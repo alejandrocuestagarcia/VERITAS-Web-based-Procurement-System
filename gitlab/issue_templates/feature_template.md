@@ -38,6 +38,3 @@ TODO: fill in from Testing Strategy
 
 ## 💡 Notes/Attachments
 *Add any screenshots, wireframes, or API snippets here.*
-
-/label ~"Type::Feature" ~"Status::To-Do"
-/estimate 4h
