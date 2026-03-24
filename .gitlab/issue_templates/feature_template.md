@@ -5,8 +5,15 @@ As a **[User Role]**, I want to **[Action]** so that **[Value/Benefit]**.
 
 ---
 
+## ▶️ Scenarios
+
+*Add Scenarios here.*
+
+---
+
 ## ✅ Acceptance Criteria
 
+*Add Acceptance Criteria here.*
 
 ---
 
