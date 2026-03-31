@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: veritas-db
+    environment:
+      POSTGRES_DB: veritas_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: pg_isready -U user -d veritas_db
+      interval: 5s
+
+  backend:
+    build: ./backend
+    container_name: veritas-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy

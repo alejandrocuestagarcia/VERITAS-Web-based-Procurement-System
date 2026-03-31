@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: backend
+
+  datasource:
+    url: jdbc:postgresql://db:5432/veritas_db
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+server:
+  port: 8080
