@@ -6,6 +6,7 @@ Standardized procurement and audit management system.
 
 - Docker & Docker Compose
 - Make
+- NPM
 - Java 21 (if running backend locally)
 
 ## Quick Start
