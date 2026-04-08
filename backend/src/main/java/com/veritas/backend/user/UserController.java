@@ -2,10 +2,7 @@ package com.veritas.backend.user;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,7 +23,7 @@ public class UserController {
     }
 
     @Operation(summary = "Edit user", description = "Edits a users basic info.")
-    @GetMapping("/{id}")
+    @PatchMapping("/{id}")
     public String editUser(@PathVariable Long id) {
         return "User " + id + " edited";
     }

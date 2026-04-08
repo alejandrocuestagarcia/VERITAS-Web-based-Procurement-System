@@ -67,16 +67,16 @@ public class RequisitionController {
     }
 
     @Operation(summary = "Bulk upload quotes", description = "Uploads a CSV file containing multiple vendor quotes for a specific request.")
-    @PostMapping(value = "/{requestId}/quotes/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String uploadQuotes(@PathVariable Long requestId, @RequestParam("file") MultipartFile file) {
-        return "File " + file.getOriginalFilename() + " uploaded for request " + requestId;
+    @PostMapping(value = "/{id}/quotes/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String uploadQuotes(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return "File " + file.getOriginalFilename() + " uploaded for request " + id;
     }
 
     @Operation(summary = "Get quote comparison", description = "Returns a side-by-side comparison of quotes, including external market price data.")
-    @GetMapping("/{requestId}/comparison")
-    public Object getQuoteComparison(@PathVariable Long requestId) {
+    @GetMapping("/{id}/comparison")
+    public Object getQuoteComparison(@PathVariable Long id) {
         return Map.of(
-                "requestId", requestId,
+                "requestId", id,
                 "quotes", List.of(),
                 "marketAverage", 0.0
         );

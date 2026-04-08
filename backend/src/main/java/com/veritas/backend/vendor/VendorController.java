@@ -25,7 +25,7 @@ public class VendorController {
     }
 
     @Operation(summary = "Edit vendor", description = "Edits a vendors basic info.")
-    @GetMapping("/{id}")
+    @PatchMapping("/{id}")
     public String editVendor(@PathVariable Long id) {
         return "Vendor " + id + " edited";
     }
