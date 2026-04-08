@@ -1,5 +1,7 @@
 package com.veritas.backend.project;
 
+import com.veritas.backend.project.dto.ProjectDto;
+import com.veritas.backend.project.dto.ProjectEditDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -12,19 +14,19 @@ import java.util.List;
 public class ProjectController {
     @Operation(summary = "List projects", description = "Retrieves all projects.")
     @GetMapping
-    public List<Object> getAllProjects() {
+    public List<ProjectDto> getAllProjects() {
         return List.of();
     }
 
     @Operation(summary = "Get project", description = "Retrieves a project.")
     @GetMapping("/{id}")
-    public List<Object> getProject(@PathVariable Long id) {
-        return List.of();
+    public ProjectDto getProject(@PathVariable Long id) {
+        return new ProjectDto();
     }
 
     @Operation(summary = "Edit project", description = "Edits a projects basic info.")
     @PatchMapping("/{id}")
-    public String editProject(@PathVariable Long id) {
-        return "Project " + id + " edited";
+    public ProjectDto editProject(@PathVariable Long id, @RequestBody ProjectEditDto updates) {
+        return new ProjectDto();
     }
 }

@@ -1,11 +1,12 @@
 package com.veritas.backend.budget;
 
+import com.veritas.backend.budget.dto.BudgetDashboardDto;
+import com.veritas.backend.budget.dto.BudgetDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/budget")
@@ -14,24 +15,24 @@ public class BudgetController {
 
     @Operation(summary = "Finance Dashboard", description = "Aggregated statistics including burndown charts and committed spending vs. actual spend.")
     @GetMapping("/dashboard")
-    public Object getFinanceDashboard() {
-        return Map.of(
-                "totalBudget", 0.0,
-                "committedFunds", 0.0,
-                "actualSpend", 0.0,
-                "burndownData", List.of()
-        );
+    public BudgetDashboardDto getFinanceDashboard() {
+        BudgetDashboardDto dto = new BudgetDashboardDto();
+        dto.setTotalBudget(0.0);
+        dto.setCommittedFunds(0.0);
+        dto.setActualSpend(0.0);
+        dto.setBurndownData(List.of());
+        return dto;
     }
 
     @Operation(summary = "Create Budget", description = "Create company budget, fails if a budget already exists.")
     @PostMapping
-    public String createBudget() {
-        return "Budget created";
+    public BudgetDto createBudget(@RequestBody BudgetDto budgetDto) {
+        return budgetDto;
     }
 
     @Operation(summary = "Edit Budget", description = "Edit the existing company budget")
     @PatchMapping
-    public String editBudget() {
-        return "Budget edited";
+    public BudgetDto editBudget(@RequestBody BudgetDto budgetDto) {
+        return budgetDto;
     }
 }

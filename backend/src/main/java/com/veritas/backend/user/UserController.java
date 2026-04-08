@@ -1,5 +1,7 @@
 package com.veritas.backend.user;
 
+import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.dto.UserEditDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -12,20 +14,19 @@ import java.util.List;
 public class UserController {
     @Operation(summary = "List users", description = "Retrieves all users.")
     @GetMapping
-    public List<Object> getAllUsers() {
+    public List<UserDto> getAllUsers() {
         return List.of();
     }
 
     @Operation(summary = "Get user", description = "Retrieves a user.")
     @GetMapping("/{id}")
-    public List<Object> getUser(@PathVariable Long id) {
-        return List.of();
+    public UserDto getUser(@PathVariable Long id) {
+        return new UserDto();
     }
 
     @Operation(summary = "Edit user", description = "Edits a users basic info.")
     @PatchMapping("/{id}")
-    public String editUser(@PathVariable Long id) {
-        return "User " + id + " edited";
+    public UserDto editUser(@PathVariable Long id, @RequestBody UserEditDto edits) {
+        return new UserDto();
     }
-
 }

@@ -1,5 +1,6 @@
 package com.veritas.backend.notification;
 
+import com.veritas.backend.notification.dto.NotificationDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +13,7 @@ import java.util.List;
 public class NotificationController {
     @Operation(summary = "Get notifications", description = "Retrieves all notifications for a user.")
     @GetMapping
-    public List<Object> getAllNotifications() {
+    public List<NotificationDto> getAllNotifications() {
         return List.of();
     }
 
