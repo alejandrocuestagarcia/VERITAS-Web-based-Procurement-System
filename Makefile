@@ -39,10 +39,10 @@ run-frontend: install-frontend ## Start the Angular frontend locally
 build-frontend: ## Build the Frontend
 	$(MAKE) -C $(FRONTEND_DIR) build
 
-build-all: build-backend ## Build everything
-	$(MAKE) -C $(FRONTEND_DIR) build
-
 # SETUP
+
+build-all: build-backend build-frontend ## Build everything
+	$(MAKE) -C $(FRONTEND_DIR) build
 
 clean: ## Remove build files and node_modules from both folders
 	$(MAKE) -C $(BACKEND_DIR) clean
