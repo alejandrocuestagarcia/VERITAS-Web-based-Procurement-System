@@ -1,0 +1,108 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$v-typography: mat.define-typography-config(
+  $font-family: 'Inter, sans-serif',
+  $headline-1: mat.define-typography-level(3.5rem, 1.1, 800, 'Manrope'), // For big spend numbers
+  $headline-5: mat.define-typography-level(1.5rem, 1.2, 700, 'Manrope'), // For section headers
+  $body-1:     mat.define-typography-level(0.875rem, 1.5, 400, 'Inter'),  // For table data
+  $button:     mat.define-typography-level(0.875rem, 1.2, 600, 'Inter'),  // For button text
+);
+
+$v-primary-palette: mat.define-palette(mat.$indigo-palette, 900);
+$v-accent-palette:  mat.define-palette(mat.$blue-gray-palette, 300);
+$v-warn-palette:    mat.define-palette(mat.$red-palette);
+
+$v-theme: mat.define-light-theme((
+  color: (
+    primary: $v-primary-palette,
+    accent: $v-accent-palette,
+    warn: $v-warn-palette,
+  ),
+  typography: $v-typography,
+  density: 0,
+));
+
+@include mat.all-component-themes($v-theme);
+
+:root {
+  --v-surface: #f7f9fb;
+  --v-surface-low: #f2f4f6;
+  --v-surface-white: #ffffff;
+  --v-on-surface: #191c1e;
+  --v-brand-gradient: linear-gradient(135deg, #003d9b 0%, #0052cc 100%);
+  --v-border-ghost: rgba(195, 198, 214, 0.15);
+}
+
+html, body { height: 100%; margin: 0; }
+
+.v-app-canvas {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--v-surface);
+  color: var(--v-on-surface);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.mat-mdc-card {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: var(--v-surface-white) !important;
+  border-radius: 0.75rem !important;
+}
+
+.v-btn-brand {
+  background: var(--v-brand-gradient) !important;
+  color: white !important;
+  border-radius: 0.375rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  padding: 0.6rem 1.5rem !important;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.v-glass-panel {
+  background: rgba(242, 244, 246, 0.8) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.v-data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  thead tr,
+  .mat-mdc-header-row {
+    background-color: #e6e8ea !important;
+
+    th, .mat-mdc-header-cell {
+      color: var(--v-on-surface);
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 1rem;
+      border: none; // The "No-Line" Rule
+    }
+  }
+
+  tbody tr,
+  .mat-mdc-row {
+    &:hover {
+      background-color: var(--v-surface-low) !important;
+    }
+
+    td, .mat-mdc-cell {
+      padding: 1rem;
+      border-bottom: 1px solid var(--v-border-ghost);
+    }
+  }
+}
