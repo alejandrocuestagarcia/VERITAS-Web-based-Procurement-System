@@ -10,15 +10,28 @@ Standardized procurement and audit management system.
 
 ## Quick Start
 
-To spin up the entire environment locally run (except docker database):
+To start the backend locally run:
 ```Bash
-make run-local
+make run-backend
 ```
 
-To spin up the entire environment in Docker run:
+To start the frontend locally run:
 ```Bash
-make up
+make run-frontend
 ```
+
+## Useful Makefile Commands
+
+Clean the frontend and backend:
+```Bash
+make clean
+```
+
+
+```Bash
+make clean
+```
+
 
 ## Useful Information
 

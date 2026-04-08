@@ -1,34 +1,52 @@
 BACKEND_DIR = ./backend
 FRONTEND_DIR = ./frontend
 
-.PHONY: help up down restart db-only run-local build clean test logs
+.PHONY: help up down restart db-only run-be run-fe install-fe build-all clean
+
+# DOCKER
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-up: ## Start everything (DB + Backend) in Docker containers
+up: ## Start DB and Backend in Docker
 	docker compose up -d
 
-down: ## Stop and remove all containers
+down: ## Stop all Docker containers
 	docker compose down
 
-restart: down up ## Restart the entire Docker stack
-
-db-only: ## Start only the PostgreSQL container (for local development)
+db-only: ## Start ONLY the Database (Required for local runs)
 	docker compose up -d db
 
-logs: ## View real-time logs from Docker
+logs: ## View Docker logs
 	docker compose logs -f
 
-build: db-only ## Build the JAR file via the backend Makefile
-	$(MAKE) -C $(BACKEND_DIR) build
+# BACKEND
 
-run-local: db-only ## Run the backend locally
-	@echo "Starting backend with DB_HOST=localhost..."
+run-backend: db-only ## Start the Spring Boot backend locally
 	export DB_HOST=localhost && $(MAKE) -C $(BACKEND_DIR) run
 
-test: db-only ## Run all backend tests
-	$(MAKE) -C $(BACKEND_DIR) test
+build-backend: ## Build the Backend JAR
+	$(MAKE) -C $(BACKEND_DIR) build
 
-clean: ## Clean everything
+# FRONTEND
+
+install-frontend: ## Install Frontend dependencies (node_modules)
+	$(MAKE) -C $(FRONTEND_DIR) install
+
+run-frontend: install-frontend ## Start the Angular frontend locally
+	$(MAKE) -C $(FRONTEND_DIR) run
+
+build-frontend: ## Build the Frontend
+	$(MAKE) -C $(FRONTEND_DIR) build
+
+build-all: build-backend ## Build everything
+	$(MAKE) -C $(FRONTEND_DIR) build
+
+# SETUP
+
+clean: ## Remove build files and node_modules from both folders
 	$(MAKE) -C $(BACKEND_DIR) clean
+	$(MAKE) -C $(FRONTEND_DIR) clean
+
+init: db-only install-frontend ## One-time setup: Start DB and install frontend libs
+	@echo "✅ Setup complete. Use 'make run-be' and 'make run-fe' in two terminals."
