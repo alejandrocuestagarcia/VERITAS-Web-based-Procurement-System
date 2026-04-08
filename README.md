@@ -27,13 +27,6 @@ Clean the frontend and backend:
 make clean
 ```
 
-
-```Bash
-make clean
-```
-
-
 ## Useful Information
 
 - Once the Backend is started, the API is available at: http://localhost:8080/api/v1/swagger-ui.html
-
