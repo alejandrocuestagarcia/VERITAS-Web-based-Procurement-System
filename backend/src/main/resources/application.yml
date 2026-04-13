@@ -10,11 +10,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: true
-
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
 
 server:
   port: 8080
