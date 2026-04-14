@@ -24,3 +24,7 @@ springdoc:
     operations-sorter: alpha   # Sorts endpoints alphabetically
   api-docs:
     path: /api.json
+security:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:dev-only-secret-key-for-local-development-hs256}==
+    access-token-expiration: 3600000 # = 1 day
