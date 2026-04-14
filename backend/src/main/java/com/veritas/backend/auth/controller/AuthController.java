@@ -7,6 +7,7 @@ import com.veritas.backend.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,8 +26,8 @@ public class AuthController {
 
     @Operation(summary = "Login", description = "Login as a user and receive token.")
     @PostMapping(path = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
-    public AuthResponseDto login(@RequestBody LoginRequestDto loginRequest) {
-        return authService.login(loginRequest);
+    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto loginRequest) {
+        return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     @Operation(summary = "Refresh Token", description = "Get a new access token.")
