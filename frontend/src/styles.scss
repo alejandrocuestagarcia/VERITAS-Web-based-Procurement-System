@@ -25,7 +25,7 @@ $v-theme: mat.define-light-theme((
 ));
 
 @include mat.all-component-themes($v-theme);
-
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
 :root {
   --v-surface: #f7f9fb;
   --v-surface-low: #f2f4f6;
@@ -33,9 +33,20 @@ $v-theme: mat.define-light-theme((
   --v-on-surface: #191c1e;
   --v-brand-gradient: linear-gradient(135deg, #003d9b 0%, #0052cc 100%);
   --v-border-ghost: rgba(195, 198, 214, 0.15);
+  --color-muted-grey: #737685;
+  --color-veritas-blue: #0052CC;
+  --color-veritas-dark: #003D9B;
 }
 
 html, body { height: 100%; margin: 0; }
+
+body {
+  font-family: 'Manrope', sans-serif;
+  background-color: #F8F9FA;
+}
+.mat-typography {
+  font-family: 'Manrope', sans-serif !important;
+}
 
 .v-app-canvas {
   font-family: 'Inter', sans-serif;
