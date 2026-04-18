@@ -2,7 +2,6 @@ package com.veritas.backend.user.entity;
 
 import com.veritas.backend.common.model.Department;
 import com.veritas.backend.team.entity.Team;
-import jakarta.annotation.PreDestroy;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -73,13 +72,6 @@ public class User implements UserDetails {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreDestroy
-    protected void onDelete() {
-        LocalDateTime now = LocalDateTime.now();
-        this.deletedAt = now;
-        this.updatedAt = now;
     }
 
     @Override

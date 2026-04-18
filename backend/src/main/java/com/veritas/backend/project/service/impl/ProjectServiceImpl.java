@@ -9,6 +9,7 @@ import com.veritas.backend.user.entity.UserRole;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsForUser(User user) {
         if (user.getRole() == UserRole.FINANCE_OFFICER) {
             return projectRepository.findAll().stream()
