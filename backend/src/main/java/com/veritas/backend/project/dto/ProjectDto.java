@@ -1,10 +1,14 @@
 package com.veritas.backend.project.dto;
 
-import lombok.Data;
 
-@Data
-public class ProjectDto {
-    private Long id;
-    private String name;
-    private String status;
-}
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record ProjectDto (
+        Long id,
+        String name,
+        LocalDate startDate,
+        LocalDate endDate,
+        BigDecimal budget,
+        String teamName
+) {}
