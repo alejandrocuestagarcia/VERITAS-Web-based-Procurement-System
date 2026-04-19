@@ -28,6 +28,9 @@ run-backend: db-only ## Start the Spring Boot backend locally
 build-backend: ## Build the Backend JAR
 	$(MAKE) -C $(BACKEND_DIR) build
 
+test-backend: ## Test the Backend
+	$(MAKE) -C $(BACKEND_DIR) test
+
 # FRONTEND
 
 gen-api:

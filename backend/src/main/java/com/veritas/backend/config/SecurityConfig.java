@@ -27,46 +27,42 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  private static final String[] WHITELIST_URLS =
-          {"/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api.json"};
+  private static final String[] WHITELIST_URLS = { "/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+      "/api.json/**" };
 
-    @Bean
-    public RoleHierarchy roleHierarchy() {
-        String hierarchy = String.format(
-                "ROLE_%s > ROLE_%s \n ROLE_%s > ROLE_%s \n ROLE_%s > ROLE_%s",
-                UserRole.ADMINISTRATOR.name(), UserRole.FINANCE_OFFICER.name(),
-                UserRole.FINANCE_OFFICER.name(), UserRole.PROCUREMENT_OFFICER.name(),
-                UserRole.PROCUREMENT_OFFICER.name(), UserRole.REQUESTER.name()
-        );
+  @Bean
+  public RoleHierarchy roleHierarchy() {
+    String hierarchy = String.format(
+        "ROLE_%s > ROLE_%s \n ROLE_%s > ROLE_%s \n ROLE_%s > ROLE_%s",
+        UserRole.ADMINISTRATOR.name(), UserRole.FINANCE_OFFICER.name(),
+        UserRole.FINANCE_OFFICER.name(), UserRole.PROCUREMENT_OFFICER.name(),
+        UserRole.PROCUREMENT_OFFICER.name(), UserRole.REQUESTER.name());
 
-        return RoleHierarchyImpl.fromHierarchy(hierarchy);
-    }
+    return RoleHierarchyImpl.fromHierarchy(hierarchy);
+  }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable).cors(cors -> cors.configurationSource(request -> {
-          CorsConfiguration config = new CorsConfiguration();
-          config.setAllowedOrigins(List.of("http://localhost:4200"));
-          config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-          config.setAllowedHeaders(List.of("*"));
-          config.setAllowCredentials(true);
-          return config;
-        })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      CorsConfiguration config = new CorsConfiguration();
+      config.setAllowedOrigins(List.of("http://localhost:4200"));
+      config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+      config.setAllowedHeaders(List.of("*"));
+      config.setAllowCredentials(true);
+      return config;
+    })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            authorizeRequests ->
-                    authorizeRequests.requestMatchers(WHITELIST_URLS).permitAll()
+            authorizeRequests -> authorizeRequests.requestMatchers(WHITELIST_URLS).permitAll()
                 .anyRequest().authenticated()
 
         ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
 
-
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
       throws Exception {
     return config.getAuthenticationManager();
   }
-
 
 }
