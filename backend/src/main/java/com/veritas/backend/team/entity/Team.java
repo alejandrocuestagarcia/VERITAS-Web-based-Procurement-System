@@ -3,13 +3,19 @@ package com.veritas.backend.team.entity;
 import com.veritas.backend.common.model.Department;
 import com.veritas.backend.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "teams")
+@Builder
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Team {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

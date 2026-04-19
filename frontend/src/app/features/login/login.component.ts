@@ -21,7 +21,6 @@ export class LoginComponent {
   ) { }
 
   onLogin() {
-
     this.authApi.login(this.loginRequest).subscribe({
       next: data => {
         if (data.accessToken && data.refreshToken) {

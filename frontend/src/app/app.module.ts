@@ -7,13 +7,18 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginComponent } from './features/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import {FormsModule} from "@angular/forms";
-import {HttpClientModule} from "@angular/common/http";
+import {HTTP_INTERCEPTORS, HttpClientModule} from "@angular/common/http";
 import {MatCardModule} from "@angular/material/card";
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ProjectListComponent } from './features/project/project-list.component';
+import {MatTableModule} from "@angular/material/table";
+import {MatPaginatorModule} from "@angular/material/paginator";
+import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
+import {MatListModule} from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
 
 @NgModule({
@@ -21,7 +26,8 @@ import { HasRoleDirective } from './core/directives/has-role.directive';
     AppComponent,
     LoginComponent,
     DashboardComponent,
-    HasRoleDirective
+    HasRoleDirective,
+    ProjectListComponent
   ],
   imports: [
     BrowserModule,
@@ -34,9 +40,18 @@ import { HasRoleDirective } from './core/directives/has-role.directive';
     MatInputModule,
     MatIconModule,
     MatButtonModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatListModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

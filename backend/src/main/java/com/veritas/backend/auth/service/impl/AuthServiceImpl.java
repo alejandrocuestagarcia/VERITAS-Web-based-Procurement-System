@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken rt = new RefreshToken();
         rt.setToken(UUID.randomUUID().toString());
         rt.setUser(user);
-        rt.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
+        rt.setExpiryDate(Instant.now().plus(1, ChronoUnit.DAYS));
         refreshTokenRepository.save(rt);
         return rt.getToken();
     }
@@ -71,5 +72,9 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("Refresh token not in database"));
     }
 
-
+    @Override
+    @Transactional
+    public void logout(RefreshTokenDto refreshToken) {
+        refreshTokenRepository.deleteByToken(refreshToken.refreshToken());
+    }
 }
