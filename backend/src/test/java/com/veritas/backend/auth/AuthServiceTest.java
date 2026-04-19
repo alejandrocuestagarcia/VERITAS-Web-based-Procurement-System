@@ -50,7 +50,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         testUser = new User();
-        testUser.setUserID(1L);
+        testUser.setId(1L);
         testUser.setEmail(CORRECT_EMAIL);
         testUser.setPasswordHash(HASHED_PASSWORD);
         testUser.setRole(UserRole.REQUESTER);
