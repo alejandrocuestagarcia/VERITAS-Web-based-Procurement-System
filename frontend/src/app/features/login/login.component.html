@@ -1,0 +1,51 @@
+<div class="login-page">
+
+  <div class="login-container">
+    <div class="logo-section">
+      <div class="background-shield">
+        <mat-icon class="shield-icon">security</mat-icon>
+      </div>
+      <div class="heading-1">VERITAS</div>
+      <div class="sub-heading">Enterprise Procurement & Governance</div>
+    </div>
+
+    <mat-card class="login-card">
+      <form class="login-form" (ngSubmit)="onLogin()">
+
+        <div class="input-group">
+          <div class="label-row">
+            <span class="label-text">Email</span>
+          </div>
+          <mat-form-field appearance="fill" class="veritas-input">
+            <mat-icon matPrefix>email</mat-icon>
+            <input matInput type="email" name="email" [(ngModel)]="loginRequest.email" placeholder="name@company.com" required>
+          </mat-form-field>
+        </div>
+
+        <div class="input-group">
+          <div class="label-row">
+            <span class="label-text">Password</span>
+            <a href="#" class="forgot-link">Forgot Password?</a>
+          </div>
+          <mat-form-field appearance="fill" class="veritas-input">
+            <mat-icon matPrefix>lock</mat-icon>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" [(ngModel)]="loginRequest.password" placeholder="••••••••" required>
+            <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
+          </mat-form-field>
+        </div>
+
+
+        <button mat-flat-button class="login-button" type="submit">
+          Login to Dashboard
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </form>
+    </mat-card>
+  </div>
+
+  <footer class="login-footer">
+    VERITAS v2.4.1
+  </footer>
+</div>

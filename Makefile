@@ -30,6 +30,13 @@ build-backend: ## Build the Backend JAR
 
 # FRONTEND
 
+gen-api:
+	@until $$(curl --output /dev/null --silent --head --fail http://localhost:8080/api/v1/api.json); do \
+		printf "."; \
+		sleep 2; \
+	done
+	cd $(FRONTEND_DIR) && npm run api:gen
+
 install-frontend: ## Install Frontend dependencies (node_modules)
 	$(MAKE) -C $(FRONTEND_DIR) install
 

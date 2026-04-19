@@ -46,6 +46,7 @@ public class AuditLog {
     @Column(name = "previous_hash")
     private String previousHash;
 
+    @Builder.Default
     @Column(name = "timestamp")
     private LocalDateTime timestamp = LocalDateTime.now();
 
