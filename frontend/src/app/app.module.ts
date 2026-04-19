@@ -18,6 +18,7 @@ import { ProjectListComponent } from './features/project/project-list.component'
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
+import { UserCreateComponent } from './features/user-create/user-create.component';
 import {MatListModule} from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
 import { VendorCreateComponent } from './features/vendor/vendor-create.component';
@@ -28,6 +29,8 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
     AppComponent,
     LoginComponent,
     DashboardComponent,
+    ProjectListComponent,
+    UserCreateComponent,
     HasRoleDirective,
     ProjectListComponent,
     VendorCreateComponent

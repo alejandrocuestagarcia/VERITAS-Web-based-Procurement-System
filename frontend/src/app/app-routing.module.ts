@@ -4,10 +4,13 @@ import {LoginComponent} from "./features/login/login.component";
 import {authGuard} from "./core/guards/auth.guard";
 import {DashboardComponent} from "./features/dashboard/dashboard.component";
 import {ProjectListComponent} from "./features/project/project-list.component";
+import {UserCreateComponent} from "./features/user-create/user-create.component";
 import {guestGuard} from "./core/guards/guest.guard";
 import {VendorCreateComponent} from "./features/vendor/vendor-create.component";
 
 const routes: Routes = [
+  { path: 'login', component: LoginComponent },
+  {path: 'user/create', component: UserCreateComponent },
   { path: 'login',
     component: LoginComponent,
     canActivate: [guestGuard]
