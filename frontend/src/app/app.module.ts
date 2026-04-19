@@ -14,13 +14,17 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ProjectListComponent } from './features/project/project-list.component';
+import {MatTableModule} from "@angular/material/table";
+import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
-    DashboardComponent
+    DashboardComponent,
+    ProjectListComponent
   ],
   imports: [
     BrowserModule,
@@ -33,7 +37,9 @@ import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
     MatInputModule,
     MatIconModule,
     MatButtonModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatTableModule,
+    MatPaginatorModule
   ],
   providers: [
     {
@@ -42,7 +48,6 @@ import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
       multi: true
     }
   ],
-
   bootstrap: [AppComponent]
 })
 export class AppModule { }
