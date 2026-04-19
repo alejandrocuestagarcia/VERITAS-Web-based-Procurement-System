@@ -40,7 +40,7 @@ gen-api:
 install-frontend: ## Install Frontend dependencies (node_modules)
 	$(MAKE) -C $(FRONTEND_DIR) install
 
-run-frontend: install-frontend ## Start the Angular frontend locally
+run-frontend: install-frontend gen-api ## Start the Angular frontend locally
 	$(MAKE) -C $(FRONTEND_DIR) run
 
 build-frontend: ## Build the Frontend

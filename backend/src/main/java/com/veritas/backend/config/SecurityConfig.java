@@ -2,9 +2,13 @@ package com.veritas.backend.config;
 
 import com.veritas.backend.auth.filter.JwtAuthenticationFilter;
 import java.util.List;
+
+import com.veritas.backend.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,10 +27,20 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  // List of all routes allowed without authentication
   private static final String[] WHITELIST_URLS =
-      {"/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api.json",
-          "/api.json/**", "/error"};
+          {"/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api.json"};
+
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        String hierarchy = String.format(
+                "ROLE_%s > ROLE_%s \n ROLE_%s > ROLE_%s \n ROLE_%s > ROLE_%s",
+                UserRole.ADMINISTRATOR.name(), UserRole.FINANCE_OFFICER.name(),
+                UserRole.FINANCE_OFFICER.name(), UserRole.PROCUREMENT_OFFICER.name(),
+                UserRole.PROCUREMENT_OFFICER.name(), UserRole.REQUESTER.name()
+        );
+
+        return RoleHierarchyImpl.fromHierarchy(hierarchy);
+    }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,7 +53,8 @@ public class SecurityConfig {
           return config;
         })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            authorizeRequests -> authorizeRequests.requestMatchers(WHITELIST_URLS).permitAll()
+            authorizeRequests ->
+                    authorizeRequests.requestMatchers(WHITELIST_URLS).permitAll()
                 .anyRequest().authenticated()
 
         ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
