@@ -2,6 +2,7 @@ package com.veritas.backend.auth.service;
 
 import com.veritas.backend.user.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -31,8 +32,16 @@ public class JwtService {
   }
 
   public boolean isTokenValid(String token, UserDetails userDetails) {
-    final String email = extractEmail(token);
-    return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
+
+    try {
+
+
+      final String email = extractEmail(token);
+      return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    } catch (ExpiredJwtException e) {
+      //Maybe handle this exception in a separate global exceptionhandler
+      return false;
+    }
   }
 
   private boolean isTokenExpired(String token) {
