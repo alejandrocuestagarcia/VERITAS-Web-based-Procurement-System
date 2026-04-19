@@ -1,9 +1,9 @@
 package com.veritas.backend;
 
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -13,8 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * such as service tests, repository tests, or full Spring context tests.
  *
  * The PostgreSQL container is started once and shared across all tests in the
- * same test run for performance. Liquibase migrations are applied automatically
- * on startup, ensuring the schema matches production.
+ * same test run for performance.
  *
  * Each test class should clean up its own data in @BeforeEach to ensure
  * test isolation.
@@ -23,7 +22,17 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public abstract class BaseDBIntegrationTest {
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> POSTGRES;
+
+    static {
+        POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+        POSTGRES.start();
+    }
+
+    @DynamicPropertySource
+    static void registerProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+    }
 }
