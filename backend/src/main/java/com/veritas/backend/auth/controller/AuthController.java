@@ -28,7 +28,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Refresh Token", description = "Get a new access token.")
-    @PostMapping("/refresh")
+    @PostMapping(path = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
     public AuthResponseDto refresh(@RequestBody RefreshTokenDto refreshToken) {
         return authService.refreshToken(refreshToken);
     }
