@@ -1,1 +1,22 @@
-<p>dashboard works!</p>
+<mat-card>
+  <mat-card-content>
+    <h3>Role-Based Access Control Demo</h3>
+    <p>This text is visible to everyone.</p>
+
+    <div *appHasRole="['ADMINISTRATOR']">
+      <strong>Administrator Only:</strong> You can see this because you have the ADMINISTRATOR role.
+    </div>
+
+    <div *appHasRole="['FINANCE_OFFICER']">
+      <strong>Finance Officer Only:</strong> You can see this because you have the FINANCE_OFFICER role.
+    </div>
+
+    <div *appHasRole="['PROCUREMENT_OFFICER']">
+      <strong>Procurement Officer Only:</strong> You can see this because you have the PROCUREMENT_OFFICER role.
+    </div>
+
+    <div *appHasRole="['REQUESTER']">
+      <strong>Requester Only:</strong> You can see this because you have the REQUESTER role.
+    </div>
+  </mat-card-content>
+</mat-card>
