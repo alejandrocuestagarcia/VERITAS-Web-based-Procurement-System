@@ -1,6 +1,7 @@
 package com.veritas.backend.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.user.entity.User;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class AuthControllerTest {
+class AuthControllerTest extends BaseDBIntegrationTest {
     private static final String CORRECT_EMAIL = "test@veritas.com", FALSE_EMAIL = "unknown@veritas.com",
             CORRECT_PASSWORD = "password123", FALSE_PASSWORD = "wrongpassword";
 
