@@ -23,7 +23,7 @@
 
 .page-subtitle {
   font-size: 13px;
-  color: grey;
+  color: var(--color-muted-grey);
   margin: 0;
 }
 
@@ -35,28 +35,6 @@
   padding-top: 4px;
 }
 
-.btn-new {
-  background: #0052CC !important;
-  color: white !important;
-  border-radius: 10px !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  height: 38px;
-  line-height: 36px;
-  padding: 0 16px !important;
-
-  mat-icon {
-    font-size: 16px;
-    height: 16px;
-    width: 16px;
-    margin-right: 5px;
-    vertical-align: middle;
-  }
-
-  &:hover { background: darkblue !important; }
-}
-
 .stat-row {
   display: flex;
   gap: 16px;
@@ -64,8 +42,8 @@
 }
 
 .stat-card {
-  background: white;
-  border: 1px solid #e4e7ef;
+  background: var(--v-surface-low);
+  border: 1px solid var(--v-border-white);
   border-radius: 14px;
   padding: 16px 22px 18px;
   min-width: 170px;
@@ -78,7 +56,7 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.09em;
-  color: grey;
+  color: var(--color-muted-grey);
   text-transform: uppercase;
 }
 
@@ -86,12 +64,12 @@
   font-family: 'Sora', sans-serif;
   font-size: 34px;
   font-weight: 700;
-  color: #0052CC;
+  color: var(--color-veritas-blue);
   line-height: 1;
 }
 
 .error-bar {
-  background: #fef2f2;
+  background: var(--v-surface-low);
   border: 1px solid #fecaca;
   color: red;
   border-radius: 10px;
@@ -101,8 +79,8 @@
 }
 
 .table-card {
-  background: #ffffff;
-  border: 1px solid #e4e7ef;
+  background: var(--v-surface-white);
+  border: 1px solid var(--v-border-white);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -112,29 +90,29 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid #e4e7ef;
+  border-bottom: 1px solid var(--v-border-white);
 }
 
 .table-title {
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: var(--v-on-surface);
 }
 
 .search-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f8f9fc;
-  border: 1px solid #e4e7ef;
+  background: var(--v-surface-low);
+  border: 1px solid var(--v-border-ghost);
   border-radius: 10px;
   padding: 6px 12px;
   width: 210px;
   transition: border-color 0.15s, background 0.15s;
 
   &:focus-within {
-    border-color: #0052CC;
-    background: #ffffff;
+    border-color: var(--color-veritas-blue);
+    background: var(--v-surface-white);
   }
 }
 
@@ -142,7 +120,7 @@
   font-size: 16px;
   width: 16px;
   height: 16px;
-  color: #6b7280;
+  color: var(--color-muted-grey);
   flex-shrink: 0;
 }
 
@@ -152,7 +130,7 @@
   background: transparent;
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
-  color: #111827;
+  color: var(--v-on-surface);
   width: 100%;
 
   &::placeholder { color: #9ca3af; }
@@ -162,52 +140,13 @@
   padding: 40px;
   text-align: center;
   font-size: 13px;
-  color: #6b7280;
-}
-
-.project-table {
-  width: 100%;
-
-  .mat-mdc-header-row {
-    background: #f8f9fc;
-    border-bottom: 1px solid #e4e7ef;
-    height: 40px;
-  }
-
-  .mat-mdc-header-cell {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    color: #9ca3af;
-    text-transform: uppercase;
-    border-bottom: none;
-    padding: 0 16px;
-  }
-
-  .mat-mdc-row {
-    height: 64px;
-    border-bottom: 1px solid #e4e7ef;
-    transition: background 0.12s ease;
-
-    &:last-child { border-bottom: none; }
-    &:hover { background: #f8faff; }
-  }
-
-  .mat-mdc-cell {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    color: #111827;
-    border-bottom: none;
-    padding: 0 16px;
-    vertical-align: middle;
-  }
+  color: var(--color-muted-grey);
 }
 
 .proj-name {
   font-size: 13px;
   font-weight: 500;
-  color: #111827;
+  color: var(--v-on-surface);
 }
 
 .team-chip {
@@ -217,7 +156,7 @@
   font-size: 11px;
   font-weight: 500;
   background: #eaf0fb;
-  color: #1a3a6b;
+  color: var(--color-veritas-dark);
   border: 1px solid #d6e4f5;
   white-space: nowrap;
   line-height: 1.4;
@@ -231,14 +170,14 @@
 
 .date-val {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-muted-grey);
   white-space: nowrap;
 }
 
 ::ng-deep mat-paginator.mat-mdc-paginator {
-  border-top: 1px solid #e4e7ef;
+  border-top: 1px solid var(--v-border-white);
   background: #f8f9fc;
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-muted-grey);
 }

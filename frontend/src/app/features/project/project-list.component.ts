@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
-import { ProjectModuleService, ProjectDto} from '../../../core/api';
+import { ProjectModuleService, ProjectDto} from '../../core/api';
 import {MatPaginator} from "@angular/material/paginator";
 import {MatTableDataSource} from "@angular/material/table";
 
