@@ -1,4 +1,4 @@
-package com.veritas.backend.project;
+package com.veritas.backend.project.controller;
 
 import com.veritas.backend.project.dto.ProjectDto;
 import com.veritas.backend.project.dto.ProjectEditDto;
@@ -7,6 +7,7 @@ import com.veritas.backend.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @Operation(summary = "List projects", description = "Retrieves all projects.")
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<ProjectDto> getAllProjects(@AuthenticationPrincipal User user) {
         return projectService.getProjectsForUser(user);
     }

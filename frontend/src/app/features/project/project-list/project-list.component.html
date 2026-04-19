@@ -1,0 +1,90 @@
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Project Portfolio</h1>
+      <p class="page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
+    </div>
+    <div class="header-actions">
+      <button mat-flat-button class="btn-new">
+        <mat-icon>add</mat-icon> New Project
+      </button>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <span class="stat-label">TOTAL PROJECTS</span>
+      <span class="stat-value">{{ dataSource.data.length }}</span>
+    </div>
+  </div>
+
+  <div class="error-bar" *ngIf="error">{{ error }}</div>
+
+  <div class="table-card">
+    <div class="table-toolbar">
+      <span class="table-title">Active Project Portfolio</span>
+      <div class="search-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          placeholder="Search projects..."
+          (input)="applyFilter($event)"
+        />
+      </div>
+    </div>
+
+    <div class="state-row" *ngIf="loading">Loading projects…</div>
+
+    <div class="state-row" *ngIf="!loading && dataSource.data.length === 0 && !error">
+      No projects found.
+    </div>
+
+    <table mat-table [dataSource]="dataSource" class="project-table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>PROJECT NAME</th>
+        <td mat-cell *matCellDef="let project">
+          <span class="proj-name">{{ project.name }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="team">
+        <th mat-header-cell *matHeaderCellDef>ASSIGNED TEAM</th>
+        <td mat-cell *matCellDef="let project">
+          <span class="team-chip">{{ project.teamName }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="budget">
+        <th mat-header-cell *matHeaderCellDef>BUDGET</th>
+        <td mat-cell *matCellDef="let project">
+          <span class="budget-val">{{ project.budget | currency:'EUR':'symbol':'1.0-0' }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="startDate">
+        <th mat-header-cell *matHeaderCellDef>START DATE</th>
+        <td mat-cell *matCellDef="let project">
+          <span class="date-val">{{ project.startDate | date:'MMM d, yyyy' }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="endDate">
+        <th mat-header-cell *matHeaderCellDef>END DATE</th>
+        <td mat-cell *matCellDef="let project">
+          <span class="date-val">{{ project.endDate | date:'MMM d, yyyy' }}</span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="project-row"></tr>
+    </table>
+
+    <mat-paginator
+      [pageSizeOptions]="[3, 5, 7]"
+      showFirstLastButtons
+      aria-label="Select page"
+    ></mat-paginator>
+
+  </div>
+</div>
