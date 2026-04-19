@@ -1,4 +1,13 @@
-<button mat-flat-button color="warn" (click)="onLogout()">
-  <mat-icon>logout</mat-icon>
-  Logout
-</button>
+<div class="nav-container">
+  <mat-nav-list>
+    <a mat-list-item routerLink="/projects" routerLinkActive="active">
+      <mat-icon matListItemIcon>folder</mat-icon>
+      <span matListItemTitle>Projects</span>
+    </a>
+
+    <mat-list-item (click)="onLogout()">
+      <mat-icon matListItemIcon>logout</mat-icon>
+      <span matListItemTitle>Logout</span>
+    </mat-list-item>
+  </mat-nav-list>
+</div>

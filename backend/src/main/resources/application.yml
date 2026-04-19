@@ -27,4 +27,4 @@ springdoc:
 security:
   jwt:
     secret-key: ${JWT_SECRET_KEY:dev-only-secret-key-for-local-development-hs256}==
-    access-token-expiration: 120000 # = 2 minutes
+    access-token-expiration: 1200000 # = 20 minutes
