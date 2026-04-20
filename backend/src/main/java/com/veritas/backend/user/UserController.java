@@ -4,6 +4,7 @@ import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.dto.UserEditDto;
+import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping(path = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "User Module", description = "Management of VERITAS users")
 public class UserController {
@@ -33,9 +34,15 @@ public class UserController {
 
     @Operation(summary = "List users", description = "Retrieves all users.")
     @IsFinanceOfficer
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE )
+    @GetMapping
     public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable) {
         return ResponseEntity.ok(userService.getAllUsers(pageable));
+    }
+
+    @Operation(summary = "Get user stats", description = "Retrieves stats about the userbase of Veritas")
+    @GetMapping("/stats")
+    public ResponseEntity<UserStatsDto> getUserStats() {
+        return ResponseEntity.ok(userService.getUserStats());
     }
 
     @Operation(summary = "Get user", description = "Retrieves a user.")

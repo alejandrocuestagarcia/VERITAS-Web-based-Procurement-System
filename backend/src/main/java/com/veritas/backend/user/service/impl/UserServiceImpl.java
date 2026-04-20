@@ -4,6 +4,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.mapper.UserMapper;
 import com.veritas.backend.user.repository.UserRepository;
@@ -75,5 +76,14 @@ public class UserServiceImpl implements UserService {
 
     return userRepository.findAll(pageable).map(userMapper::toUserDto);
 
+  }
+
+  @Override
+  public UserStatsDto getUserStats() {
+    long total = userRepository.count();
+
+    long inactive = userRepository.countByIsActiveFalse();
+
+    return new UserStatsDto(total, inactive, 0);
   }
 }
