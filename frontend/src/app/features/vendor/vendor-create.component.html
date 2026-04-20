@@ -1,0 +1,86 @@
+<div class="v-page-wrap">
+  <form #vendorForm="ngForm" (ngSubmit)="saveChanges()">
+
+    <header class="v-page-header">
+      <div>
+        <div class="v-stat-label">VENDORS > <strong>ADD NEW VENDOR</strong></div>
+        <h1 class="v-page-title">Vendor Registration</h1>
+        <p class="v-page-subtitle">Onboard a new strategic partner to the VERITAS ecosystem.</p>
+      </div>
+      <div class="v-page-header-actions">
+        <button mat-button type="button" (click)="discard()">Discard</button>
+        <button mat-flat-button class="v-btn-brand" type="submit" [disabled]="loading">
+          Save Changes
+        </button>
+      </div>
+    </header>
+
+    <div class="v-error-bar" *ngIf="error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <div class="v-form-container">
+
+      <section class="v-card">
+        <div class="v-card-header">
+          <div class="icon-wrap">
+            <mat-icon>business</mat-icon>
+          </div>
+          <h3 class="card-title">General Identity</h3>
+        </div>
+
+        <div class="v-form-row">
+          <div class="v-form-field">
+            <label>VENDOR NAME *</label>
+            <input type="text" name="vendorName" placeholder="ABC Global Logistics" [(ngModel)]="vendor.vendorName"
+              #vendorName="ngModel" required [disabled]="loading"
+              [class.is-invalid]="vendorName.invalid && vendorName.touched" />
+            <span class="error-text" *ngIf="vendorName.invalid && vendorName.touched">Vendor name is required</span>
+          </div>
+          <div class="v-form-field">
+            <label>TAX ID / VAT NUMBER *</label>
+            <input type="text" name="taxId" placeholder="XXXXXXXXXXX" [(ngModel)]="vendor.taxId" #taxId="ngModel"
+              required [disabled]="loading" [class.is-invalid]="taxId.invalid && taxId.touched" />
+            <span class="error-text" *ngIf="taxId.invalid && taxId.touched">Tax ID is required</span>
+          </div>
+        </div>
+
+        <div class="v-form-row">
+          <div class="v-form-field">
+            <label>DESCRIPTION *</label>
+            <textarea name="description" placeholder="Enter notes" [(ngModel)]="vendor.description"
+              #description="ngModel" required [disabled]="loading" rows="4"
+              [class.is-invalid]="description.invalid && description.touched"></textarea>
+            <span class="error-text" *ngIf="description.invalid && description.touched">Description is required</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="v-card">
+        <div class="v-card-header">
+          <div class="icon-wrap">
+            <mat-icon>contact_mail</mat-icon>
+          </div>
+          <h3 class="card-title">Primary Contact</h3>
+        </div>
+
+        <div class="v-form-row">
+          <div class="v-form-field">
+            <label>CONTACT NAME</label>
+            <input type="text" name="primaryContactName" placeholder="Full legal name"
+              [(ngModel)]="vendor.primaryContactName" [disabled]="loading" />
+          </div>
+          <div class="v-form-field">
+            <label>CONTACT EMAIL</label>
+            <input type="email" name="primaryContactEmail" placeholder="email@vendor.com"
+              [(ngModel)]="vendor.primaryContactEmail" #email="ngModel" email [disabled]="loading"
+              [class.is-invalid]="email.invalid && email.touched" />
+            <span class="error-text" *ngIf="email.errors?.['email'] && email.touched">Please enter a valid email
+              address</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </form>
+</div>

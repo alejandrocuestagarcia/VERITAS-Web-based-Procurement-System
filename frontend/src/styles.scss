@@ -4,34 +4,32 @@
 
 @include mat.core();
 
-$v-typography: mat.define-typography-config(
-  $font-family: 'Inter, sans-serif',
+$v-typography: mat.define-typography-config($font-family: 'Inter, sans-serif',
 
-  $headline-1: mat.define-typography-level(3.5rem, 1.1, 800, 'Manrope'), // For big spend numbers
-  $headline-5: mat.define-typography-level(1.5rem, 1.2, 700, 'Manrope'), // For section headers
+    $headline-1: mat.define-typography-level(3.5rem, 1.1, 800, 'Manrope'), // For big spend numbers
+    $headline-5: mat.define-typography-level(1.5rem, 1.2, 700, 'Manrope'), // For section headers
 
-  $body-1:     mat.define-typography-level(0.875rem, 1.5, 400, 'Inter'),  // For table data
-  $button:     mat.define-typography-level(0.875rem, 1.2, 600, 'Inter'),  // For button text
-);
+    $body-1: mat.define-typography-level(0.875rem, 1.5, 400, 'Inter'), // For table data
+    $button: mat.define-typography-level(0.875rem, 1.2, 600, 'Inter'), // For button text
+  );
 
 @include mat.typography-hierarchy($v-typography);
 
 $v-primary-palette: mat.define-palette(mat.$indigo-palette, 900);
-$v-accent-palette:  mat.define-palette(mat.$blue-gray-palette, 300);
-$v-warn-palette:    mat.define-palette(mat.$red-palette);
+$v-accent-palette: mat.define-palette(mat.$blue-gray-palette, 300);
+$v-warn-palette: mat.define-palette(mat.$red-palette);
 
-$v-theme: mat.define-light-theme((
-  color: (
-    primary: $v-primary-palette,
-    accent: $v-accent-palette,
-    warn: $v-warn-palette,
-  ),
-  typography: $v-typography,
-  density: 0,
-));
+$v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
+        accent: $v-accent-palette,
+        warn: $v-warn-palette,
+      ),
+      typography: $v-typography,
+      density: 0,
+    ));
 
 @include mat.all-component-themes($v-theme);
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
 :root {
   --v-surface: #f7f9fb;
   --v-surface-low: #f2f4f6;
@@ -59,6 +57,10 @@ html, body { height: 100%; margin: 0; }
 body {
   @include mat.typography-level($v-typography, body-1);
   background-color: #F8F9FA;
+}
+
+.mat-typography {
+  font-family: 'Manrope', sans-serif !important;
 }
 
 .v-app-canvas {
@@ -98,6 +100,12 @@ body {
   -webkit-backdrop-filter: blur(20px);
 }
 
+.v-page-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .v-data-table {
   width: 100%;
   border-collapse: separate;
@@ -132,11 +140,11 @@ body {
   }
 }
 
-.v-table-page-wrap {
+.v-page-wrap {
   padding: 32px 36px;
 }
 
-.v-table-page-header {
+.v-page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -144,7 +152,7 @@ body {
   gap: 16px;
 }
 
-.v-table-page-title {
+.v-page-title {
   font-family: 'Manrope', sans-serif;
   font-size: 24px;
   font-weight: 700;
@@ -153,13 +161,13 @@ body {
   line-height: 1.2;
 }
 
-.v-table-page-subtitle {
+.v-page-subtitle {
   font-size: 13px;
   color: var(--color-muted-grey);
   margin: 0;
 }
 
-.v-table-page-header-actions {
+.v-page-header-actions {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -259,12 +267,104 @@ body {
   color: var(--color-muted-grey);
 }
 
+.v-card {
+  background: white;
+  border: 1px solid #e4e7ef;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+.v-card-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.v-card-header .icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #eaf0fb;
+  color: #003D9B;
+  border-radius: 8px;
+}
+
+.v-card-header .card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #191c1e;
+  margin: 0;
+}
+
+.v-form-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.v-form-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.v-form-field {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v-form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5b5b5c;
+  text-transform: uppercase;
+}
+
+.v-form-field input,
+.v-form-field textarea {
+  font-family: 'Inter', sans-serif;
+  padding: 12px 16px;
+  border: 1px solid #e4e7ef;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.v-form-field input:focus,
+.v-form-field textarea:focus {
+  border-color: #0052CC;
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+
+.v-form-field .is-invalid {
+  border-color: #ef4444 !important;
+}
+
+.v-form-field .error-text {
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
 .v-error-bar {
-  background: var(--v-surface-low);
+  background: #fef2f2;
   border: 1px solid #fecaca;
-  color: red;
+  color: #b91c1c;
+  padding: 12px 16px;
   border-radius: 10px;
-  padding: 10px 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 13px;
-  margin-bottom: 16px;
 }

@@ -1,11 +1,11 @@
-<div class="v-table-page-wrap">
+<div class="v-page-wrap">
 
-  <div class="v-table-page-header">
-    <div class="header-left">
-      <h1 class="v-table-page-title">Project Portfolio</h1>
-      <p class="v-table-page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
+  <div class="v-page-header">
+    <div class="v-page-header-left">
+      <h1 class="v-page-title">Project Portfolio</h1>
+      <p class="v-page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
     </div>
-    <div class="v-table-page-header-actions">
+    <div class="v-page-header-actions">
       <button mat-flat-button class="v-btn-brand">
         <mat-icon>add</mat-icon> New Project
       </button>
@@ -26,7 +26,7 @@
       <span class="table-title">Active Project Portfolio</span>
       <div class="v-table-search">
         <mat-icon>search</mat-icon>
-        <input placeholder="Search projects..." (input)="applyFilter($event)"/>
+        <input placeholder="Search projects..." (input)="applyFilter($event)" />
       </div>
     </div>
 
@@ -75,11 +75,7 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="project-row"></tr>
     </table>
 
-    <mat-paginator
-      [pageSizeOptions]="[3, 5, 7]"
-      showFirstLastButtons
-      aria-label="Select page"
-    ></mat-paginator>
+    <mat-paginator [pageSizeOptions]="[3, 5, 7]" showFirstLastButtons aria-label="Select page"></mat-paginator>
 
   </div>
 </div>
