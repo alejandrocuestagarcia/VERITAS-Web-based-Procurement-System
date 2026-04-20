@@ -4,34 +4,30 @@
 
 @include mat.core();
 
-$v-typography: mat.define-typography-config(
-  $font-family: 'Inter, sans-serif',
-
-  $headline-1: mat.define-typography-level(3.5rem, 1.1, 800, 'Manrope'), // For big spend numbers
-  $headline-5: mat.define-typography-level(1.5rem, 1.2, 700, 'Manrope'), // For section headers
-
-  $body-1:     mat.define-typography-level(0.875rem, 1.5, 400, 'Inter'),  // For table data
-  $button:     mat.define-typography-level(0.875rem, 1.2, 600, 'Inter'),  // For button text
-);
+$v-typography: mat.define-typography-config($font-family: 'Inter, sans-serif',
+    $headline-1: mat.define-typography-level(3.5rem, 1.1, 800, 'Manrope'), // For big spend numbers
+    $headline-5: mat.define-typography-level(1.5rem, 1.2, 700, 'Manrope'), // For section headers
+    $body-1: mat.define-typography-level(0.875rem, 1.5, 400, 'Inter'), // For table data
+    $button: mat.define-typography-level(0.875rem, 1.2, 600, 'Inter'), // For button text
+  );
 
 @include mat.typography-hierarchy($v-typography);
 
 $v-primary-palette: mat.define-palette(mat.$indigo-palette, 900);
-$v-accent-palette:  mat.define-palette(mat.$blue-gray-palette, 300);
-$v-warn-palette:    mat.define-palette(mat.$red-palette);
+$v-accent-palette: mat.define-palette(mat.$blue-gray-palette, 300);
+$v-warn-palette: mat.define-palette(mat.$red-palette);
 
-$v-theme: mat.define-light-theme((
-  color: (
-    primary: $v-primary-palette,
-    accent: $v-accent-palette,
-    warn: $v-warn-palette,
-  ),
-  typography: $v-typography,
-  density: 0,
-));
+$v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
+        accent: $v-accent-palette,
+        warn: $v-warn-palette,
+      ),
+      typography: $v-typography,
+      density: 0,
+    ));
 
 @include mat.all-component-themes($v-theme);
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
 :root {
   --v-surface: #f7f9fb;
   --v-surface-low: #f2f4f6;
@@ -59,6 +55,10 @@ html, body { height: 100%; margin: 0; }
 body {
   @include mat.typography-level($v-typography, body-1);
   background-color: #F8F9FA;
+}
+
+.mat-typography {
+  font-family: 'Manrope', sans-serif !important;
 }
 
 .v-app-canvas {
