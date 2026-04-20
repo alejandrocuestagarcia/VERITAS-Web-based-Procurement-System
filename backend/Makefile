@@ -10,7 +10,7 @@ run: ## Run the backend locally
 	./gradlew bootRun
 
 test: ## Run backend tests
-	./gradlew test
+	./gradlew test --rerun-tasks
 
 clean: ## Clean backend build files
 	./gradlew clean

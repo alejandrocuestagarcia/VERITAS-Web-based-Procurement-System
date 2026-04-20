@@ -4,6 +4,8 @@ import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.auth.repository.RefreshTokenRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +27,7 @@ public class RoleBasedAccessControlTest {
         private UserRepository userRepository;
 
         @Autowired
-        private com.veritas.backend.auth.repository.RefreshTokenRepository refreshTokenRepository;
+        private RefreshTokenRepository refreshTokenRepository;
 
         @Autowired
         private JwtService jwtService;
@@ -44,6 +46,12 @@ public class RoleBasedAccessControlTest {
                 financeToken = createUserAndGetToken("finance@veritas.com", UserRole.FINANCE_OFFICER);
                 procurementToken = createUserAndGetToken("procurement@veritas.com", UserRole.PROCUREMENT_OFFICER);
                 requesterToken = createUserAndGetToken("requester@veritas.com", UserRole.REQUESTER);
+        }
+
+        @AfterEach
+        void deleteUsers() {
+                refreshTokenRepository.deleteAll();
+                userRepository.deleteAll();
         }
 
         private String createUserAndGetToken(String email, UserRole role) {
