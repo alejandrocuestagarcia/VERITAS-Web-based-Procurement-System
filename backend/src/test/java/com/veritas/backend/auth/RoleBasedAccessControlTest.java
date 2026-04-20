@@ -1,5 +1,6 @@
 package com.veritas.backend.auth;
 
+import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
@@ -18,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RoleBasedAccessControlTest {
+class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
 
         @Autowired
         private MockMvc mockMvc;
