@@ -18,6 +18,8 @@ import { ProjectListComponent } from './features/project/project-list.component'
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
+import {MatListModule} from "@angular/material/list";
+import { HasRoleDirective } from './core/directives/has-role.directive';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 
 @NgModule({
@@ -25,6 +27,7 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
     AppComponent,
     LoginComponent,
     DashboardComponent,
+    HasRoleDirective,
     ProjectListComponent
   ],
   imports: [
@@ -41,6 +44,7 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
     MatCheckboxModule,
     MatTableModule,
     MatPaginatorModule,
+    MatListModule,
     MatSnackBarModule
   ],
   providers: [

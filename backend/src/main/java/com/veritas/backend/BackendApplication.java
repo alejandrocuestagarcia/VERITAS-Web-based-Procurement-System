@@ -20,17 +20,49 @@ public class BackendApplication {
 	@Bean
 	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder) {
 		return args -> {
-			if (userRepo.findByEmail("dev@veritas.com").isEmpty()) {
+			if (userRepo.findByEmail("admin@veritas.com").isEmpty()) {
 				User admin = User.builder()
-						.name("Veritas Dev")
-						.email("dev@veritas.com")
+						.name("Veritas Admin")
+						.email("admin@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.ADMINISTRATOR)
 						.department(Department.IT)
 						.isActive(true)
 						.build();
 				userRepo.save(admin);
-
+			}
+			if (userRepo.findByEmail("finance@veritas.com").isEmpty()) {
+				User finance = User.builder()
+						.name("Veritas Finance")
+						.email("finance@veritas.com")
+						.passwordHash(encoder.encode("password123"))
+						.role(UserRole.FINANCE_OFFICER)
+						.department(Department.IT)
+						.isActive(true)
+						.build();
+				userRepo.save(finance);
+			}
+			if (userRepo.findByEmail("procurement@veritas.com").isEmpty()) {
+				User procurement = User.builder()
+						.name("Veritas Procurement")
+						.email("procurement@veritas.com")
+						.passwordHash(encoder.encode("password123"))
+						.role(UserRole.PROCUREMENT_OFFICER)
+						.department(Department.IT)
+						.isActive(true)
+						.build();
+				userRepo.save(procurement);
+			}
+			if (userRepo.findByEmail("requester@veritas.com").isEmpty()) {
+				User requester = User.builder()
+						.name("Veritas Requester")
+						.email("requester@veritas.com")
+						.passwordHash(encoder.encode("password123"))
+						.role(UserRole.REQUESTER)
+						.department(Department.IT)
+						.isActive(true)
+						.build();
+				userRepo.save(requester);
 			}
 		};
 	}

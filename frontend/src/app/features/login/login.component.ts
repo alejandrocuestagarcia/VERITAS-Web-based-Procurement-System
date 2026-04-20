@@ -1,7 +1,7 @@
-import {Component} from '@angular/core';
-import {AuthModuleService, LoginRequestDto} from "../../core/api";
-import {Router} from "@angular/router";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import { Component } from '@angular/core';
+import { AuthModuleService, LoginRequestDto } from "../../core/api";
+import { Router } from "@angular/router";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-login',
@@ -23,12 +23,8 @@ export class LoginComponent {
   ) {}
 
   onLogin() {
-
     this.authApi.login(this.loginRequest).subscribe({
       next: data => {
-        console.log("Got")
-        console.log(data);
-        console.log(data.accessToken);
         if (data.accessToken && data.refreshToken) {
           localStorage.setItem('access_token', data.accessToken);
           localStorage.setItem('refresh_token', data.refreshToken);

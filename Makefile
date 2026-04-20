@@ -28,6 +28,9 @@ run-backend: db-only ## Start the Spring Boot backend locally
 build-backend: ## Build the Backend JAR
 	$(MAKE) -C $(BACKEND_DIR) build
 
+test-backend: ## Test the Backend
+	$(MAKE) -C $(BACKEND_DIR) test
+
 # FRONTEND
 
 gen-api:
@@ -40,7 +43,7 @@ gen-api:
 install-frontend: ## Install Frontend dependencies (node_modules)
 	$(MAKE) -C $(FRONTEND_DIR) install
 
-run-frontend: install-frontend ## Start the Angular frontend locally
+run-frontend: install-frontend gen-api ## Start the Angular frontend locally
 	$(MAKE) -C $(FRONTEND_DIR) run
 
 build-frontend: ## Build the Frontend

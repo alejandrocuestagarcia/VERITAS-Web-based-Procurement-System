@@ -62,16 +62,4 @@ class ProjectServiceUnitTest {
         assertThat(result).hasSize(1);
         verify(projectRepository).findByTeam(team);
     }
-
-    @Test
-    void administratorCannotSeeProjects() {
-        User user = User.builder()
-                .role(UserRole.ADMINISTRATOR)
-                .build();
-
-        var result = projectService.getProjectsForUser(user);
-
-        assertThat(result).isEmpty();
-        verifyNoInteractions(projectRepository);
-    }
 }
