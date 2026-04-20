@@ -1,6 +1,5 @@
 package com.veritas.backend.auth;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -20,7 +19,6 @@ import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -119,9 +117,9 @@ class AuthServiceImplTest {
     when(refreshTokenRepository.findByToken(anyString())).thenReturn(Optional.of(refreshToken));
     when(jwtService.generateAccessToken(user)).thenReturn("new_access_token");
 
-    authService.refreshToken(new RefreshTokenDto("valid_token"));
+    AuthResponseDto response = authService.refreshToken(new RefreshTokenDto("valid_token"));
 
-    assertThat(refreshToken.getToken()).isEqualTo("new_access_token");
+    assertThat(response.accessToken()).isEqualTo("new_access_token");
 
   }
 
