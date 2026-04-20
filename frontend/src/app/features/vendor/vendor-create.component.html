@@ -74,7 +74,10 @@
           <div class="v-form-field">
             <label>CONTACT EMAIL</label>
             <input type="email" name="primaryContactEmail" placeholder="email@vendor.com"
-              [(ngModel)]="vendor.primaryContactEmail" [disabled]="loading" />
+              [(ngModel)]="vendor.primaryContactEmail" #email="ngModel" email [disabled]="loading"
+              [class.is-invalid]="email.invalid && email.touched" />
+            <span class="error-text" *ngIf="email.errors?.['email'] && email.touched">Please enter a valid email
+              address</span>
           </div>
         </div>
       </section>

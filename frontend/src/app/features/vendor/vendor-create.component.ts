@@ -41,7 +41,7 @@ export class VendorCreateComponent {
     this.error = null;
 
     if (this.vendorForm.invalid) {
-      this.error = 'Please fill in all required fields.';
+      this.error = 'Please correct the errors in the form.';
       this.loading = false;
 
       this.vendorForm.form.markAllAsTouched();
