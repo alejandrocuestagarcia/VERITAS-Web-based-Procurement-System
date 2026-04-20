@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { AuthModuleService, LoginRequestDto } from "../../core/api";
 import { Router } from "@angular/router";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-login',
@@ -17,8 +18,9 @@ export class LoginComponent {
 
   constructor(
     private authApi: AuthModuleService,
-    private router: Router
-  ) { }
+    private router: Router,
+    private snackBar: MatSnackBar
+  ) {}
 
   onLogin() {
     this.authApi.login(this.loginRequest).subscribe({
@@ -33,8 +35,18 @@ export class LoginComponent {
       },
       error: err => {
         console.log(err);
+        this.showError(err.error);
       }
     })
 
+  }
+
+  private showError(message: string) {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: "bottom",
+      panelClass: ['error-snackbar']
+    })
   }
 }

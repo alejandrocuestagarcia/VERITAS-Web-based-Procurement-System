@@ -20,6 +20,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
 import {MatListModule} from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
+import {MatSnackBarModule} from "@angular/material/snack-bar";
 
 @NgModule({
   declarations: [
@@ -43,7 +44,8 @@ import { HasRoleDirective } from './core/directives/has-role.directive';
     MatCheckboxModule,
     MatTableModule,
     MatPaginatorModule,
-    MatListModule
+    MatListModule,
+    MatSnackBarModule
   ],
   providers: [
     {

@@ -45,6 +45,15 @@ $v-theme: mat.define-light-theme((
   --color-veritas-dark: #003D9B;
 }
 
+.error-snackbar {
+  --mdc-snackbar-container-color: #B00020;
+  --mdc-snackbar-supporting-text-color: white;
+
+  .mat-mdc-snack-bar-action {
+    color: white !important;
+  }
+}
+
 html, body { height: 100%; margin: 0; }
 
 body {
