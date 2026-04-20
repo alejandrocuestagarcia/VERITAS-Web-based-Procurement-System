@@ -29,10 +29,14 @@
       <span matListItemTitle>Projects</span>
     </a>
 
+    <a mat-list-item routerLink="/vendors/create" routerLinkActive="active">
+      <mat-icon matListItemIcon>business</mat-icon>
+      <span matListItemTitle>Create Vendor</span>
+    </a>
+
     <mat-list-item (click)="onLogout()">
       <mat-icon matListItemIcon>logout</mat-icon>
       <span matListItemTitle>Logout</span>
     </mat-list-item>
   </mat-nav-list>
 </div>
-

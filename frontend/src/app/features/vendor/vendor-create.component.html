@@ -1,0 +1,79 @@
+<div class="page-wrap">
+  <form #vendorForm="ngForm" (ngSubmit)="saveChanges()">
+
+    <header class="page-header">
+      <div class="header-left">
+        <div class="stat-label">VENDORS > <strong>ADD NEW VENDOR</strong></div>
+        <h1 class="page-title">Vendor Registration</h1>
+        <p class="page-subtitle">Onboard a new strategic partner to the VERITAS ecosystem.</p>
+      </div>
+      <div class="header-actions">
+        <button mat-button type="button" (click)="discard()">Discard</button>
+        <button mat-flat-button class="v-btn-brand" type="submit" [disabled]="loading">
+          Save Changes
+        </button>
+      </div>
+    </header>
+
+    <div class="v-error-bar" *ngIf="error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <div class="v-form-container">
+
+      <!-- Identity Section -->
+      <section class="v-card">
+        <div class="v-card-header">
+          <div class="icon-wrap">
+            <mat-icon>business</mat-icon>
+          </div>
+          <h3 class="card-title">General Identity</h3>
+        </div>
+
+        <div class="v-form-row">
+          <div class="v-form-field">
+            <label>Vendor Name *</label>
+            <input name="vendorName" placeholder="ABC Global Logistics" [(ngModel)]="vendor.vendorName" required
+              [class.is-invalid]="vendorForm.submitted && !vendor.vendorName" [disabled]="loading">
+          </div>
+          <div class="v-form-field">
+            <label>Tax ID / VAT Number *</label>
+            <input name="taxId" placeholder="XXXXXXXXXXX" [(ngModel)]="vendor.taxId" required
+              [class.is-invalid]="vendorForm.submitted && !vendor.taxId" [disabled]="loading">
+          </div>
+        </div>
+
+        <div class="v-form-field">
+          <label>Description *</label>
+          <textarea name="description" placeholder="Enter notes" [(ngModel)]="vendor.description" required rows="4"
+            [class.is-invalid]="vendorForm.submitted && !vendor.description" [disabled]="loading"></textarea>
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section class="v-card">
+        <div class="v-card-header">
+          <div class="icon-wrap">
+            <mat-icon>contact_mail</mat-icon>
+          </div>
+          <h3 class="card-title">Primary Contact</h3>
+        </div>
+
+        <div class="v-form-row">
+          <div class="v-form-field">
+            <label>Contact Name</label>
+            <input name="contactName" placeholder="Full legal name" [(ngModel)]="vendor.primaryContactName"
+              [disabled]="loading">
+          </div>
+          <div class="v-form-field">
+            <label>Contact Email</label>
+            <input name="contactEmail" type="email" placeholder="email@vendor.com"
+              [(ngModel)]="vendor.primaryContactEmail" [disabled]="loading">
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </form>
+</div>

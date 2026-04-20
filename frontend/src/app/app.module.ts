@@ -20,6 +20,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
 import {MatListModule} from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
+import { VendorCreateComponent } from './features/vendor/vendor-create.component';
 
 @NgModule({
   declarations: [
@@ -27,7 +28,8 @@ import { HasRoleDirective } from './core/directives/has-role.directive';
     LoginComponent,
     DashboardComponent,
     HasRoleDirective,
-    ProjectListComponent
+    ProjectListComponent,
+    VendorCreateComponent
   ],
   imports: [
     BrowserModule,

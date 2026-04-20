@@ -19,18 +19,17 @@
     </div>
   </div>
 
-  <div class="error-bar" *ngIf="error">{{ error }}</div>
+  <div class="v-error-bar" *ngIf="error">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
 
   <div class="table-card">
     <div class="table-toolbar">
       <span class="table-title">Active Project Portfolio</span>
       <div class="search-wrap">
         <mat-icon class="search-icon">search</mat-icon>
-        <input
-          class="search-input"
-          placeholder="Search projects..."
-          (input)="applyFilter($event)"
-        />
+        <input class="search-input" placeholder="Search projects..." (input)="applyFilter($event)" />
       </div>
     </div>
 
@@ -80,11 +79,7 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="project-row"></tr>
     </table>
 
-    <mat-paginator
-      [pageSizeOptions]="[3, 5, 7]"
-      showFirstLastButtons
-      aria-label="Select page"
-    ></mat-paginator>
+    <mat-paginator [pageSizeOptions]="[3, 5, 7]" showFirstLastButtons aria-label="Select page"></mat-paginator>
 
   </div>
 </div>

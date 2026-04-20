@@ -5,6 +5,7 @@ import {authGuard} from "./core/guards/auth.guard";
 import {DashboardComponent} from "./features/dashboard/dashboard.component";
 import {ProjectListComponent} from "./features/project/project-list.component";
 import {guestGuard} from "./core/guards/guest.guard";
+import {VendorCreateComponent} from "./features/vendor/vendor-create.component";
 
 const routes: Routes = [
   { path: 'login',
@@ -19,6 +20,11 @@ const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'vendors/create',
+    component: VendorCreateComponent,
     canActivate: [authGuard]
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
