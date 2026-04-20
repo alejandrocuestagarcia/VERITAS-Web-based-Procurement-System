@@ -17,11 +17,8 @@ public class Vendor {
     @Column(name = "vendor_name", nullable = false)
     private String vendorName;
 
-    @Column(name = "tax_id")
+    @Column(name = "tax_id", unique = true)
     private String taxId;
-
-    @Column(name = "reliability_score")
-    private Integer reliabilityScore = 0;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -40,4 +37,16 @@ public class Vendor {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

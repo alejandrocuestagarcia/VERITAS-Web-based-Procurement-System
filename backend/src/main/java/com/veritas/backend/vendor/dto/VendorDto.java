@@ -1,10 +1,17 @@
 package com.veritas.backend.vendor.dto;
 
-import lombok.Data;
+import java.time.LocalDateTime;
 
-@Data
-public class VendorDto {
-    private Long id;
-    private String name;
-    private Double reliabilityScore;
-}
+public record VendorDto (
+    String vendorName,
+    String taxId,
+    Double communicationScore,
+    Double deliveryScore,
+    Double qualityScore,
+    Double overallScore,
+    String description,
+    String primaryContactName,
+    String primaryContactEmail,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
+){}
