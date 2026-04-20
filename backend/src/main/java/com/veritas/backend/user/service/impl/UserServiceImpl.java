@@ -9,7 +9,10 @@ import com.veritas.backend.user.mapper.UserMapper;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.UserService;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +65,15 @@ public class UserServiceImpl implements UserService {
     }
 
     return userMapper.toUserDto(savedUser);
+
+
+  }
+
+  @Override
+  @Transactional
+  public Page<UserDto> getAllUsers(Pageable pageable) {
+
+    return userRepository.findAll(pageable).map(userMapper::toUserDto);
 
   }
 }

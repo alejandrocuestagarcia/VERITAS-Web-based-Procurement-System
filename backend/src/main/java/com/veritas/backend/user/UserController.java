@@ -10,10 +10,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
@@ -26,9 +33,9 @@ public class UserController {
 
     @Operation(summary = "List users", description = "Retrieves all users.")
     @IsFinanceOfficer
-    @GetMapping
-    public List<UserDto> getAllUsers() {
-        return List.of();
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE )
+    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable) {
+        return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
     @Operation(summary = "Get user", description = "Retrieves a user.")
