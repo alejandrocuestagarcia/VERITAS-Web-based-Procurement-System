@@ -22,7 +22,6 @@
 
     <div class="v-form-container">
 
-      <!-- Identity Section -->
       <section class="v-card">
         <div class="v-card-header">
           <div class="icon-wrap">
@@ -33,25 +32,31 @@
 
         <div class="v-form-row">
           <div class="v-form-field">
-            <label>Vendor Name *</label>
-            <input name="vendorName" placeholder="ABC Global Logistics" [(ngModel)]="vendor.vendorName" required
-              [class.is-invalid]="vendorForm.submitted && !vendor.vendorName" [disabled]="loading">
+            <label>VENDOR NAME *</label>
+            <input type="text" name="vendorName" placeholder="ABC Global Logistics" [(ngModel)]="vendor.vendorName"
+              #vendorName="ngModel" required [disabled]="loading"
+              [class.is-invalid]="vendorName.invalid && vendorName.touched" />
+            <span class="error-text" *ngIf="vendorName.invalid && vendorName.touched">Vendor name is required</span>
           </div>
           <div class="v-form-field">
-            <label>Tax ID / VAT Number *</label>
-            <input name="taxId" placeholder="XXXXXXXXXXX" [(ngModel)]="vendor.taxId" required
-              [class.is-invalid]="vendorForm.submitted && !vendor.taxId" [disabled]="loading">
+            <label>TAX ID / VAT NUMBER *</label>
+            <input type="text" name="taxId" placeholder="XXXXXXXXXXX" [(ngModel)]="vendor.taxId" #taxId="ngModel"
+              required [disabled]="loading" [class.is-invalid]="taxId.invalid && taxId.touched" />
+            <span class="error-text" *ngIf="taxId.invalid && taxId.touched">Tax ID is required</span>
           </div>
         </div>
 
-        <div class="v-form-field">
-          <label>Description *</label>
-          <textarea name="description" placeholder="Enter notes" [(ngModel)]="vendor.description" required rows="4"
-            [class.is-invalid]="vendorForm.submitted && !vendor.description" [disabled]="loading"></textarea>
+        <div class="v-form-row">
+          <div class="v-form-field">
+            <label>DESCRIPTION *</label>
+            <textarea name="description" placeholder="Enter notes" [(ngModel)]="vendor.description"
+              #description="ngModel" required [disabled]="loading" rows="4"
+              [class.is-invalid]="description.invalid && description.touched"></textarea>
+            <span class="error-text" *ngIf="description.invalid && description.touched">Description is required</span>
+          </div>
         </div>
       </section>
 
-      <!-- Contact Section -->
       <section class="v-card">
         <div class="v-card-header">
           <div class="icon-wrap">
@@ -62,18 +67,17 @@
 
         <div class="v-form-row">
           <div class="v-form-field">
-            <label>Contact Name</label>
-            <input name="contactName" placeholder="Full legal name" [(ngModel)]="vendor.primaryContactName"
-              [disabled]="loading">
+            <label>CONTACT NAME</label>
+            <input type="text" name="primaryContactName" placeholder="Full legal name"
+              [(ngModel)]="vendor.primaryContactName" [disabled]="loading" />
           </div>
           <div class="v-form-field">
-            <label>Contact Email</label>
-            <input name="contactEmail" type="email" placeholder="email@vendor.com"
-              [(ngModel)]="vendor.primaryContactEmail" [disabled]="loading">
+            <label>CONTACT EMAIL</label>
+            <input type="email" name="primaryContactEmail" placeholder="email@vendor.com"
+              [(ngModel)]="vendor.primaryContactEmail" [disabled]="loading" />
           </div>
         </div>
       </section>
-
     </div>
   </form>
 </div>
