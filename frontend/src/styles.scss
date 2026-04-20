@@ -1,7 +1,9 @@
 //AI-REFACTORED
 
 @use '@angular/material' as mat;
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @include mat.core();
 
 $v-typography: mat.define-typography-config($font-family: 'Inter, sans-serif',
