@@ -8,6 +8,7 @@ import com.veritas.backend.vendor.service.VendorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,13 +31,13 @@ public class VendorController {
     @IsRequester
     @GetMapping("/{id}")
     public VendorDto getVendor(@PathVariable Long id) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null, null, null);
+        return new VendorDto(null, null, null, null, null, null, null, null, null);
     }
 
     @Operation(summary = "Create vendor", description = "Creates a new vendor.")
     @IsProcurementOfficer
     @PostMapping()
-    public VendorDto createVendor(@RequestBody VendorDto create) {
+    public VendorDto createVendor(@Valid @RequestBody VendorDto create) {
         return vendorService.createVendor(create);
     }
 
@@ -44,13 +45,13 @@ public class VendorController {
     @IsProcurementOfficer
     @PatchMapping("/{id}")
     public VendorDto editVendor(@PathVariable Long id, @RequestBody VendorDto edits) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null, null, null);
+        return new VendorDto(null, null, null, null, null, null, null, null, null);
     }
 
     @Operation(summary = "Rate a vendor", description = "Saves communication, delivery, and quality scores for a specific vendor.")
     @IsProcurementOfficer
     @PostMapping("/{id}/rate")
     public VendorDto rateVendor(@PathVariable Long id, @RequestBody VendorRatingDto ratingData) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null, null, null);
+        return new VendorDto(null, null, null, null, null, null, null, null, null);
     }
 }

@@ -9,12 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class VendorServiceImpl implements VendorService {
     private final VendorRepository vendorRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public VendorDto createVendor(VendorDto vendorDto) {
 
         Vendor vendor = new Vendor();
@@ -29,7 +29,6 @@ public class VendorServiceImpl implements VendorService {
 
     private VendorDto convertVendorToVendorDto(Vendor vendor) {
         return new VendorDto(vendor.getVendorName(), vendor.getTaxId(), null, null, null,
-                null, vendor.getDescription(), vendor.getPrimaryContactName(), vendor.getPrimaryContactEmail(),
-                vendor.getCreatedAt(), vendor.getUpdatedAt());
+                null, vendor.getDescription(), vendor.getPrimaryContactName(), vendor.getPrimaryContactEmail());
     }
 }
