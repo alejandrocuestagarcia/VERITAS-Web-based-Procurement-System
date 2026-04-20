@@ -1,13 +1,13 @@
-<div class="page-wrap">
+<div class="v-page-wrap">
   <form #vendorForm="ngForm" (ngSubmit)="saveChanges()">
 
-    <header class="page-header">
-      <div class="header-left">
-        <div class="stat-label">VENDORS > <strong>ADD NEW VENDOR</strong></div>
-        <h1 class="page-title">Vendor Registration</h1>
-        <p class="page-subtitle">Onboard a new strategic partner to the VERITAS ecosystem.</p>
+    <header class="v-page-header">
+      <div>
+        <div class="v-stat-label">VENDORS > <strong>ADD NEW VENDOR</strong></div>
+        <h1 class="v-page-title">Vendor Registration</h1>
+        <p class="v-page-subtitle">Onboard a new strategic partner to the VERITAS ecosystem.</p>
       </div>
-      <div class="header-actions">
+      <div class="v-page-header-actions">
         <button mat-button type="button" (click)="discard()">Discard</button>
         <button mat-flat-button class="v-btn-brand" type="submit" [disabled]="loading">
           Save Changes
