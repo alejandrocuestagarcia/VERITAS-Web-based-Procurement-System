@@ -21,19 +21,15 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsForUser(User user) {
-        if (user.getRole() == UserRole.FINANCE_OFFICER) {
-            return projectRepository.findAll().stream()
-                    .map(this::convertProjectToProjectDto)
-                    .toList();
-        }
-
         if (user.getRole() == UserRole.PROCUREMENT_OFFICER || user.getRole() == UserRole.REQUESTER) {
             return projectRepository.findByTeam(user.getTeam()).stream()
                     .map(this::convertProjectToProjectDto)
                     .toList();
         }
 
-        return Collections.emptyList();
+        return projectRepository.findAll().stream()
+                .map(this::convertProjectToProjectDto)
+                .toList();
     }
 
     private ProjectDto convertProjectToProjectDto(Project project) {
