@@ -1,41 +1,37 @@
-<div class="page-wrap">
+<div class="v-table-page-wrap">
 
-  <div class="page-header">
+  <div class="v-table-page-header">
     <div class="header-left">
-      <h1 class="page-title">Project Portfolio</h1>
-      <p class="page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
+      <h1 class="v-table-page-title">Project Portfolio</h1>
+      <p class="v-table-page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
     </div>
-    <div class="header-actions">
+    <div class="v-table-page-header-actions">
       <button mat-flat-button class="v-btn-brand">
         <mat-icon>add</mat-icon> New Project
       </button>
     </div>
   </div>
 
-  <div class="stat-row">
-    <div class="stat-card">
-      <span class="stat-label">TOTAL PROJECTS</span>
-      <span class="stat-value">{{ dataSource.data.length }}</span>
+  <div class="v-stat-row">
+    <div class="v-stat-card">
+      <span class="v-stat-label">TOTAL PROJECTS</span>
+      <span class="v-stat-value">{{ dataSource.data.length }}</span>
     </div>
   </div>
 
-  <div class="v-error-bar" *ngIf="error">
-    <mat-icon>error_outline</mat-icon>
-    <span>{{ error }}</span>
-  </div>
+  <div class="v-error-bar" *ngIf="error">{{ error }}</div>
 
-  <div class="table-card">
-    <div class="table-toolbar">
+  <div class="v-table-card">
+    <div class="v-table-toolbar">
       <span class="table-title">Active Project Portfolio</span>
-      <div class="search-wrap">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input class="search-input" placeholder="Search projects..." (input)="applyFilter($event)" />
+      <div class="v-table-search">
+        <mat-icon>search</mat-icon>
+        <input placeholder="Search projects..." (input)="applyFilter($event)"/>
       </div>
     </div>
 
-    <div class="state-row" *ngIf="loading">Loading projects…</div>
-
-    <div class="state-row" *ngIf="!loading && dataSource.data.length === 0 && !error">
+    <div class="v-table-state" *ngIf="loading">Loading projects…</div>
+    <div class="v-table-state" *ngIf="!loading && dataSource.data.length === 0 && !error">
       No projects found
     </div>
 
