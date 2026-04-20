@@ -53,13 +53,13 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         testingTeam = teamRepository.save(Team.builder()
                 .name("Testing Team")
-                .description("A team for testing")
+                .description("Handles QA and testing work")
                 .isActive(true)
                 .build());
 
         developmentTeam = teamRepository.save(Team.builder()
                 .name("Development Team")
-                .description("A Team for developing")
+                .description("Builds product features")
                 .isActive(true)
                 .build());
 
