@@ -1,10 +1,11 @@
 package com.veritas.backend.user;
 
-import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
+import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.dto.UserStatsDto;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -32,11 +34,13 @@ public class UserController {
 
     private final UserService userService;
 
+
     @Operation(summary = "List users", description = "Retrieves all users.")
     @IsFinanceOfficer
     @GetMapping
-    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable) {
-        return ResponseEntity.ok(userService.getAllUsers(pageable));
+    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable, @RequestParam(required = false) String search, @RequestParam(required = false)
+                                                     UserRole userRole) {
+        return ResponseEntity.ok(userService.getAllUsersFiltered(pageable, search, userRole));
     }
 
     @Operation(summary = "Get user stats", description = "Retrieves stats about the userbase of Veritas")

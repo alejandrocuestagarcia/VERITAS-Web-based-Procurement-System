@@ -1,7 +1,8 @@
-import { Component, OnInit} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {Pageable, UserDto, UserDtoRoleEnum, UserModuleService} from "../../core/api";
 import {PageEvent} from "@angular/material/paginator";
+import {SharedTableComponent} from "../../shared/components/table/shared-table.component";
 
 @Component({
   selector: 'app-user-list',
@@ -11,7 +12,8 @@ import {PageEvent} from "@angular/material/paginator";
 export class UserListComponent implements OnInit {
 
   dataSource = new MatTableDataSource<UserDto>();
-  totalElements = 0;
+  totalUserCount = 0;
+  totalPageElements = 0;
   displayedColumns: string[] = ['name', 'email', 'team', 'role', 'actions'];
   loading = false;
   inactiveUserCount = 0;
@@ -22,12 +24,22 @@ export class UserListComponent implements OnInit {
   userRoles = Object.values(UserDtoRoleEnum);
   selectedRole = "ALL"
   userSessions = 0;
+  currentSearchString = "";
 
-  constructor(private readonly userService: UserModuleService) {}
+  @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
+
+  constructor(private readonly userService: UserModuleService) {
+  }
 
   ngOnInit(): void {
     this.loadUsers(0, 10);
     this.loadUserStats();
+  }
+
+  onSearchChanged(value: string) {
+    this.currentSearchString = value;
+    this.sharedTable.resetToFirstPage();
+    this.loadUsers(0, 10);
   }
 
   onPageChange(event: PageEvent): void {
@@ -43,10 +55,13 @@ export class UserListComponent implements OnInit {
       sort: ['name,asc']
     };
 
-    this.userService.getAllUsers(pageable).subscribe({
+    const roleParam = this.selectedRole === 'ALL' ? undefined : (this.selectedRole as UserDtoRoleEnum);
+
+    this.userService.getAllUsers(pageable, this.currentSearchString, roleParam).subscribe({
       next: (response) => {
         console.log(response);
         this.dataSource.data = response.content || [];
+        this.totalPageElements = response.totalElements || 0;
         this.loading = false;
       },
       error: (err) => {
@@ -57,6 +72,14 @@ export class UserListComponent implements OnInit {
   }
 
   onRoleFilterChange(value: any) {
+    const newValue = value ?? 'ALL';
+
+    if (this.selectedRole === newValue && value === undefined) {
+      this.selectedRole = 'ALL';
+      return;
+    }
+    this.sharedTable.resetToFirstPage();
+
     this.selectedRole = value;
     this.loadUsers(0, 10)
 
@@ -76,7 +99,7 @@ export class UserListComponent implements OnInit {
     this.userService.getUserStats().subscribe({
       next: (response) => {
         this.inactiveUserCount = response.inactive ?? 0;
-        this.totalElements = response.total ?? 0;
+        this.totalUserCount = response.total ?? 0;
         this.userSessions = response.activeSessions ?? 0;
       },
       error: (err) => {

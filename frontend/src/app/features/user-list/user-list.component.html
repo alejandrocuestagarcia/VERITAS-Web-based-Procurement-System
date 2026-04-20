@@ -7,16 +7,17 @@
     [subtitle]="subtitle"
     [dataSource]="dataSource"
     [displayedColumns]="displayedColumns"
-    [totalElements]="totalElements"
+    [totalElements]="totalPageElements"
     [loading]="loading"
-    (pageChanged)="onPageChange($event)">
+    (pageChanged)="onPageChange($event)"
+    (searchChanged)="onSearchChanged($event)">
 
 
     <ng-container stats>
       <div class="stat-row">
         <div class="stat-card">
           <span class="label">Total Users</span>
-          <span class="value">{{ totalElements }}</span>
+          <span class="value">{{ totalUserCount }}</span>
         </div>
         <div class="stat-card">
           <span class="label">Active Now</span>
@@ -43,7 +44,7 @@
       </mat-chip-listbox>
     </div>
 
-    <button actions mat-flat-button class="v-btn-brand">
+    <button actions mat-flat-button class="v-btn-brand" routerLink="users/create">
       <mat-icon>person_add</mat-icon>
       Add User
     </button>
@@ -75,7 +76,7 @@
         <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
         <td mat-cell *matCellDef="let user">
           <div class="v-action-group">
-            <button mat-icon-button (click)="openEditDialog(user)" matTooltip="Edit User">
+            <button mat-icon-button [routerLink]="['users', user.id, 'edit']" matTooltip="Edit User">
               <mat-icon>edit</mat-icon>
             </button>
 

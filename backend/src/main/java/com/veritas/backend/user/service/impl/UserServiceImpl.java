@@ -6,6 +6,7 @@ import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.mapper.UserMapper;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.UserService;
@@ -85,5 +86,14 @@ public class UserServiceImpl implements UserService {
     long inactive = userRepository.countByIsActiveFalse();
 
     return new UserStatsDto(total, inactive, 0);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<UserDto> getAllUsersFiltered(Pageable pageable, String filter, UserRole userRole) {
+
+    String query = (filter != null && !filter.isBlank()) ? "%" + filter.trim().toLowerCase() + "%" : null;
+
+    return userRepository.findAllFiltered(query, userRole, pageable).map(userMapper::toUserDto);
   }
 }
