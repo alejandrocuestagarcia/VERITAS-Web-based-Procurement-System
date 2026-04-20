@@ -75,11 +75,7 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="project-row"></tr>
     </table>
 
-    <mat-paginator
-      [pageSizeOptions]="[3, 5, 7]"
-      showFirstLastButtons
-      aria-label="Select page"
-    ></mat-paginator>
+    <mat-paginator [pageSizeOptions]="[3, 5, 7]" showFirstLastButtons aria-label="Select page"></mat-paginator>
 
   </div>
 </div>

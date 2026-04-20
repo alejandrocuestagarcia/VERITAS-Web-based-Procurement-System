@@ -256,9 +256,7 @@ body {
     color: var(--v-on-surface);
     width: 100%;
 
-    &::placeholder {
-      color: #9ca3af;
-    }
+    &::placeholder { color: #9ca3af; }
   }
 }
 
