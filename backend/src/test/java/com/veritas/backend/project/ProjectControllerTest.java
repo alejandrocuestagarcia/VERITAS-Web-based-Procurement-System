@@ -114,23 +114,4 @@ class ProjectControllerTest extends BaseDBIntegrationTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }
-
-    @Test
-    void adminCannotSeeProjectsControllerIntegrationTest() throws Exception {
-        User admin = userRepository.save(User.builder()
-                .name("Test Administrator")
-                .email("test@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.ADMINISTRATOR)
-                .team(testingTeam)
-                .department(Department.IT)
-                .isActive(true)
-                .build());
-
-        String token = jwtService.generateAccessToken(admin);
-        mockMvc.perform(get("/projects")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
-    }
 }

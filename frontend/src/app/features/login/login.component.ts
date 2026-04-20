@@ -1,6 +1,6 @@
-import {Component} from '@angular/core';
-import {AuthModuleService, LoginRequestDto} from "../../core/api";
-import {Router} from "@angular/router";
+import { Component } from '@angular/core';
+import { AuthModuleService, LoginRequestDto } from "../../core/api";
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-login',
@@ -18,7 +18,7 @@ export class LoginComponent {
   constructor(
     private authApi: AuthModuleService,
     private router: Router
-  ) {}
+  ) { }
 
   onLogin() {
     this.authApi.login(this.loginRequest).subscribe({

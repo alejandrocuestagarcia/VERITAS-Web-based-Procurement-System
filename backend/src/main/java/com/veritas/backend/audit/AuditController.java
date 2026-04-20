@@ -1,6 +1,7 @@
 package com.veritas.backend.audit;
 
 import com.veritas.backend.audit.dto.AuditLogDto;
+import com.veritas.backend.config.annotations.IsRequester;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.ByteArrayResource;
@@ -21,12 +22,14 @@ import java.util.List;
 public class AuditController {
 
     @Operation(summary = "Get audit logs", description = "Retrieves a chronological list of all actions and state changes for a request.")
+    @IsRequester
     @GetMapping
     public List<AuditLogDto> getAuditLogs(@PathVariable Long requestId) {
         return List.of();
     }
 
     @Operation(summary = "Export audit as PDF", description = "Generates and downloads a PDF report of the request lifecycle.")
+    @IsRequester
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<Resource> exportAuditPdf(@PathVariable Long requestId) {
         byte[] pdfContent = new byte[0];
@@ -39,6 +42,7 @@ public class AuditController {
     }
 
     @Operation(summary = "Get audit trace graph", description = "Returns audit entries linked with hash pointers for integrity visualization.")
+    @IsRequester
     @GetMapping("/trace")
     public List<AuditLogDto> getAuditTrace(@PathVariable Long requestId) {
         return List.of();

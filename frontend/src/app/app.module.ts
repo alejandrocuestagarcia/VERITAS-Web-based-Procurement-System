@@ -19,12 +19,14 @@ import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
 import {MatListModule} from "@angular/material/list";
+import { HasRoleDirective } from './core/directives/has-role.directive';
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     DashboardComponent,
+    HasRoleDirective,
     ProjectListComponent
   ],
   imports: [
