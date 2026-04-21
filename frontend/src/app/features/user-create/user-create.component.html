@@ -3,7 +3,8 @@
   <div class="max-w-5xl">
     <header class="mb-8">
       <h1 class="mat-headline-1 text-4xl mb-2">Create New User</h1>
-      <p class="text-muted-grey">Configure account access, departmental associations, and procurement authority levels for a new team member.</p>
+      <p class="text-muted-grey">Configure account access, departmental associations, and procurement authority levels
+        for a new team member.</p>
     </header>
 
     <mat-card class="v-form-card">
@@ -15,6 +16,7 @@
             <mat-form-field appearance="outline">
               <mat-icon matPrefix>person_outline</mat-icon>
               <input matInput formControlName="name" placeholder="e.g. Alexander Sterling">
+              <mat-error *ngIf="userForm.get('name')?.hasError('required')">Name is required</mat-error>
             </mat-form-field>
           </div>
 
@@ -23,6 +25,17 @@
             <mat-form-field appearance="outline">
               <mat-icon matPrefix>alternate_email</mat-icon>
               <input matInput formControlName="email" type="email" placeholder="a.sterling@veritas.corp">
+              <mat-error *ngIf="userForm.get('email')?.hasError('required')">Email is required</mat-error>
+              <mat-error *ngIf="userForm.get('email')?.hasError('email')">Please enter a valid email address</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="v-label">Password</label>
+            <mat-form-field appearance="outline">
+              <mat-icon matPrefix>lock_outline</mat-icon>
+              <input matInput formControlName="password" type="password" placeholder="Enter password">
+              <mat-error *ngIf="userForm.get('password')?.hasError('required')">Password is required</mat-error>
             </mat-form-field>
           </div>
 
@@ -35,10 +48,11 @@
                   {{ role | titlecase }}
                 </mat-option>
               </mat-select>
+              <mat-error *ngIf="userForm.get('userRole')?.hasError('required')">User role is required</mat-error>
             </mat-form-field>
           </div>
 
-<!--          Not functional yet since Team fetching is missing-->
+          <!--          Not functional yet since Team fetching is missing-->
           <div class="flex flex-col">
             <label class="v-label">Assigned Team</label>
             <mat-form-field appearance="outline">
@@ -60,6 +74,7 @@
                   {{ department }}
                 </mat-option>
               </mat-select>
+              <mat-error *ngIf="userForm.get('department')?.hasError('required')">Department is required</mat-error>
             </mat-form-field>
           </div>
 
@@ -67,7 +82,8 @@
             <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"></mat-slide-toggle>
             <div class="flex flex-col">
               <span class="text-sm font-semibold">Assign as Team Leader</span>
-              <span class="text-xs text-muted-grey">This user will be set as the unique head of the selected team.</span>
+              <span class="text-xs text-muted-grey">This user will be set as the unique head of the selected
+                team.</span>
             </div>
           </div>
         </div>

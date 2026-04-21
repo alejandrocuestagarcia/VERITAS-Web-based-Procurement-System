@@ -10,7 +10,7 @@ import {VendorCreateComponent} from "./features/vendor/vendor-create.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  {path: 'user/create', component: UserCreateComponent },
+  {path: 'users/create', component: UserCreateComponent },
   { path: 'login',
     component: LoginComponent,
     canActivate: [guestGuard]

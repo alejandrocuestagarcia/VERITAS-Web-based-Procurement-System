@@ -6,6 +6,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record UserCreationRequestDto(@NotBlank @Email String email, @NotBlank String name, @NotBlank String password, @NotNull
-                                     UserRole userRole, @NotNull Long teamId, @NotNull Department department, boolean promoteToTeamLeader) {
+public record UserCreationRequestDto(@NotBlank @Email String email, @NotBlank String name, @NotBlank String password,
+        @NotNull UserRole userRole, @NotNull Long teamId, @NotNull Department department, boolean promoteToTeamLeader) {
 }

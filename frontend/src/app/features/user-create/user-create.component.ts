@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {
   TeamsModuleService,
   UserCreationRequestDto,
@@ -26,16 +27,16 @@ export class UserCreateComponent implements OnInit {
   teams$: any = [];
   departments$ = Object.values(UserCreationRequestDtoDepartmentEnum);
 
-  constructor(private fb: FormBuilder, private router: Router, private userService: UserModuleService, private teamService: TeamsModuleService) {
+  constructor(private fb: FormBuilder, private router: Router, private userService: UserModuleService, private teamService: TeamsModuleService, private snackBar: MatSnackBar) {
   }
 
 
   private initForm(): void {
     this.userForm = this.fb.group({
       name: ['', Validators.required],
-      email: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
       //how to handle setting the password?
-      password: [''],
+      password: ['', Validators.required],
 
       userRole: [null, Validators.required],
       // teamId: [null, Validators.required],
@@ -53,7 +54,7 @@ export class UserCreateComponent implements OnInit {
       const request: UserCreationRequestDto = {
         name: this.userForm.value.name,
         email: this.userForm.value.email,
-        password: "blabla",
+        password: this.userForm.value.password,
         userRole: this.userForm.value.userRole,
         teamId: 3, // Explicitly setting dummy ID while functionality not implemented
         department: this.userForm.value.department,
@@ -64,12 +65,18 @@ export class UserCreateComponent implements OnInit {
       console.log(request);
       this.userService.createUser(request).subscribe({
         next: () => {
+          this.snackBar.open('User created successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/users']);
         },
         error: err => {
           console.log(err);
+          console.log(err.error);
+          this.snackBar.open('Failed to create user. Please try again.', 'Close', { duration: 5000 });
         }
       })
+    } else {
+      this.userForm.markAllAsTouched();
+      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', { duration: 4000 });
     }
   }
 

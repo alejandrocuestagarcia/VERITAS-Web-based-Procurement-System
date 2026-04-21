@@ -7,6 +7,7 @@ import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class UserController {
 
     private final UserService userService;
+
     @Operation(summary = "List users", description = "Retrieves all users.")
     @IsFinanceOfficer
     @GetMapping
@@ -33,7 +35,7 @@ public class UserController {
     @IsFinanceOfficer
     @GetMapping("/{id}")
     public UserDto getUser(@PathVariable Long id) {
-        return null ;
+        return null;
     }
 
     @Operation(summary = "Edit user", description = "Edits a users basic info.")
@@ -44,11 +46,13 @@ public class UserController {
     }
 
     @Operation(summary = "Create user", description = "Creates a new user.")
-    @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody UserCreationRequestDto user) {
+    @IsFinanceOfficer
+    @PostMapping(consumes = "application/json", produces = "application/json")
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreationRequestDto user) {
         UserDto userDto = userService.createUser(user);
 
-        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id()).toUri();
+        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id())
+                .toUri();
         return ResponseEntity.created(userUri).body(userDto);
     }
 

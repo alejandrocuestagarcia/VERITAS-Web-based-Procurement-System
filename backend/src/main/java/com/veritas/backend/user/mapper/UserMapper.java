@@ -12,6 +12,10 @@ public interface UserMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "passwordHash", ignore = true)
   @Mapping(target = "team", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "isActive", ignore = true)
   @Mapping(source = "userRole", target = "role")
   User toUser(UserCreationRequestDto userCreationRequestDto);
 
