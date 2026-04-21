@@ -23,7 +23,7 @@
 
   <div class="v-table-card">
     <div class="v-table-toolbar">
-      <span class="table-title">Active Project Portfolio</span>
+      <span>Active Project Portfolio</span>
       <div class="v-table-search">
         <mat-icon>search</mat-icon>
         <input placeholder="Search projects..." (input)="applyFilter($event)" />
@@ -39,35 +39,35 @@
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>PROJECT NAME</th>
         <td mat-cell *matCellDef="let project">
-          <span class="proj-name">{{ project.name }}</span>
+          <span>{{ project.name }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="team">
         <th mat-header-cell *matHeaderCellDef>ASSIGNED TEAM</th>
         <td mat-cell *matCellDef="let project">
-          <span class="team-chip">{{ project.teamName }}</span>
+          <span class="v-chip">{{ project.teamName }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="budget">
         <th mat-header-cell *matHeaderCellDef>BUDGET</th>
         <td mat-cell *matCellDef="let project">
-          <span class="budget-val">{{ project.budget | currency:'EUR':'symbol':'1.0-0' }}</span>
+          <span>{{ project.budget | currency:'EUR':'symbol':'1.0-0' }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="startDate">
         <th mat-header-cell *matHeaderCellDef>START DATE</th>
         <td mat-cell *matCellDef="let project">
-          <span class="date-val">{{ project.startDate | date:'MMM d, yyyy' }}</span>
+          <span>{{ project.startDate | date:'MMM d, yyyy' }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="endDate">
         <th mat-header-cell *matHeaderCellDef>END DATE</th>
         <td mat-cell *matCellDef="let project">
-          <span class="date-val">{{ project.endDate | date:'MMM d, yyyy' }}</span>
+          <span>{{ project.endDate | date:'MMM d, yyyy' }}</span>
         </td>
       </ng-container>
 

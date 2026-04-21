@@ -1,6 +1,7 @@
 package com.veritas.backend.vendor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.service.VendorService;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -20,12 +22,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class VendorControllerTest {
+class VendorControllerTest extends BaseDBIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @MockitoBean
     private VendorService vendorService;
 
     @Autowired
