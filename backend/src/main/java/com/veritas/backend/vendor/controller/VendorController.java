@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/vendors")
+@RequestMapping("/api/v1/vendors")
 @RequiredArgsConstructor
 @Tag(name = "Vendor Module", description = "Vendor management, ratings, and quote comparisons")
 public class VendorController {

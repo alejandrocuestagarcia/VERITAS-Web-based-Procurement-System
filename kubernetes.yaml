@@ -1,0 +1,136 @@
+# 1. DATABASE DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: veritas-db
+  namespace: veritas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: veritas-db
+  template:
+    metadata:
+      labels:
+        app: veritas-db
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: postgres
+          image: public.ecr.aws/bitnami/postgresql:16
+          securityContext:
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+          env:
+            - name: POSTGRESQL_DATABASE
+              value: "veritas_db"
+            - name: POSTGRESQL_USERNAME
+              value: "user"
+            - name: POSTGRESQL_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 5432
+---
+# 2. DATABASE SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: veritas
+spec:
+  selector:
+    app: veritas-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+# 3. BACKEND DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: veritas
+  namespace: veritas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: veritas
+  template:
+    metadata:
+      labels:
+        app: veritas
+    spec:
+      containers:
+        - name: backend-container
+          image: IMAGE_PLACEHOLDER
+          env:
+            - name: DB_HOST
+              value: "db"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://db:5432/veritas_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "user"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      imagePullSecrets:
+        - name: secret-dockercfg
+---
+# 4. BACKEND SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: s-veritas-service
+  namespace: veritas
+spec:
+  selector:
+    app: veritas
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# 5. BACKEND INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: veritas-ingress
+  namespace: veritas
+spec:
+  rules:
+    - host: "veritas.apps.student.inso-w.at"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: s-veritas-service
+                port:
+                  number: 80

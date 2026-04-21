@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/notifications")
+@RequestMapping("/api/v1/notifications")
 @Tag(name = "Notification Module", description = "Notification retrieval and history for users")
 public class NotificationController {
     @Operation(summary = "Get notifications", description = "Retrieves all notifications for a user.")

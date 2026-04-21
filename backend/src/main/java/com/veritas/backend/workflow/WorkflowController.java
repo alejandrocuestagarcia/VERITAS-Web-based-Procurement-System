@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/workflows")
+@RequestMapping("/api/v1/workflows")
 @Tag(name = "Workflow Module", description = "Management of procurement process templates and BPMN logic")
 public class WorkflowController {
 

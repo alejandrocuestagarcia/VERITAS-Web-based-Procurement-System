@@ -44,10 +44,10 @@ public class Team {
 
     @Enumerated(EnumType.STRING)
     private Department department;
- 
-    /* 
+
+    /*
     Safer pattern than inline initialization. It ensures that if a creation date or an active status
-    are manually set before saving, the set values won't be accidentally overwritten by the Java 
+    are manually set before saving, the set values won't be accidentally overwritten by the Java
     object's default constructor logic.
     */
     @PrePersist

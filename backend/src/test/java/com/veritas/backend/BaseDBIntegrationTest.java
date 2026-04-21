@@ -19,20 +19,29 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * test isolation.
  */
 @SpringBootTest
-@Testcontainers
 public abstract class BaseDBIntegrationTest {
 
     static final PostgreSQLContainer<?> POSTGRES;
 
     static {
-        POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
-        POSTGRES.start();
+
+        if (System.getenv("CI") == null) {
+            // Only start Docker if we are NOT on the 'test' profile (e.g., local dev)
+            POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+            POSTGRES.start();
+        } else {
+            // In CI, we don't create the container
+            POSTGRES = null;
+        }
     }
 
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        // Only try to link Postgres properties if the container actually exists
+        if (POSTGRES != null && POSTGRES.isRunning()) {
+            registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+            registry.add("spring.datasource.username", POSTGRES::getUsername);
+            registry.add("spring.datasource.password", POSTGRES::getPassword);
+        }
     }
 }

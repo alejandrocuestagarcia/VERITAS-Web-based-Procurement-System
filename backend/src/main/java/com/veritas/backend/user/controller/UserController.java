@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping(path = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/api/v1/users", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "User Module", description = "Management of VERITAS users")
 public class UserController {

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/budget")
+@RequestMapping("/api/v1/budget")
 @Tag(name = "Financial Governance Module", description = "Budgeting, project tracking, and final expenditure processing")
 public class BudgetController {
 

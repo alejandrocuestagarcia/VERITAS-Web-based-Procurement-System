@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.5.13'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
+	id 'com.google.cloud.tools.jib' version '3.4.1'
 }
 
 group = 'com.veritas'
@@ -73,6 +74,13 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		showStandardStreams = true
+		exceptionFormat = "full"
+	}
+
 	finalizedBy jacocoTestReport
 }
 
@@ -93,4 +101,24 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs << '-parameters'
+}
+
+jib {
+	from {
+		image = 'eclipse-temurin:21-jre-alpine'
+	}
+	to {
+		image = System.getProperty('jib.to.image') ?: 'veritas-backend:latest'
+
+		auth {
+			username = System.getenv('CI_REGISTRY_USER') ?: ""
+			password = System.getenv('CI_REGISTRY_PASSWORD') ?: ""
+		}
+	}
+	container {
+		mainClass = 'com.veritas.backend.BackendApplication'
+		ports = ['8080']
+		creationTime = 'USE_CURRENT_TIMESTAMP'
+		jvmFlags = ['-Djava.security.egd=file:/dev/./urandom']
+	}
 }

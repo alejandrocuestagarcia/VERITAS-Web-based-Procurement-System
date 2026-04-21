@@ -21,7 +21,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/projects")
+@RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
 @Tag(name = "Project Module", description = "Management of company projects")
 public class ProjectController {

@@ -27,8 +27,17 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  private static final String[] WHITELIST_URLS = { "/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-      "/api.json/**" };
+  private static final String[] WHITELIST_URLS = { "/api/v1/auth/**", "/login", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+          "/api/v1/api.json", "/api/v1/api.json/**",
+          // UI Entry Points
+          "/",
+          "/index.html",
+          "/favicon.ico",
+          "/*.js",
+          "/*.css",
+          "/assets/**",
+          // Infrastructure for Kubernetes
+          "/api/v1/health" };
 
   @Bean
   public RoleHierarchy roleHierarchy() {
@@ -45,7 +54,7 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable).cors(cors -> cors.configurationSource(request -> {
       CorsConfiguration config = new CorsConfiguration();
-      config.setAllowedOrigins(List.of("http://localhost:4200"));
+      config.setAllowedOrigins(List.of("http://localhost:4200", "https://veritas.apps.student.inso-w.at"));
       config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
       config.setAllowedHeaders(List.of("*"));
       config.setAllowCredentials(true);

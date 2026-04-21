@@ -92,7 +92,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.saveAll(java.util.List.of(alex, john));
 
     mockMvc.perform(
-            get("/users").param("search", "Alexander").param("page", "0").param("size", "10"))
+            get("/api/v1/users").param("search", "Alexander").param("page", "0").param("size", "10"))
         .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].name").value("Alexander Sterling"));
   }
@@ -104,7 +104,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
         "newuser@veritas.com", "New User", "securePassword123",
         UserRole.ADMINISTRATOR, testTeam.getTeamId(), Department.IT, false);
 
-    mockMvc.perform(post("/users")
+    mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
@@ -119,7 +119,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
         "duplicate@veritas.com", "First User", "securePassword123",
         UserRole.FINANCE_OFFICER, testTeam.getTeamId(), Department.IT, false);
 
-    mockMvc.perform(post("/users")
+    mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request1)))
         .andExpect(status().isCreated());
@@ -128,7 +128,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
         "duplicate@veritas.com", "Second User", "securePassword456",
         UserRole.FINANCE_OFFICER, testTeam.getTeamId(), Department.IT, false);
 
-    mockMvc.perform(post("/users")
+    mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request2)))
         .andExpect(status().isConflict());
@@ -146,7 +146,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.save(john);
 
     mockMvc.perform(
-            get("/users").param("search", "sterling").param("page", "0").param("size", "10"))
+            get("/api/v1/users").param("search", "sterling").param("page", "0").param("size", "10"))
         .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].email").value("alexander.sterling@veritas.com"));
   }
@@ -162,7 +162,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.saveAll(java.util.List.of(alex, john));
 
     mockMvc.perform(
-            get("/users").param("userRole", "REQUESTER").param("page", "0").param("size", "10"))
+            get("/api/v1/users").param("userRole", "REQUESTER").param("page", "0").param("size", "10"))
         .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].role").value("REQUESTER"));
   }
@@ -178,7 +178,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.save(alex);
     userRepository.save(john);
 
-    mockMvc.perform(get("/users").param("search", "Alex").param("userRole", "FINANCE_OFFICER")
+    mockMvc.perform(get("/api/v1/users").param("search", "Alex").param("userRole", "FINANCE_OFFICER")
             .param("page", "0").param("size", "10")).andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(0));
   }
@@ -187,7 +187,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
   void UserStats_Called_ReturnsTotalAndInactiveCounts() throws Exception {
-    mockMvc.perform(get("/users/stats")).andExpect(status().isOk())
+    mockMvc.perform(get("/api/v1/users/stats")).andExpect(status().isOk())
         .andExpect(jsonPath("$.total").isNumber()).andExpect(jsonPath("$.inactive").isNumber())
         .andExpect(jsonPath("$.activeSessions").isNumber());
   }
@@ -195,13 +195,13 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   @Test
   @WithMockUser(roles = "REQUESTER")
   void UserRetrieval_AsRequester_ReturnsForbidden() throws Exception {
-    mockMvc.perform(get("/users")).andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/v1/users")).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser(roles = "REQUESTER")
   void UserStats_AsRequester_ReturnsForbidden() throws Exception {
-    mockMvc.perform(get("/users/stats")).andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/v1/users/stats")).andExpect(status().isForbidden());
   }
 
   @Test
@@ -218,7 +218,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.save(finance);
 
     UserEditDto edit = new UserEditDto("new@test.com", "New Name", null, null, null, null);
-    mockMvc.perform(patch("/users/" + finance.getId())
+    mockMvc.perform(patch("/api/v1/users/" + finance.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
             .andExpect(status().isOk())
@@ -251,7 +251,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.save(user2);
 
     UserEditDto edit = new UserEditDto("finance2@test.com", "First Finance User", null, null, null, null);
-    mockMvc.perform(patch("/users/" + user1.getId())
+    mockMvc.perform(patch("/api/v1/users/" + user1.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
             .andExpect(status().isConflict());
@@ -281,7 +281,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     teamRepository.save(newTeam);
 
     UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
-    mockMvc.perform(patch("/users/" + user.getId())
+    mockMvc.perform(patch("/api/v1/users/" + user.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
             .andExpect(status().isBadRequest());
@@ -300,7 +300,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .build();
     userRepository.save(user);
 
-    mockMvc.perform(get("/users/" + user.getId()))
+    mockMvc.perform(get("/api/v1/users/" + user.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("requester@test.com"))
             .andExpect(jsonPath("$.name").value("Test Requester"))

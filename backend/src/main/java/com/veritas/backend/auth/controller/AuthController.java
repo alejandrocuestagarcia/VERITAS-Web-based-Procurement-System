@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @Tag(name = "Auth Module", description = "Secure authentication for general users")
 public class AuthController {
 

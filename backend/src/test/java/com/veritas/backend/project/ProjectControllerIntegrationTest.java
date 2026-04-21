@@ -99,7 +99,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
                 .build());
 
         String token = jwtService.generateAccessToken(financeOfficer);
-        mockMvc.perform(get("/projects")
+        mockMvc.perform(get("/api/v1/projects")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
@@ -118,7 +118,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
                 .build());
 
         String token = jwtService.generateAccessToken(requester);
-        mockMvc.perform(get("/projects")
+        mockMvc.perform(get("/api/v1/projects")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }
@@ -138,7 +138,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
         String token = jwtService.generateAccessToken(financeOfficer);
         ProjectCreationDto dto = new ProjectCreationDto("Controller Project", "CTRL-123", testingTeam.getTeamId(), LocalDate.now(), LocalDate.now().plusDays(10), BigDecimal.valueOf(1000));
 
-        mockMvc.perform(post("/projects")
+        mockMvc.perform(post("/api/v1/projects")
                         .header("Authorization", "Bearer " + token)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(dto))
