@@ -1,30 +1,38 @@
 package com.veritas.backend.user;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.veritas.backend.common.model.Department;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.mapper.UserMapper;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.impl.UserServiceImpl;
 import jakarta.persistence.EntityExistsException;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 //AI-GENERATED
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -97,4 +105,28 @@ class UserServiceTest {
         assertThrows(IllegalStateException.class, () -> userService.createUser(request));
         verify(userRepository, never()).save(any());
     }
+
+  @Test
+  void getAllUsersFiltered_shouldFormatQuery_whenFilterIsNotEmpty() {
+    Pageable pageable = PageRequest.of(0, 10);
+    when(userRepository.findAllFiltered("%alex%", UserRole.REQUESTER, pageable)).thenReturn(
+        new PageImpl<>(List.of()));
+
+    userService.getAllUsersFiltered(pageable, "  ALEX  ", UserRole.REQUESTER);
+
+    verify(userRepository).findAllFiltered("%alex%", UserRole.REQUESTER, pageable);
+  }
+
+  @Test
+  void getUserStats_shouldReturnMappedStats_whenCalled() {
+    when(userRepository.count()).thenReturn(100L);
+    when(userRepository.countByIsActiveFalse()).thenReturn(15L);
+
+    UserStatsDto stats = userService.getUserStats();
+
+    assertThat(stats.total()).isEqualTo(100);
+    assertThat(stats.inactive()).isEqualTo(15);
+//    assertThat(stats.activeSessions()).isZero();
+  }
+
 }

@@ -44,6 +44,7 @@ public class UserController {
     }
 
     @Operation(summary = "Get user stats", description = "Retrieves stats about the userbase of Veritas")
+    @IsFinanceOfficer
     @GetMapping("/stats")
     public ResponseEntity<UserStatsDto> getUserStats() {
         return ResponseEntity.ok(userService.getUserStats());
