@@ -1,0 +1,27 @@
+<nav class="v-sidebar v-glass-panel">
+  <div class="v-sidebar-header">
+    <span class="v-logo-text">VERITAS</span>
+  </div>
+  <div class="v-sidebar-actions" *appHasRole="['REQUESTER', 'PROCUREMENT_OFFICER']">
+    <button routerLink="/requisition/new" class="v-btn-brand v-new-req-btn">
+      <mat-icon>add</mat-icon>
+      <span>New Requisition</span>
+    </button>
+  </div>
+  <div class="v-nav-list">
+    <a *ngFor="let item of navLinks"
+       [routerLink]="item.route"
+       routerLinkActive="v-active-link"
+       class="v-nav-item">
+      <mat-icon>{{ item.icon }}</mat-icon>
+      <span class="v-label">{{ item.label }}</span>
+    </a>
+  </div>
+
+  <div class="v-sidebar-footer">
+    <button (click)="onLogout()" class="v-nav-item logout-btn">
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </div>
+</nav>

@@ -1,1 +1,12 @@
-<router-outlet></router-outlet>
+<div class="v-app-canvas">
+
+  <div class="v-app-shell">
+
+    <app-sidebar *ngIf="authService.isLoggedIn()"></app-sidebar>
+
+    <main class="v-main-content" [class.v-authenticated]="authService.isLoggedIn()">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+</div>
