@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -122,7 +123,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Team description is required"));
+                .andExpect(jsonPath("$.description").value("Team description is required"));
     }
 
     @Test
@@ -142,7 +143,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(duplicate)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message", containsString("already exists")));
+                .andExpect(content().string(containsString("already exists")));
     }
 
     @Test
@@ -156,7 +157,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Leader not found with id 999999"));
+                .andExpect(content().string("Leader not found with id 999999"));
     }
 
     @Test

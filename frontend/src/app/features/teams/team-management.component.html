@@ -1,0 +1,190 @@
+<div class="v-page-wrap team-governance-page">
+  <div class="v-page-header">
+    <div class="v-page-header-left">
+      <h1 class="v-page-title">Team Governance</h1>
+      <p class="v-page-subtitle">
+        Orchestrate cross-functional teams, define departmental boundaries, and
+        align human capital with strategic projects.
+      </p>
+    </div>
+
+    <div class="v-page-header-actions">
+      <button type="button" class="v-btn-brand add-team-btn" (click)="navigateToAddTeam()">
+        <mat-icon>group_add</mat-icon>
+        Add Team
+      </button>
+    </div>
+  </div>
+
+  <div class="v-stat-row governance-stat-row">
+    <article class="v-stat-card governance-stat-card">
+      <span class="v-stat-label">Total Teams</span>
+      <span class="v-stat-value">{{ totalTeams }}</span>
+    </article>
+
+    <article class="v-stat-card governance-stat-card">
+      <span class="v-stat-label">Active Projects</span>
+      <span class="v-stat-value">{{ totalProjects }}</span>
+    </article>
+
+    <article class="v-stat-card governance-stat-card">
+      <span class="v-stat-label">Departments</span>
+      <span class="v-stat-value">{{ totalDepartments }}</span>
+    </article>
+  </div>
+
+  <div class="v-error-bar" *ngIf="error">{{ error }}</div>
+
+  <section class="v-table-card governance-table-card">
+    <header class="governance-toolbar">
+      <label class="governance-search" for="team-governance-search">
+        <mat-icon>search</mat-icon>
+        <input
+          id="team-governance-search"
+          type="text"
+          placeholder="Search by team name or project..."
+          [value]="searchTerm"
+          (input)="updateSearch($any($event.target).value)"
+        />
+      </label>
+
+      <div class="governance-filters">
+        <span class="filter-label">
+          <mat-icon>tune</mat-icon>
+          FILTER BY:
+        </span>
+
+        <button
+          type="button"
+          class="filter-chip"
+          *ngFor="let filter of departmentFilters"
+          [class.active]="activeDepartmentFilter === filter.key"
+          (click)="setDepartmentFilter(filter.key)"
+        >
+          {{ filter.label }}
+        </button>
+      </div>
+    </header>
+
+    <div class="v-table-state" *ngIf="loading">Loading team governance data...</div>
+    <div class="v-table-state" *ngIf="!loading && !error && filteredRows.length === 0">
+      No teams found for this filter.
+    </div>
+
+    <table class="governance-table" *ngIf="!loading && !error && filteredRows.length > 0">
+      <thead>
+      <tr>
+        <th>IDENTITY</th>
+        <th>DEPARTMENT</th>
+        <th>PROJECTS</th>
+        <th>STATUS</th>
+        <th>OPERATIONS</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr *ngFor="let row of pagedRows; trackBy: trackByRow">
+        <td class="identity-column">
+          <div class="identity-wrap">
+            <span class="identity-icon-tile">
+              <mat-icon>{{ row.icon }}</mat-icon>
+            </span>
+
+            <div class="identity-text">
+              <span class="team-name">{{ row.name }}</span>
+              <span class="team-members">{{ row.membersCount }} MEMBERS</span>
+            </div>
+          </div>
+        </td>
+
+        <td class="department-column">{{ row.departmentLabel }}</td>
+        <td class="projects-column">{{ row.projectsText }}</td>
+
+        <td class="status-column">
+          <span class="status-pill" [class.active]="row.isActive" [class.on-hold]="!row.isActive">
+            <span class="status-dot"></span>
+            {{ row.statusLabel }}
+          </span>
+        </td>
+
+        <td class="operations-column">
+          <span class="operation-icon" aria-hidden="true">
+            <mat-icon>edit</mat-icon>
+          </span>
+          <span class="operation-icon" aria-hidden="true">
+            <mat-icon>delete_outline</mat-icon>
+          </span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <footer class="governance-footer" *ngIf="!loading && !error">
+      <span class="footer-range">Showing {{ rangeStart }}-{{ rangeEnd }} of {{ filteredRows.length }} teams</span>
+
+      <div class="pagination" *ngIf="filteredRows.length > 0">
+        <button
+          type="button"
+          class="page-control icon-control"
+          [disabled]="currentPage === 1"
+          (click)="toFirstPage()"
+          aria-label="Go to first page"
+        >
+          <mat-icon>first_page</mat-icon>
+        </button>
+
+        <button
+          type="button"
+          class="page-control icon-control"
+          [disabled]="currentPage === 1"
+          (click)="toPreviousPage()"
+          aria-label="Go to previous page"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+
+        <ng-container *ngIf="showLeadingEllipsis">
+          <button type="button" class="page-control page-number" (click)="goToPage(1)">1</button>
+          <span class="ellipsis">...</span>
+        </ng-container>
+
+        <button
+          type="button"
+          class="page-control page-number"
+          *ngFor="let page of visiblePageNumbers"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <ng-container *ngIf="showTrailingEllipsis">
+          <span class="ellipsis">...</span>
+          <button type="button" class="page-control page-number" (click)="goToPage(totalPages)">
+            {{ totalPages }}
+          </button>
+        </ng-container>
+
+        <button
+          type="button"
+          class="page-control icon-control"
+          [disabled]="currentPage === totalPages"
+          (click)="toNextPage()"
+          aria-label="Go to next page"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+
+        <button
+          type="button"
+          class="page-control icon-control"
+          [disabled]="currentPage === totalPages"
+          (click)="toLastPage()"
+          aria-label="Go to last page"
+        >
+          <mat-icon>last_page</mat-icon>
+        </button>
+      </div>
+    </footer>
+  </section>
+</div>

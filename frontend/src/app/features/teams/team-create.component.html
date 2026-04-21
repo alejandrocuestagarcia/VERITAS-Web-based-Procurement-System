@@ -1,0 +1,189 @@
+<div class="v-page-wrap team-create-page">
+  <form #teamForm="ngForm" (ngSubmit)="submit()" novalidate>
+    <header class="v-page-header add-team-header">
+      <div class="v-page-header-left">
+        <div class="v-stat-label">ADMINISTRATION > <strong>TEAMS</strong></div>
+        <h1 class="v-page-title">Add New Team</h1>
+        <p class="v-page-subtitle">
+          Define a new operational unit, assign structural pillars, and establish foundational access
+          protocols for collaborative governance.
+        </p>
+      </div>
+    </header>
+
+    <div class="v-error-bar" *ngIf="error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <section class="v-card add-team-card">
+      <h3 class="section-title">Core Identification</h3>
+
+      <div class="v-form-row">
+        <div class="v-form-field full-width-field">
+          <label>Team Name</label>
+          <input
+            type="text"
+            name="teamName"
+            placeholder="e.g. Infrastructure Strategy Group"
+            [(ngModel)]="model.name"
+            #teamName="ngModel"
+            required
+            minlength="2"
+            maxlength="120"
+            [disabled]="submitting"
+            [class.is-invalid]="teamName.invalid && teamName.touched"
+          />
+          <span class="error-text" *ngIf="teamName.invalid && teamName.touched">
+            Team name is required.
+          </span>
+        </div>
+      </div>
+
+      <div class="v-form-row two-up-row">
+        <div class="v-form-field">
+          <label>Team Lead</label>
+          <select
+            name="leaderId"
+            [(ngModel)]="model.leaderId"
+            #leaderId="ngModel"
+            (ngModelChange)="onLeadChanged()"
+            [disabled]="submitting || loadingLeads"
+          >
+            <option [value]="null">
+              {{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}
+            </option>
+            <option *ngFor="let option of leadOptions" [value]="option.id">
+              {{ option.displayName }}
+            </option>
+          </select>
+          <span class="hint-text" *ngIf="!loadingLeads && leadOptions.length === 0" style="font-size: 0.85em; color: #666; margin-top: 4px; display: block;">
+            No leads available to select.
+          </span>
+        </div>
+
+        <div class="v-form-field">
+          <label>Department</label>
+          <select
+            name="department"
+            [(ngModel)]="model.department"
+            #department="ngModel"
+            required
+            [disabled]="submitting"
+            [class.is-invalid]="department.invalid && department.touched"
+          >
+            <option [ngValue]="null" disabled>Select Department</option>
+            <option *ngFor="let option of departmentOptions" [ngValue]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <span class="error-text" *ngIf="department.invalid && department.touched">
+            Department is required.
+          </span>
+        </div>
+      </div>
+
+      <div class="v-form-row">
+        <div class="v-form-field full-width-field">
+          <label>Description</label>
+          <textarea
+            name="description"
+            rows="4"
+            placeholder="Briefly describe the team's objectives and scope..."
+            [(ngModel)]="model.description"
+            #description="ngModel"
+            required
+            maxlength="500"
+            [disabled]="submitting"
+            [class.is-invalid]="description.invalid && description.touched"
+          ></textarea>
+          <span class="error-text" *ngIf="description.invalid && description.touched">
+            Description is required.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="v-card add-team-card composition-card">
+      <div class="composition-header">
+        <h3 class="section-title">Team Composition</h3>
+        <button
+          type="button"
+          class="inline-action"
+          (click)="toggleMembersPanel()"
+          [disabled]="submitting || leadOptions.length === 0"
+        >
+          <mat-icon>person_add</mat-icon>
+          Add Member
+        </button>
+      </div>
+
+      <div class="member-card owner-card" *ngIf="leadMember as owner">
+        <div class="member-left">
+          <div class="avatar-chip">{{ owner.initials }}</div>
+          <div class="member-details">
+            <span class="member-name">{{ owner.displayName }}</span>
+            <span class="member-subtitle">{{ owner.subtitle }}</span>
+          </div>
+        </div>
+        <span class="member-badge">OWNER</span>
+      </div>
+
+      <div class="member-picker" *ngIf="membersPanelOpen">
+        <div class="member-picker-row">
+          <select
+            name="memberCandidate"
+            [(ngModel)]="selectedMemberCandidateId"
+            [disabled]="submitting"
+          >
+            <option [ngValue]="null" disabled>Select member</option>
+            <option *ngFor="let candidate of availableMemberCandidates" [value]="candidate.id">
+              {{ candidate.displayName }}
+            </option>
+          </select>
+          <button
+            type="button"
+            class="v-btn-brand"
+            (click)="addMember()"
+            [disabled]="submitting || selectedMemberCandidateId === null"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      <div class="member-list" *ngIf="additionalMembers.length > 0">
+        <div class="member-card" *ngFor="let member of additionalMembers; trackBy: trackByMemberId">
+          <div class="member-left">
+            <div class="avatar-chip">{{ member.initials }}</div>
+            <div class="member-details">
+              <span class="member-name">{{ member.displayName }}</span>
+              <span class="member-subtitle">{{ member.subtitle }}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="inline-remove"
+            (click)="removeMember(member.id)"
+            [disabled]="submitting"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-members" *ngIf="additionalMembers.length === 0">
+        <mat-icon>groups_2</mat-icon>
+        <p class="empty-title">No additional members added</p>
+        <p class="empty-subtitle">Teams perform best with specialized roles assigned early.</p>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <button type="button" mat-button (click)="cancel()" [disabled]="submitting">Cancel</button>
+      <button type="submit" mat-flat-button class="v-btn-brand" [disabled]="submitting || loadingLeads">
+        {{ submitting ? 'Creating...' : 'Create Team' }}
+      </button>
+    </footer>
+  </form>
+</div>

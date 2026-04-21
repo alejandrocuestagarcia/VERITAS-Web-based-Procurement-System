@@ -1,7 +1,7 @@
 package com.veritas.backend.team.service.impl;
 
-import com.veritas.backend.common.exception.ConflictException;
-import com.veritas.backend.common.exception.NotFoundException;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.team.dto.TeamCreateDto;
 import com.veritas.backend.team.dto.TeamDto;
 import com.veritas.backend.team.dto.TeamEditDto;
@@ -34,7 +34,7 @@ public class TeamServiceImpl implements TeamService {
     @Transactional(readOnly = true)
     public TeamDto getTeam(Long id) {
         Team team = teamRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new NotFoundException("Team not found with id " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
 
         return convertTeamToTeamDto(team);
     }
@@ -44,7 +44,7 @@ public class TeamServiceImpl implements TeamService {
     public TeamDto createTeam(TeamCreateDto request) {
         String teamName = request.getName().trim();
         if (teamRepository.existsByNameIgnoreCase(teamName)) {
-            throw new ConflictException("Team with name '" + teamName + "' already exists");
+            throw new EntityExistsException("Team with name '" + teamName + "' already exists");
         }
 
         Team team = new Team();
@@ -56,7 +56,7 @@ public class TeamServiceImpl implements TeamService {
 
         if (request.getLeaderId() != null) {
             User leader = userRepository.findById(Objects.requireNonNull(request.getLeaderId()))
-                    .orElseThrow(() -> new NotFoundException("Leader not found with id " + request.getLeaderId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
             team.setLeader(leader);
         }
 
@@ -68,7 +68,7 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public TeamDto editTeam(Long id, TeamEditDto edits) {
         Team team = teamRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new NotFoundException("Team not found with id " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
 
         if (edits.getName() != null) {
             String updatedName = edits.getName().trim();
@@ -78,7 +78,7 @@ public class TeamServiceImpl implements TeamService {
 
             boolean nameChanged = !updatedName.equalsIgnoreCase(team.getName());
             if (nameChanged && teamRepository.existsByNameIgnoreCase(updatedName)) {
-                throw new ConflictException("Team with name '" + updatedName + "' already exists");
+                throw new EntityExistsException("Team with name '" + updatedName + "' already exists");
             }
 
             team.setName(updatedName);

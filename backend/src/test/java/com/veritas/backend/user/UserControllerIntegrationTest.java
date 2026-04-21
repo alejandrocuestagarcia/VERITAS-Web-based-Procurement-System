@@ -66,7 +66,8 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     Team testTeam = new Team();
     testTeam.setName("Test Team");
     testTeam.setDepartment(Department.IT);
-    testTeam.setDescription("A Team for testing");
+    testTeam.setDescription("Description Placeholder");
+
     teamRepository.save(testTeam);
   }
 
