@@ -1,7 +1,7 @@
-import {Component, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   TeamsModuleService,
   UserCreationRequestDto,
@@ -35,10 +35,9 @@ export class UserCreateComponent implements OnInit {
     this.userForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      //how to handle setting the password?
       password: ['', Validators.required],
 
-      userRole: [null, Validators.required],
+      role: [null, Validators.required],
       // teamId: [null, Validators.required],
       teamId: [null],
       department: [null, Validators.required],
@@ -55,7 +54,7 @@ export class UserCreateComponent implements OnInit {
         name: this.userForm.value.name,
         email: this.userForm.value.email,
         password: this.userForm.value.password,
-        userRole: this.userForm.value.userRole,
+        role: this.userForm.value.role,
         teamId: 3, // Explicitly setting dummy ID while functionality not implemented
         department: this.userForm.value.department,
         promoteToTeamLeader: this.userForm.value.promoteToTeamLeader
