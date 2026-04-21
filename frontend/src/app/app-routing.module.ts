@@ -30,6 +30,7 @@ const routes: Routes = [
     component: VendorCreateComponent,
     canActivate: [authGuard]
   },
+  { path: 'requisition/new', redirectTo: '/dashboard'}, //change later to the right page
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];

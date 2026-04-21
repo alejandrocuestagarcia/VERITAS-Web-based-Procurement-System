@@ -26,16 +26,17 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatOptionModule} from "@angular/material/core";
 import {MatSelectModule} from "@angular/material/select";
+import { SidebarComponent } from './core/components/sidebar/sidebar.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     DashboardComponent,
-    ProjectListComponent,
     UserCreateComponent,
     HasRoleDirective,
     ProjectListComponent,
+    SidebarComponent,
     VendorCreateComponent
   ],
   imports: [
@@ -58,7 +59,6 @@ import {MatSelectModule} from "@angular/material/select";
     MatOptionModule,
     MatSelectModule,
     ReactiveFormsModule,
-    MatListModule,
     MatSnackBarModule
   ],
   providers: [

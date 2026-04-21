@@ -35,6 +35,7 @@ $v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
 :root {
   --v-surface: #f7f9fb;
   --v-surface-low: #f2f4f6;
+  --v-surface-highest:#dadce0;
   --v-surface-white: #ffffff;
   --v-border-white: #e4e7ef;
   --v-on-surface: #191c1e;
@@ -71,6 +72,17 @@ body {
   color: var(--v-on-surface);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+}
+
+.v-app-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+.v-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .mat-mdc-card {
@@ -390,4 +402,9 @@ mat-paginator.mat-mdc-paginator {
   align-items: center;
   gap: 10px;
   font-size: 13px;
+}
+
+
+.v-authenticated {
+  padding-left: 260px;
 }
