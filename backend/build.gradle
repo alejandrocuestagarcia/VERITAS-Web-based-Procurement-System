@@ -27,6 +27,19 @@ repositories {
 }
 
 dependencies {
+
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	// Testing
+	testImplementation 'org.assertj:assertj-core:3.27.7'
+	testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -69,4 +82,15 @@ jacocoTestReport {
 		xml.required = true
 		html.required = true
 	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs = [
+			'-Amapstruct.suppressGeneratorTimestamp=true',
+			'-Amapstruct.defaultComponentModel=spring' // This makes @Mapper default to Spring
+	]
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs << '-parameters'
 }

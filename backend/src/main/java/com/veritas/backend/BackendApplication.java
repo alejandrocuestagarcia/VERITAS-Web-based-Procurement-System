@@ -1,6 +1,8 @@
 package com.veritas.backend;
 
 import com.veritas.backend.common.model.Department;
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
@@ -18,8 +20,16 @@ public class BackendApplication {
 	}
 
 	@Bean
-	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder) {
+	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder, TeamRepository teamRepo) {
 		return args -> {
+
+			teamRepo.findById(1L).orElseGet(() -> {
+				Team team = new Team();
+				team.setName("Procurement Alpha");
+				team.setDepartment(Department.IT);
+				return teamRepo.save(team);
+			});
+
 			if (userRepo.findByEmail("admin@veritas.com").isEmpty()) {
 				User admin = User.builder()
 						.name("Veritas Admin")
