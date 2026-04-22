@@ -1,37 +1,46 @@
-<div class="page-wrap">
-  <div class="page-header">
-    <div class="header-left">
-      <h1 class="page-title">{{ title }}</h1>
-      <p class="page-subtitle">{{ subtitle }}</p>
+<div class="p-8 px-9">
+
+  <!-- Page header -->
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="font-manrope text-2xl font-bold text-on-surface m-0 mb-1 leading-tight">{{ title }}</h1>
+      <p class="text-[13px] text-muted-grey m-0">{{ subtitle }}</p>
     </div>
-    <div class="header-actions">
+    <div class="flex gap-2 items-center shrink-0 pt-1">
       <ng-content select="[actions]"></ng-content>
     </div>
   </div>
 
-  <div class="stats-container">
+  <!-- Stats slot -->
+  <div class="flex gap-5 justify-start mb-8 w-full">
     <ng-content select="[stats]"></ng-content>
   </div>
 
-  <div class="table-card">
-    <div class="table-toolbar">
-      <div class="toolbar-left">
-        <div class="search-wrap">
-          <mat-icon class="search-icon">search</mat-icon>
-          <input
-            class="search-input"
-            [placeholder]="searchPlaceholder"
-            (input)="onSearch($event)" />
-        </div>
+  <!-- Table card -->
+  <div class="bg-surface-white border border-border-white rounded-card overflow-hidden">
+
+    <!-- Toolbar -->
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-border-white">
+      <!-- Search -->
+      <div class="flex items-center gap-2 bg-surface-low border border-border-ghost rounded-search
+                  px-3 py-1.5 w-[210px] transition-colors duration-150
+                  focus-within:border-veritas-blue focus-within:bg-surface-white">
+        <mat-icon class="text-base w-4 h-4 text-muted-grey shrink-0">search</mat-icon>
+        <input class="border-0 outline-none bg-transparent font-inter text-[13px]
+                 text-on-surface w-full placeholder:text-[#9ca3af]" [placeholder]="searchPlaceholder"
+          (input)="onSearch($event)" />
       </div>
 
-      <div class="toolbar-right">
+      <!-- Filters slot -->
+      <div>
         <ng-content select="[filters]"></ng-content>
       </div>
     </div>
 
-    <div class="state-row" *ngIf="loading">Loading...</div>
+    <!-- Loading state -->
+    <div class="p-10 text-center text-[13px] text-muted-grey" *ngIf="loading">Loading...</div>
 
+    <!-- Table -->
     <table mat-table [dataSource]="dataSource" class="v-data-table">
       <ng-content select="[columns]"></ng-content>
 
@@ -39,10 +48,8 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="v-row"></tr>
     </table>
 
-    <mat-paginator
-      [length]="totalElements"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[5, 10, 25]"
+    <!-- Paginator -->
+    <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 25]"
       (page)="pageChanged.emit($event)">
     </mat-paginator>
   </div>

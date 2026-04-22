@@ -1,13 +1,12 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
-import {MatTableDataSource} from "@angular/material/table";
-import {Pageable, UserDto, UserDtoRoleEnum, UserModuleService} from "../../core/api";
-import {PageEvent} from "@angular/material/paginator";
-import {SharedTableComponent} from "../../shared/components/table/shared-table.component";
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { MatTableDataSource } from "@angular/material/table";
+import { Pageable, UserDto, UserDtoRoleEnum, UserModuleService } from "../../core/api";
+import { PageEvent } from "@angular/material/paginator";
+import { SharedTableComponent } from "../../shared/components/table/shared-table.component";
 
 @Component({
   selector: 'app-user-list',
   templateUrl: './user-list.component.html',
-  styleUrls: ['./user-list.component.scss']
 })
 export class UserListComponent implements OnInit {
 

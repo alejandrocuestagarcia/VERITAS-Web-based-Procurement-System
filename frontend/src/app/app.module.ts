@@ -20,6 +20,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
 import { UserCreateComponent } from './features/user-create/user-create.component';
 import { SharedTableComponent } from './shared/components/table/shared-table.component';
+import { StatCardComponent } from './shared/components/stat-card/stat-card.component';
 import { UserListComponent } from './features/user-list/user-list.component';
 import {MatChipsModule} from "@angular/material/chips";
 import { FormatEnumPipe } from './shared/pipes/format-enum.pipe';
@@ -45,6 +46,7 @@ import {MatDatepickerModule} from "@angular/material/datepicker";
     DashboardComponent,
     UserCreateComponent,
     SharedTableComponent,
+    StatCardComponent,
     UserListComponent,
     FormatEnumPipe,
     UserCreateComponent,
