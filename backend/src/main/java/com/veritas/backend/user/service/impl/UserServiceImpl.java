@@ -4,12 +4,17 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.mapper.UserMapper;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.UserService;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,5 +68,32 @@ public class UserServiceImpl implements UserService {
 
     return userMapper.toUserDto(savedUser);
 
+
+  }
+
+  @Override
+  @Transactional
+  public Page<UserDto> getAllUsers(Pageable pageable) {
+
+    return userRepository.findAll(pageable).map(userMapper::toUserDto);
+
+  }
+
+  @Override
+  public UserStatsDto getUserStats() {
+    long total = userRepository.count();
+
+    long inactive = userRepository.countByIsActiveFalse();
+
+    return new UserStatsDto(total, inactive, 0);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<UserDto> getAllUsersFiltered(Pageable pageable, String filter, UserRole userRole) {
+
+    String query = (filter != null && !filter.isBlank()) ? "%" + filter.trim().toLowerCase() + "%" : null;
+
+    return userRepository.findAllFiltered(query, userRole, pageable).map(userMapper::toUserDto);
   }
 }

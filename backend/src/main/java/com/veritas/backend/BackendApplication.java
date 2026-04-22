@@ -1,11 +1,15 @@
 package com.veritas.backend;
 
 import com.veritas.backend.common.model.Department;
+import com.veritas.backend.project.entity.Project;
+import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,10 +24,10 @@ public class BackendApplication {
 	}
 
 	@Bean
-	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder, TeamRepository teamRepo) {
+	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder, TeamRepository teamRepo, ProjectRepository projectRepo) {
 		return args -> {
 
-			teamRepo.findById(1L).orElseGet(() -> {
+			Team teamOne = teamRepo.findById(1L).orElseGet(() -> {
 				Team team = new Team();
 				team.setName("Procurement Alpha");
 				team.setDepartment(Department.IT);
@@ -73,6 +77,30 @@ public class BackendApplication {
 						.isActive(true)
 						.build();
 				userRepo.save(requester);
+
+			}
+
+			if (projectRepo.count() == 0) {
+				Project p1 = Project.builder()
+						.name("Apollo Architecture Audit")
+						.budget(new BigDecimal("150000"))
+						.projectKey("apollo-architecture-audit")
+						.startDate(LocalDate.of(2026, 1, 1))
+						.endDate(LocalDate.of(2026, 12, 31))
+						.team(teamOne)
+						.build();
+
+				Project p2 = Project.builder()
+						.name("Enterprise Lifecycle Management")
+						.projectKey("Second")
+						.budget(new BigDecimal("275000"))
+						.startDate(LocalDate.of(2026, 3, 15))
+						.endDate(LocalDate.of(2027, 6, 1))
+						.team(teamOne)
+						.build();
+
+				projectRepo.save(p1);
+				projectRepo.save(p2);
 			}
 		};
 	}

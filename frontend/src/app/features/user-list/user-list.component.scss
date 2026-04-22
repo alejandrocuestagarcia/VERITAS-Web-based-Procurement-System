@@ -1,0 +1,47 @@
+//AI-REFACTORED
+
+.stat-row {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-start;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.stat-card {
+  background: var(--v-surface-low);
+  border: 1px solid var(--v-border-white);
+  border-radius: 14px;
+  padding: 16px 22px 18px;
+  min-width: 150px;
+
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  color: var(--color-muted-grey);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--color-veritas-blue);
+  line-height: 1;
+}
+
+
+
+.state-row {
+  padding: 40px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-muted-grey);
+}
