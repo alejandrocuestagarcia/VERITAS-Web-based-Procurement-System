@@ -23,13 +23,12 @@
     <div class="flex items-center justify-between px-5 py-3.5 border-b border-border-white">
       <!-- Search -->
       <div class="flex items-center gap-2 bg-surface-low border border-border-ghost rounded-search
-                  px-3 py-1.5 w-[210px] transition-colors duration-150
-                  focus-within:border-veritas-blue focus-within:bg-surface-white">
-        <mat-icon class="w-4 h-4 text-muted-grey shrink-0">search</mat-icon>
+                  px-3 py-1.5 transition-colors duration-150
+                  focus-within:border-veritas-blue">
+        <mat-icon>search</mat-icon>
         <input class="border-0 outline-none bg-transparent font-inter text-[13px]
-                 text-on-surface w-full placeholder:text-[#9ca3af]"
-               [placeholder]="searchPlaceholder"
-               (input)="onSearch($event)" />
+                 text-on-surface w-full placeholder:text-[#9ca3af]" [placeholder]="searchPlaceholder"
+          (input)="onSearch($event)" />
       </div>
 
       <!-- Filters slot -->
