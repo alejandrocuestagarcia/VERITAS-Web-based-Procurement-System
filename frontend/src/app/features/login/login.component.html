@@ -1,51 +1,65 @@
-<div class="login-page">
+<div class="flex flex-col justify-center items-center min-h-screen">
 
-  <div class="login-container">
-    <div class="logo-section">
-      <div class="background-shield">
-        <mat-icon class="shield-icon">security</mat-icon>
+  <!-- Card container -->
+  <div class="flex flex-col items-center gap-4 w-[440px] z-10">
+
+    <!-- Logo section -->
+    <div class="flex flex-col items-center gap-3">
+      <div class="flex justify-center items-center py-3 px-4 bg-veritas-blue rounded-lg">
+        <mat-icon class="text-white text-[32px] w-8 h-8">security</mat-icon>
       </div>
-      <div class="heading-1">VERITAS</div>
-      <div class="sub-heading">Enterprise Procurement & Governance</div>
+      <div class="text-veritas-dark font-bold text-[2.5rem] leading-none font-manrope">VERITAS</div>
+      <div class="text-[#57657A] text-sm -mt-2">Enterprise Procurement &amp; Governance</div>
     </div>
 
-    <mat-card class="login-card">
-      <form class="login-form" (ngSubmit)="onLogin()">
+    <!-- Login card -->
+    <mat-card class="w-full box-border px-10 pt-10 pb-14 bg-white rounded-lg
+                     border border-[rgba(195,198,214,0.1)]
+                     shadow-[0_12px_32px_-4px_rgba(25,28,30,0.06)]">
+      <form class="flex flex-col gap-6 w-full" (ngSubmit)="onLogin()">
 
-        <div class="input-group">
-          <div class="label-row">
-            <span class="label-text">Email</span>
+        <!-- Email -->
+        <div class="flex flex-col gap-2 w-full">
+          <div class="flex justify-between items-end w-full">
+            <span class="font-bold text-base text-on-surface">Email</span>
           </div>
-          <mat-form-field appearance="fill" class="veritas-input">
+          <mat-form-field appearance="fill" class="w-full">
             <mat-icon matPrefix>email</mat-icon>
-            <input matInput type="email" name="email" [(ngModel)]="loginRequest.email" placeholder="name@company.com" required>
+            <input matInput type="email" name="email" [(ngModel)]="loginRequest.email"
+                   placeholder="name@company.com" required>
           </mat-form-field>
         </div>
 
-        <div class="input-group">
-          <div class="label-row">
-            <span class="label-text">Password</span>
-            <a href="#" class="forgot-link">Forgot Password?</a>
+        <!-- Password -->
+        <div class="flex flex-col gap-2 w-full">
+          <div class="flex justify-between items-end w-full">
+            <span class="font-bold text-base text-on-surface">Password</span>
+            <a href="#" class="font-bold text-xs text-veritas-dark no-underline">Forgot Password?</a>
           </div>
-          <mat-form-field appearance="fill" class="veritas-input">
+          <mat-form-field appearance="fill" class="w-full">
             <mat-icon matPrefix>lock</mat-icon>
-            <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" [(ngModel)]="loginRequest.password" placeholder="••••••••" required>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" name="password"
+                   [(ngModel)]="loginRequest.password" placeholder="••••••••" required>
             <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
-              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
           </mat-form-field>
         </div>
 
-
-        <button mat-flat-button class="login-button" type="submit">
+        <!-- Submit -->
+        <button mat-flat-button type="submit"
+                class="v-btn-brand w-full flex flex-row-reverse justify-center gap-3 py-6">
           Login to Dashboard
           <mat-icon>arrow_forward</mat-icon>
         </button>
+
       </form>
     </mat-card>
   </div>
 
-  <footer class="login-footer">
+  <!-- Footer -->
+  <footer class="mt-12 text-[0.8rem] text-[#57657A] text-center">
     VERITAS v2.4.1
   </footer>
+
 </div>
