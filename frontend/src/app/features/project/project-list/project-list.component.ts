@@ -37,7 +37,7 @@ export class ProjectListComponent implements OnInit {
     if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
   }
 
-  openEditDialog(project: ProjectDto) {
+  editProject(project: ProjectDto) {
     return ""
   }
 

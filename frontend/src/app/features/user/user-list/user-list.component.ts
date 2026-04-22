@@ -84,7 +84,7 @@ export class UserListComponent implements OnInit {
 
   }
 
-  openEditDialog(user: UserDto) {
+  editUser(user: UserDto) {
     return ""
   }
 
