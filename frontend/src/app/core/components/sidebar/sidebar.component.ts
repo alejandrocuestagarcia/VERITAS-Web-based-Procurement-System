@@ -14,7 +14,9 @@ export class SidebarComponent implements OnInit{
     protected navService: NavigationService
   ) {
   }
+
   navLinks: NavItem[] = [];
+
   ngOnInit(): void {
     const role = this.authService.getRole()
     if (role) {
