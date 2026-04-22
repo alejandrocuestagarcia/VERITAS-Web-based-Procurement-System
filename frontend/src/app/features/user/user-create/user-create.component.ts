@@ -8,7 +8,7 @@ import {
   UserCreationRequestDtoDepartmentEnum,
   UserDtoRoleEnum,
   UserModuleService
-} from "../../core/api";
+} from "../../../core/api";
 
 @Component({
   selector: 'app-user-create',
