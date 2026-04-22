@@ -25,14 +25,13 @@
   <ng-container columns>
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef>PROJECT NAME</th>
-      <td mat-cell *matCellDef="let project" class="font-medium">{{ project.name }}</td>
+      <td mat-cell *matCellDef="let project" class="">{{ project.name }}</td>
     </ng-container>
 
     <ng-container matColumnDef="team">
       <th mat-header-cell *matHeaderCellDef>ASSIGNED TEAM</th>
       <td mat-cell *matCellDef="let project">
-        <span class="inline-block px-[11px] py-1 rounded-chip text-[11px] font-medium
-                     bg-[#eaf0fb] text-veritas-dark border border-[#d6e4f5] whitespace-nowrap leading-[1.4]">
+        <span class="">
           {{ project.teamName }}
         </span>
       </td>
@@ -40,14 +39,14 @@
 
     <ng-container matColumnDef="budget">
       <th mat-header-cell *matHeaderCellDef>BUDGET</th>
-      <td mat-cell *matCellDef="let project" class="font-semibold text-on-surface">
+      <td mat-cell *matCellDef="let project" class="font-semibold">
         {{ project.budget | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="startDate">
       <th mat-header-cell *matHeaderCellDef>START DATE</th>
-      <td mat-cell *matCellDef="let project" class="text-[12px] text-muted-grey whitespace-nowrap">
+      <td mat-cell *matCellDef="let project" class="text-[12px] text-muted-grey">
         {{ project.startDate | date:'MMM d, yyyy' }}
       </td>
     </ng-container>
@@ -56,6 +55,20 @@
       <th mat-header-cell *matHeaderCellDef>END DATE</th>
       <td mat-cell *matCellDef="let project" class="text-[12px] text-muted-grey whitespace-nowrap">
         {{ project.endDate | date:'MMM d, yyyy' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
+      <td mat-cell *matCellDef="let project">
+        <div class="flex items-center gap-1">
+          <button mat-icon-button (click)="openEditDialog(project)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteProject(project)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
       </td>
     </ng-container>
   </ng-container>

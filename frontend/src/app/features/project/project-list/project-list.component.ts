@@ -10,7 +10,7 @@ import { SharedTableComponent } from '../../shared/components/table/shared-table
 export class ProjectListComponent implements OnInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  displayedColumns = ['name', 'team', 'budget', 'startDate', 'endDate'];
+  displayedColumns = ['name', 'team', 'budget', 'startDate', 'endDate', 'actions'];
   dataSource = new MatTableDataSource<ProjectDto>([]);
 
   loading = false;
@@ -35,5 +35,13 @@ export class ProjectListComponent implements OnInit {
   applyFilter(value: string): void {
     this.dataSource.filter = value.trim().toLowerCase();
     if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+  }
+
+  openEditDialog(project: ProjectDto) {
+    return ""
+  }
+
+  deleteProject(project: ProjectDto) {
+    return ""
   }
 }
