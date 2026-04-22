@@ -1,84 +1,63 @@
-<div class="v-page-wrap">
+<app-shared-table title="Project Portfolio"
+  subtitle="Architecture audit and delivery lifecycle management for Enterprise Tier" entity="projects"
+  searchPlaceholder="Search projects..." [dataSource]="dataSource" [displayedColumns]="displayedColumns"
+  [totalElements]="dataSource.data.length" [loading]="loading" (searchChanged)="applyFilter($event)">
 
-  <div class="v-page-header">
-    <div class="v-page-header-left">
-      <h1 class="v-page-title">Project Portfolio</h1>
-      <p class="v-page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
+  <!-- Stats -->
+  <ng-container stats>
+    <app-stat-card label="Total Projects" [value]="dataSource.data.length" />
+  </ng-container>
+
+  <!-- Actions -->
+  <button actions mat-flat-button class="v-btn-brand" *appHasRole="['FINANCE_OFFICER', 'ADMINISTRATOR']" [routerLink]="['/projects/create']">
+    <mat-icon>add</mat-icon>
+    New Project
+  </button>
+
+  <!-- Error bar -->
+  <ng-container filters>
+    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 rounded-[10px] px-4 py-2.5 text-[13px]">
+      {{ error }}
     </div>
-    <div class="v-page-header-actions">
-      <button *appHasRole="['FINANCE_OFFICER', 'ADMINISTRATOR']"
-              mat-flat-button
-              class="v-btn-brand"
-              [routerLink]="['/projects/create']">
-        <mat-icon>add</mat-icon> New Project
-      </button>
-    </div>
-  </div>
+  </ng-container>
 
-  <div class="v-stat-row">
-    <div class="v-stat-card">
-      <span class="v-stat-label">TOTAL PROJECTS</span>
-      <span class="v-stat-value">{{ dataSource.data.length }}</span>
-    </div>
-  </div>
+  <!-- Columns -->
+  <ng-container columns>
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>PROJECT NAME</th>
+      <td mat-cell *matCellDef="let project" class="font-medium">{{ project.name }}</td>
+    </ng-container>
 
-  <div class="v-error-bar" *ngIf="error">{{ error }}</div>
+    <ng-container matColumnDef="team">
+      <th mat-header-cell *matHeaderCellDef>ASSIGNED TEAM</th>
+      <td mat-cell *matCellDef="let project">
+        <span class="inline-block px-[11px] py-1 rounded-chip text-[11px] font-medium
+                     bg-[#eaf0fb] text-veritas-dark border border-[#d6e4f5] whitespace-nowrap leading-[1.4]">
+          {{ project.teamName }}
+        </span>
+      </td>
+    </ng-container>
 
-  <div class="v-table-card">
-    <div class="v-table-toolbar">
-      <span>Active Project Portfolio</span>
-      <div class="v-table-search">
-        <mat-icon>search</mat-icon>
-        <input placeholder="Search projects..." (input)="applyFilter($event)" />
-      </div>
-    </div>
+    <ng-container matColumnDef="budget">
+      <th mat-header-cell *matHeaderCellDef>BUDGET</th>
+      <td mat-cell *matCellDef="let project" class="font-semibold text-on-surface">
+        {{ project.budget | currency:'EUR':'symbol':'1.0-0' }}
+      </td>
+    </ng-container>
 
-    <div class="v-table-state" *ngIf="loading">Loading projects…</div>
-    <div class="v-table-state" *ngIf="!loading && dataSource.data.length === 0 && !error">
-      No projects found
-    </div>
+    <ng-container matColumnDef="startDate">
+      <th mat-header-cell *matHeaderCellDef>START DATE</th>
+      <td mat-cell *matCellDef="let project" class="text-[12px] text-muted-grey whitespace-nowrap">
+        {{ project.startDate | date:'MMM d, yyyy' }}
+      </td>
+    </ng-container>
 
-    <table mat-table [dataSource]="dataSource" class="v-data-table">
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>PROJECT NAME</th>
-        <td mat-cell *matCellDef="let project">
-          <span>{{ project.name }}</span>
-        </td>
-      </ng-container>
+    <ng-container matColumnDef="endDate">
+      <th mat-header-cell *matHeaderCellDef>END DATE</th>
+      <td mat-cell *matCellDef="let project" class="text-[12px] text-muted-grey whitespace-nowrap">
+        {{ project.endDate | date:'MMM d, yyyy' }}
+      </td>
+    </ng-container>
+  </ng-container>
 
-      <ng-container matColumnDef="team">
-        <th mat-header-cell *matHeaderCellDef>ASSIGNED TEAM</th>
-        <td mat-cell *matCellDef="let project">
-          <span class="v-chip">{{ project.teamName }}</span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="budget">
-        <th mat-header-cell *matHeaderCellDef>BUDGET</th>
-        <td mat-cell *matCellDef="let project">
-          <span>{{ project.budget | currency:'EUR':'symbol':'1.0-0' }}</span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="startDate">
-        <th mat-header-cell *matHeaderCellDef>START DATE</th>
-        <td mat-cell *matCellDef="let project">
-          <span>{{ project.startDate | date:'MMM d, yyyy' }}</span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="endDate">
-        <th mat-header-cell *matHeaderCellDef>END DATE</th>
-        <td mat-cell *matCellDef="let project">
-          <span>{{ project.endDate | date:'MMM d, yyyy' }}</span>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="project-row"></tr>
-    </table>
-
-    <mat-paginator [pageSizeOptions]="[3, 5, 7]" showFirstLastButtons aria-label="Select page"></mat-paginator>
-
-  </div>
-</div>
+</app-shared-table>

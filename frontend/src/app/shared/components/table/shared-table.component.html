@@ -48,6 +48,11 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="v-row"></tr>
     </table>
 
+    <div *ngIf="loading">Loading {{entity}}...</div>
+    <div *ngIf="!loading && dataSource.data.length === 0" class="p-8 text-center text-[15px] text-muted-grey">
+      No {{entity}} found
+    </div>
+
     <!-- Paginator -->
     <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 25]"
       (page)="pageChanged.emit($event)">

@@ -1,6 +1,6 @@
-<app-shared-table [title]="title" [subtitle]="subtitle" [dataSource]="dataSource" [displayedColumns]="displayedColumns"
-  [totalElements]="totalPageElements" [loading]="loading" (pageChanged)="onPageChange($event)"
-  (searchChanged)="onSearchChanged($event)">
+<app-shared-table [title]="title" [subtitle]="subtitle" entity="users" [dataSource]="dataSource"
+  [displayedColumns]="displayedColumns" [totalElements]="totalPageElements" [loading]="loading"
+  (pageChanged)="onPageChange($event)" (searchChanged)="onSearchChanged($event)">
 
   <!-- Stats -->
   <ng-container stats>

@@ -35,7 +35,7 @@ $v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
 :root {
   --v-surface: #f7f9fb;
   --v-surface-low: #f2f4f6;
-  --v-surface-highest:#dadce0;
+  --v-surface-highest: #dadce0;
   --v-surface-white: #ffffff;
   --v-border-white: #e4e7ef;
   --v-on-surface: #191c1e;
@@ -55,7 +55,11 @@ $v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
   }
 }
 
-html, body { height: 100%; margin: 0; }
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
 
 body {
   @include mat.typography-level($v-typography, body-1);
@@ -79,6 +83,7 @@ body {
   min-height: 100vh;
   width: 100%;
 }
+
 .v-main-content {
   flex: 1;
   display: flex;
@@ -129,7 +134,8 @@ body {
   .mat-mdc-header-row {
     background-color: #e6e8ea !important;
 
-    th, .mat-mdc-header-cell {
+    th,
+    .mat-mdc-header-cell {
       color: var(--v-on-surface);
       font-family: 'Inter', sans-serif;
       font-weight: 600;
@@ -147,7 +153,8 @@ body {
       background-color: var(--v-surface-low) !important;
     }
 
-    td, .mat-mdc-cell {
+    td,
+    .mat-mdc-cell {
       padding: 1rem;
       border-bottom: 1px solid var(--v-border-ghost);
     }
@@ -270,7 +277,9 @@ body {
     color: var(--v-on-surface);
     width: 100%;
 
-    &::placeholder { color: #9ca3af; }
+    &::placeholder {
+      color: #9ca3af;
+    }
   }
 }
 
