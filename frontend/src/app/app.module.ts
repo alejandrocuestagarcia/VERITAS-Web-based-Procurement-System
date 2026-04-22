@@ -32,6 +32,9 @@ import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatOptionModule} from "@angular/material/core";
 import {MatSelectModule} from "@angular/material/select";
 import { SidebarComponent } from './core/components/sidebar/sidebar.component';
+import { SharedFormComponent } from './shared/components/creation/shared-form/shared-form.component';
+import { SharedFormCardComponent } from './shared/components/creation/shared-form-card/shared-form-card.component';
+import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
 
 @NgModule({
   declarations: [
@@ -46,7 +49,10 @@ import { SidebarComponent } from './core/components/sidebar/sidebar.component';
     HasRoleDirective,
     ProjectListComponent,
     SidebarComponent,
-    VendorCreateComponent
+    VendorCreateComponent,
+    SharedFormComponent,
+    SharedFormCardComponent,
+    SharedFormFieldComponent
   ],
   imports: [
     BrowserModule,

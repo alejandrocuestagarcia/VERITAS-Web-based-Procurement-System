@@ -1,86 +1,59 @@
-<div class="v-page-wrap">
-  <form #vendorForm="ngForm" (ngSubmit)="saveChanges()">
+<div [formGroup]="vendorForm">
+  <app-shared-form
+    title="Vendor Registration"
+    subtitle="Onboard a new strategic partner to the VERITAS ecosystem."
+    routingSubtitle="VENDORS > ADD NEW VENDOR"
+    submitButtonLabel="Add Vendor"
+    submitButtonIcon="person_add"
+    [loading]="loading"
+    (submitted)="onSubmit()"
+    (cancelled)="onCancel()">
 
-    <header class="v-page-header">
-      <div>
-        <div class="v-stat-label">VENDORS > <strong>ADD NEW VENDOR</strong></div>
-        <h1 class="v-page-title">Vendor Registration</h1>
-        <p class="v-page-subtitle">Onboard a new strategic partner to the VERITAS ecosystem.</p>
-      </div>
-      <div class="v-page-header-actions">
-        <button mat-button type="button" (click)="discard()">Discard</button>
-        <button mat-flat-button class="v-btn-brand" type="submit" [disabled]="loading">
-          Save Changes
-        </button>
-      </div>
-    </header>
+    <app-shared-form-card icon="business" title="General Identity">
+      <app-shared-form-field label="VENDOR NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput formControlName="name" placeholder="ABC Global Logistics">
+          <mat-error *ngIf="vendorForm.get('name')?.hasError('required') && vendorForm.get('name')?.touched">
+            Vendor name is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-    <div class="v-error-bar" *ngIf="error">
-      <mat-icon>error_outline</mat-icon>
-      <span>{{ error }}</span>
-    </div>
+      <app-shared-form-field label="TAX ID / VAT NUMBER">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput formControlName="taxId" placeholder="XXXXXXXXXXX">
+          <mat-error *ngIf="vendorForm.get('taxId')?.hasError('required') && vendorForm.get('taxId')?.touched">
+            Tax ID is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-    <div class="v-form-container">
+      <app-shared-form-field label="DESCRIPTION" [fullWidth]="true">
+        <mat-form-field appearance="outline" class="w-full">
+          <textarea matInput formControlName="description" placeholder="Enter notes" rows="4"></textarea>
+          <mat-error *ngIf="vendorForm.get('description')?.hasError('required') && vendorForm.get('description')?.touched">
+            Description is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
 
-      <section class="v-card">
-        <div class="v-card-header">
-          <div class="icon-wrap">
-            <mat-icon>business</mat-icon>
-          </div>
-          <h3 class="card-title">General Identity</h3>
-        </div>
+    <app-shared-form-card icon="contact_mail" title="Primary Contact">
+      <app-shared-form-field label="CONTACT NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput formControlName="primaryContactName" placeholder="Full legal name">
+        </mat-form-field>
+      </app-shared-form-field>
 
-        <div class="v-form-row">
-          <div class="v-form-field">
-            <label>VENDOR NAME *</label>
-            <input type="text" name="vendorName" placeholder="ABC Global Logistics" [(ngModel)]="vendor.vendorName"
-              #vendorName="ngModel" required [disabled]="loading"
-              [class.is-invalid]="vendorName.invalid && vendorName.touched" />
-            <span class="error-text" *ngIf="vendorName.invalid && vendorName.touched">Vendor name is required</span>
-          </div>
-          <div class="v-form-field">
-            <label>TAX ID / VAT NUMBER *</label>
-            <input type="text" name="taxId" placeholder="XXXXXXXXXXX" [(ngModel)]="vendor.taxId" #taxId="ngModel"
-              required [disabled]="loading" [class.is-invalid]="taxId.invalid && taxId.touched" />
-            <span class="error-text" *ngIf="taxId.invalid && taxId.touched">Tax ID is required</span>
-          </div>
-        </div>
+      <app-shared-form-field label="CONTACT EMAIL">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput formControlName="primaryContactEmail" type="email" placeholder="email@vendor.com">
+          <mat-error *ngIf="vendorForm.get('primaryContactEmail')?.hasError('email') && vendorForm.get('primaryContactEmail')?.touched">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
 
-        <div class="v-form-row">
-          <div class="v-form-field">
-            <label>DESCRIPTION *</label>
-            <textarea name="description" placeholder="Enter notes" [(ngModel)]="vendor.description"
-              #description="ngModel" required [disabled]="loading" rows="4"
-              [class.is-invalid]="description.invalid && description.touched"></textarea>
-            <span class="error-text" *ngIf="description.invalid && description.touched">Description is required</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="v-card">
-        <div class="v-card-header">
-          <div class="icon-wrap">
-            <mat-icon>contact_mail</mat-icon>
-          </div>
-          <h3 class="card-title">Primary Contact</h3>
-        </div>
-
-        <div class="v-form-row">
-          <div class="v-form-field">
-            <label>CONTACT NAME</label>
-            <input type="text" name="primaryContactName" placeholder="Full legal name"
-              [(ngModel)]="vendor.primaryContactName" [disabled]="loading" />
-          </div>
-          <div class="v-form-field">
-            <label>CONTACT EMAIL</label>
-            <input type="email" name="primaryContactEmail" placeholder="email@vendor.com"
-              [(ngModel)]="vendor.primaryContactEmail" #email="ngModel" email [disabled]="loading"
-              [class.is-invalid]="email.invalid && email.touched" />
-            <span class="error-text" *ngIf="email.errors?.['email'] && email.touched">Please enter a valid email
-              address</span>
-          </div>
-        </div>
-      </section>
-    </div>
-  </form>
+  </app-shared-form>
 </div>
