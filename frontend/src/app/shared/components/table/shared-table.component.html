@@ -1,4 +1,4 @@
-<div class="p-8 px-9">
+<div class="py-8 px-9">
 
   <!-- Page header -->
   <div class="flex items-start justify-between mb-6 gap-4">
@@ -12,7 +12,7 @@
   </div>
 
   <!-- Stats slot -->
-  <div class="flex gap-5 justify-start mb-8 w-full">
+  <div class="flex gap-5 mb-8">
     <ng-content select="[stats]"></ng-content>
   </div>
 
@@ -25,10 +25,11 @@
       <div class="flex items-center gap-2 bg-surface-low border border-border-ghost rounded-search
                   px-3 py-1.5 w-[210px] transition-colors duration-150
                   focus-within:border-veritas-blue focus-within:bg-surface-white">
-        <mat-icon class="text-base w-4 h-4 text-muted-grey shrink-0">search</mat-icon>
+        <mat-icon class="w-4 h-4 text-muted-grey shrink-0">search</mat-icon>
         <input class="border-0 outline-none bg-transparent font-inter text-[13px]
-                 text-on-surface w-full placeholder:text-[#9ca3af]" [placeholder]="searchPlaceholder"
-          (input)="onSearch($event)" />
+                 text-on-surface w-full placeholder:text-[#9ca3af]"
+               [placeholder]="searchPlaceholder"
+               (input)="onSearch($event)" />
       </div>
 
       <!-- Filters slot -->
@@ -37,21 +38,18 @@
       </div>
     </div>
 
-    <!-- Loading state -->
-    <div class="p-10 text-center text-[13px] text-muted-grey" *ngIf="loading">Loading...</div>
+    <!-- Loading / empty state -->
+    <div class="p-10 text-center text-sm text-muted-grey" *ngIf="loading">Loading {{ entity }}…</div>
+    <div class="p-10 text-center text-sm text-muted-grey" *ngIf="!loading && dataSource.data.length === 0">
+      No {{ entity }} found
+    </div>
 
     <!-- Table -->
     <table mat-table [dataSource]="dataSource" class="v-data-table">
       <ng-content select="[columns]"></ng-content>
-
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="v-row"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
-
-    <div *ngIf="loading">Loading {{entity}}...</div>
-    <div *ngIf="!loading && dataSource.data.length === 0" class="p-8 text-center text-[15px] text-muted-grey">
-      No {{entity}} found
-    </div>
 
     <!-- Paginator -->
     <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 25]"

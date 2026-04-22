@@ -1,4 +1,4 @@
-<nav class="w-[260px] h-screen flex flex-col box-border p-4 fixed left-0 top-0
+<nav class="w-[260px] h-screen flex flex-col p-4 fixed left-0 top-0
             border-r border-border-ghost z-[1000] v-glass-panel">
 
   <!-- Logo -->
@@ -7,8 +7,8 @@
   </span>
 
   <!-- New Requisition button -->
-  <div class="flex justify-center pb-6" *appHasRole="['REQUESTER', 'PROCUREMENT_OFFICER']">
-    <button routerLink="/requisition/new" class="v-btn-brand w-full flex items-center justify-center gap-4 h-12">
+  <div class="flex pb-6" *appHasRole="['REQUESTER', 'PROCUREMENT_OFFICER']">
+    <button routerLink="/requisition/new" mat-flat-button class="v-btn-brand w-full">
       <mat-icon>add</mat-icon>
       <span>New Requisition</span>
     </button>
@@ -16,21 +16,24 @@
 
   <!-- Nav links -->
   <div class="flex-1">
-    <a *ngFor="let item of navLinks" [routerLink]="item.route" routerLinkActive="v-active-link" class="flex items-center w-full px-4 py-3 mb-1 rounded-lg no-underline
-              text-on-surface bg-transparent border-0 cursor-pointer transition-all duration-200
-              hover:bg-surface-highest">
-      <mat-icon class="mr-4 text-[20px] w-5 h-5 opacity-60">{{ item.icon }}</mat-icon>
+    <a *ngFor="let item of navLinks"
+       [routerLink]="item.route"
+       routerLinkActive="v-active-link"
+       class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
+              text-on-surface cursor-pointer transition-colors duration-200
+              hover:bg-surface-highest no-underline">
+      <mat-icon class="mr-4 w-5 h-5 opacity-60">{{ item.icon }}</mat-icon>
       <span>{{ item.label }}</span>
     </a>
   </div>
 
   <!-- Logout -->
-  <div>
-    <button (click)="onLogout()" class="flex items-center w-full px-4 py-3 mb-1 rounded-lg no-underline
-              text-on-surface bg-transparent border-0 cursor-pointer transition-all duration-200
-              hover:bg-surface-highest">
-      <mat-icon class="mr-4 text-[20px] w-5 h-5 opacity-60">logout</mat-icon>
-      <span>Logout</span>
-    </button>
-  </div>
+  <button (click)="onLogout()"
+          class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
+                 text-on-surface cursor-pointer transition-colors duration-200
+                 hover:bg-surface-highest bg-transparent border-0">
+    <mat-icon class="mr-4 w-5 h-5 opacity-60">logout</mat-icon>
+    <span>Logout</span>
+  </button>
+
 </nav>
