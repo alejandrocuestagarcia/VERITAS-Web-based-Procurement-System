@@ -1,0 +1,93 @@
+<div [formGroup]="projectForm">
+  <app-shared-form
+    title="Create New Project"
+    subtitle="Define project details, timeline, and budget for team execution"
+    routingSubtitle="PROJECTS > ADD NEW PROJECT"
+    submitButtonLabel="Add Project"
+    submitButtonIcon="person_add"
+    [loading]="loading"
+    (submitted)="onSubmit()"
+    (cancelled)="onCancel()">
+
+    <app-shared-form-card icon="business" title="General Information">
+      <app-shared-form-field label="PROJECT NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput formControlName="name" placeholder="e.g. Skyline Observatory Alpha">
+          <mat-error *ngIf="projectForm.get('name')?.hasError('required') && projectForm.get('name')?.touched">
+            Project name is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="PROJECT KEY">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput formControlName="projectKey" placeholder="e.g. SKY-001">
+          <mat-error *ngIf="projectForm.get('projectKey')?.hasError('required') && projectForm.get('projectKey')?.touched">
+            Project key is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="TEAM">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-select formControlName="teamId" placeholder="Select team">
+            <mat-option *ngFor="let team of teams" [value]="team.id">
+              {{ team.name }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="projectForm.get('teamId')?.hasError('required') && projectForm.get('teamId')?.touched">
+            Team is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
+    <app-shared-form-card icon="event" title="Project Timeline & Budget">
+      <app-shared-form-field label="START DATE">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput [matDatepicker]="startPicker" formControlName="startDate" placeholder="Choose start date">
+          <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+          <mat-error *ngIf="projectForm.get('startDate')?.hasError('required') && projectForm.get('startDate')?.touched">
+            Start date is required
+          </mat-error>
+          <mat-error *ngIf="projectForm.get('startDate')?.hasError('pastDate') && projectForm.get('startDate')?.touched">
+            Start date cannot be in the past
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="END DATE">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput [matDatepicker]="endPicker" formControlName="endDate" placeholder="Choose end date">
+          <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+          <mat-error *ngIf="projectForm.get('endDate')?.hasError('required') && projectForm.get('endDate')?.touched">
+            End date is required
+          </mat-error>
+          <mat-error *ngIf="projectForm.get('endDate')?.hasError('pastDate') && projectForm.get('endDate')?.touched">
+            End date cannot be in the past
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="BUDGET">
+        <mat-form-field appearance="outline" class="w-full">
+          <input matInput type="number" formControlName="budget" placeholder="e.g. 10000">
+          <mat-error *ngIf="projectForm.get('budget')?.hasError('required') && projectForm.get('budget')?.touched">
+            Budget is required
+          </mat-error>
+          <mat-error *ngIf="projectForm.get('budget')?.hasError('min') && projectForm.get('budget')?.touched">
+            Budget must be positive
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <div class="mt-2 flex items-center h-6 text-sm text-red-600"
+           *ngIf="projectForm.hasError('invalidDateRange') && (projectForm.get('endDate')?.touched || projectForm.get('startDate')?.touched)">
+        End date must be after start date
+      </div>
+    </app-shared-form-card>
+
+  </app-shared-form>
+</div>

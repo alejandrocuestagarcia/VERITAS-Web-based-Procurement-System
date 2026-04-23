@@ -64,6 +64,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private void sendError(HttpServletResponse response, String message) throws IOException {
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     response.setContentType("application/json");
-    objectMapper.writeValue(response.getWriter(), Map.of("error", message));
+
+    objectMapper.writeValue(response.getWriter(), Map.of(
+            "status", HttpServletResponse.SC_UNAUTHORIZED,
+            "message", message
+    ));
   }
 }
