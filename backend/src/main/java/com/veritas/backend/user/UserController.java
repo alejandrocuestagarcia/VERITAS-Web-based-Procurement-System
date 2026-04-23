@@ -61,7 +61,8 @@ public class UserController {
     @IsFinanceOfficer
     @PatchMapping("/{id}")
     public ResponseEntity<UserDto> editUser(@PathVariable Long id, @RequestBody UserEditDto edits) {
-        return null;
+        UserDto updated = userService.editUser(id, edits);
+        return ResponseEntity.ok(updated);
     }
 
     @Operation(summary = "Create user", description = "Creates a new user.")
@@ -70,8 +71,7 @@ public class UserController {
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreationRequestDto user) {
         UserDto userDto = userService.createUser(user);
 
-        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id())
-                .toUri();
+        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id()).toUri();
         return ResponseEntity.created(userUri).body(userDto);
     }
 

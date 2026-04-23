@@ -1,9 +1,8 @@
 package com.veritas.backend.user.dto;
 
-import lombok.Data;
-
-@Data
-public class UserEditDto {
-    private String email;
-    private String role;
-}
+public record UserEditDto (
+        String email,
+        String name,
+        Long teamId,
+        Boolean isTeamLeader
+) { }

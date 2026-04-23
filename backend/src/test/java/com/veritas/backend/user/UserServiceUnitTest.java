@@ -1,9 +1,7 @@
 package com.veritas.backend.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,6 +12,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
@@ -24,6 +23,9 @@ import jakarta.persistence.EntityExistsException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -128,5 +130,94 @@ class UserServiceUnitTest {
     assertThat(stats.inactive()).isEqualTo(15);
 //    assertThat(stats.activeSessions()).isZero();
   }
+
+    @Test
+    void editUser_shouldThrowEntityNotFoundException_whenUserNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null)));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void editUser_shouldChangeTeam_whenUserIsNotLeader() {
+        Team oldTeam = new Team();
+        oldTeam.setTeamId(1L);
+        oldTeam.setLeader(null);
+
+        Team newTeam = new Team();
+        newTeam.setTeamId(2L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setTeam(oldTeam);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(teamRepository.findById(2L)).thenReturn(Optional.of(newTeam));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.editUser(1L, new UserEditDto(null, null, 2L, null));
+
+        assertEquals(newTeam, user.getTeam());
+    }
+
+    @Test
+    void editUser_shouldSetUserAsTeamLeader_whenIsTeamLeaderTrue() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setTeam(team);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.editUser(1L, new UserEditDto(null, null, null, true));
+
+        assertEquals(user, team.getLeader());
+        verify(teamRepository).save(team);
+    }
+
+    @Test
+    void editUser_shouldDemoteLeader_whenIsTeamLeaderFalse() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setTeam(team);
+        team.setLeader(user);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.editUser(1L, new UserEditDto(null, null, null, false));
+
+        assertNull(team.getLeader());
+        verify(teamRepository).save(team);
+    }
+
+    @Test
+    void editUser_shouldNotDemote_whenUserIsNotCurrentLeader() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setTeam(team);
+
+        User leader = new User();
+        leader.setId(2L);
+        team.setLeader(leader);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.editUser(1L, new UserEditDto(null, null, null, false));
+
+        assertEquals(leader, team.getLeader());
+        verify(teamRepository, never()).save(any());
+    }
 
 }

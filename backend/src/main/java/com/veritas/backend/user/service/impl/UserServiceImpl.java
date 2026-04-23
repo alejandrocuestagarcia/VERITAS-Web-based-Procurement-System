@@ -4,6 +4,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.dto.UserStatsDto;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
@@ -60,6 +61,54 @@ public class UserServiceImpl implements UserService {
     return userMapper.toUserDto(savedUser);
 
 
+  }
+
+  @Override
+  @Transactional
+  public UserDto editUser(Long id, UserEditDto edits) {
+    User user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+    if (edits.email() != null && !edits.email().equals(user.getEmail())) {
+      if (userRepository.existsByEmail(edits.email())) {
+        throw new EntityExistsException("Email already registered");
+      }
+      user.setEmail(edits.email());
+    }
+
+    if (edits.name() != null) {
+      user.setName(edits.name());
+    }
+
+    if (edits.teamId() != null) {
+      // If user is team leader, prevent team change unless demoted
+      if (user.getTeam() != null && user.getTeam().getLeader() != null && user.getTeam().getLeader().getId().equals(user.getId())
+          && !edits.teamId().equals(user.getTeam().getTeamId())) {
+        throw new IllegalArgumentException("Cannot change team while user is team leader. Demote first.");
+      }
+
+      Team newTeam = teamRepository.findById(edits.teamId()).orElseThrow(() -> new EntityNotFoundException("Team not found"));
+      user.setTeam(newTeam);
+    }
+
+    if (edits.isTeamLeader() != null) {
+      if (edits.isTeamLeader()) {
+        if (user.getTeam() == null) {
+          throw new IllegalStateException("Cannot set team leader: user has no team assigned.");
+        }
+
+        user.getTeam().setLeader(user);
+        teamRepository.save(user.getTeam());
+      } else {
+        if (user.getTeam() != null && user.getTeam().getLeader() != null &&
+                user.getTeam().getLeader().getId().equals(user.getId())) {
+          user.getTeam().setLeader(null);
+          teamRepository.save(user.getTeam());
+        }
+      }
+    }
+
+    User saved = userRepository.save(user);
+    return userMapper.toUserDto(saved);
   }
 
   @Override
