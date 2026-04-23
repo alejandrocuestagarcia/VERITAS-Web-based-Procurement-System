@@ -2,6 +2,7 @@ package com.veritas.backend.project;
 
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.common.model.Department;
+import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -121,5 +122,18 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
         var result = projectService.getProjectsForUser(procurementOfficer);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void createProjectDBIntegrationTest() {
+        var dto = new ProjectCreationDto("Integration Project", UUID.randomUUID().toString(), testingTeam.getTeamId(), LocalDate.now(), LocalDate.now().plusDays(10), BigDecimal.valueOf(5000));
+
+        var result = projectService.createProject(dto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.name()).isEqualTo("Integration Project");
+
+        var projects = projectRepository.findAll();
+        assertThat(projects).hasSize(2);
     }
 }

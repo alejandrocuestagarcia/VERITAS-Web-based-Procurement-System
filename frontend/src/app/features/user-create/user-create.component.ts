@@ -16,40 +16,40 @@ import {
   styleUrls: ['./user-create.component.scss']
 })
 export class UserCreateComponent implements OnInit {
+  userForm!: FormGroup;
+  loading = false;
+
+  roles = Object.values(UserDtoRoleEnum);
+  departments = Object.values(UserCreationRequestDtoDepartmentEnum);
+  teams: any = [];
+
+  constructor(private fb: FormBuilder,
+              private router: Router,
+              private userService: UserModuleService,
+              private teamService: TeamsModuleService,
+              private snackBar: MatSnackBar) {
+  }
+
   ngOnInit(): void {
     this.initForm();
   }
-
-
-  userForm!: FormGroup;
-
-  roles = Object.values(UserDtoRoleEnum);
-  teams$: any = [];
-  departments$ = Object.values(UserCreationRequestDtoDepartmentEnum);
-
-  constructor(private fb: FormBuilder, private router: Router, private userService: UserModuleService, private teamService: TeamsModuleService, private snackBar: MatSnackBar) {
-  }
-
 
   private initForm(): void {
     this.userForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
-
       role: [null, Validators.required],
-      // teamId: [null, Validators.required],
       teamId: [null],
       department: [null, Validators.required],
-
       promoteToTeamLeader: [false],
-    })
+    });
   }
 
   onSubmit(): void {
-
-
     if (this.userForm.valid) {
+      this.loading = true;
+
       const request: UserCreationRequestDto = {
         name: this.userForm.value.name,
         email: this.userForm.value.email,
@@ -63,10 +63,12 @@ export class UserCreateComponent implements OnInit {
 
       this.userService.createUser(request).subscribe({
         next: () => {
+          this.loading = false;
           this.snackBar.open('User created successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/users']);
         },
         error: err => {
+          this.loading = false;
           this.snackBar.open('Failed to create user. Please try again.', 'Close', { duration: 5000 });
         }
       })
@@ -79,5 +81,4 @@ export class UserCreateComponent implements OnInit {
   onCancel(): void {
     this.router.navigate(['/users']);
   }
-
 }

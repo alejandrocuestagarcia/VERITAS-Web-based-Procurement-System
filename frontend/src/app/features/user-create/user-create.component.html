@@ -1,113 +1,104 @@
-<div class="v-app-canvas p-6 flex flex-col items-center">
+<div [formGroup]="userForm" >
+  <app-shared-form
+    title="Create New User"
+    subtitle="Configure account access, departmental associations, and procurement authority levels for a new team member."
+    routingSubtitle="USERS > ADD NEW USER"
+    submitButtonLabel="Create User"
+    submitButtonIcon="person_add"
+    [loading]="loading"
+    (submitted)="onSubmit()"
+    (cancelled)="onCancel()">
 
-  <div class="max-w-5xl">
-    <header class="mb-8">
-      <h1 class="mat-headline-1 text-4xl mb-2">Create New User</h1>
-      <p class="text-muted-grey">Configure account access, departmental associations, and procurement authority levels
-        for a new team member.</p>
-    </header>
+    <app-shared-form-card icon="manage_accounts" title="Account Details">
+      <app-shared-form-field label="FULL NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>person_outline</mat-icon>
+          <input matInput formControlName="name" placeholder="e.g. Alexander Sterling">
+          <mat-error *ngIf="userForm.get('name')?.hasError('required') && userForm.get('name')?.touched">
+            Name is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-    <mat-card class="v-form-card">
-      <form *ngIf="userForm" [formGroup]="userForm" (ngSubmit)="onSubmit()" class="p-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+      <app-shared-form-field label="EMAIL ADDRESS">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>alternate_email</mat-icon>
+          <input matInput formControlName="email" type="email" placeholder="a.sterling@veritas.corp">
+          <mat-error *ngIf="userForm.get('email')?.hasError('required') && userForm.get('email')?.touched">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="userForm.get('email')?.hasError('email') && userForm.get('email')?.touched">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-          <div class="flex flex-col">
-            <label class="v-label">Full Name</label>
-            <mat-form-field appearance="outline">
-              <mat-icon matPrefix>person_outline</mat-icon>
-              <input matInput formControlName="name" placeholder="e.g. Alexander Sterling">
-              <mat-error *ngIf="userForm.get('name')?.hasError('required')">Name is required</mat-error>
-            </mat-form-field>
-          </div>
+      <app-shared-form-field label="PASSWORD">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input matInput formControlName="password" type="password" placeholder="Enter password">
+          <mat-error *ngIf="userForm.get('password')?.hasError('required') && userForm.get('password')?.touched">
+            Password is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-          <div class="flex flex-col">
-            <label class="v-label">Email Address</label>
-            <mat-form-field appearance="outline">
-              <mat-icon matPrefix>alternate_email</mat-icon>
-              <input matInput formControlName="email" type="email" placeholder="a.sterling@veritas.corp">
-              <mat-error *ngIf="userForm.get('email')?.hasError('required')">Email is required</mat-error>
-              <mat-error *ngIf="userForm.get('email')?.hasError('email')">Please enter a valid email address</mat-error>
-            </mat-form-field>
-          </div>
+      <app-shared-form-field label="USER ROLE">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>shield_person</mat-icon>
+          <mat-select formControlName="role" placeholder="Select an access level">
+            <mat-option *ngFor="let role of roles" [value]="role">{{ role | titlecase }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="userForm.get('role')?.hasError('required') && userForm.get('role')?.touched">
+            User role is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
 
-          <div class="flex flex-col">
-            <label class="v-label">Password</label>
-            <mat-form-field appearance="outline">
-              <mat-icon matPrefix>lock_outline</mat-icon>
-              <input matInput formControlName="password" type="password" placeholder="Enter password">
-              <mat-error *ngIf="userForm.get('password')?.hasError('required')">Password is required</mat-error>
-            </mat-form-field>
-          </div>
+    <app-shared-form-card icon="corporate_fare" title="Organisational Assignment">
+      <app-shared-form-field label="ASSIGNED TEAM">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>groups</mat-icon>
+          <mat-select formControlName="teamId" placeholder="Select assigned team">
+            <mat-option *ngFor="let team of teams" [value]="team.id">{{ team.name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </app-shared-form-field>
 
-          <div class="flex flex-col">
-            <label class="v-label">User Role</label>
-            <mat-form-field appearance="outline">
-              <mat-icon matPrefix>shield_person</mat-icon>
-              <mat-select formControlName="role" placeholder="Select an access level">
-                <mat-option *ngFor="let role of roles" [value]="role">
-                  {{ role | titlecase }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="userForm.get('role')?.hasError('required')">User role is required</mat-error>
-            </mat-form-field>
-          </div>
+      <app-shared-form-field label="DEPARTMENT">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>corporate_fare</mat-icon>
+          <mat-select formControlName="department" placeholder="Select department">
+            <mat-option *ngFor="let dept of departments" [value]="dept">{{ dept }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="userForm.get('department')?.hasError('required') && userForm.get('department')?.touched">
+            Department is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-          <!--          Not functional yet since Team fetching is missing-->
-          <div class="flex flex-col">
-            <label class="v-label">Assigned Team</label>
-            <mat-form-field appearance="outline">
-              <mat-icon matPrefix>corporate_fare</mat-icon>
-              <mat-select formControlName="teamId" placeholder="Select assigned team">
-                <mat-option *ngFor="let team of teams$">
-                  {{ team.name }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <div class="flex flex-col">
-            <label class="v-label">Department</label>
-            <mat-form-field appearance="outline">
-              <mat-icon matPrefix>corporate_fare</mat-icon>
-              <mat-select formControlName="department" placeholder="Select Department">
-                <mat-option *ngFor="let department of departments$" [value]="department">
-                  {{ department }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="userForm.get('department')?.hasError('required')">Department is required</mat-error>
-            </mat-form-field>
-          </div>
-
-          <div class="flex flex-row items-center gap-4 h-full">
-            <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"></mat-slide-toggle>
-            <div class="flex flex-col">
-              <span class="text-sm font-semibold">Assign as Team Leader</span>
-              <span class="text-xs text-muted-grey">This user will be set as the unique head of the selected
-                team.</span>
-            </div>
-          </div>
+      <div class="flex items-center gap-4 col-span-2">
+        <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"></mat-slide-toggle>
+        <div class="flex flex-col">
+          <span class="text-sm font-semibold">Assign as Team Leader</span>
+          <span class="text-xs text-slate-500">This user will be set as the unique head of the selected team.</span>
         </div>
+      </div>
+    </app-shared-form-card>
 
-        <div class="v-onboarding-panel my-8">
-          <mat-icon class="info-icon">info</mat-icon>
-          <div class="flex flex-col">
-            <span class="font-bold text-sm">Onboarding Invitation</span>
-            <span class="text-xs text-slate-600">
-              Once created, an automated invitation will be sent to the email address provided.
-              The user will have 48 hours to activate their account.
-            </span>
-          </div>
+    <ng-container infoPanel>
+      <div class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 mt-2">
+        <mat-icon class="text-blue-700 mt-0.5 flex-shrink-0">info</mat-icon>
+        <div class="flex flex-col">
+          <span class="font-bold text-sm">Onboarding Invitation</span>
+          <span class="text-xs text-slate-600">
+          Once created, an automated invitation will be sent to the email address provided.
+          The user will have 48 hours to activate their account.
+        </span>
         </div>
+      </div>
+    </ng-container>
 
-
-
-        <div class="v-form-footer -mx-8 -mb-8 p-6 bg-slate-50 flex justify-end gap-4 rounded-b-xl">
-          <button mat-button type="button" (click)="onCancel()">Cancel</button>
-          <button mat-flat-button type="submit" class="v-btn-brand">
-            Create User <mat-icon class="ml-2 text-sm">person_add</mat-icon>
-          </button>
-        </div>
-      </form>
-    </mat-card>
-  </div>
+  </app-shared-form>
 </div>

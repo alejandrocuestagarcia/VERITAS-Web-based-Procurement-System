@@ -3,11 +3,12 @@ import {RouterModule, Routes} from '@angular/router';
 import {LoginComponent} from "./features/login/login.component";
 import {authGuard} from "./core/guards/auth.guard";
 import {DashboardComponent} from "./features/dashboard/dashboard.component";
-import {ProjectListComponent} from "./features/project/project-list.component";
+import {ProjectListComponent} from "./features/project/project-list/project-list.component";
 import {UserCreateComponent} from "./features/user-create/user-create.component";
 import {UserListComponent} from "./features/user-list/user-list.component";
 import {guestGuard} from "./core/guards/guest.guard";
 import {VendorCreateComponent} from "./features/vendor/vendor-create.component";
+import {ProjectCreateComponent} from "./features/project/project-create/project-create.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -16,6 +17,11 @@ const routes: Routes = [
   { path: 'login',
     component: LoginComponent,
     canActivate: [guestGuard]
+  },
+  {
+    path: 'projects/create',
+    component: ProjectCreateComponent,
+    canActivate: [authGuard]
   },
   {
     path: 'projects',

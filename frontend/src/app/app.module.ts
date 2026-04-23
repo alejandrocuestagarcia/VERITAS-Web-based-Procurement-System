@@ -14,7 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { ProjectListComponent } from './features/project/project-list.component';
+import { ProjectListComponent } from './features/project/project-list/project-list.component';
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {AuthInterceptor} from "./core/interceptors/AuthInterceptor";
@@ -29,9 +29,14 @@ import { HasRoleDirective } from './core/directives/has-role.directive';
 import { VendorCreateComponent } from './features/vendor/vendor-create.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
-import {MatOptionModule} from "@angular/material/core";
+import {MatNativeDateModule, MatOptionModule} from "@angular/material/core";
 import {MatSelectModule} from "@angular/material/select";
 import { SidebarComponent } from './core/components/sidebar/sidebar.component';
+import { SharedFormComponent } from './shared/components/creation/shared-form/shared-form.component';
+import { SharedFormCardComponent } from './shared/components/creation/shared-form-card/shared-form-card.component';
+import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
+import { ProjectCreateComponent } from './features/project/project-create/project-create.component';
+import {MatDatepickerModule} from "@angular/material/datepicker";
 
 @NgModule({
   declarations: [
@@ -46,7 +51,11 @@ import { SidebarComponent } from './core/components/sidebar/sidebar.component';
     HasRoleDirective,
     ProjectListComponent,
     SidebarComponent,
-    VendorCreateComponent
+    VendorCreateComponent,
+    SharedFormComponent,
+    SharedFormCardComponent,
+    SharedFormFieldComponent,
+    ProjectCreateComponent
   ],
   imports: [
     BrowserModule,
@@ -70,7 +79,9 @@ import { SidebarComponent } from './core/components/sidebar/sidebar.component';
     MatOptionModule,
     MatSelectModule,
     ReactiveFormsModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   providers: [
     {

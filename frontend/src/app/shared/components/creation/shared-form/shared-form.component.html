@@ -1,0 +1,27 @@
+<!--AI-REFACTORED (Tailwind)-->
+
+<div class="p-6">
+  <form (ngSubmit)="submitted.emit()">
+
+    <header class="flex items-start justify-between mb-8">
+      <div>
+        <div *ngIf="routingSubtitle" class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1" [innerHTML]="routingSubtitle"></div>
+        <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">{{ title }}</h1>
+        <p *ngIf="subtitle" class="text-sm text-slate-500 m-0">{{ subtitle }}</p>
+      </div>
+      <div class="flex gap-2 items-center pt-1">
+        <button mat-button type="button" (click)="cancelled.emit()">Discard</button>
+        <button mat-flat-button class="v-btn-brand" type="submit" [disabled]="loading">
+          {{ submitButtonLabel }}
+          <mat-icon *ngIf="submitButtonIcon">{{ submitButtonIcon }}</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex flex-col">
+      <ng-content></ng-content>
+      <ng-content select="[infoPanel]"></ng-content>
+    </div>
+
+  </form>
+</div>

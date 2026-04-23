@@ -6,7 +6,10 @@
       <p class="v-page-subtitle">Architecture audit and delivery lifecycle management for Enterprise Tier</p>
     </div>
     <div class="v-page-header-actions">
-      <button mat-flat-button class="v-btn-brand">
+      <button *appHasRole="['FINANCE_OFFICER', 'ADMINISTRATOR']"
+              mat-flat-button
+              class="v-btn-brand"
+              [routerLink]="['/projects/create']">
         <mat-icon>add</mat-icon> New Project
       </button>
     </div>

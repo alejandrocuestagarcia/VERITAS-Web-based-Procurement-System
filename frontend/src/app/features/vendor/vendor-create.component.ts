@@ -1,63 +1,74 @@
-import { Component, ViewChild } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { Router } from '@angular/router';
-import { VendorModuleService } from '../../core/api/api/vendorModule.service';
-import { VendorDto } from '../../core/api/model/vendorDto';
-import { NgForm } from '@angular/forms';
+import {VendorModuleService} from '../../core/api';
+import { VendorDto } from '../../core/api';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-vendor-create',
   templateUrl: './vendor-create.component.html',
   styleUrls: ['./vendor-create.component.scss']
 })
-export class VendorCreateComponent {
-  @ViewChild('vendorForm') vendorForm!: NgForm;
-
-  vendor: VendorDto = {
-    vendorName: '',
-    taxId: '',
-    description: '',
-    primaryContactName: '',
-    primaryContactEmail: '',
-    communicationScore: 0,
-    deliveryScore: 0,
-    qualityScore: 0,
-    overallScore: 0
-  };
-
+export class VendorCreateComponent implements OnInit {
+  vendorForm!: FormGroup;
   loading = false;
-  error: string | null = null;
 
   constructor(
+    private fb: FormBuilder,
     private vendorService: VendorModuleService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar,
   ) { }
 
-  discard() {
-    this.router.navigate(['/projects']); // Fallback to projects for now, or just /
+  ngOnInit(): void {
+    this.initForm();
   }
 
-  saveChanges() {
-    this.loading = true;
-    this.error = null;
-
-    if (this.vendorForm.invalid) {
-      this.error = 'Please correct the errors in the form.';
-      this.loading = false;
-
-      this.vendorForm.form.markAllAsTouched();
-      return;
-    }
-
-    this.vendorService.createVendor(this.vendor).subscribe({
-      next: () => {
-        this.loading = false;
-        this.router.navigate(['/dashboard']);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = 'Failed to create vendor. Please try again.';
-        console.error('Error creating vendor:', err);
-      }
+  private initForm(): void {
+    this.vendorForm = this.fb.group({
+      name:          ['', Validators.required],
+      taxId:               ['', Validators.required],
+      description:         ['', Validators.required],
+      primaryContactName:  [''],
+      primaryContactEmail: ['', Validators.email],
     });
+  }
+
+  onSubmit(): void {
+    if (this.vendorForm.valid) {
+      this.loading = true;
+
+      const request: VendorDto = {
+        vendorName: this.vendorForm.value.name,
+        taxId: this.vendorForm.value.taxId,
+        description: this.vendorForm.value.description,
+        primaryContactName: this.vendorForm.value.primaryContactName,
+        primaryContactEmail: this.vendorForm.value.primaryContactEmail,
+        communicationScore: 0,
+        deliveryScore: 0,
+        qualityScore: 0,
+        overallScore: 0
+      };
+
+      this.vendorService.createVendor(request).subscribe({
+        next: () => {
+          this.loading = false;
+          this.snackBar.open('Vendor added successfully', 'Close', { duration: 3000 });
+          this.router.navigate(['/dashboards']); //needs to be refactored to /projects
+        },
+        error: err => {
+          this.loading = false;
+          this.snackBar.open('Failed to add vendor. Please try again.', 'Close', { duration: 5000 });
+        }
+      })
+    } else {
+      this.vendorForm.markAllAsTouched();
+      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', { duration: 4000 });
+    }
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/dashboard']); //needs to be refactored to /projects
   }
 }
