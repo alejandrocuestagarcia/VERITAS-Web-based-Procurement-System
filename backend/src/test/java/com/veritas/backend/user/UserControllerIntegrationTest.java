@@ -221,7 +221,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .build();
     userRepository.save(finance);
 
-    UserEditDto edit = new UserEditDto("new@test.com", "New Name", null, null);
+    UserEditDto edit = new UserEditDto("new@test.com", "New Name", null, null, null, null);
     mockMvc.perform(patch("/users/" + finance.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
@@ -254,7 +254,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.save(user1);
     userRepository.save(user2);
 
-    UserEditDto edit = new UserEditDto("finance2@test.com", "First Finance User", null, null);
+    UserEditDto edit = new UserEditDto("finance2@test.com", "First Finance User", null, null, null, null);
     mockMvc.perform(patch("/users/" + user1.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
@@ -283,7 +283,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     newTeam.setDepartment(Department.IT);
     teamRepository.save(newTeam);
 
-    UserEditDto edit = new UserEditDto(null, null, newTeam.getTeamId(), true);
+    UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
     mockMvc.perform(patch("/users/" + user.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))

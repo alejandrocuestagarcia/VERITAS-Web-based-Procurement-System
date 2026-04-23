@@ -32,6 +32,18 @@
           </mat-error>
         </mat-form-field>
       </app-shared-form-field>
+
+      <app-shared-form-field label="USER ROLE" *appHasRole="['ADMINISTRATOR']">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>shield_person</mat-icon>
+          <mat-select formControlName="role" placeholder="Select an access level">
+            <mat-option *ngFor="let role of roles" [value]="role">{{ role | titlecase }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="userForm.get('role')?.hasError('required') && userForm.get('role')?.touched">
+            User role is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
     </app-shared-form-card>
 
     <app-shared-form-card icon="corporate_fare" title="Organisational Assignment">
@@ -44,6 +56,18 @@
           <mat-hint *ngIf="userForm.get('isTeamLeader')?.value">
             Demote from team leader to change team
           </mat-hint>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="DEPARTMENT">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>corporate_fare</mat-icon>
+          <mat-select formControlName="department" placeholder="Select department">
+            <mat-option *ngFor="let dept of departments" [value]="dept">{{ dept }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="userForm.get('department')?.hasError('required') && userForm.get('department')?.touched">
+            Department is required
+          </mat-error>
         </mat-form-field>
       </app-shared-form-field>
 

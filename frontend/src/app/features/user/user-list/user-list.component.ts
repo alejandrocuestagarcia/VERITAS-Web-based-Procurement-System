@@ -3,6 +3,7 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Pageable, UserDto, UserDtoRoleEnum, UserModuleService } from "../../../core/api";
 import { PageEvent } from "@angular/material/paginator";
 import { SharedTableComponent } from "../../../shared/components/table/shared-table.component";
+import { AuthService } from "../../core/services/auth.service";
 
 @Component({
   selector: 'app-user-list',
@@ -26,8 +27,10 @@ export class UserListComponent implements OnInit {
 
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  constructor(private readonly userService: UserModuleService) {
-  }
+  constructor(
+    private readonly userService: UserModuleService,
+    protected authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers(0, 10);

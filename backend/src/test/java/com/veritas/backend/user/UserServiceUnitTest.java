@@ -135,7 +135,7 @@ class UserServiceUnitTest {
     void editUser_shouldThrowEntityNotFoundException_whenUserNotFound() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null)));
+        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null, null, null)));
         verify(userRepository, never()).save(any());
     }
 
@@ -156,7 +156,7 @@ class UserServiceUnitTest {
         when(teamRepository.findById(2L)).thenReturn(Optional.of(newTeam));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, 2L, null));
+        userService.editUser(1L, new UserEditDto(null, null, null, 2L, null, null));
 
         assertEquals(newTeam, user.getTeam());
     }
@@ -173,7 +173,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, true));
+        userService.editUser(1L, new UserEditDto(null, null, null, null, null, true));
 
         assertEquals(user, team.getLeader());
         verify(teamRepository).save(team);
@@ -192,7 +192,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, false));
+        userService.editUser(1L, new UserEditDto(null, null, null, null, null,false));
 
         assertNull(team.getLeader());
         verify(teamRepository).save(team);
@@ -214,7 +214,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, false));
+        userService.editUser(1L, new UserEditDto(null, null, null, null, null,false));
 
         assertEquals(leader, team.getLeader());
         verify(teamRepository, never()).save(any());

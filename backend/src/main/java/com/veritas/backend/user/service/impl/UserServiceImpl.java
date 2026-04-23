@@ -107,6 +107,14 @@ public class UserServiceImpl implements UserService {
       }
     }
 
+    if (edits.role() != null) {
+      user.setRole(edits.role());
+    }
+
+    if (edits.department() != null) {
+      user.setDepartment(edits.department());
+    }
+
     User saved = userRepository.save(user);
     return userMapper.toUserDto(saved);
   }
@@ -124,7 +132,9 @@ public class UserServiceImpl implements UserService {
     return new UserEditDto(
             user.getEmail(),
             user.getName(),
+            user.getRole(),
             user.getTeam() != null ? user.getTeam().getTeamId() : null,
+            user.getDepartment(),
             isTeamLeader
     );
   }
