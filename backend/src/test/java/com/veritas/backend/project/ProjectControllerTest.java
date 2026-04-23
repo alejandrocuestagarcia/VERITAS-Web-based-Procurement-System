@@ -1,8 +1,10 @@
 package com.veritas.backend.project;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.common.model.Department;
+import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
@@ -25,6 +27,7 @@ import java.util.UUID;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,6 +35,9 @@ class ProjectControllerTest extends BaseDBIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     UserRepository userRepository;
@@ -113,5 +119,29 @@ class ProjectControllerTest extends BaseDBIntegrationTest {
         mockMvc.perform(get("/projects")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void financeOfficerCanCreateProjectControllerIntegrationTest() throws Exception {
+        User financeOfficer = userRepository.save(User.builder()
+                .name("Finance")
+                .email("finance@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.FINANCE_OFFICER)
+                .team(testingTeam)
+                .department(Department.IT)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(financeOfficer);
+        ProjectCreationDto dto = new ProjectCreationDto("Controller Project", "CTRL-123", testingTeam.getTeamId(), LocalDate.now(), LocalDate.now().plusDays(10), BigDecimal.valueOf(1000));
+
+        mockMvc.perform(post("/projects")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Controller Project"));
     }
 }
