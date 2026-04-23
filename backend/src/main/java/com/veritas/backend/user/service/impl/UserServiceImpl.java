@@ -112,6 +112,24 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public UserEditDto getUserByIdForEdit(Long id) {
+    User user = userRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+    boolean isTeamLeader = user.getTeam() != null
+            && user.getTeam().getLeader() != null
+            && user.getTeam().getLeader().getId().equals(user.getId());
+
+    return new UserEditDto(
+            user.getEmail(),
+            user.getName(),
+            user.getTeam() != null ? user.getTeam().getTeamId() : null,
+            isTeamLeader
+    );
+  }
+
+  @Override
   @Transactional
   public Page<UserDto> getAllUsers(Pageable pageable) {
 

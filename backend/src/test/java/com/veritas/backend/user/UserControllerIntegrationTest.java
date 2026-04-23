@@ -289,4 +289,25 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
                     .content(objectMapper.writeValueAsString(edit)))
             .andExpect(status().isBadRequest());
   }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
+  void getUserByIdForEdit_shouldReturnUser_whenExists() throws Exception {
+    User user = User.builder()
+            .name("Test Requester")
+            .email("requester@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+    userRepository.save(user);
+
+    mockMvc.perform(get("/users/" + user.getId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("requester@test.com"))
+            .andExpect(jsonPath("$.name").value("Test Requester"))
+            .andExpect(jsonPath("$.teamId").value(testTeam.getTeamId()))
+            .andExpect(jsonPath("$.isTeamLeader").value(false));
+  }
 }

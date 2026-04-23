@@ -220,4 +220,54 @@ class UserServiceUnitTest {
         verify(teamRepository, never()).save(any());
     }
 
+    @Test
+    void getUserByIdForEdit_shouldThrowEntityNotFoundException_whenUserNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> userService.getUserByIdForEdit(99L));
+    }
+
+    @Test
+    void getUserByIdForEdit_shouldReturnIsTeamLeaderTrue_whenUserIsLeader() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("leader@test.com");
+        user.setName("Leader");
+        user.setTeam(team);
+        team.setLeader(user);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UserEditDto result = userService.getUserByIdForEdit(1L);
+
+        assertEquals(1L, result.teamId());
+        assertTrue(result.isTeamLeader());
+    }
+
+    @Test
+    void getUserByIdForEdit_shouldReturnIsTeamLeaderFalse_whenUserIsNotLeader() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User leader = new User();
+        leader.setId(2L);
+        team.setLeader(leader);
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("member@test.com");
+        user.setName("Member");
+        user.setTeam(team);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UserEditDto result = userService.getUserByIdForEdit(1L);
+
+        assertEquals(1L, result.teamId());
+        assertFalse(result.isTeamLeader());
+    }
+
 }

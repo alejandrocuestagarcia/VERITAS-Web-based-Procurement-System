@@ -1,26 +1,37 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { LoginComponent } from "./features/login/login.component";
-import { authGuard } from "./core/guards/auth.guard";
-import { DashboardComponent } from "./features/dashboard/dashboard.component";
-import { ProjectListComponent } from "./features/project/project-list/project-list.component";
-import { UserCreateComponent } from "./features/user/user-create/user-create.component";
-import { UserListComponent } from "./features/user/user-list/user-list.component";
-import { guestGuard } from "./core/guards/guest.guard";
-import { VendorCreateComponent } from "./features/vendor/vendor-create/vendor-create.component";
-import { ProjectCreateComponent } from "./features/project/project-create/project-create.component";
-import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
+import {NgModule} from '@angular/core';
+import {RouterModule, Routes} from '@angular/router';
+import {LoginComponent} from "./features/login/login.component";
+import {authGuard} from "./core/guards/auth.guard";
+import {DashboardComponent} from "./features/dashboard/dashboard.component";
+import {ProjectListComponent} from "./features/project/project-list/project-list.component";
+import {UserCreateComponent} from "./features/user/user-create/user-create.component";
+import {UserListComponent} from "./features/user/user-list/user-list.component";
+import {guestGuard} from "./core/guards/guest.guard";
+import {VendorCreateComponent} from "./features/vendor/vendor-create/vendor-create.component";
+import {ProjectCreateComponent} from "./features/project/project-create/project-create.component";
+import {VendorListComponent} from "./features/vendor/vendor-list/vendor-list.component";
+import {UserEditComponent} from "./features/user/user-edit/user-edit.component";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 
 const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'users/create', component: UserCreateComponent },
-  { path: 'users', component: UserListComponent },
-  {
-    path: 'login',
+  { path: 'login',
     component: LoginComponent,
     canActivate: [guestGuard]
+  },
+  { path: 'users',
+    component: UserListComponent,
+    canActivate: [authGuard]
+  },
+  { path: 'users/create',
+    component: UserCreateComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'users/edit/:id',
+    component: UserEditComponent,
+    canActivate: [authGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },
   {
     path: 'projects/create',

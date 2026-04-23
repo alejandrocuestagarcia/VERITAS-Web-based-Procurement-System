@@ -11,8 +11,6 @@ public interface UserMapper {
 
   User toUser(UserCreationRequestDto userCreationRequestDto);
 
-
   @Mapping(source = "team.name", target = "teamName")
   UserDto toUserDto(User user);
-
 }

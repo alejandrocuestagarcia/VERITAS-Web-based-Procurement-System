@@ -13,6 +13,8 @@ public interface UserService {
 
   UserDto editUser(Long id, UserEditDto edits);
 
+  UserEditDto getUserByIdForEdit(Long id);
+
   Page<UserDto> getAllUsers(Pageable pageable);
 
   UserStatsDto getUserStats();

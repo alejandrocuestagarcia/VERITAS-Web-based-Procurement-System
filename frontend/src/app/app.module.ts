@@ -42,6 +42,7 @@ import { TeamListComponent } from './features/team/team-list/team-list.component
 import { TeamCreateComponent } from './features/team/team-create/team-create.component';
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
+import { UserEditComponent } from './features/user/user-edit/user-edit.component';
 
 @NgModule({
   declarations: [
@@ -65,7 +66,8 @@ import { MatSliderModule } from "@angular/material/slider";
     VendorListComponent,
     TeamListComponent,
     TeamCreateComponent,
-    VendorCreateComponent
+    VendorCreateComponent,
+    UserEditComponent
   ],
   imports: [
     BrowserModule,

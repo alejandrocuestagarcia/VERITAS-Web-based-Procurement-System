@@ -9,7 +9,6 @@ import { SharedTableComponent } from "../../../shared/components/table/shared-ta
   templateUrl: './user-list.component.html',
 })
 export class UserListComponent implements OnInit {
-
   dataSource = new MatTableDataSource<UserDto>();
   totalUserCount = 0;
   totalPageElements = 0;
