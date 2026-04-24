@@ -37,17 +37,8 @@ public class UserServiceImpl implements UserService {
       throw new EntityExistsException("Email already registered");
     }
 
-    // TODO: Restore this once the team feature is fully implemented.
-    // Team team = teamRepository.findById(userDto.teamId()).orElseThrow(
-    // () -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not
-    // found"));
-
-    // Fallback: Pick the first available team since team feature is incomplete
-    java.util.List<Team> teams = teamRepository.findAll();
-    if (teams.isEmpty()) {
-      throw new IllegalStateException("Cannot create user: No teams available in the system.");
-    }
-    Team team = teams.get(0);
+    Team team = teamRepository.findById(userDto.teamId())
+        .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
 
     if (userDto.promoteToTeamLeader() && !team.getDepartment().equals(userDto.department())) {
       throw new IllegalArgumentException("A team leader must belong to the same department as the team.");

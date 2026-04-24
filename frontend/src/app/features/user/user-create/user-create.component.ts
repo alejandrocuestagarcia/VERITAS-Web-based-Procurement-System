@@ -7,7 +7,8 @@ import {
   UserCreationRequestDto,
   UserCreationRequestDtoDepartmentEnum,
   UserDtoRoleEnum,
-  UserModuleService
+  UserModuleService,
+  TeamDto
 } from "../../../core/api";
 
 @Component({
@@ -21,7 +22,7 @@ export class UserCreateComponent implements OnInit {
 
   roles = Object.values(UserDtoRoleEnum);
   departments = Object.values(UserCreationRequestDtoDepartmentEnum);
-  teams: any = [];
+  teams: TeamDto[] = [];
 
   constructor(private fb: FormBuilder,
               private router: Router,
@@ -32,6 +33,18 @@ export class UserCreateComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.loadTeams();
+  }
+
+  private loadTeams(): void {
+    this.teamService.getAllTeams().subscribe({
+      next: (teams) => {
+        this.teams = teams;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load teams', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   private initForm(): void {
@@ -55,7 +68,7 @@ export class UserCreateComponent implements OnInit {
         email: this.userForm.value.email,
         password: this.userForm.value.password,
         role: this.userForm.value.role,
-        teamId: 3, // Explicitly setting dummy ID while functionality not implemented
+        teamId: this.userForm.value.teamId,
         department: this.userForm.value.department,
         promoteToTeamLeader: this.userForm.value.promoteToTeamLeader
 

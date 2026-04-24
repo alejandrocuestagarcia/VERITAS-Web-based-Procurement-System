@@ -63,12 +63,12 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.deleteAll();
     teamRepository.deleteAll();
 
-    Team testTeam = new Team();
+    testTeam = new Team();
     testTeam.setName("Test Team");
     testTeam.setDepartment(Department.IT);
     testTeam.setDescription("Description Placeholder");
 
-    teamRepository.save(testTeam);
+    testTeam = teamRepository.save(testTeam);
   }
 
   @AfterEach
@@ -99,7 +99,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   void UserCreation_ValidInput_ReturnsCreated() throws Exception {
     UserCreationRequestDto request = new UserCreationRequestDto(
         "newuser@veritas.com", "New User", "securePassword123",
-        UserRole.ADMINISTRATOR, 999L, Department.IT, false);
+        UserRole.ADMINISTRATOR, testTeam.getTeamId(), Department.IT, false);
 
     mockMvc.perform(post("/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +114,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   void UserCreation_DuplicateEmail_ReturnsConflict() throws Exception {
     UserCreationRequestDto request1 = new UserCreationRequestDto(
         "duplicate@veritas.com", "First User", "securePassword123",
-        UserRole.FINANCE_OFFICER, 999L, Department.IT, false);
+        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), Department.IT, false);
 
     mockMvc.perform(post("/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -123,7 +123,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     UserCreationRequestDto request2 = new UserCreationRequestDto(
         "duplicate@veritas.com", "Second User", "securePassword456",
-        UserRole.FINANCE_OFFICER, 999L, Department.IT, false);
+        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), Department.IT, false);
 
     mockMvc.perform(post("/users")
             .contentType(MediaType.APPLICATION_JSON)

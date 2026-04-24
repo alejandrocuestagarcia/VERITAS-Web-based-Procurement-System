@@ -67,7 +67,7 @@ class UserServiceUnitTest {
                 LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
-        when(teamRepository.findAll()).thenReturn(List.of(mockTeam));
+        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(mockTeam));
         when(userMapper.toUser(request)).thenReturn(mappedUser);
         when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
         when(userRepository.save(mappedUser)).thenReturn(savedUser);
@@ -94,15 +94,15 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void CreateUser_NoTeamsAvailable_ThrowsIllegalStateException() {
+    void CreateUser_TeamNotFound_ThrowsEntityNotFoundException() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "test@veritas.com", "Test User", "password123",
                 UserRole.PROCUREMENT_OFFICER, 1L, Department.IT, false);
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
-        when(teamRepository.findAll()).thenReturn(Collections.emptyList());
+        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.empty());
 
-        assertThrows(IllegalStateException.class, () -> userService.createUser(request));
+        assertThrows(jakarta.persistence.EntityNotFoundException.class, () -> userService.createUser(request));
         verify(userRepository, never()).save(any());
     }
 

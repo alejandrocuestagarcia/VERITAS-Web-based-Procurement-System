@@ -12,6 +12,7 @@ import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,15 +48,8 @@ public class ProjectServiceImpl implements ProjectService {
             throw new EntityExistsException("Project with same name or projectKey already exists");
         }
 
-        // TODO: Restore this once the team feature is fully implemented.
-       // Team team = teamRepository.findById(project.teamId()).orElseThrow(() -> new EntityNotFoundException("Team with id " + project.teamId() + " not found"));
-
-        // Fallback: Pick the first available team since team feature is incomplete
-        java.util.List<Team> teams = teamRepository.findAll();
-        if (teams.isEmpty()) {
-            throw new IllegalStateException("Cannot create project: No teams available in the system.");
-        }
-        Team team = teams.getFirst();
+        Team team = teamRepository.findById(projectCreationDto.teamId())
+                .orElseThrow(() -> new EntityNotFoundException("Team with id " + projectCreationDto.teamId() + " not found"));
 
         Project project = projectMapper.toProject(projectCreationDto);
         project.setTeam(team);

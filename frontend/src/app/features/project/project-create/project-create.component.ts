@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup, ValidationErrors, ValidatorFn, Validators} from "@angular/forms";
 import {
-  ProjectCreationDto, ProjectModuleService,
+  ProjectCreationDto, ProjectModuleService, TeamsModuleService, TeamDto
 } from "../../../core/api";
 import {Router} from "@angular/router";
 import {MatSnackBar} from "@angular/material/snack-bar";
@@ -15,23 +15,36 @@ export class ProjectCreateComponent implements OnInit {
   projectForm!: FormGroup;
   loading = false;
 
-  teams: any = [];
+  teams: TeamDto[] = [];
 
   constructor(private fb: FormBuilder,
               private router: Router,
               private projectService: ProjectModuleService,
+              private teamService: TeamsModuleService,
               private snackBar: MatSnackBar) {
   }
 
   ngOnInit(): void {
     this.initForm();
+    this.loadTeams();
+  }
+
+  private loadTeams(): void {
+    this.teamService.getAllTeams().subscribe({
+      next: (teams) => {
+        this.teams = teams;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load teams', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   private initForm(): void {
     this.projectForm = this.fb.group({
       name: ['', Validators.required],
       projectKey: ['', [Validators.required]],
-      teamId: [null], //Did not set Validators.required while functionality not implemented
+      teamId: [null, Validators.required],
       startDate: [null, [Validators.required, this.dateNotInPastValidator()]],
       endDate: [null, [Validators.required, this.dateNotInPastValidator()]],
       budget: [0, [Validators.required, Validators.min(1)]]
@@ -48,7 +61,7 @@ export class ProjectCreateComponent implements OnInit {
       const request: ProjectCreationDto = {
         name: this.projectForm.value.name,
         projectKey: this.projectForm.value.projectKey,
-        teamId: 3, // Explicitly setting dummy ID while functionality not implemented
+        teamId: this.projectForm.value.teamId,
         startDate: this.formatDate(this.projectForm.value.startDate),
         endDate: this.formatDate(this.projectForm.value.endDate),
         budget: this.projectForm.value.budget,
