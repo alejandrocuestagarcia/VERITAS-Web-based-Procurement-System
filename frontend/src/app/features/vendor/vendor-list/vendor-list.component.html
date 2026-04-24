@@ -1,12 +1,30 @@
-<app-shared-table [title]="title" [subtitle]="subtitle" [dataSource]="dataSource"
-    [displayedColumns]="displayedColumns" [totalElements]="totalPageElements" [loading]="loading"
-    (pageChanged)="onPageChange($event)" (searchChanged)="onSearchChanged($event)">
+<app-shared-table [title]="title" [subtitle]="subtitle" [dataSource]="dataSource" [displayedColumns]="displayedColumns"
+  [totalElements]="totalPageElements" [loading]="loading" (pageChanged)="onPageChange($event)"
+  (searchChanged)="onSearchChanged($event)">
 
   <!-- Stats -->
   <ng-container stats>
     <app-stat-card label="Total Vendors" [value]="totalVendorCount" />
-    <app-stat-card label="Average Score"  [value]="averageScore.toPrecision(2) + ' / 10'" />
+    <app-stat-card label="Average Score" [value]="averageScore.toFixed(1) + ' / 10'" />
   </ng-container>
+
+  <!-- Filters -->
+  <div filters class="flex items-center gap-4 mr-2">
+    <button mat-icon-button *ngIf="minimumRating > 0" (click)="clearRating()" matTooltip="Clear Rating Filter"
+      class="text-muted-grey hover:text-warn transition-colors">
+      <mat-icon>filter_list_off</mat-icon>
+    </button>
+
+    <div class="flex flex-col min-w-[150px]">
+      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Minimum Rating</span>
+      <mat-slider min="0" max="10" step="0.5" discrete>
+        <input matSliderThumb [value]="minimumRating" (valueChange)="onSliderChange($event)">
+      </mat-slider>
+    </div>
+
+    <span class="text-[24px] font-manrope font-bold text-veritas-blue leading-tight tabular-nums">
+      {{minimumRating.toFixed(1)}} / 10</span>
+  </div>
 
   <!-- Actions -->
   <button actions mat-flat-button class="v-btn-brand" [routerLink]="['/vendors/create']">
@@ -43,9 +61,9 @@
           <button mat-icon-button (click)="editVendor(vendor)" matTooltip="Edit Vendor">
             <mat-icon>edit</mat-icon>
           </button>
-            <button mat-icon-button color="warn" (click)="deleteVendor(vendor)">
-              <mat-icon>delete</mat-icon>
-            </button>
+          <button mat-icon-button color="warn" (click)="deleteVendor(vendor)">
+            <mat-icon>delete</mat-icon>
+          </button>
         </div>
       </td>
     </ng-container>

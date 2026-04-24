@@ -39,6 +39,7 @@ import { SharedFormCardComponent } from './shared/components/creation/shared-for
 import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
 import { ProjectCreateComponent } from './features/project/project-create/project-create.component';
 import {MatDatepickerModule} from "@angular/material/datepicker";
+import {MatSliderModule} from "@angular/material/slider";
 
 @NgModule({
   declarations: [
@@ -85,7 +86,8 @@ import {MatDatepickerModule} from "@angular/material/datepicker";
     ReactiveFormsModule,
     MatSnackBarModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatSliderModule
   ],
   providers: [
     {
