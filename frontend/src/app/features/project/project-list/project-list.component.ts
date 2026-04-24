@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ProjectModuleService, ProjectDto } from '../../core/api';
+import { ProjectModuleService, ProjectDto } from '../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
-import { SharedTableComponent } from '../../shared/components/table/shared-table.component';
+import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 
 @Component({
   selector: 'app-project-list',
