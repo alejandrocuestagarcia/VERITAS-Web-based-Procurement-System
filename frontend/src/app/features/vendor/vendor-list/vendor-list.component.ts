@@ -13,7 +13,7 @@ export class VendorListComponent implements OnInit {
   dataSource = new MatTableDataSource<VendorDto>();
   totalVendorCount = 0;
   totalPageElements = 0;
-  displayedColumns: string[] = ['vendorName', 'taxId', 'overallScore', 'contact', 'actions'];
+  displayedColumns: string[] = ['vendorName', 'taxId', 'rating', 'contact', 'actions'];
   loading = false;
   averageScore = 0.0;
   subtitle = "Configure Vendors for potential Company Procurements.";

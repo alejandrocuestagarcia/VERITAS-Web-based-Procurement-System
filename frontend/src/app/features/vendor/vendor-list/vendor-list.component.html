@@ -5,7 +5,7 @@
   <!-- Stats -->
   <ng-container stats>
     <app-stat-card label="Total Vendors" [value]="totalVendorCount" />
-    <app-stat-card label="Average Score" [value]="averageScore.toFixed(1) + ' / 10'" />
+    <app-stat-card label="Average Rating" [value]="averageScore.toFixed(1) + ' / 10'" />
   </ng-container>
 
   <!-- Filters -->
@@ -44,8 +44,8 @@
       <td mat-cell *matCellDef="let vendor">{{ vendor.taxId }}</td>
     </ng-container>
 
-    <ng-container matColumnDef="overallScore">
-      <th mat-header-cell *matHeaderCellDef>SCORE</th>
+    <ng-container matColumnDef="rating">
+      <th mat-header-cell *matHeaderCellDef>RATING</th>
       <td mat-cell *matCellDef="let vendor">{{ vendor.overallScore }}</td>
     </ng-container>
 
