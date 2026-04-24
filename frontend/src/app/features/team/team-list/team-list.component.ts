@@ -2,14 +2,13 @@ import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
-import { SharedTableComponent } from '../../shared/components/table/shared-table.component';
+import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 import {
   ProjectDto,
   ProjectModuleService,
-  TeamCreateDtoDepartmentEnum,
   TeamDto,
   TeamsModuleService
-} from '../../core/api';
+} from '../../../core/api';
 
 type DepartmentFilter = 'all' | 'it' | 'rd' | 'hr' | 'sales' | 'legal';
 
@@ -26,11 +25,11 @@ interface TeamRow {
 }
 
 @Component({
-  selector: 'app-team-management',
-  templateUrl: './team-management.component.html',
-  styleUrls: ['./team-management.component.scss']
+  selector: 'app-team-list',
+  templateUrl: './team-list.component.html',
+  styleUrls: ['./team-list.component.scss']
 })
-export class TeamManagementComponent implements OnInit, AfterViewInit {
+export class TeamListComponent implements OnInit, AfterViewInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
   readonly departmentFilters: Array<{ key: DepartmentFilter; label: string }> = [
@@ -70,12 +69,12 @@ export class TeamManagementComponent implements OnInit, AfterViewInit {
     }
     this.dataSource.filterPredicate = (data: TeamRow, filter: string) => {
       const searchTerms = JSON.parse(filter);
-      
+
       const matchesDepartment = searchTerms.department === 'all' || data.departmentFilter === searchTerms.department;
-      const matchesSearch = !searchTerms.search 
-                            || data.name.toLowerCase().includes(searchTerms.search) 
+      const matchesSearch = !searchTerms.search
+                            || data.name.toLowerCase().includes(searchTerms.search)
                             || data.projectsText.toLowerCase().includes(searchTerms.search);
-      
+
       return matchesDepartment && matchesSearch;
     };
     // Initialize the filter so it shows everything first

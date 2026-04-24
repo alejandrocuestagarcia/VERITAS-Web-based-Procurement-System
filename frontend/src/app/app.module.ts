@@ -28,7 +28,7 @@ import { FormatEnumPipe } from './shared/pipes/format-enum.pipe';
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatListModule } from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
-import { VendorCreateComponent } from './features/vendor/vendor-create.component';
+import { VendorCreateComponent } from './features/vendor/vendor-create/vendor-create.component';
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatNativeDateModule, MatOptionModule } from "@angular/material/core";
@@ -38,8 +38,8 @@ import { SharedFormComponent } from './shared/components/creation/shared-form/sh
 import { SharedFormCardComponent } from './shared/components/creation/shared-form-card/shared-form-card.component';
 import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
 import { ProjectCreateComponent } from './features/project/project-create/project-create.component';
-import { TeamManagementComponent } from './features/teams/team-management.component';
-import { TeamCreateComponent } from './features/teams/team-create.component';
+import { TeamListComponent } from './features/team/team-list/team-list.component';
+import { TeamCreateComponent } from './features/team/team-create/team-create.component';
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
 
@@ -63,7 +63,7 @@ import { MatSliderModule } from "@angular/material/slider";
     SharedFormFieldComponent,
     ProjectCreateComponent,
     VendorListComponent,
-    TeamManagementComponent,
+    TeamListComponent,
     TeamCreateComponent,
     VendorCreateComponent
   ],

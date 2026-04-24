@@ -8,7 +8,7 @@ import {
   TeamsModuleService,
   UserDto,
   UserModuleService
-} from '../../core/api';
+} from '../../../core/api';
 
 interface TeamMemberOption {
   id: number;

@@ -9,9 +9,9 @@ import { UserListComponent } from "./features/user/user-list/user-list.component
 import { guestGuard } from "./core/guards/guest.guard";
 import { VendorCreateComponent } from "./features/vendor/vendor-create/vendor-create.component";
 import { ProjectCreateComponent } from "./features/project/project-create/project-create.component";
-import { TeamManagementComponent } from "./features/teams/team-management.component";
-import { TeamCreateComponent } from "./features/teams/team-create.component";
-import {VendorListComponent} from "./features/vendor/vendor-list/vendor-list.component";
+import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
+import { TeamListComponent } from "./features/team/team-list/team-list.component";
+import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -34,7 +34,7 @@ const routes: Routes = [
   },
   {
     path: 'teams',
-    component: TeamManagementComponent,
+    component: TeamListComponent,
     canActivate: [authGuard]
   },
   {

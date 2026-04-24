@@ -13,7 +13,7 @@ import { of } from 'rxjs';
 import {
   TeamsModuleService,
   UserModuleService
-} from '../../core/api';
+} from '../../../core/api';
 import { TeamCreateComponent } from './team-create.component';
 
 describe('TeamCreateComponent', () => {

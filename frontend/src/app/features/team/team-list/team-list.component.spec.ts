@@ -8,12 +8,12 @@ import { of } from 'rxjs';
 import {
   ProjectModuleService,
   TeamsModuleService
-} from '../../core/api';
-import { TeamManagementComponent } from './team-management.component';
+} from '../../../core/api';
+import { TeamListComponent } from './team-list.component';
 
-describe('TeamManagementComponent', () => {
-  let component: TeamManagementComponent;
-  let fixture: ComponentFixture<TeamManagementComponent>;
+describe('TeamListComponent', () => {
+  let component: TeamListComponent;
+  let fixture: ComponentFixture<TeamListComponent>;
 
   const teamsModuleServiceStub = {
     getAllTeams: () =>
@@ -46,7 +46,7 @@ describe('TeamManagementComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [TeamManagementComponent],
+      declarations: [TeamListComponent],
       imports: [RouterTestingModule],
       providers: [
         { provide: TeamsModuleService, useValue: teamsModuleServiceStub },
@@ -55,7 +55,7 @@ describe('TeamManagementComponent', () => {
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(TeamManagementComponent);
+    fixture = TestBed.createComponent(TeamListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
