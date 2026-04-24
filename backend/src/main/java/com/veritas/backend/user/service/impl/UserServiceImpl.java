@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
     User savedUser = userRepository.save(user);
 
     if (userDto.promoteToTeamLeader()) {
-      team.setLeader(user);
+      team.setLeader(savedUser);
       teamRepository.save(team);
     }
 
