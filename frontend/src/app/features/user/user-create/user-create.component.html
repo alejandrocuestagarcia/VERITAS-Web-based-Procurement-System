@@ -12,7 +12,7 @@
     <app-shared-form-card icon="manage_accounts" title="Account Details">
       <app-shared-form-field label="FULL NAME">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>person_outline</mat-icon>
+          <mat-icon matPrefix>person</mat-icon>
           <input matInput formControlName="name" placeholder="e.g. Alexander Sterling">
           <mat-error *ngIf="userForm.get('name')?.hasError('required') && userForm.get('name')?.touched">
             Name is required
@@ -22,7 +22,7 @@
 
       <app-shared-form-field label="EMAIL ADDRESS">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>alternate_email</mat-icon>
+          <mat-icon matPrefix>email</mat-icon>
           <input matInput formControlName="email" type="email" placeholder="a.sterling@veritas.corp">
           <mat-error *ngIf="userForm.get('email')?.hasError('required') && userForm.get('email')?.touched">
             Email is required
@@ -35,7 +35,7 @@
 
       <app-shared-form-field label="PASSWORD">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>lock_outline</mat-icon>
+          <mat-icon matPrefix>lock</mat-icon>
           <input matInput formControlName="password" type="password" placeholder="Enter password">
           <mat-error *ngIf="userForm.get('password')?.hasError('required') && userForm.get('password')?.touched">
             Password is required
@@ -68,7 +68,7 @@
 
       <app-shared-form-field label="DEPARTMENT">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>corporate_fare</mat-icon>
+          <mat-icon matPrefix>meeting_room</mat-icon>
           <mat-select formControlName="department" placeholder="Select department">
             <mat-option *ngFor="let dept of departments" [value]="dept">{{ dept }}</mat-option>
           </mat-select>

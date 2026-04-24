@@ -1,10 +1,10 @@
-<div class="v-app-canvas">
+<div class="bg-surface text-on-surface antialiased min-h-screen">
 
-  <div class="v-app-shell">
+  <div class="flex min-h-screen w-full">
 
     <app-sidebar *ngIf="authService.isLoggedIn()"></app-sidebar>
 
-    <main class="v-main-content" [class.v-authenticated]="authService.isLoggedIn()">
+    <main class="flex-1 flex flex-col" [class.pl-[260px]]="authService.isLoggedIn()">
       <router-outlet></router-outlet>
     </main>
 

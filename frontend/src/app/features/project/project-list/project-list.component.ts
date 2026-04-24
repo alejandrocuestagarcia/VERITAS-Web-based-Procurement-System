@@ -1,23 +1,22 @@
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
-import { ProjectModuleService, ProjectDto} from '../../../core/api';
-import {MatPaginator} from "@angular/material/paginator";
-import {MatTableDataSource} from "@angular/material/table";
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { ProjectModuleService, ProjectDto } from '../../../core/api';
+import { MatTableDataSource } from '@angular/material/table';
+import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 
 @Component({
   selector: 'app-project-list',
   templateUrl: './project-list.component.html',
-  styleUrls: ['./project-list.component.scss']
 })
-export class ProjectListComponent implements OnInit, AfterViewInit {
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+export class ProjectListComponent implements OnInit {
+  @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  displayedColumns = ['name', 'team', 'budget', 'startDate', 'endDate'];
+  displayedColumns = ['name', 'team', 'budget', 'startDate', 'endDate', 'actions'];
   dataSource = new MatTableDataSource<ProjectDto>([]);
 
   loading = false;
   error: string | null = null;
 
-  constructor(private projectService: ProjectModuleService) {}
+  constructor(private projectService: ProjectModuleService) { }
 
   ngOnInit(): void {
     this.loading = true;
@@ -33,13 +32,16 @@ export class ProjectListComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-  }
-
-  applyFilter(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
+  applyFilter(value: string): void {
     this.dataSource.filter = value.trim().toLowerCase();
     if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+  }
+
+  editProject(project: ProjectDto) {
+    return ""
+  }
+
+  deleteProject(project: ProjectDto) {
+    return ""
   }
 }

@@ -1,51 +1,60 @@
-<div class="login-page">
+<div class="flex flex-col justify-center items-center min-h-screen">
 
-  <div class="login-container">
-    <div class="logo-section">
-      <div class="background-shield">
-        <mat-icon class="shield-icon">security</mat-icon>
+  <!-- Card container -->
+  <div class="flex flex-col items-center gap-4 w-[440px]">
+
+    <!-- Logo section -->
+    <div class="flex flex-col items-center gap-3">
+      <div class="flex items-center px-4 py-3 bg-veritas-blue rounded-lg">
+        <mat-icon class="text-white w-8 h-8">security</mat-icon>
       </div>
-      <div class="heading-1">VERITAS</div>
-      <div class="sub-heading">Enterprise Procurement & Governance</div>
+      <div class="text-veritas-dark font-bold text-[2.5rem] font-manrope">VERITAS</div>
+      <div class="text-slate-600 text-sm -mt-2">Enterprise Procurement &amp; Governance</div>
     </div>
 
-    <mat-card class="login-card">
-      <form class="login-form" (ngSubmit)="onLogin()">
+    <!-- Login card -->
+    <mat-card class="w-full px-10 pt-10 pb-14 rounded-lg shadow-md">
+      <form class="flex flex-col gap-6 w-full" (ngSubmit)="onLogin()">
 
-        <div class="input-group">
-          <div class="label-row">
-            <span class="label-text">Email</span>
-          </div>
-          <mat-form-field appearance="fill" class="veritas-input">
+        <!-- Email -->
+        <div class="flex flex-col gap-2">
+          <div class="font-bold text-on-surface">Email</div>
+          <mat-form-field appearance="outline" class="w-full">
             <mat-icon matPrefix>email</mat-icon>
-            <input matInput type="email" name="email" [(ngModel)]="loginRequest.email" placeholder="name@company.com" required>
+            <input matInput type="email" name="email" [(ngModel)]="loginRequest.email" placeholder="name@company.com"
+              required>
           </mat-form-field>
         </div>
 
-        <div class="input-group">
-          <div class="label-row">
-            <span class="label-text">Password</span>
-            <a href="#" class="forgot-link">Forgot Password?</a>
+        <!-- Password -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-end">
+            <span class="font-bold text-on-surface">Password</span>
+            <a href="#" class="font-bold text-xs text-veritas-dark no-underline">Forgot Password?</a>
           </div>
-          <mat-form-field appearance="fill" class="veritas-input">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-icon matPrefix>lock</mat-icon>
-            <input matInput [type]="hidePassword ? 'password' : 'text'" name="password" [(ngModel)]="loginRequest.password" placeholder="••••••••" required>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" name="password"
+              [(ngModel)]="loginRequest.password" placeholder="••••••••" required>
             <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
-              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
           </mat-form-field>
         </div>
 
-
-        <button mat-flat-button class="login-button" type="submit">
-          Login to Dashboard
+        <!-- Submit -->
+        <button type="submit" mat-flat-button class="v-btn-brand">
           <mat-icon>arrow_forward</mat-icon>
+          <span>Login to Dashboard</span>
         </button>
+
       </form>
     </mat-card>
   </div>
 
-  <footer class="login-footer">
+  <!-- Footer -->
+  <footer class="mt-12 text-xs text-muted-grey text-center">
     VERITAS v2.4.1
   </footer>
+
 </div>

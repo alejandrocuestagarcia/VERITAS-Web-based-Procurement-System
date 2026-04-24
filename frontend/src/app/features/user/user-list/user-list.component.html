@@ -1,0 +1,68 @@
+<app-shared-table [title]="title" [subtitle]="subtitle" entity="users"
+  [dataSource]="dataSource" [displayedColumns]="displayedColumns"
+  [totalElements]="totalPageElements" [loading]="loading"
+  (pageChanged)="onPageChange($event)" (searchChanged)="onSearchChanged($event)">
+
+  <!-- Stats -->
+  <ng-container stats>
+    <app-stat-card label="Total Users" [value]="totalUserCount" />
+    <app-stat-card label="Active Now"  [value]="userSessions" />
+    <app-stat-card label="Inactive"    [value]="inactiveUserCount" />
+  </ng-container>
+
+  <!-- Filters -->
+  <div filters class="flex items-center gap-3">
+    <span class="text-[11px] font-semibold text-muted-grey uppercase tracking-wider">Filter by:</span>
+    <mat-chip-listbox (change)="onRoleFilterChange($event.value)">
+      <mat-chip-option value="ALL" [selected]="selectedRole === 'ALL'">All Roles</mat-chip-option>
+      <mat-chip-option *ngFor="let role of userRoles" [value]="role">{{ role | formatEnum }}</mat-chip-option>
+    </mat-chip-listbox>
+  </div>
+
+  <!-- Actions -->
+  <button actions mat-flat-button class="v-btn-brand" [routerLink]="['/users/create']">
+    <mat-icon>person_add</mat-icon>
+    <span>Add User</span>
+  </button>
+
+  <!-- Columns -->
+  <ng-container columns>
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>NAME</th>
+      <td mat-cell *matCellDef="let user" class="font-medium">{{ user.name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="email">
+      <th mat-header-cell *matHeaderCellDef>EMAIL</th>
+      <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="team">
+      <th mat-header-cell *matHeaderCellDef>TEAM</th>
+      <td mat-cell *matCellDef="let user">{{ user.teamName }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="role">
+      <th mat-header-cell *matHeaderCellDef>ROLE</th>
+      <td mat-cell *matCellDef="let user" class="font-medium">{{ user.role | titlecase }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
+      <td mat-cell *matCellDef="let user">
+        <div class="flex items-center gap-1">
+          <button mat-icon-button (click)="editUser(user)" matTooltip="Edit User">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <span [matTooltip]="user.role === 'ADMINISTRATOR' ? 'Administrators cannot be deleted' : 'Delete user'">
+            <button mat-icon-button color="warn" (click)="deleteUser(user)"
+                    [disabled]="user.role === UserDtoRoleEnum.Administrator">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </span>
+        </div>
+      </td>
+    </ng-container>
+  </ng-container>
+
+</app-shared-table>

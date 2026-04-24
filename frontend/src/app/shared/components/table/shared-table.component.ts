@@ -9,9 +9,9 @@ import {
   QueryList,
   ViewChild
 } from '@angular/core';
-import {MatColumnDef, MatTable, MatTableDataSource} from "@angular/material/table";
-import {MatPaginator, PageEvent} from "@angular/material/paginator";
-import {debounceTime, distinctUntilChanged, Subject} from "rxjs";
+import { MatColumnDef, MatTable, MatTableDataSource } from "@angular/material/table";
+import { MatPaginator, PageEvent } from "@angular/material/paginator";
+import { debounceTime, distinctUntilChanged, Subject } from "rxjs";
 
 @Component({
   selector: 'app-shared-table',
@@ -21,6 +21,7 @@ import {debounceTime, distinctUntilChanged, Subject} from "rxjs";
 export class SharedTableComponent implements AfterContentInit, OnDestroy {
   @Input() title: string = '';
   @Input() subtitle: string = '';
+  @Input() entity: string = '';
   @Input() searchPlaceholder: string = 'Search...';
   @Input() loading: boolean = false;
 
@@ -33,7 +34,7 @@ export class SharedTableComponent implements AfterContentInit, OnDestroy {
   @Output() searchChanged = new EventEmitter<string>();
 
 
-  @ViewChild(MatTable, {static: true}) table!: MatTable<any>;
+  @ViewChild(MatTable, { static: true }) table!: MatTable<any>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   @ContentChildren(MatColumnDef) columnDefs!: QueryList<MatColumnDef>;

@@ -6,7 +6,6 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
   hidePassword = true
@@ -20,7 +19,7 @@ export class LoginComponent {
     private authApi: AuthModuleService,
     private router: Router,
     private snackBar: MatSnackBar
-  ) {}
+  ) { }
 
   onLogin() {
     this.authApi.login(this.loginRequest).subscribe({

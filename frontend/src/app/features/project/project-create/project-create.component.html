@@ -4,7 +4,7 @@
     subtitle="Define project details, timeline, and budget for team execution"
     routingSubtitle="PROJECTS > ADD NEW PROJECT"
     submitButtonLabel="Add Project"
-    submitButtonIcon="person_add"
+    submitButtonIcon="add"
     [loading]="loading"
     (submitted)="onSubmit()"
     (cancelled)="onCancel()">
@@ -12,6 +12,7 @@
     <app-shared-form-card icon="business" title="General Information">
       <app-shared-form-field label="PROJECT NAME">
         <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>assignment</mat-icon>
           <input matInput formControlName="name" placeholder="e.g. Skyline Observatory Alpha">
           <mat-error *ngIf="projectForm.get('name')?.hasError('required') && projectForm.get('name')?.touched">
             Project name is required
@@ -21,6 +22,7 @@
 
       <app-shared-form-field label="PROJECT KEY">
         <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>key</mat-icon>
           <input matInput formControlName="projectKey" placeholder="e.g. SKY-001">
           <mat-error *ngIf="projectForm.get('projectKey')?.hasError('required') && projectForm.get('projectKey')?.touched">
             Project key is required
@@ -30,6 +32,7 @@
 
       <app-shared-form-field label="TEAM">
         <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>groups</mat-icon>
           <mat-select formControlName="teamId" placeholder="Select team">
             <mat-option *ngFor="let team of teams" [value]="team.id">
               {{ team.name }}
@@ -45,6 +48,7 @@
     <app-shared-form-card icon="event" title="Project Timeline & Budget">
       <app-shared-form-field label="START DATE">
         <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>first_page</mat-icon>
           <input matInput [matDatepicker]="startPicker" formControlName="startDate" placeholder="Choose start date">
           <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
           <mat-datepicker #startPicker></mat-datepicker>
@@ -59,6 +63,7 @@
 
       <app-shared-form-field label="END DATE">
         <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>last_page</mat-icon>
           <input matInput [matDatepicker]="endPicker" formControlName="endDate" placeholder="Choose end date">
           <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
           <mat-datepicker #endPicker></mat-datepicker>
@@ -73,6 +78,7 @@
 
       <app-shared-form-field label="BUDGET">
         <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>payments</mat-icon>
           <input matInput type="number" formControlName="budget" placeholder="e.g. 10000">
           <mat-error *ngIf="projectForm.get('budget')?.hasError('required') && projectForm.get('budget')?.touched">
             Budget is required
