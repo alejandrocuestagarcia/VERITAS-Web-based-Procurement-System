@@ -108,31 +108,31 @@ class UserServiceUnitTest {
         verify(userRepository, never()).save(any());
     }
 
-  @Test
-  void GetAllUsersFiltered_FilterIsNotEmpty_FormatsQuery() {
-    Pageable pageable = PageRequest.of(0, 10);
-    when(userRepository.findAllFiltered("%alex%", UserRole.REQUESTER, pageable)).thenReturn(
-        new PageImpl<>(List.of()));
+    @Test
+    void GetAllUsersFiltered_FilterIsNotEmpty_FormatsQuery() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(userRepository.findAllFiltered("%alex%", UserRole.REQUESTER, pageable)).thenReturn(
+            new PageImpl<>(List.of()));
 
-    userService.getAllUsersFiltered(pageable, "  ALEX  ", UserRole.REQUESTER);
+        userService.getAllUsersFiltered(pageable, "  ALEX  ", UserRole.REQUESTER);
 
-    verify(userRepository).findAllFiltered("%alex%", UserRole.REQUESTER, pageable);
-  }
-
-  @Test
-  void GetUserStats_Called_ReturnsMappedStats() {
-    when(userRepository.count()).thenReturn(100L);
-    when(userRepository.countByIsActiveFalse()).thenReturn(15L);
-
-    UserStatsDto stats = userService.getUserStats();
-
-    assertThat(stats.total()).isEqualTo(100);
-    assertThat(stats.inactive()).isEqualTo(15);
-//    assertThat(stats.activeSessions()).isZero();
-  }
+        verify(userRepository).findAllFiltered("%alex%", UserRole.REQUESTER, pageable);
+    }
 
     @Test
-    void editUser_shouldThrowEntityNotFoundException_whenUserNotFound() {
+    void GetUserStats_Called_ReturnsMappedStats() {
+        when(userRepository.count()).thenReturn(100L);
+        when(userRepository.countByIsActiveFalse()).thenReturn(15L);
+
+        UserStatsDto stats = userService.getUserStats();
+
+        assertThat(stats.total()).isEqualTo(100);
+        assertThat(stats.inactive()).isEqualTo(15);
+        //assertThat(stats.activeSessions()).isZero();
+    }
+
+    @Test
+    void EditUser_UserNotFound_ThrowsEntityNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null, null, null)));
@@ -140,7 +140,7 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void editUser_shouldChangeTeam_whenUserIsNotLeader() {
+    void EditUser_ValidTeamChangeWhenUserIsNotLeader_UpdatesTeam() {
         Team oldTeam = new Team();
         oldTeam.setTeamId(1L);
         oldTeam.setLeader(null);
@@ -162,7 +162,7 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void editUser_shouldSetUserAsTeamLeader_whenIsTeamLeaderTrue() {
+    void EditUser_SetAsTeamLeaderWhenIsTeamLeaderTrue_SetsUserAsLeader() {
         Team team = new Team();
         team.setTeamId(1L);
 
@@ -180,7 +180,7 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void editUser_shouldDemoteLeader_whenIsTeamLeaderFalse() {
+    void EditUser_UnsetTeamLeaderWhenIsTeamLeaderFalse_DemotesLeader() {
         Team team = new Team();
         team.setTeamId(1L);
 
@@ -199,7 +199,7 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void editUser_shouldNotDemote_whenUserIsNotCurrentLeader() {
+    void EditUser_UnsetTeamLeaderWhenUserIsNotCurrentLeader_KeepsExistingLeader() {
         Team team = new Team();
         team.setTeamId(1L);
 
@@ -221,14 +221,14 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void getUserByIdForEdit_shouldThrowEntityNotFoundException_whenUserNotFound() {
+    void GetUserByIdForEdit_UserNotFound_ThrowsEntityNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> userService.getUserByIdForEdit(99L));
     }
 
     @Test
-    void getUserByIdForEdit_shouldReturnIsTeamLeaderTrue_whenUserIsLeader() {
+    void GetUserByIdForEdit_UserIsLeader_ReturnsIsTeamLeaderTrue() {
         Team team = new Team();
         team.setTeamId(1L);
 
@@ -248,7 +248,7 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void getUserByIdForEdit_shouldReturnIsTeamLeaderFalse_whenUserIsNotLeader() {
+    void GetUserByIdForEdit_UserIsNotLeader_ReturnsIsTeamLeaderFalse() {
         Team team = new Team();
         team.setTeamId(1L);
 

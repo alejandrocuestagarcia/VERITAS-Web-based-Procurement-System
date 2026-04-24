@@ -210,7 +210,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void editUser_shouldUpdateNameAndEmail_whenValid() throws Exception {
+  void UserEdit_ValidInput_ReturnsUpdatedUser() throws Exception {
     User finance = User.builder()
             .name("Test Finance")
             .email("finance@test.com")
@@ -232,7 +232,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void editUser_shouldReturnConflict_whenEmailExists() throws Exception {
+  void UserEdit_DuplicateEmail_ReturnsConflict() throws Exception {
     User user1 = User.builder()
             .name("First Finance User")
             .email("finance1@test.com")
@@ -263,7 +263,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void editUser_shouldReturnBadRequest_whenChangingTeamAsTeamLeader() throws Exception {
+  void UserEdit_AsTeamLeaderChangingTeam_ReturnsBadRequest() throws Exception {
     User user = User.builder()
             .name("Leader")
             .email("leader@test.com")
@@ -292,7 +292,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void getUserByIdForEdit_shouldReturnUser_whenExists() throws Exception {
+  void UserRetrievalById_UserExists_ReturnsUser() throws Exception {
     User user = User.builder()
             .name("Test Requester")
             .email("requester@test.com")
