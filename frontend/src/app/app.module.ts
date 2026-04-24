@@ -22,6 +22,7 @@ import { UserCreateComponent } from './features/user/user-create/user-create.com
 import { SharedTableComponent } from './shared/components/table/shared-table.component';
 import { StatCardComponent } from './shared/components/stat-card/stat-card.component';
 import { UserListComponent } from './features/user/user-list/user-list.component';
+import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
 import {MatChipsModule} from "@angular/material/chips";
 import { FormatEnumPipe } from './shared/pipes/format-enum.pipe';
 import {MatTooltipModule} from "@angular/material/tooltip";
@@ -57,7 +58,8 @@ import {MatDatepickerModule} from "@angular/material/datepicker";
     SharedFormComponent,
     SharedFormCardComponent,
     SharedFormFieldComponent,
-    ProjectCreateComponent
+    ProjectCreateComponent,
+    VendorListComponent
   ],
   imports: [
     BrowserModule,

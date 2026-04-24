@@ -30,7 +30,7 @@ export class NavigationService {
     { label: 'Projects', icon: 'assignment', route: '/projects',
       roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR'] },
 
-    { label: 'Vendors', icon: 'storefront', route: '/vendors',
+    { label: 'Vendors', icon: 'store', route: '/vendors',
       roles: ['REQUESTER', 'PROCUREMENT_OFFICER'] },
 
     { label: 'Budgets', icon: 'payments', route: '/budget',
