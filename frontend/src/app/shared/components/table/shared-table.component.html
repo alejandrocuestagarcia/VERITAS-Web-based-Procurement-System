@@ -37,18 +37,18 @@
       </div>
     </div>
 
-    <!-- Loading / empty state -->
-    <div class="p-10 text-center text-sm text-muted-grey" *ngIf="loading">Loading {{ entity }}…</div>
-    <div class="p-10 text-center text-sm text-muted-grey" *ngIf="!loading && dataSource.data.length === 0">
-      No {{ entity }} found
-    </div>
-
     <!-- Table -->
     <table mat-table [dataSource]="dataSource" class="v-data-table">
       <ng-content select="[columns]"></ng-content>
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
+
+    <!-- Loading / empty state -->
+    <div class="p-10 text-center text-sm text-muted-grey" *ngIf="loading">Loading {{ entity }}…</div>
+    <div class="p-10 text-center text-sm text-muted-grey" *ngIf="!loading && dataSource.data.length === 0">
+      No {{ entity }} found
+    </div>
 
     <!-- Paginator -->
     <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 25]"
