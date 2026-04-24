@@ -33,12 +33,10 @@ public class Vendor {
     private String description;
 
     @Column(name = "primary_contact_name")
-    @NotBlank(message = "Primary contact name is required")
     @Size(max = 120, message = "Primary contact name must be at most 120 characters")
     private String primaryContactName;
 
     @Column(name = "primary_contact_email")
-    @NotBlank(message = "Primary contact email is required")
     @Size(max = 120, message = "Primary contact email must be at most 120 characters")
     private String primaryContactEmail;
 
