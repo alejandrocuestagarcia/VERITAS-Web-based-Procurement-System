@@ -3,7 +3,8 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Pageable, UserDto, UserDtoRoleEnum, UserModuleService } from "../../../core/api";
 import { PageEvent } from "@angular/material/paginator";
 import { SharedTableComponent } from "../../../shared/components/table/shared-table.component";
-import { AuthService } from "../../core/services/auth.service";
+import { AuthService } from "../../../core/services/auth.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-user-list',
@@ -29,6 +30,7 @@ export class UserListComponent implements OnInit {
 
   constructor(
     private readonly userService: UserModuleService,
+    private router: Router,
     protected authService: AuthService
   ) {}
 
@@ -86,7 +88,7 @@ export class UserListComponent implements OnInit {
   }
 
   editUser(user: UserDto) {
-    return ""
+    this.router.navigate(['/users/edit', user.id]);
   }
 
   deleteUser(user: UserDto) {
