@@ -23,15 +23,23 @@ public class VendorController {
     @Operation(summary = "List vendors", description = "Retrieves all vendors including their reliability scores and basic info.")
     @IsRequester
     @GetMapping
-    public List<VendorDto> getAllVendors() {
-        return List.of();
+    public ResponseEntity<Page<VendorDto>> getAllVendors(Pageable pageable,
+                                                        @RequestParam(required = false) String search,
+                                                        @RequestParam(defaultValue = "0.0") Double minimumRating) {
+        return ResponseEntity.ok(this.vendorService.findVendorsByStringAndRating(pageable, search, minimumRating));
+    }
+
+    @Operation(summary = "Get vendor stats", description = "Retrieves stats about the vendors of Veritas")
+    @GetMapping("/stats")
+    public ResponseEntity<VendorStatsDto> getVendorStats() {
+        return ResponseEntity.ok(vendorService.getVendorStats());
     }
 
     @Operation(summary = "Get vendor", description = "Retrieves a vendor including their reliability score and basic info.")
     @IsRequester
     @GetMapping("/{id}")
     public VendorDto getVendor(@PathVariable Long id) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null);
+        return vendorService.getVendorById(id);
     }
 
     @Operation(summary = "Create vendor", description = "Creates a new vendor.")

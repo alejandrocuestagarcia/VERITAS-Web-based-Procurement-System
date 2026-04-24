@@ -17,4 +17,5 @@ public record VendorDto (
     String primaryContactName,
     @Email(message = "Invalid email format")
     String primaryContactEmail
-){}
+){
+}

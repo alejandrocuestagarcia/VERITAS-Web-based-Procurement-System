@@ -2,6 +2,7 @@ package com.veritas.backend.vendor.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Formula;
 
 import java.time.LocalDateTime;
 
@@ -37,6 +38,18 @@ public class Vendor {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Formula("(SELECT AVG(e.communication_score) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    private Double communicationScore;
+
+    @Formula("(SELECT AVG(e.quality_score) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    private Double qualityScore;
+
+    @Formula("(SELECT AVG(e.delivery_score) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    private Double deliveryScore;
+
+    @Formula("(SELECT AVG((COALESCE(e.communication_score, 0) + COALESCE(e.delivery_score, 0) + COALESCE(e.quality_score, 0)) / 3.0) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    private Double overallScore;
 
     @PrePersist
     protected void onCreate() {
