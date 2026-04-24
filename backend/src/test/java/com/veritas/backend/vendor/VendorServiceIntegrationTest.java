@@ -31,7 +31,7 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
     void cleanUp() { vendorRepository.deleteAll(); }
 
     @Test
-    void createVendorShouldPersistInDatabase() {
+    void VendorCreation_ValidInput_PersistsInDatabase() {
         VendorDto inputDto = new VendorDto(
                 "Integration Test Vendor",
                 "TAX-INT-456",

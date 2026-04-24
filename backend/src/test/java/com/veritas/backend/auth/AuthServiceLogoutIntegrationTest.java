@@ -54,7 +54,7 @@ class AuthServiceLogoutIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void logoutDeletesRefreshTokenFromDatabaseIntegrationTest() {
+    void Logout_ValidToken_DeletesRefreshTokenFromDatabase() {
         assertThat(refreshTokenRepository.findByToken(refreshToken)).isPresent();
 
         authService.logout(new RefreshTokenDto(refreshToken));
@@ -63,12 +63,12 @@ class AuthServiceLogoutIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void logoutWithNonExistentTokenDoesNotThrowExceptionTest() {
+    void Logout_NonExistentToken_DoesNotThrowException() {
         assertDoesNotThrow(() -> authService.logout(new RefreshTokenDto("non-existent-token-123")));
     }
 
     @Test
-    void logoutPreventsTokenReuseIntegrationTest() {
+    void Logout_ValidToken_PreventsTokenReuse() {
         authService.logout(new RefreshTokenDto(refreshToken));
 
         assertThrows(RuntimeException.class, () -> authService.refreshToken(new RefreshTokenDto(refreshToken)));

@@ -35,7 +35,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 //AI-GENERATED
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class UserServiceUnitTest {
 
     @Mock
     private UserRepository userRepository;
@@ -53,7 +53,7 @@ class UserServiceTest {
     private UserServiceImpl userService;
 
     @Test
-    void createUser_Succeed_whenUserValid() {
+    void CreateUser_ValidUser_SavesAndReturnsUser() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "test@veritas.corp", "Test User", "password123",
                 UserRole.REQUESTER, 1L, Department.IT, false);
@@ -82,7 +82,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser_shouldEntityExistsException_whenDuplicateEmail() {
+    void CreateUser_DuplicateEmail_ThrowsEntityExistsException() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "duplicate@veritas.com", "Test User", "password123",
                 UserRole.FINANCE_OFFICER, 1L, Department.IT, false);
@@ -94,7 +94,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser_shouldThrowIllegalStateException_whenNoTeamsAvailable() {
+    void CreateUser_NoTeamsAvailable_ThrowsIllegalStateException() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "test@veritas.com", "Test User", "password123",
                 UserRole.PROCUREMENT_OFFICER, 1L, Department.IT, false);
@@ -107,7 +107,7 @@ class UserServiceTest {
     }
 
   @Test
-  void getAllUsersFiltered_shouldFormatQuery_whenFilterIsNotEmpty() {
+  void GetAllUsersFiltered_FilterIsNotEmpty_FormatsQuery() {
     Pageable pageable = PageRequest.of(0, 10);
     when(userRepository.findAllFiltered("%alex%", UserRole.REQUESTER, pageable)).thenReturn(
         new PageImpl<>(List.of()));
@@ -118,7 +118,7 @@ class UserServiceTest {
   }
 
   @Test
-  void getUserStats_shouldReturnMappedStats_whenCalled() {
+  void GetUserStats_Called_ReturnsMappedStats() {
     when(userRepository.count()).thenReturn(100L);
     when(userRepository.countByIsActiveFalse()).thenReturn(15L);
 

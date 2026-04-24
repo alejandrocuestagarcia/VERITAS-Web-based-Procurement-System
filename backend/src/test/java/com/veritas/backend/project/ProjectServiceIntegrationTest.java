@@ -72,7 +72,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void financeOfficerCanSeeAllProjectsDBIntegrationTest() {
+    void ProjectRetrieval_FinanceOfficer_ReturnsAllProjects() {
         User financeOfficer = userRepository.save(User.builder()
                 .name("Test Finance")
                 .email("test@yahoo.com")
@@ -90,7 +90,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void requesterCanOnlySeeTeamProjectsDBIntegrationTest() {
+    void ProjectRetrieval_Requester_ReturnsTeamProjects() {
         User requester = userRepository.save(User.builder()
                 .name("Test Requester")
                 .email("test@yahoo.com")
@@ -108,7 +108,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void procurementOfficerCannotSeeOtherTeamsProjectsDBIntegrationTest() {
+    void ProjectRetrieval_ProcurementOfficer_ReturnsEmptyForOtherTeams() {
         User procurementOfficer = userRepository.save(User.builder()
                 .name("Test Procurement")
                 .email("test@yahoo.com")
@@ -125,7 +125,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void createProjectDBIntegrationTest() {
+    void ProjectCreation_ValidInput_ReturnsCreatedProject() {
         var dto = new ProjectCreationDto("Integration Project", UUID.randomUUID().toString(), testingTeam.getTeamId(), LocalDate.now(), LocalDate.now().plusDays(10), BigDecimal.valueOf(5000));
 
         var result = projectService.createProject(dto);

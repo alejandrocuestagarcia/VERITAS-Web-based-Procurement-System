@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class UserControllerTest extends BaseDBIntegrationTest {
+class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
@@ -79,7 +79,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void getAllUsersFiltered_shouldReturnOnlyMatchingUsers_whenSearchQueryIsProvided()
+  void UserRetrieval_SearchQueryProvided_ReturnsMatchingUsers()
       throws Exception {
     User alex = User.builder().name("Alexander Sterling").email("alex@test.com").team(testTeam)
         .isActive(true).passwordHash(encoder.encode("password123")).role(UserRole.REQUESTER)
@@ -96,7 +96,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void createUser_shouldSucceed_withValidUserInput() throws Exception {
+  void UserCreation_ValidInput_ReturnsCreated() throws Exception {
     UserCreationRequestDto request = new UserCreationRequestDto(
         "newuser@veritas.com", "New User", "securePassword123",
         UserRole.ADMINISTRATOR, 999L, Department.IT, false);
@@ -111,7 +111,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void createUser_shouldConflict_withValidDuplicateUserMail() throws Exception {
+  void UserCreation_DuplicateEmail_ReturnsConflict() throws Exception {
     UserCreationRequestDto request1 = new UserCreationRequestDto(
         "duplicate@veritas.com", "First User", "securePassword123",
         UserRole.FINANCE_OFFICER, 999L, Department.IT, false);
@@ -133,7 +133,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void getAllUsersFiltered_shouldReturnUser_whenEmailMatchesPartially() throws Exception {
+  void UserRetrieval_PartialEmailMatch_ReturnsUser() throws Exception {
     User alex = User.builder().name("Alex").email("alexander.sterling@veritas.com").team(testTeam)
         .isActive(true).role(UserRole.REQUESTER).passwordHash("hash").build();
     User john = User.builder().name("John").email("john@test.com").team(testTeam)
@@ -150,7 +150,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void getAllUsersFiltered_shouldReturnUsers_whenRoleMatches() throws Exception {
+  void UserRetrieval_RoleMatch_ReturnsUsers() throws Exception {
     User alex =
         User.builder().name("Alex").email("alex@test.com").team(testTeam).role(UserRole.REQUESTER)
             .isActive(true).passwordHash("hash").build();
@@ -166,7 +166,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void getAllUsersFiltered_shouldReturnEmpty_whenNameMatchesButRoleDoesNot() throws Exception {
+  void UserRetrieval_NameMatchesButRoleDoesNot_ReturnsEmpty() throws Exception {
     User alex = User.builder().name("Alexander").email("alex@test.com").team(testTeam)
         .role(UserRole.REQUESTER).isActive(true).passwordHash("hash").build();
     User john = User.builder().name("John").email("john@test.com").team(testTeam)
@@ -183,7 +183,7 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
-  void getUserStats_shouldReturnTotalAndInactiveCounts_whenCalled() throws Exception {
+  void UserStats_Called_ReturnsTotalAndInactiveCounts() throws Exception {
     mockMvc.perform(get("/users/stats")).andExpect(status().isOk())
         .andExpect(jsonPath("$.total").isNumber()).andExpect(jsonPath("$.inactive").isNumber())
         .andExpect(jsonPath("$.activeSessions").isNumber());
@@ -191,13 +191,13 @@ class UserControllerTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "REQUESTER")
-  void getAllUsers_shouldReturnForbidden_whenUserIsRequester() throws Exception {
+  void UserRetrieval_AsRequester_ReturnsForbidden() throws Exception {
     mockMvc.perform(get("/users")).andExpect(status().isForbidden());
   }
 
   @Test
   @WithMockUser(roles = "REQUESTER")
-  void getUserStats_shouldReturnForbidden_whenUserIsRequester() throws Exception {
+  void UserStats_AsRequester_ReturnsForbidden() throws Exception {
     mockMvc.perform(get("/users/stats")).andExpect(status().isForbidden());
   }
 }

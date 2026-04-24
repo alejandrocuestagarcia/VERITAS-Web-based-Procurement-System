@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AuthControllerTest extends BaseDBIntegrationTest {
+class AuthControllerIntegrationTest extends BaseDBIntegrationTest {
     private static final String CORRECT_EMAIL = "test@veritas.com", FALSE_EMAIL = "unknown@veritas.com",
             CORRECT_PASSWORD = "password123", FALSE_PASSWORD = "wrongpassword";
 
@@ -59,7 +59,7 @@ class AuthControllerTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void testLoginSuccess() throws Exception {
+    void Login_ValidCredentials_ReturnsTokensAndRole() throws Exception {
         LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, CORRECT_PASSWORD);
 
         mockMvc.perform(post("/auth/login")
@@ -72,7 +72,7 @@ class AuthControllerTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void testLoginInvalidCredentials() throws Exception {
+    void Login_InvalidCredentials_ReturnsUnauthorized() throws Exception {
         LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, FALSE_PASSWORD);
 
         mockMvc.perform(post("/auth/login")
@@ -82,7 +82,7 @@ class AuthControllerTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void testLoginUserNotFound() throws Exception {
+    void Login_UserNotFound_ReturnsUnauthorized() throws Exception {
         LoginRequestDto request = new LoginRequestDto(FALSE_EMAIL, CORRECT_PASSWORD);
 
         mockMvc.perform(post("/auth/login")

@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
+class RoleBasedAccessControlIntegrationTest extends BaseDBIntegrationTest {
 
         @Autowired
         private MockMvc mockMvc;
@@ -67,7 +67,7 @@ class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
         }
 
         @Test
-        void adminCanAccessEverything() throws Exception {
+        void RoleBasedAccessControl_Admin_CanAccessEverything() throws Exception {
                 mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk());
                 mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + adminToken))
@@ -79,7 +79,7 @@ class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
         }
 
         @Test
-        void financeCanAccessFinanceAndBelow() throws Exception {
+        void RoleBasedAccessControl_Finance_CanAccessFinanceAndBelow() throws Exception {
                 mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + financeToken))
                                 .andExpect(status().isForbidden()); // Higher level
                 mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + financeToken))
@@ -91,7 +91,7 @@ class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
         }
 
         @Test
-        void procurementCanAccessProcurementAndBelow() throws Exception {
+        void RoleBasedAccessControl_Procurement_CanAccessProcurementAndBelow() throws Exception {
                 mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + procurementToken))
                                 .andExpect(status().isForbidden()); // Higher level
                 mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + procurementToken))
@@ -103,7 +103,7 @@ class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
         }
 
         @Test
-        void requesterCanOnlyAccessRequester() throws Exception {
+        void RoleBasedAccessControl_Requester_CanOnlyAccessRequester() throws Exception {
                 mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + requesterToken))
                                 .andExpect(status().isForbidden()); // Higher level
                 mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + requesterToken))
@@ -115,7 +115,7 @@ class RoleBasedAccessControlTest extends BaseDBIntegrationTest {
         }
 
         @Test
-        void unauthenticatedCannotAccessAnything() throws Exception {
+        void RoleBasedAccessControl_Unauthenticated_CannotAccessAnything() throws Exception {
                 mockMvc.perform(get("/test-security/admin"))
                                 .andExpect(status().isForbidden());
                 mockMvc.perform(get("/test-security/finance"))

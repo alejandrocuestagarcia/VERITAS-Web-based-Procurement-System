@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ProjectControllerTest extends BaseDBIntegrationTest {
+class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -85,7 +85,7 @@ class ProjectControllerTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void financeOfficerCanSeeAllProjectsControllerIntegrationTest() throws Exception {
+    void ProjectRetrieval_FinanceOfficer_ReturnsAllProjects() throws Exception {
         User financeOfficer = userRepository.save(User.builder()
                 .name("Test Finance")
                 .email("test@yahoo.com")
@@ -104,7 +104,7 @@ class ProjectControllerTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void requesterCanOnlySeeTeamProjectsControllerIntegrationTest() throws Exception {
+    void ProjectRetrieval_Requester_ReturnsTeamProjects() throws Exception {
         User requester = userRepository.save(User.builder()
                 .name("Test Requester")
                 .email("test@yahoo.com")
@@ -122,7 +122,7 @@ class ProjectControllerTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void financeOfficerCanCreateProjectControllerIntegrationTest() throws Exception {
+    void ProjectCreation_FinanceOfficer_ReturnsCreatedProject() throws Exception {
         User financeOfficer = userRepository.save(User.builder()
                 .name("Finance")
                 .email("finance@test.com")
