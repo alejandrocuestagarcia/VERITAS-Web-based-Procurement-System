@@ -58,7 +58,6 @@ export class UserListComponent implements OnInit {
 
     this.userService.getAllUsers(pageable, this.currentSearchString, roleParam).subscribe({
       next: (response) => {
-        console.log(response);
         this.dataSource.data = response.content || [];
         this.totalPageElements = response.totalElements || 0;
         this.loading = false;
