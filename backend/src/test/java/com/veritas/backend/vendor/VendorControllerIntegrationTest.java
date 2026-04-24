@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class VendorControllerTest extends BaseDBIntegrationTest {
+class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -35,7 +35,7 @@ class VendorControllerTest extends BaseDBIntegrationTest {
 
     @Test
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
-    void createVendor_AsProcurementOfficer_ShouldReturnCreated() throws Exception {
+    void VendorCreation_AsProcurementOfficer_ReturnsCreated() throws Exception {
         VendorDto inputDto = new VendorDto(
                 "Controller Test Vendor",
                 "TAX-CTRL-789",
@@ -58,7 +58,7 @@ class VendorControllerTest extends BaseDBIntegrationTest {
 
     @Test
     @WithMockUser(roles = "REQUESTER")
-    void createVendorAsRequesterShouldReturnForbidden() throws Exception {
+    void VendorCreation_AsRequester_ReturnsForbidden() throws Exception {
         VendorDto inputDto = new VendorDto(
                 "Forbidden Vendor",
                 "TAX-FORBIDDEN",
@@ -77,7 +77,7 @@ class VendorControllerTest extends BaseDBIntegrationTest {
 
     @Test
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
-    void createVendorWithInvalidDataShouldReturnBadRequest() throws Exception {
+    void VendorCreation_InvalidData_ReturnsBadRequest() throws Exception {
         VendorDto invalidDto = new VendorDto(
                 "",
                 "",

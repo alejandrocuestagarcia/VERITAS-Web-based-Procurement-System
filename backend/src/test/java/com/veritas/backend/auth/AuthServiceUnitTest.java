@@ -35,7 +35,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
-class AuthServiceImplTest {
+class AuthServiceUnitTest {
 
   private static final String CORRECT_EMAIL = "test@veritas.com", FALSE_EMAIL = "unknown@veritas.com",
           CORRECT_PASSWORD = "password123", HASHED_PASSWORD = "hashedpassword", FALSE_PASSWORD = "wrongpassword";
@@ -65,7 +65,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void login_shouldReturnAuthResponse_WhenCredentialsAreValid() {
+  void Login_ValidCredentials_ReturnsAuthResponse() {
 
     User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
 
@@ -89,7 +89,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void login_shouldThrowBadCredential_whenEmailIsInvalid() {
+  void Login_InvalidEmail_ThrowsBadCredentialsException() {
 
     createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
 
@@ -103,7 +103,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void login_shouldThrowBadCredential_whenPasswordIsInvalid() {
+  void Login_InvalidPassword_ThrowsBadCredentialsException() {
 
     User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
 
@@ -117,7 +117,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void refreshToken_shouldReturnNewAccessToken_WhenRefreshTokenIsValid() {
+  void RefreshToken_ValidToken_ReturnsNewAccessToken() {
 
     User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
 
@@ -136,7 +136,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void refreshToken_shouldThrowRuntimeException_WhenRefreshTokenNotFound() {
+  void RefreshToken_TokenNotFound_ThrowsRuntimeException() {
 
     User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
 
@@ -153,7 +153,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void testLoginSuccess() {
+  void Login_ValidRequest_ReturnsAuthResponseAndSavesToken() {
     LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, CORRECT_PASSWORD);
 
     when(userRepository.findByEmail(CORRECT_EMAIL)).thenReturn(Optional.of(testUser));
@@ -175,7 +175,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void testLoginUserNotFound() {
+  void Login_UserNotFound_ThrowsBadCredentialsException() {
     LoginRequestDto request = new LoginRequestDto(FALSE_EMAIL, CORRECT_PASSWORD);
     when(userRepository.findByEmail(FALSE_EMAIL)).thenReturn(Optional.empty());
 
@@ -188,7 +188,7 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void testLoginInvalidPassword() {
+  void Login_WrongPassword_ThrowsBadCredentialsException() {
     LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, FALSE_PASSWORD);
 
     when(userRepository.findByEmail(CORRECT_EMAIL)).thenReturn(Optional.of(testUser));

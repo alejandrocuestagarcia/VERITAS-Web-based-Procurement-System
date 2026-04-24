@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AuthControllerLogoutTest extends BaseDBIntegrationTest {
+class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     MockMvc mockMvc;
 
@@ -67,7 +67,7 @@ class AuthControllerLogoutTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void logoutDeletesRefreshTokenControllerIntegrationTest() throws Exception {
+    void Logout_ValidToken_ReturnsNoContentAndDeletesToken() throws Exception {
         assertThat(refreshTokenRepository.findByToken(refreshToken)).isPresent();
 
         mockMvc.perform(post("/auth/logout")
@@ -79,7 +79,7 @@ class AuthControllerLogoutTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void logoutWithInvalidTokenStillReturnsNoContentControllerIntegrationTest() throws Exception {
+    void Logout_InvalidToken_ReturnsNoContent() throws Exception {
         mockMvc.perform(post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshTokenDto("non-existent-token-123"))))

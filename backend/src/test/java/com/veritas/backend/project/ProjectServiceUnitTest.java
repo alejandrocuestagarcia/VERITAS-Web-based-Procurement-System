@@ -38,7 +38,7 @@ class ProjectServiceUnitTest {
     private ProjectServiceImpl projectService;
 
     @Test
-    void financeOfficerCanSeeAllProjectsTest() {
+    void GetProjectsForUser_FinanceOfficer_ReturnsAllProjects() {
         Team team = Team.builder().name("Testing Team").build();
 
         Project project1 = Project.builder().team(team).build();
@@ -62,7 +62,7 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void requesterCanOnlySeeTeamProjectsTest() {
+    void GetProjectsForUser_Requester_ReturnsOnlyTeamProjects() {
         Team team = Team.builder().name("Testing Team").build();
 
         Project project1 = Project.builder().team(team).build();
@@ -83,7 +83,7 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void createProjectSuccess() {
+    void CreateProject_ValidInput_SavesAndReturnsProject() {
         Team team = Team.builder().name("Testing Team").build();
 
         ProjectCreationDto dto = new ProjectCreationDto("Secret Project", "KEY-123", 1L, null, null, null);
@@ -106,7 +106,7 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void createProjectThrowsIfExists() {
+    void CreateProject_DuplicateProject_ThrowsEntityExistsException() {
         ProjectCreationDto dto = new ProjectCreationDto("Duplicate", "DUP-KEY", 1L, null, null, null);
 
         when(projectRepository.existsByNameOrProjectKey("Duplicate", "DUP-KEY")).thenReturn(true);
@@ -117,7 +117,7 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void createProjectThrowsIfNoTeams() {
+    void CreateProject_NoTeamsAvailable_ThrowsIllegalStateException() {
         ProjectCreationDto dto = new ProjectCreationDto("Secret New", "SEC-KEY", 1L, null, null, null);
 
         when(projectRepository.existsByNameOrProjectKey("Secret New", "SEC-KEY")).thenReturn(false);

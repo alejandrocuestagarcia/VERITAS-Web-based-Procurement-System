@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
-class JwtServiceTest {
+class JwtServiceUnitTest {
 
   private JwtService jwtService;
 
@@ -37,7 +37,7 @@ class JwtServiceTest {
   }
 
   @Test
-  void should_GenerateAndExtractSubject_Successfully() {
+  void GenerateAndExtractSubject_ValidUser_ReturnsSubject() {
 
 
     String token = jwtService.generateAccessToken(adminUser);
@@ -48,11 +48,11 @@ class JwtServiceTest {
   }
 
   @Test
-  void extractEmail() {
+  void ExtractEmail_ValidToken_ReturnsEmail() {
   }
 
   @Test
-  void isTokenValid_ShouldReturnTrue_WhenDetailsMatch() {
+  void IsTokenValid_DetailsMatch_ReturnsTrue() {
 
     String token = jwtService.generateAccessToken(adminUser);
 
@@ -62,7 +62,7 @@ class JwtServiceTest {
   }
 
   @Test
-  void isTokenValid_ShouldReturnFalse_WhenTokenExpiredOneMillisecondAgo() {
+  void IsTokenValid_TokenExpired_ReturnsFalse() {
 
     ReflectionTestUtils.setField(jwtService, "accessTokenExpire", -1L);
 
@@ -73,7 +73,7 @@ class JwtServiceTest {
   }
 
   @Test
-  void isTokenValid_ShouldReturnFalse_WhenTokenHasZeroMillisecondsExpiryDuration() {
+  void IsTokenValid_ZeroExpiry_ReturnsFalse() {
 
     ReflectionTestUtils.setField(jwtService, "accessTokenExpire", 0L);
 
@@ -84,7 +84,7 @@ class JwtServiceTest {
   }
 
   @Test
-  void extractClaim_shouldExtractSubject_Successfully() {
+  void ExtractClaim_SubjectClaim_ReturnsSubject() {
     String token = jwtService.generateAccessToken(adminUser);
 
     String subject = jwtService.extractClaim(token, Claims::getSubject);
@@ -93,7 +93,7 @@ class JwtServiceTest {
   }
 
   @Test
-  void extractClaim_shouldExtractCustomRoleClaim_Successfully() {
+  void ExtractClaim_CustomRoleClaim_ReturnsRole() {
     String token = jwtService.generateAccessToken(adminUser);
 
     String role = jwtService.extractClaim(token, claims -> claims.get("role", String.class));
@@ -102,7 +102,7 @@ class JwtServiceTest {
   }
 
   @Test
-  void extractClaim_shouldExtractExpirationDate() {
+  void ExtractClaim_ExpirationClaim_ReturnsExpirationDate() {
 
     String token = jwtService.generateAccessToken(adminUser);
 

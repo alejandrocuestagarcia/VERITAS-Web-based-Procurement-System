@@ -26,7 +26,7 @@ public class VendorServiceUnitTest {
     private VendorServiceImpl vendorService;
 
     @Test
-    void createVendorShouldSaveAndReturnVendor() {
+    void CreateVendor_ValidInput_SavesAndReturnsVendor() {
         VendorDto inputDto = new VendorDto(
                 "Test Vendor",
                 "TAX-123",

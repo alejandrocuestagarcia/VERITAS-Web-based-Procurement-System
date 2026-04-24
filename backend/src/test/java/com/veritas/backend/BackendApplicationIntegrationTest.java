@@ -6,13 +6,13 @@ import org.springframework.context.ApplicationContext;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-class BackendApplicationTests extends BaseDBIntegrationTest {
+class BackendApplicationIntegrationTest extends BaseDBIntegrationTest {
 
 	@Autowired
 	private ApplicationContext context;
 
 	@Test
-	void contextLoads() {
+	void ApplicationContext_Load_StartsSuccessfully() {
 		assertThat(context).isNotNull();
 	}
 }
