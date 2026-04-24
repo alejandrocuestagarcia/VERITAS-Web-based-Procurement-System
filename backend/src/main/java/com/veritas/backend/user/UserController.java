@@ -1,6 +1,5 @@
 package com.veritas.backend.user;
 
-import com.veritas.backend.common.exception.NotFoundException;
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
