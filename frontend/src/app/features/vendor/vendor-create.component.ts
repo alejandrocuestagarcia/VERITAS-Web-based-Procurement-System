@@ -1,9 +1,9 @@
-import {Component, OnInit} from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import {VendorModuleService} from '../../core/api';
+import { VendorModuleService } from '../../core/api';
 import { VendorDto } from '../../core/api';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {MatSnackBar} from "@angular/material/snack-bar";
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-vendor-create',
@@ -27,10 +27,10 @@ export class VendorCreateComponent implements OnInit {
 
   private initForm(): void {
     this.vendorForm = this.fb.group({
-      name:          ['', Validators.required],
-      taxId:               ['', Validators.required],
-      description:         ['', Validators.required],
-      primaryContactName:  [''],
+      name: ['', Validators.required],
+      taxId: ['', Validators.required],
+      description: ['', Validators.required],
+      primaryContactName: [''],
       primaryContactEmail: ['', Validators.email],
     });
   }
@@ -69,6 +69,6 @@ export class VendorCreateComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/dashboard']); //needs to be refactored to /projects
+    this.router.navigate(['/vendors']);
   }
 }
