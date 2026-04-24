@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // AI-GENERATED
 @SpringBootTest
 @AutoConfigureMockMvc
-class TeamControllerCreateTest extends BaseDBIntegrationTest {
+class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -71,7 +71,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void financeOfficerCanCreateTeam() throws Exception {
+    void TeamCreation_AsFinanceOfficer_ReturnsCreated() throws Exception {
         String token = createTokenForRole(UserRole.FINANCE_OFFICER);
         TeamCreateDto request = createTeamRequest("Platform Team");
 
@@ -87,7 +87,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void administratorCanCreateTeam() throws Exception {
+    void TeamCreation_AsAdministrator_ReturnsCreated() throws Exception {
         String token = createTokenForRole(UserRole.ADMINISTRATOR);
         TeamCreateDto request = createTeamRequest("Operations Team");
 
@@ -100,7 +100,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void requesterCannotCreateTeam() throws Exception {
+    void TeamCreation_AsRequester_ReturnsForbidden() throws Exception {
         String token = createTokenForRole(UserRole.REQUESTER);
         TeamCreateDto request = createTeamRequest("Restricted Team");
 
@@ -112,7 +112,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void createTeamFailsWhenDescriptionMissing() throws Exception {
+    void TeamCreation_MissingDescription_ReturnsBadRequest() throws Exception {
         String token = createTokenForRole(UserRole.FINANCE_OFFICER);
         TeamCreateDto request = new TeamCreateDto();
         request.setName("Incomplete Team");
@@ -127,7 +127,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void createTeamFailsWhenNameAlreadyExists() throws Exception {
+    void TeamCreation_DuplicateName_ReturnsConflict() throws Exception {
         String token = createTokenForRole(UserRole.ADMINISTRATOR);
         TeamCreateDto first = createTeamRequest("Core Team");
         TeamCreateDto duplicate = createTeamRequest("core team");
@@ -147,7 +147,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void createTeamFailsWhenLeaderNotFound() throws Exception {
+    void TeamCreation_LeaderNotFound_ReturnsNotFound() throws Exception {
         String token = createTokenForRole(UserRole.FINANCE_OFFICER);
         TeamCreateDto request = createTeamRequest("Team With Missing Leader");
         request.setLeaderId(999999L);
@@ -161,7 +161,7 @@ class TeamControllerCreateTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void createTeamSetsLeaderWithoutAssigningUsersToTeam() throws Exception {
+    void TeamCreation_WithLeader_ReturnsCreatedAndSetsLeader() throws Exception {
         String token = createTokenForRole(UserRole.ADMINISTRATOR);
         User leader = userRepository.save(User.builder()
                 .name("Leader User")
