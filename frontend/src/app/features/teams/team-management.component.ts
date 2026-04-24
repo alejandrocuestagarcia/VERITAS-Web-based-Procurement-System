@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { MatTableDataSource } from '@angular/material/table';
+import { SharedTableComponent } from '../../shared/components/table/shared-table.component';
 import {
   ProjectDto,
   ProjectModuleService,
@@ -28,10 +30,10 @@ interface TeamRow {
   templateUrl: './team-management.component.html',
   styleUrls: ['./team-management.component.scss']
 })
-export class TeamManagementComponent implements OnInit {
-  readonly pageSize = 10;
+export class TeamManagementComponent implements OnInit, AfterViewInit {
+  @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
+
   readonly departmentFilters: Array<{ key: DepartmentFilter; label: string }> = [
-    { key: 'all', label: 'All Teams' },
     { key: 'it', label: 'Technology' },
     { key: 'rd', label: 'Research and Development' },
     { key: 'hr', label: 'Human Resources' },
@@ -39,20 +41,18 @@ export class TeamManagementComponent implements OnInit {
     { key: 'legal', label: 'Legal' }
   ];
 
+  displayedColumns: string[] = ['identity', 'department', 'projects', 'status', 'operations'];
+  dataSource = new MatTableDataSource<TeamRow>([]);
+
   loading = false;
   error: string | null = null;
 
-  searchTerm = '';
   activeDepartmentFilter: DepartmentFilter = 'all';
-  currentPage = 1;
+  private currentSearchString = "";
 
   totalTeams = 0;
   totalProjects = 0;
   totalDepartments = 0;
-
-  rows: TeamRow[] = [];
-  filteredRows: TeamRow[] = [];
-  pagedRows: TeamRow[] = [];
 
   constructor(
     private teamsService: TeamsModuleService,
@@ -64,92 +64,46 @@ export class TeamManagementComponent implements OnInit {
     this.loadData();
   }
 
-  updateSearch(value: string): void {
-    this.searchTerm = value;
-    this.currentPage = 1;
+  ngAfterViewInit(): void {
+    if (this.sharedTable) {
+      this.dataSource.paginator = this.sharedTable.paginator;
+    }
+    this.dataSource.filterPredicate = (data: TeamRow, filter: string) => {
+      const searchTerms = JSON.parse(filter);
+      
+      const matchesDepartment = searchTerms.department === 'all' || data.departmentFilter === searchTerms.department;
+      const matchesSearch = !searchTerms.search 
+                            || data.name.toLowerCase().includes(searchTerms.search) 
+                            || data.projectsText.toLowerCase().includes(searchTerms.search);
+      
+      return matchesDepartment && matchesSearch;
+    };
+    // Initialize the filter so it shows everything first
     this.applyFilters();
   }
 
-  setDepartmentFilter(filter: DepartmentFilter): void {
-    this.activeDepartmentFilter = filter;
-    this.currentPage = 1;
+  onSearchChanged(value: string): void {
+    this.currentSearchString = value.trim().toLowerCase();
     this.applyFilters();
+  }
+
+  onDepartmentFilterChange(value: any): void {
+    this.activeDepartmentFilter = value ?? 'all';
+    this.applyFilters();
+  }
+
+  private applyFilters() {
+    this.dataSource.filter = JSON.stringify({
+      department: this.activeDepartmentFilter,
+      search: this.currentSearchString
+    });
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
   navigateToAddTeam(): void {
     this.router.navigate(['/teams/add']);
-  }
-
-  toFirstPage(): void {
-    this.goToPage(1);
-  }
-
-  toPreviousPage(): void {
-    if (this.currentPage > 1) {
-      this.goToPage(this.currentPage - 1);
-    }
-  }
-
-  toNextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.goToPage(this.currentPage + 1);
-    }
-  }
-
-  toLastPage(): void {
-    this.goToPage(this.totalPages);
-  }
-
-  goToPage(page: number): void {
-    this.currentPage = Math.min(Math.max(page, 1), this.totalPages);
-    this.updatePagedRows();
-  }
-
-  trackByRow(_index: number, row: TeamRow): number {
-    return row.id;
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
-  }
-
-  get rangeStart(): number {
-    if (this.filteredRows.length === 0) {
-      return 0;
-    }
-
-    return (this.currentPage - 1) * this.pageSize + 1;
-  }
-
-  get rangeEnd(): number {
-    return Math.min(this.currentPage * this.pageSize, this.filteredRows.length);
-  }
-
-  get visiblePageNumbers(): number[] {
-    if (this.totalPages <= 5) {
-      return this.range(1, this.totalPages);
-    }
-
-    if (this.currentPage <= 3) {
-      return [1, 2, 3];
-    }
-
-    if (this.currentPage >= this.totalPages - 2) {
-      return [this.totalPages - 2, this.totalPages - 1, this.totalPages];
-    }
-
-    return [this.currentPage - 1, this.currentPage, this.currentPage + 1];
-  }
-
-  get showLeadingEllipsis(): boolean {
-    return this.totalPages > 5 && this.visiblePageNumbers[0] > 1;
-  }
-
-  get showTrailingEllipsis(): boolean {
-    return (
-      this.totalPages > 5
-      && this.visiblePageNumbers[this.visiblePageNumbers.length - 1] < this.totalPages
-    );
   }
 
   private loadData(): void {
@@ -164,12 +118,12 @@ export class TeamManagementComponent implements OnInit {
         const normalizedTeams = this.toArray<TeamDto>(teams);
         const normalizedProjects = this.toArray<ProjectDto>(projects);
 
-        this.rows = this.buildTeamRows(normalizedTeams, normalizedProjects);
-        this.totalTeams = this.rows.length;
+        const rows = this.buildTeamRows(normalizedTeams, normalizedProjects);
+        this.dataSource.data = rows;
+        this.totalTeams = rows.length;
         this.totalProjects = normalizedProjects.length;
-        this.totalDepartments = this.countUniqueDepartments(this.rows);
+        this.totalDepartments = this.countUniqueDepartments(rows);
 
-        this.currentPage = 1;
         this.applyFilters();
         this.loading = false;
       },
@@ -178,36 +132,6 @@ export class TeamManagementComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-
-  private applyFilters(): void {
-    const normalizedSearch = this.searchTerm.trim().toLowerCase();
-
-    this.filteredRows = this.rows.filter((row) => {
-      const matchesDepartment =
-        this.activeDepartmentFilter === 'all'
-        || row.departmentFilter === this.activeDepartmentFilter;
-
-      const matchesSearch =
-        !normalizedSearch
-        || row.name.toLowerCase().includes(normalizedSearch)
-        || row.projectsText.toLowerCase().includes(normalizedSearch);
-
-      return matchesDepartment && matchesSearch;
-    });
-
-    this.currentPage = Math.min(Math.max(this.currentPage, 1), this.totalPages);
-    this.updatePagedRows();
-  }
-
-  private updatePagedRows(): void {
-    if (this.filteredRows.length === 0) {
-      this.pagedRows = [];
-      return;
-    }
-
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    this.pagedRows = this.filteredRows.slice(startIndex, startIndex + this.pageSize);
   }
 
   private buildTeamRows(teams: TeamDto[], projects: ProjectDto[]): TeamRow[] {
@@ -227,7 +151,7 @@ export class TeamManagementComponent implements OnInit {
         projectsText: this.formatProjects(projectNames),
         statusLabel: isActive ? 'ACTIVE' : 'ON HOLD',
         isActive,
-        membersCount: 0,
+        membersCount: 0, // Mock members count for now
         icon: this.resolveIcon(department.filter)
       };
     });
@@ -326,10 +250,6 @@ export class TeamManagementComponent implements OnInit {
       default:
         return 'groups';
     }
-  }
-
-  private range(start: number, end: number): number[] {
-    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
   }
 
   private toArray<T>(value: unknown): T[] {

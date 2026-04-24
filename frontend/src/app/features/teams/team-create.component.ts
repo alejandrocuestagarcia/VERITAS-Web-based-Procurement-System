@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgForm } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   TeamCreateDto,
@@ -23,7 +23,7 @@ interface TeamMemberOption {
   styleUrls: ['./team-create.component.scss']
 })
 export class TeamCreateComponent implements OnInit {
-  @ViewChild('teamForm') teamForm!: NgForm;
+  teamForm!: FormGroup;
 
   readonly departmentOptions: Array<{ value: TeamCreateDtoDepartmentEnum; label: string }> = [
     { value: TeamCreateDtoDepartmentEnum.It, label: 'Technology' },
@@ -32,18 +32,6 @@ export class TeamCreateComponent implements OnInit {
     { value: TeamCreateDtoDepartmentEnum.Sales, label: 'Sales' },
     { value: TeamCreateDtoDepartmentEnum.Legal, label: 'Legal' }
   ];
-
-  model: {
-    name: string;
-    leaderId: number | null;
-    department: TeamCreateDtoDepartmentEnum | null;
-    description: string;
-  } = {
-      name: '',
-      leaderId: null,
-      department: null,
-      description: ''
-    };
 
   leadOptions: TeamMemberOption[] = [];
   loadingLeads = false;
@@ -58,10 +46,22 @@ export class TeamCreateComponent implements OnInit {
     private userService: UserModuleService,
     private teamsService: TeamsModuleService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private fb: FormBuilder
   ) { }
 
   ngOnInit(): void {
+    this.teamForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+      leaderId: [null],
+      department: [null, Validators.required],
+      description: ['', [Validators.required, Validators.maxLength(500)]]
+    });
+
+    this.teamForm.get('leaderId')?.valueChanges.subscribe(() => {
+      this.onLeadChanged();
+    });
+
     this.loadLeadOptions();
   }
 
@@ -72,21 +72,23 @@ export class TeamCreateComponent implements OnInit {
   submit(): void {
     this.error = null;
 
-    if (this.teamForm.invalid || this.model.department === null) {
+    if (this.teamForm.invalid) {
       this.error = 'Please complete all required fields before creating the team.';
-      this.teamForm.form.markAllAsTouched();
+      this.teamForm.markAllAsTouched();
       return;
     }
 
     this.submitting = true;
 
+    const formValues = this.teamForm.value;
+
     const payload: TeamCreateDto = {
-      name: this.model.name.trim(),
-      description: this.model.description.trim(),
-      department: this.model.department
+      name: formValues.name.trim(),
+      description: formValues.description.trim(),
+      department: formValues.department
     };
 
-    const leaderId = this.normalizeLeaderId(this.model.leaderId);
+    const leaderId = this.normalizeLeaderId(formValues.leaderId);
     if (leaderId !== null) {
       payload.leaderId = leaderId;
     }
@@ -122,7 +124,7 @@ export class TeamCreateComponent implements OnInit {
       return;
     }
 
-    if (this.normalizeLeaderId(this.model.leaderId) === candidate.id) {
+    if (this.normalizeLeaderId(this.teamForm.value.leaderId) === candidate.id) {
       this.error = 'The selected team lead is already assigned as owner.';
       return;
     }
@@ -142,7 +144,7 @@ export class TeamCreateComponent implements OnInit {
   }
 
   onLeadChanged(): void {
-    const currentLeadId = this.normalizeLeaderId(this.model.leaderId);
+    const currentLeadId = this.normalizeLeaderId(this.teamForm.value.leaderId);
     if (currentLeadId === null) {
       return;
     }
@@ -151,7 +153,8 @@ export class TeamCreateComponent implements OnInit {
   }
 
   get leadMember(): TeamMemberOption | null {
-    const currentLeadId = this.normalizeLeaderId(this.model.leaderId);
+    if (!this.teamForm) return null;
+    const currentLeadId = this.normalizeLeaderId(this.teamForm.value.leaderId);
     if (currentLeadId === null) {
       return null;
     }
@@ -160,7 +163,8 @@ export class TeamCreateComponent implements OnInit {
   }
 
   get availableMemberCandidates(): TeamMemberOption[] {
-    const currentLeadId = this.normalizeLeaderId(this.model.leaderId);
+    if (!this.teamForm) return [];
+    const currentLeadId = this.normalizeLeaderId(this.teamForm.value.leaderId);
     return this.leadOptions.filter((option) => {
       if (currentLeadId === option.id) {
         return false;

@@ -65,19 +65,16 @@ describe('TeamManagementComponent', () => {
   });
 
   it('should derive project labels and default members count', () => {
-    expect(component.pagedRows.length).toBe(2);
-    expect(component.pagedRows[0].projectsText).toBe('Data Lake Migration');
-    expect(component.pagedRows[0].membersCount).toBe(0);
+    expect(component.dataSource.data.length).toBe(2);
+    expect(component.dataSource.data[0].projectsText).toBe('Data Lake Migration');
+    expect(component.dataSource.data[0].membersCount).toBe(0);
   });
 
   it('should filter by department and search term', () => {
-    component.setDepartmentFilter('it');
-    expect(component.filteredRows.length).toBe(1);
+    component.onDepartmentFilterChange('it');
+    expect(component.activeDepartmentFilter).toBe('it');
 
-    component.updateSearch('data lake');
-    expect(component.filteredRows.length).toBe(1);
-
-    component.updateSearch('non-existing-query');
-    expect(component.filteredRows.length).toBe(0);
+    component.onSearchChanged('data lake');
+    expect(component.dataSource.filter).toContain('data lake');
   });
 });

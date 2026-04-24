@@ -1,190 +1,89 @@
-<div class="v-page-wrap team-governance-page">
-  <div class="v-page-header">
-    <div class="v-page-header-left">
-      <h1 class="v-page-title">Team Governance</h1>
-      <p class="v-page-subtitle">
-        Orchestrate cross-functional teams, define departmental boundaries, and
-        align human capital with strategic projects.
-      </p>
-    </div>
+<app-shared-table title="Team Governance"
+  subtitle="Orchestrate cross-functional teams, define departmental boundaries, and align human capital with strategic projects."
+  entity="teams" searchPlaceholder="Search by team name or project..."
+  [dataSource]="dataSource" [displayedColumns]="displayedColumns"
+  [totalElements]="dataSource.data.length" [loading]="loading"
+  (searchChanged)="onSearchChanged($event)">
 
-    <div class="v-page-header-actions">
-      <button type="button" class="v-btn-brand add-team-btn" (click)="navigateToAddTeam()">
-        <mat-icon>group_add</mat-icon>
-        Add Team
-      </button>
-    </div>
+  <!-- Stats -->
+  <ng-container stats>
+    <app-stat-card label="Total Teams" [value]="totalTeams" />
+    <app-stat-card label="Active Projects" [value]="totalProjects" />
+    <app-stat-card label="Departments" [value]="totalDepartments" />
+  </ng-container>
+
+  <!-- Filters -->
+  <div filters class="flex items-center gap-3">
+    <span class="text-[11px] font-semibold text-muted-grey uppercase tracking-wider">Filter by:</span>
+    <mat-chip-listbox (change)="onDepartmentFilterChange($event.value)">
+      <mat-chip-option value="all" [selected]="activeDepartmentFilter === 'all'">All Teams</mat-chip-option>
+      <mat-chip-option *ngFor="let filter of departmentFilters" [value]="filter.key" [selected]="activeDepartmentFilter === filter.key">{{ filter.label }}</mat-chip-option>
+    </mat-chip-listbox>
   </div>
 
-  <div class="v-stat-row governance-stat-row">
-    <article class="v-stat-card governance-stat-card">
-      <span class="v-stat-label">Total Teams</span>
-      <span class="v-stat-value">{{ totalTeams }}</span>
-    </article>
+  <!-- Actions -->
+  <button actions mat-flat-button class="v-btn-brand" (click)="navigateToAddTeam()">
+    <mat-icon>group_add</mat-icon>
+    <span>Add Team</span>
+  </button>
 
-    <article class="v-stat-card governance-stat-card">
-      <span class="v-stat-label">Active Projects</span>
-      <span class="v-stat-value">{{ totalProjects }}</span>
-    </article>
-
-    <article class="v-stat-card governance-stat-card">
-      <span class="v-stat-label">Departments</span>
-      <span class="v-stat-value">{{ totalDepartments }}</span>
-    </article>
+  <!-- Error -->
+  <div *ngIf="error" filters
+       class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">
+    {{ error }}
   </div>
 
-  <div class="v-error-bar" *ngIf="error">{{ error }}</div>
-
-  <section class="v-table-card governance-table-card">
-    <header class="governance-toolbar">
-      <label class="governance-search" for="team-governance-search">
-        <mat-icon>search</mat-icon>
-        <input
-          id="team-governance-search"
-          type="text"
-          placeholder="Search by team name or project..."
-          [value]="searchTerm"
-          (input)="updateSearch($any($event.target).value)"
-        />
-      </label>
-
-      <div class="governance-filters">
-        <span class="filter-label">
-          <mat-icon>tune</mat-icon>
-          FILTER BY:
-        </span>
-
-        <button
-          type="button"
-          class="filter-chip"
-          *ngFor="let filter of departmentFilters"
-          [class.active]="activeDepartmentFilter === filter.key"
-          (click)="setDepartmentFilter(filter.key)"
-        >
-          {{ filter.label }}
-        </button>
-      </div>
-    </header>
-
-    <div class="v-table-state" *ngIf="loading">Loading team governance data...</div>
-    <div class="v-table-state" *ngIf="!loading && !error && filteredRows.length === 0">
-      No teams found for this filter.
-    </div>
-
-    <table class="governance-table" *ngIf="!loading && !error && filteredRows.length > 0">
-      <thead>
-      <tr>
-        <th>IDENTITY</th>
-        <th>DEPARTMENT</th>
-        <th>PROJECTS</th>
-        <th>STATUS</th>
-        <th>OPERATIONS</th>
-      </tr>
-      </thead>
-
-      <tbody>
-      <tr *ngFor="let row of pagedRows; trackBy: trackByRow">
-        <td class="identity-column">
-          <div class="identity-wrap">
-            <span class="identity-icon-tile">
-              <mat-icon>{{ row.icon }}</mat-icon>
-            </span>
-
-            <div class="identity-text">
-              <span class="team-name">{{ row.name }}</span>
-              <span class="team-members">{{ row.membersCount }} MEMBERS</span>
-            </div>
+  <!-- Columns -->
+  <ng-container columns>
+    <ng-container matColumnDef="identity">
+      <th mat-header-cell *matHeaderCellDef>IDENTITY</th>
+      <td mat-cell *matCellDef="let row">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-blue-50 text-blue-700">
+             <mat-icon>{{ row.icon }}</mat-icon>
           </div>
-        </td>
+          <div class="flex flex-col">
+            <span class="font-medium text-[14px] text-gray-900">{{ row.name }}</span>
+            <span class="text-[12px] text-gray-500 font-semibold tracking-wide">{{ row.membersCount }} MEMBERS</span>
+          </div>
+        </div>
+      </td>
+    </ng-container>
 
-        <td class="department-column">{{ row.departmentLabel }}</td>
-        <td class="projects-column">{{ row.projectsText }}</td>
+    <ng-container matColumnDef="department">
+      <th mat-header-cell *matHeaderCellDef>DEPARTMENT</th>
+      <td mat-cell *matCellDef="let row" class="text-gray-700 font-semibold text-[13px]">{{ row.departmentLabel }}</td>
+    </ng-container>
 
-        <td class="status-column">
-          <span class="status-pill" [class.active]="row.isActive" [class.on-hold]="!row.isActive">
-            <span class="status-dot"></span>
-            {{ row.statusLabel }}
-          </span>
-        </td>
+    <ng-container matColumnDef="projects">
+      <th mat-header-cell *matHeaderCellDef>PROJECTS</th>
+      <td mat-cell *matCellDef="let row" class="text-gray-700 max-w-[200px] truncate font-semibold text-[13px]" [title]="row.projectsText">{{ row.projectsText }}</td>
+    </ng-container>
 
-        <td class="operations-column">
-          <span class="operation-icon" aria-hidden="true">
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>STATUS</th>
+      <td mat-cell *matCellDef="let row">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
+              [ngClass]="row.isActive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-100 text-slate-600 border border-slate-200'">
+          <span class="w-1.5 h-1.5 rounded-full" [ngClass]="row.isActive ? 'bg-green-500' : 'bg-slate-400'"></span>
+          {{ row.statusLabel }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="operations">
+      <th mat-header-cell *matHeaderCellDef>OPERATIONS</th>
+      <td mat-cell *matCellDef="let row">
+        <div class="flex items-center gap-1 text-gray-500">
+          <button mat-icon-button matTooltip="Edit Team">
             <mat-icon>edit</mat-icon>
-          </span>
-          <span class="operation-icon" aria-hidden="true">
-            <mat-icon>delete_outline</mat-icon>
-          </span>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-
-    <footer class="governance-footer" *ngIf="!loading && !error">
-      <span class="footer-range">Showing {{ rangeStart }}-{{ rangeEnd }} of {{ filteredRows.length }} teams</span>
-
-      <div class="pagination" *ngIf="filteredRows.length > 0">
-        <button
-          type="button"
-          class="page-control icon-control"
-          [disabled]="currentPage === 1"
-          (click)="toFirstPage()"
-          aria-label="Go to first page"
-        >
-          <mat-icon>first_page</mat-icon>
-        </button>
-
-        <button
-          type="button"
-          class="page-control icon-control"
-          [disabled]="currentPage === 1"
-          (click)="toPreviousPage()"
-          aria-label="Go to previous page"
-        >
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-
-        <ng-container *ngIf="showLeadingEllipsis">
-          <button type="button" class="page-control page-number" (click)="goToPage(1)">1</button>
-          <span class="ellipsis">...</span>
-        </ng-container>
-
-        <button
-          type="button"
-          class="page-control page-number"
-          *ngFor="let page of visiblePageNumbers"
-          [class.active]="page === currentPage"
-          (click)="goToPage(page)"
-        >
-          {{ page }}
-        </button>
-
-        <ng-container *ngIf="showTrailingEllipsis">
-          <span class="ellipsis">...</span>
-          <button type="button" class="page-control page-number" (click)="goToPage(totalPages)">
-            {{ totalPages }}
           </button>
-        </ng-container>
+          <button mat-icon-button matTooltip="Delete Team">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+  </ng-container>
 
-        <button
-          type="button"
-          class="page-control icon-control"
-          [disabled]="currentPage === totalPages"
-          (click)="toNextPage()"
-          aria-label="Go to next page"
-        >
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-
-        <button
-          type="button"
-          class="page-control icon-control"
-          [disabled]="currentPage === totalPages"
-          (click)="toLastPage()"
-          aria-label="Go to last page"
-        >
-          <mat-icon>last_page</mat-icon>
-        </button>
-      </div>
-    </footer>
-  </section>
-</div>
+</app-shared-table>

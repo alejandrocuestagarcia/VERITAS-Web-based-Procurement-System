@@ -2,8 +2,11 @@
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
 
@@ -35,7 +38,14 @@ describe('TeamCreateComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [TeamCreateComponent],
-      imports: [FormsModule, RouterTestingModule, MatSnackBarModule],
+      imports: [
+        ReactiveFormsModule,
+        RouterTestingModule,
+        MatSnackBarModule,
+        MatInputModule,
+        MatSelectModule,
+        NoopAnimationsModule
+      ],
       providers: [
         { provide: UserModuleService, useValue: userModuleServiceStub },
         { provide: TeamsModuleService, useValue: teamsModuleServiceStub }
@@ -58,7 +68,7 @@ describe('TeamCreateComponent', () => {
   });
 
   it('should expose selected lead as owner member', () => {
-    component.model.leaderId = 11;
+    component.teamForm.controls['leaderId'].setValue(11);
     expect(component.leadMember?.displayName).toBe('Jonathan Doe');
   });
 });

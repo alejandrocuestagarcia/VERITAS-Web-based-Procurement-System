@@ -1,189 +1,127 @@
-<div class="v-page-wrap team-create-page">
-  <form #teamForm="ngForm" (ngSubmit)="submit()" novalidate>
-    <header class="v-page-header add-team-header">
-      <div class="v-page-header-left">
-        <div class="v-stat-label">ADMINISTRATION > <strong>TEAMS</strong></div>
-        <h1 class="v-page-title">Add New Team</h1>
-        <p class="v-page-subtitle">
-          Define a new operational unit, assign structural pillars, and establish foundational access
-          protocols for collaborative governance.
-        </p>
-      </div>
-    </header>
+<div [formGroup]="teamForm">
+  <app-shared-form
+    title="Add New Team"
+    subtitle="Define a new operational unit, assign structural pillars, and establish foundational access protocols for collaborative governance."
+    routingSubtitle="ADMINISTRATION > TEAMS"
+    [submitButtonLabel]="submitting ? 'Creating...' : 'Create Team'"
+    submitButtonIcon="group_add"
+    [loading]="submitting || loadingLeads"
+    (submitted)="submit()"
+    (cancelled)="cancel()">
 
-    <div class="v-error-bar" *ngIf="error">
+    <!-- Error -->
+    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm flex items-center gap-2 mb-6">
       <mat-icon>error_outline</mat-icon>
       <span>{{ error }}</span>
     </div>
 
-    <section class="v-card add-team-card">
-      <h3 class="section-title">Core Identification</h3>
+    <app-shared-form-card icon="badge" title="Core Identification">
+      <app-shared-form-field label="TEAM NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>groups</mat-icon>
+          <input matInput type="text" formControlName="name" placeholder="e.g. Infrastructure Strategy Group">
+          <mat-error *ngIf="teamForm.get('name')?.hasError('required') && teamForm.get('name')?.touched">Team name is required.</mat-error>
+          <mat-error *ngIf="teamForm.get('name')?.hasError('minlength') && teamForm.get('name')?.touched">Team name must be at least 2 characters.</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
 
-      <div class="v-form-row">
-        <div class="v-form-field full-width-field">
-          <label>Team Name</label>
-          <input
-            type="text"
-            name="teamName"
-            placeholder="e.g. Infrastructure Strategy Group"
-            [(ngModel)]="model.name"
-            #teamName="ngModel"
-            required
-            minlength="2"
-            maxlength="120"
-            [disabled]="submitting"
-            [class.is-invalid]="teamName.invalid && teamName.touched"
-          />
-          <span class="error-text" *ngIf="teamName.invalid && teamName.touched">
-            Team name is required.
-          </span>
-        </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <app-shared-form-field label="TEAM LEAD">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-select formControlName="leaderId" placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}">
+              <mat-option [value]="null">None</mat-option>
+              <mat-option *ngFor="let option of leadOptions" [value]="option.id">
+                {{ option.displayName }}
+              </mat-option>
+            </mat-select>
+            <mat-hint *ngIf="!loadingLeads && leadOptions.length === 0">No leads available to select.</mat-hint>
+          </mat-form-field>
+        </app-shared-form-field>
+
+        <app-shared-form-field label="DEPARTMENT">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-icon matPrefix>business</mat-icon>
+            <mat-select formControlName="department" placeholder="Select Department">
+              <mat-option *ngFor="let option of departmentOptions" [value]="option.value">
+                {{ option.label }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="teamForm.get('department')?.hasError('required') && teamForm.get('department')?.touched">Department is required.</mat-error>
+          </mat-form-field>
+        </app-shared-form-field>
       </div>
 
-      <div class="v-form-row two-up-row">
-        <div class="v-form-field">
-          <label>Team Lead</label>
-          <select
-            name="leaderId"
-            [(ngModel)]="model.leaderId"
-            #leaderId="ngModel"
-            (ngModelChange)="onLeadChanged()"
-            [disabled]="submitting || loadingLeads"
-          >
-            <option [value]="null">
-              {{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}
-            </option>
-            <option *ngFor="let option of leadOptions" [value]="option.id">
-              {{ option.displayName }}
-            </option>
-          </select>
-          <span class="hint-text" *ngIf="!loadingLeads && leadOptions.length === 0" style="font-size: 0.85em; color: #666; margin-top: 4px; display: block;">
-            No leads available to select.
-          </span>
-        </div>
+      <app-shared-form-field label="DESCRIPTION">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>description</mat-icon>
+          <textarea matInput formControlName="description" rows="4" placeholder="Briefly describe the team's objectives and scope..."></textarea>
+          <mat-error *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description is required.</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
 
-        <div class="v-form-field">
-          <label>Department</label>
-          <select
-            name="department"
-            [(ngModel)]="model.department"
-            #department="ngModel"
-            required
-            [disabled]="submitting"
-            [class.is-invalid]="department.invalid && department.touched"
-          >
-            <option [ngValue]="null" disabled>Select Department</option>
-            <option *ngFor="let option of departmentOptions" [ngValue]="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-          <span class="error-text" *ngIf="department.invalid && department.touched">
-            Department is required.
-          </span>
-        </div>
-      </div>
-
-      <div class="v-form-row">
-        <div class="v-form-field full-width-field">
-          <label>Description</label>
-          <textarea
-            name="description"
-            rows="4"
-            placeholder="Briefly describe the team's objectives and scope..."
-            [(ngModel)]="model.description"
-            #description="ngModel"
-            required
-            maxlength="500"
-            [disabled]="submitting"
-            [class.is-invalid]="description.invalid && description.touched"
-          ></textarea>
-          <span class="error-text" *ngIf="description.invalid && description.touched">
-            Description is required.
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <section class="v-card add-team-card composition-card">
-      <div class="composition-header">
-        <h3 class="section-title">Team Composition</h3>
-        <button
-          type="button"
-          class="inline-action"
-          (click)="toggleMembersPanel()"
-          [disabled]="submitting || leadOptions.length === 0"
-        >
-          <mat-icon>person_add</mat-icon>
-          Add Member
+    <app-shared-form-card icon="group" title="Team Composition">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-800">MEMBERS</h3>
+        <button type="button" mat-button color="primary" class="font-semibold" (click)="toggleMembersPanel()" [disabled]="submitting || leadOptions.length === 0">
+          <mat-icon>person_add</mat-icon> Add Member
         </button>
       </div>
 
-      <div class="member-card owner-card" *ngIf="leadMember as owner">
-        <div class="member-left">
-          <div class="avatar-chip">{{ owner.initials }}</div>
-          <div class="member-details">
-            <span class="member-name">{{ owner.displayName }}</span>
-            <span class="member-subtitle">{{ owner.subtitle }}</span>
+      <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white mb-2" *ngIf="leadMember as owner">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
+            {{ owner.initials }}
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-900">{{ owner.displayName }}</span>
+            <span class="text-xs font-semibold text-gray-500">{{ owner.subtitle }}</span>
           </div>
         </div>
-        <span class="member-badge">OWNER</span>
+        <span class="text-xs font-bold text-gray-600 bg-gray-100 rounded-md px-2 py-1">OWNER</span>
       </div>
 
-      <div class="member-picker" *ngIf="membersPanelOpen">
-        <div class="member-picker-row">
-          <select
-            name="memberCandidate"
-            [(ngModel)]="selectedMemberCandidateId"
-            [disabled]="submitting"
-          >
-            <option [ngValue]="null" disabled>Select member</option>
-            <option *ngFor="let candidate of availableMemberCandidates" [value]="candidate.id">
-              {{ candidate.displayName }}
-            </option>
-          </select>
-          <button
-            type="button"
-            class="v-btn-brand"
-            (click)="addMember()"
-            [disabled]="submitting || selectedMemberCandidateId === null"
-          >
+      <div class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 mb-2" *ngIf="membersPanelOpen">
+        <div class="flex gap-2 items-center">
+          <!-- We can use a standalone ngModel here because it's not part of the form submission payload directly -->
+          <mat-form-field appearance="outline" class="w-full flex-1" style="margin-bottom: -1.25em;">
+            <mat-select [(ngModel)]="selectedMemberCandidateId" [ngModelOptions]="{standalone: true}" [disabled]="submitting" placeholder="Select member">
+              <mat-option *ngFor="let candidate of availableMemberCandidates" [value]="candidate.id">
+                {{ candidate.displayName }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button type="button" mat-flat-button class="v-btn-brand h-[56px]" (click)="addMember()" [disabled]="submitting || selectedMemberCandidateId === null">
             Add
           </button>
         </div>
       </div>
 
-      <div class="member-list" *ngIf="additionalMembers.length > 0">
-        <div class="member-card" *ngFor="let member of additionalMembers; trackBy: trackByMemberId">
-          <div class="member-left">
-            <div class="avatar-chip">{{ member.initials }}</div>
-            <div class="member-details">
-              <span class="member-name">{{ member.displayName }}</span>
-              <span class="member-subtitle">{{ member.subtitle }}</span>
+      <div class="flex flex-col gap-2" *ngIf="additionalMembers.length > 0">
+        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white" *ngFor="let member of additionalMembers; trackBy: trackByMemberId">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
+              {{ member.initials }}
+            </div>
+            <div class="flex flex-col">
+              <span class="text-sm font-bold text-gray-900">{{ member.displayName }}</span>
+              <span class="text-xs font-semibold text-gray-500">{{ member.subtitle }}</span>
             </div>
           </div>
-          <button
-            type="button"
-            class="inline-remove"
-            (click)="removeMember(member.id)"
-            [disabled]="submitting"
-          >
+          <button type="button" mat-button color="warn" class="font-bold" (click)="removeMember(member.id)" [disabled]="submitting">
             Remove
           </button>
         </div>
       </div>
 
-      <div class="empty-members" *ngIf="additionalMembers.length === 0">
-        <mat-icon>groups_2</mat-icon>
-        <p class="empty-title">No additional members added</p>
-        <p class="empty-subtitle">Teams perform best with specialized roles assigned early.</p>
+      <div class="border border-dashed border-gray-300 rounded-lg p-6 text-center text-gray-500 bg-gray-50 mt-4" *ngIf="additionalMembers.length === 0">
+        <mat-icon class="text-gray-400">groups_2</mat-icon>
+        <p class="text-lg font-bold text-gray-600 mt-2 mb-1">No additional members added</p>
+        <p class="text-sm m-0">Teams perform best with specialized roles assigned early.</p>
       </div>
-    </section>
 
-    <footer class="form-footer">
-      <button type="button" mat-button (click)="cancel()" [disabled]="submitting">Cancel</button>
-      <button type="submit" mat-flat-button class="v-btn-brand" [disabled]="submitting || loadingLeads">
-        {{ submitting ? 'Creating...' : 'Create Team' }}
-      </button>
-    </footer>
-  </form>
+    </app-shared-form-card>
+
+  </app-shared-form>
 </div>
