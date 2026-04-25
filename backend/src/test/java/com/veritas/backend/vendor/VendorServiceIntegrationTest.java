@@ -50,4 +50,33 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         assertThat(persistedVendor.get().getVendorName()).isEqualTo(inputDto.vendorName());
         assertThat(persistedVendor.get().getPrimaryContactEmail()).isEqualTo(inputDto.primaryContactEmail());
     }
+
+    @Test
+    void FindVendors_ByStringAndRating_ShowsCorrectVendors() {
+        saveVendor("Apple Inc.", "TAX-AAPL");
+        saveVendor("Microsoft Corp.", "TAX-MSFT");
+
+        Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "Apple", 0.0);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).vendorName()).isEqualTo("Apple Inc.");
+    }
+
+    @Test
+    void FindVendors_ByStringAndRating_FilteredByTaxId() {
+        saveVendor("Apple Inc.", "TAX-AAPL");
+        saveVendor("Microsoft Corp.", "TAX-MSFT");
+
+        Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "MSFT", 0.0);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).taxId()).isEqualTo("TAX-MSFT");
+    }
+
+    private Vendor saveVendor(String name, String taxId) {
+        Vendor vendor = new Vendor();
+        vendor.setVendorName(name);
+        vendor.setTaxId(taxId);
+        return vendorRepository.save(vendor);
+    }
 }

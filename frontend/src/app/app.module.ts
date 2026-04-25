@@ -22,12 +22,13 @@ import { UserCreateComponent } from './features/user/user-create/user-create.com
 import { SharedTableComponent } from './shared/components/table/shared-table.component';
 import { StatCardComponent } from './shared/components/stat-card/stat-card.component';
 import { UserListComponent } from './features/user/user-list/user-list.component';
+import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
 import {MatChipsModule} from "@angular/material/chips";
 import { FormatEnumPipe } from './shared/pipes/format-enum.pipe';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatListModule} from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
-import { VendorCreateComponent } from './features/vendor/vendor-create.component';
+import { VendorCreateComponent } from './features/vendor/vendor-create/vendor-create.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatNativeDateModule, MatOptionModule} from "@angular/material/core";
@@ -38,6 +39,7 @@ import { SharedFormCardComponent } from './shared/components/creation/shared-for
 import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
 import { ProjectCreateComponent } from './features/project/project-create/project-create.component';
 import {MatDatepickerModule} from "@angular/material/datepicker";
+import {MatSliderModule} from "@angular/material/slider";
 
 @NgModule({
   declarations: [
@@ -57,7 +59,8 @@ import {MatDatepickerModule} from "@angular/material/datepicker";
     SharedFormComponent,
     SharedFormCardComponent,
     SharedFormFieldComponent,
-    ProjectCreateComponent
+    ProjectCreateComponent,
+    VendorListComponent
   ],
   imports: [
     BrowserModule,
@@ -83,7 +86,8 @@ import {MatDatepickerModule} from "@angular/material/datepicker";
     ReactiveFormsModule,
     MatSnackBarModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatSliderModule
   ],
   providers: [
     {

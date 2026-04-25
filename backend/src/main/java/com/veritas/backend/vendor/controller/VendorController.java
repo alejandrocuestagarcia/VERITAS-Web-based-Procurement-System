@@ -4,14 +4,17 @@ import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorRatingDto;
+import com.veritas.backend.vendor.dto.VendorStatsDto;
 import com.veritas.backend.vendor.service.VendorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/vendors")
@@ -22,36 +25,44 @@ public class VendorController {
 
     @Operation(summary = "List vendors", description = "Retrieves all vendors including their reliability scores and basic info.")
     @IsRequester
-    @GetMapping
-    public List<VendorDto> getAllVendors() {
-        return List.of();
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Page<VendorDto>> getAllVendors(Pageable pageable,
+                                                         @RequestParam(required = false) String search,
+                                                         @RequestParam(defaultValue = "0.0") Double minimumRating) {
+        return ResponseEntity.ok(this.vendorService.findVendorsByStringAndRating(pageable, search, minimumRating));
+    }
+
+    @Operation(summary = "Get vendor stats", description = "Retrieves stats about the vendors of Veritas")
+    @GetMapping(path = "/stats", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<VendorStatsDto> getVendorStats() {
+        return ResponseEntity.ok(vendorService.getVendorStats());
     }
 
     @Operation(summary = "Get vendor", description = "Retrieves a vendor including their reliability score and basic info.")
     @IsRequester
-    @GetMapping("/{id}")
-    public VendorDto getVendor(@PathVariable Long id) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null);
+    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<VendorDto> getVendor(@PathVariable Long id) {
+        return ResponseEntity.ok(vendorService.getVendorById(id));
     }
 
     @Operation(summary = "Create vendor", description = "Creates a new vendor.")
     @IsProcurementOfficer
-    @PostMapping()
-    public VendorDto createVendor(@Valid @RequestBody VendorDto create) {
-        return vendorService.createVendor(create);
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<VendorDto> createVendor(@Valid @RequestBody VendorDto create) {
+        return ResponseEntity.ok(vendorService.createVendor(create));
     }
 
     @Operation(summary = "Edit vendor", description = "Edits a vendors basic info.")
     @IsProcurementOfficer
-    @PatchMapping("/{id}")
-    public VendorDto editVendor(@PathVariable Long id, @RequestBody VendorDto edits) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null);
+    @PatchMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<VendorDto> editVendor(@PathVariable Long id, @RequestBody VendorDto edits) {
+        return null;
     }
 
     @Operation(summary = "Rate a vendor", description = "Saves communication, delivery, and quality scores for a specific vendor.")
     @IsProcurementOfficer
-    @PostMapping("/{id}/rate")
-    public VendorDto rateVendor(@PathVariable Long id, @RequestBody VendorRatingDto ratingData) {
-        return new VendorDto(null, null, null, null, null, null, null, null, null);
+    @PostMapping(path = "/{id}/rate", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<VendorDto> rateVendor(@PathVariable Long id, @RequestBody VendorRatingDto ratingData) {
+        return  null;
     }
 }

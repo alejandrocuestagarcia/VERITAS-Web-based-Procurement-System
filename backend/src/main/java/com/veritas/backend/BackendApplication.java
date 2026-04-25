@@ -31,6 +31,7 @@ public class BackendApplication {
 				Team team = new Team();
 				team.setName("Procurement Alpha");
 				team.setDepartment(Department.IT);
+				team.setDescription("Handles procurement for the alpha team");
 				return teamRepo.save(team);
 			});
 

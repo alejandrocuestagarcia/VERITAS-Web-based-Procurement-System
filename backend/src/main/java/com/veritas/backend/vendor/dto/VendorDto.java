@@ -1,9 +1,15 @@
 package com.veritas.backend.vendor.dto;
 
+import java.time.LocalDateTime;
+
+import org.springframework.cglib.core.Local;
+
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record VendorDto (
+    Long id,
     @NotBlank(message = "Vendor name is required")
     String vendorName,
     @NotBlank(message = "Tax ID is required")
@@ -16,5 +22,9 @@ public record VendorDto (
     String description,
     String primaryContactName,
     @Email(message = "Invalid email format")
-    String primaryContactEmail
-){}
+    String primaryContactEmail,
+    LocalDateTime updatedAt,
+    LocalDateTime createdAt,
+    LocalDateTime deletedAt
+){
+}

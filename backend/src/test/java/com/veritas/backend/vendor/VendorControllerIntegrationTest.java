@@ -93,4 +93,75 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
                         .content(objectMapper.writeValueAsString(invalidDto)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(roles = "PROCUREMENT_OFFICER")
+    void VendorCreation_AsProcurementOfficer_ShouldReturnCreated() throws Exception {
+        VendorDto inputDto = new VendorDto(
+                "Controller Test Vendor",
+                "TAX-CTRL-789",
+                null, null, null, null,
+                "Controller test description",
+                "Alice",
+                "alice@example.com");
+
+        when(vendorService.createVendor(any(VendorDto.class))).thenReturn(inputDto);
+
+        mockMvc.perform(post("/vendors")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.vendorName").value(inputDto.vendorName()))
+                .andExpect(jsonPath("$.taxId").value(inputDto.taxId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "REQUESTER")
+    void FindVendors_ShouldReturn_AllVendors() throws Exception {
+        VendorDto vendor1 = new VendorDto(
+                "Vendor 1",
+                "TAX-1",
+                null, null, null, null,
+                "Description 1",
+                "Contact 1",
+                "contact1@example.com");
+        VendorDto vendor2 = new VendorDto(
+                "Vendor 2",
+                "TAX-2",
+                null, null, null, null,
+                "Description 2",
+                "Contact 2",
+                "contact2@example.com");
+
+        Page<VendorDto> page = new PageImpl<>(java.util.List.of(vendor1, vendor2));
+
+        when(vendorService.findVendorsByStringAndRating(any(Pageable.class), any(), any()))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/vendors")
+                .param("page", "0")
+                .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].vendorName").value("Vendor 1"))
+                .andExpect(jsonPath("$.content[1].vendorName").value("Vendor 2"))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    @WithMockUser(roles = "REQUESTER")
+    void FindVendors_WithSearchAndRating_ShouldReturnFilteredVendors() throws Exception {
+        Page<VendorDto> emptyPage = new PageImpl<>(java.util.List.of());
+
+        when(vendorService.findVendorsByStringAndRating(any(Pageable.class), any(String.class), any(Double.class)))
+                .thenReturn(emptyPage);
+
+        mockMvc.perform(get("/vendors")
+                .param("search", "test")
+                .param("minimumRating", "4.5"))
+                .andExpect(status().isOk());
+
+        verify(vendorService).findVendorsByStringAndRating(any(Pageable.class), org.mockito.ArgumentMatchers.eq("test"),
+                org.mockito.ArgumentMatchers.eq(4.5));
+    }
 }

@@ -61,4 +61,31 @@ public class VendorServiceUnitTest {
         assertThat(capturedVendor.getVendorName()).isEqualTo(inputDto.vendorName());
         assertThat(capturedVendor.getTaxId()).isEqualTo(inputDto.taxId());
     }
+
+    @Test
+    void FindVendors_ByStringAndRating_ShouldCallRepositoryAndMapToDto() {
+        Vendor vendor = new Vendor();
+        vendor.setVendorName("Test Vendor");
+        Page<Vendor> page = new PageImpl<>(List.of(vendor));
+
+        when(vendorRepository.findByRating(eq("test"), eq(5.0), any(Pageable.class)))
+                .thenReturn(page);
+
+        Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", 5.0);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).vendorName()).isEqualTo("Test Vendor");
+        verify(vendorRepository).findByRating(eq("test"), eq(5.0), any(Pageable.class));
+    }
+
+    @Test
+    void FindVendors_ByStringAndRating_WithInvalidRating_ShouldThrowException() {
+        assertThatThrownBy(() -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", 11.0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Rating must be between 0.0 and 10.0");
+
+        assertThatThrownBy(() -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", -1.0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Rating must be between 0.0 and 10.0");
+    }
 }
