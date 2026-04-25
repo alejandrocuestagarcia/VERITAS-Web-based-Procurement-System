@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.common.model.Department;
-import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -55,9 +54,6 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   private PasswordEncoder encoder;
 
   private Team testTeam;
-
-  @Autowired
-  private RefreshTokenRepository refreshTokenRepository;
 
   @BeforeEach
   void setUp() {
@@ -281,6 +277,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     Team newTeam = new Team();
     newTeam.setName("Other Team");
     newTeam.setDepartment(Department.IT);
+    newTeam.setDescription("IT Department Team");
     teamRepository.save(newTeam);
 
     UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
