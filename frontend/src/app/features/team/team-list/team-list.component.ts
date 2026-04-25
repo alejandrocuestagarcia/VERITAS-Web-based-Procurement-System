@@ -40,7 +40,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     { key: 'legal', label: 'Legal' }
   ];
 
-  displayedColumns: string[] = ['identity', 'department', 'projects', 'status', 'operations'];
+  displayedColumns: string[] = ['identity', 'department', 'projects', 'status', 'actions'];
   dataSource = new MatTableDataSource<TeamRow>([]);
 
   loading = false;
@@ -147,6 +147,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
         name: teamName,
         departmentLabel: department.label,
         departmentFilter: department.filter,
+        projectNames: projectNames,
         projectsText: this.formatProjects(projectNames),
         statusLabel: isActive ? 'ACTIVE' : 'ON HOLD',
         isActive,

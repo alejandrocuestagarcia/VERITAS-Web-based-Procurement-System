@@ -25,7 +25,6 @@
         </mat-form-field>
       </app-shared-form-field>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <app-shared-form-field label="TEAM LEAD">
           <mat-form-field appearance="outline" class="w-full">
             <mat-icon matPrefix>person</mat-icon>
@@ -39,24 +38,23 @@
           </mat-form-field>
         </app-shared-form-field>
 
-        <app-shared-form-field label="DEPARTMENT">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-icon matPrefix>business</mat-icon>
-            <mat-select formControlName="department" placeholder="Select Department">
-              <mat-option *ngFor="let option of departmentOptions" [value]="option.value">
-                {{ option.label }}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="teamForm.get('department')?.hasError('required') && teamForm.get('department')?.touched">Department is required.</mat-error>
-          </mat-form-field>
-        </app-shared-form-field>
-      </div>
-
       <app-shared-form-field label="DESCRIPTION">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>description</mat-icon>
-          <textarea matInput formControlName="description" rows="4" placeholder="Briefly describe the team's objectives and scope..."></textarea>
+          <mat-icon matPrefix>article</mat-icon>
+          <textarea matInput formControlName="description" rows="1" placeholder="Briefly describe the team's objectives and scope..."></textarea>
           <mat-error *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description is required.</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="DEPARTMENT">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>business</mat-icon>
+          <mat-select formControlName="department" placeholder="Select Department">
+            <mat-option *ngFor="let option of departmentOptions" [value]="option.value">
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="teamForm.get('department')?.hasError('required') && teamForm.get('department')?.touched">Department is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
     </app-shared-form-card>
