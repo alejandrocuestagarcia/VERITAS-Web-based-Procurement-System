@@ -7,7 +7,7 @@ import {ProjectListComponent} from "./features/project/project-list/project-list
 import {UserCreateComponent} from "./features/user/user-create/user-create.component";
 import {UserListComponent} from "./features/user/user-list/user-list.component";
 import {guestGuard} from "./core/guards/guest.guard";
-import {VendorCreateComponent} from "./features/vendor/vendor-create.component";
+import {VendorCreateComponent} from "./features/vendor/vendor-create/vendor-create.component";
 import {ProjectCreateComponent} from "./features/project/project-create/project-create.component";
 import {VendorListComponent} from "./features/vendor/vendor-list/vendor-list.component";
 

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { VendorModuleService } from '../../core/api';
-import { VendorDto } from '../../core/api';
+import { VendorModuleService } from '../../../core/api';
+import { VendorDto } from '../../../core/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from "@angular/material/snack-bar";
 

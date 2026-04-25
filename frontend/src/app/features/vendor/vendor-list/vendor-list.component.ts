@@ -65,7 +65,6 @@ export class VendorListComponent implements OnInit {
 
     this.vendorService.getAllVendors(pageable, this.currentSearchString, this.minimumRating).subscribe({
       next: (response) => {
-        console.log(response);
         this.dataSource.data = response.content || [];
         this.totalPageElements = response.totalElements || 0;
         this.loading = false;

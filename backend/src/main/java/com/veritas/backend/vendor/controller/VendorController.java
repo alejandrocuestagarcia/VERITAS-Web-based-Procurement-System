@@ -41,28 +41,28 @@ public class VendorController {
     @Operation(summary = "Get vendor", description = "Retrieves a vendor including their reliability score and basic info.")
     @IsRequester
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public VendorDto getVendor(@PathVariable Long id) {
-        return vendorService.getVendorById(id);
+    public ResponseEntity<VendorDto> getVendor(@PathVariable Long id) {
+        return ResponseEntity.ok(vendorService.getVendorById(id));
     }
 
     @Operation(summary = "Create vendor", description = "Creates a new vendor.")
     @IsProcurementOfficer
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public VendorDto createVendor(@Valid @RequestBody VendorDto create) {
-        return vendorService.createVendor(create);
+    public ResponseEntity<VendorDto> createVendor(@Valid @RequestBody VendorDto create) {
+        return ResponseEntity.ok(vendorService.createVendor(create));
     }
 
     @Operation(summary = "Edit vendor", description = "Edits a vendors basic info.")
     @IsProcurementOfficer
     @PatchMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public VendorDto editVendor(@PathVariable Long id, @RequestBody VendorDto edits) {
+    public ResponseEntity<VendorDto> editVendor(@PathVariable Long id, @RequestBody VendorDto edits) {
         return null;
     }
 
     @Operation(summary = "Rate a vendor", description = "Saves communication, delivery, and quality scores for a specific vendor.")
     @IsProcurementOfficer
     @PostMapping(path = "/{id}/rate", produces = MediaType.APPLICATION_JSON_VALUE)
-    public VendorDto rateVendor(@PathVariable Long id, @RequestBody VendorRatingDto ratingData) {
+    public ResponseEntity<VendorDto> rateVendor(@PathVariable Long id, @RequestBody VendorRatingDto ratingData) {
         return  null;
     }
 }
