@@ -55,7 +55,7 @@ export class VendorCreateComponent implements OnInit {
         next: () => {
           this.loading = false;
           this.snackBar.open('Vendor added successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/dashboards']); //needs to be refactored to /projects
+          this.router.navigate(['/vendors']);
         },
         error: err => {
           this.loading = false;
