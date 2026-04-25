@@ -8,15 +8,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,12 +42,14 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
     void VendorCreation_AsProcurementOfficer_ReturnsCreated() throws Exception {
         VendorDto inputDto = new VendorDto(
+                1L,
                 "Controller Test Vendor",
                 "TAX-CTRL-789",
                 null, null, null, null,
                 "Controller test description",
                 "Alice",
-                "alice@example.com"
+                "alice@example.com",
+                null, null, null
         );
 
         when(vendorService.createVendor(any(VendorDto.class))).thenReturn(inputDto);
@@ -60,12 +67,14 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "REQUESTER")
     void VendorCreation_AsRequester_ReturnsForbidden() throws Exception {
         VendorDto inputDto = new VendorDto(
+                1L,
                 "Forbidden Vendor",
                 "TAX-FORBIDDEN",
                 null, null, null, null,
                 "Should fail",
                 "Bob",
-                "bob@example.com"
+                "bob@example.com",
+                null, null, null
         );
 
         mockMvc.perform(post("/vendors")
@@ -79,12 +88,14 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
     void VendorCreation_InvalidData_ReturnsBadRequest() throws Exception {
         VendorDto invalidDto = new VendorDto(
+                1L,
                 "",
                 "",
                 null, null, null, null,
                 "",
                 "Invalid",
-                "not-an-email"
+                "not-an-email",
+                null, null, null
         );
 
         mockMvc.perform(post("/vendors")
@@ -98,12 +109,15 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
     void VendorCreation_AsProcurementOfficer_ShouldReturnCreated() throws Exception {
         VendorDto inputDto = new VendorDto(
+                1L,
                 "Controller Test Vendor",
                 "TAX-CTRL-789",
                 null, null, null, null,
                 "Controller test description",
                 "Alice",
-                "alice@example.com");
+                "alice@example.com",
+                null, null, null
+        );
 
         when(vendorService.createVendor(any(VendorDto.class))).thenReturn(inputDto);
 
@@ -120,19 +134,25 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "REQUESTER")
     void FindVendors_ShouldReturn_AllVendors() throws Exception {
         VendorDto vendor1 = new VendorDto(
+                1L,
                 "Vendor 1",
                 "TAX-1",
                 null, null, null, null,
                 "Description 1",
                 "Contact 1",
-                "contact1@example.com");
+                "contact1@example.com",
+                null, null, null
+        );
         VendorDto vendor2 = new VendorDto(
+                1L,
                 "Vendor 2",
                 "TAX-2",
                 null, null, null, null,
                 "Description 2",
                 "Contact 2",
-                "contact2@example.com");
+                "contact2@example.com",
+                null, null, null
+        );
 
         Page<VendorDto> page = new PageImpl<>(java.util.List.of(vendor1, vendor2));
 

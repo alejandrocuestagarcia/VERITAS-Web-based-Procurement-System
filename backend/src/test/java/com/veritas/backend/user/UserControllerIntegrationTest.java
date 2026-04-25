@@ -28,8 +28,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -68,6 +66,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     Team testTeam = new Team();
     testTeam.setName("Test Team");
     testTeam.setDepartment(Department.IT);
+    testTeam.setDescription("A Team for testing");
     teamRepository.save(testTeam);
   }
 

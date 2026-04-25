@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.Optional;
 
@@ -33,12 +35,14 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void VendorCreation_ValidInput_PersistsInDatabase() {
         VendorDto inputDto = new VendorDto(
+                null,
                 "Integration Test Vendor",
                 "TAX-INT-456",
                 null, null, null, null,
                 "Integration test description",
                 "Boban Bobanovic",
-                "boban@example.com"
+                "boban@example.com",
+                null, null, null
         );
 
         VendorDto result = vendorService.createVendor(inputDto);
@@ -77,6 +81,7 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         Vendor vendor = new Vendor();
         vendor.setVendorName(name);
         vendor.setTaxId(taxId);
+        vendor.setDescription("Test vendors");
         return vendorRepository.save(vendor);
     }
 }

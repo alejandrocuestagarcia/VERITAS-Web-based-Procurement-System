@@ -2,6 +2,7 @@ package com.veritas.backend.vendor;
 
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.mapper.VendorMapper;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.impl.VendorServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -10,9 +11,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,19 +31,28 @@ public class VendorServiceUnitTest {
     @Mock
     private VendorRepository vendorRepository;
 
+    @Mock
+    private VendorMapper vendorMapper;
+
     @InjectMocks
     private VendorServiceImpl vendorService;
 
     @Test
     void CreateVendor_ValidInput_SavesAndReturnsVendor() {
         VendorDto inputDto = new VendorDto(
+                1L,
                 "Test Vendor",
                 "TAX-123",
                 null, null, null, null,
                 "A test vendor description",
                 "John Doe",
-                "john@example.com"
+                "john@example.com",
+                null, null, null
         );
+
+        Vendor mappedVendor = new Vendor();
+        mappedVendor.setVendorName(inputDto.vendorName());
+        mappedVendor.setTaxId(inputDto.taxId());
 
         Vendor savedVendor = new Vendor();
         savedVendor.setId(1L);
@@ -44,6 +62,8 @@ public class VendorServiceUnitTest {
         savedVendor.setPrimaryContactName(inputDto.primaryContactName());
         savedVendor.setPrimaryContactEmail(inputDto.primaryContactEmail());
 
+        when(vendorMapper.toVendor(inputDto)).thenReturn(mappedVendor);
+        when(vendorMapper.toVendorDto(savedVendor)).thenReturn(inputDto);
         when(vendorRepository.save(any(Vendor.class))).thenReturn(savedVendor);
 
         VendorDto result = vendorService.createVendor(inputDto);
@@ -68,8 +88,17 @@ public class VendorServiceUnitTest {
         vendor.setVendorName("Test Vendor");
         Page<Vendor> page = new PageImpl<>(List.of(vendor));
 
-        when(vendorRepository.findByRating(eq("test"), eq(5.0), any(Pageable.class)))
-                .thenReturn(page);
+        VendorDto dto = new VendorDto(
+                1L, "Test Vendor", "TAX-123",
+                null, null, null, null,
+                "A test vendor description",
+                "John Doe",
+                "john@example.com",
+                null, null, null
+        );
+
+        when(vendorRepository.findByRating(eq("test"), eq(5.0), any(Pageable.class))).thenReturn(page);
+        when(vendorMapper.toVendorDto(vendor)).thenReturn(dto);
 
         Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", 5.0);
 
