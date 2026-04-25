@@ -24,7 +24,7 @@ export class NavigationService {
     { label: 'All Requests', icon: 'list_alt', route: '/requests/all',
       roles: ['FINANCE_OFFICER'] },
 
-    { label: 'Workflows', icon: 'account_tree', route: '/workflow',
+    { label: 'Workflows', icon: 'account_tree', route: '/workflows',
       roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR'] },
 
     { label: 'Projects', icon: 'assignment', route: '/projects',

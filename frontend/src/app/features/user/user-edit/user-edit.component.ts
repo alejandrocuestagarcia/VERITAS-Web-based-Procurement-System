@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {
+  TeamDto,
   TeamsModuleService, UserCreationRequestDtoDepartmentEnum, UserDtoRoleEnum,
   UserModuleService
 } from "../../../core/api";
@@ -19,7 +20,7 @@ export class UserEditComponent implements OnInit {
 
   roles = Object.values(UserDtoRoleEnum);
   departments = Object.values(UserCreationRequestDtoDepartmentEnum);
-  teams: any[] = [];
+  teams: TeamDto[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -42,7 +43,7 @@ export class UserEditComponent implements OnInit {
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       role: [null, Validators.required],
-      teamId: [null],
+      teamId: [null, Validators.required],
       department: [null, Validators.required],
       isTeamLeader: [false],
     });
@@ -58,11 +59,10 @@ export class UserEditComponent implements OnInit {
   }
 
   private loadTeams(): void {
-    // mock for now until team functionality is implemented
-    // this.teamService.getAllTeams().subscribe({
-    //   next: (teams) => this.teams = teams,
-    //   error: () => this.snackBar.open('Failed to load teams.', 'Close', { duration: 3000 })
-    // });
+    this.teamService.getAllTeams().subscribe({
+      next: (teams) => this.teams = teams,
+      error: () => this.snackBar.open('Failed to load teams.', 'Close', { duration: 3000 })
+    });
   }
 
   private loadUser(): void {

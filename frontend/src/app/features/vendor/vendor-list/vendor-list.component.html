@@ -27,7 +27,7 @@
   </div>
 
   <!-- Actions -->
-  <button actions mat-flat-button class="v-btn-brand" [routerLink]="['/vendors/create']">
+  <button actions mat-flat-button class="v-btn-brand" *appHasRole="['PROCUREMENT_OFFICER']" [routerLink]="['/vendors/create']">
     <mat-icon>add</mat-icon>
     <span>Add Vendor</span>
   </button>
@@ -63,10 +63,10 @@
       <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
       <td mat-cell *matCellDef="let vendor">
         <div class="flex items-center gap-1">
-          <button mat-icon-button (click)="editVendor(vendor)" matTooltip="Edit Vendor">
+          <button mat-icon-button *appHasRole="['PROCUREMENT_OFFICER']" (click)="editVendor(vendor)" matTooltip="Edit Vendor">
             <mat-icon>edit</mat-icon>
           </button>
-          <button mat-icon-button color="warn" (click)="deleteVendor(vendor)">
+          <button mat-icon-button color="warn" *appHasRole="['PROCUREMENT_OFFICER']" (click)="deleteVendor(vendor)">
             <mat-icon>delete</mat-icon>
           </button>
         </div>

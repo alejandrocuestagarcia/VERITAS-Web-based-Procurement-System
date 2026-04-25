@@ -11,6 +11,7 @@ import {VendorCreateComponent} from "./features/vendor/vendor-create/vendor-crea
 import {ProjectCreateComponent} from "./features/project/project-create/project-create.component";
 import {VendorListComponent} from "./features/vendor/vendor-list/vendor-list.component";
 import {UserEditComponent} from "./features/user/user-edit/user-edit.component";
+import {roleGuard} from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 
@@ -19,24 +20,22 @@ const routes: Routes = [
     component: LoginComponent,
     canActivate: [guestGuard]
   },
-  { path: 'users',
+  {
+    path: 'users',
     component: UserListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },
   { path: 'users/create',
     component: UserCreateComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },
   {
     path: 'users/edit/:id',
     component: UserEditComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
-  },
-  {
-    path: 'projects/create',
-    component: ProjectCreateComponent,
-    canActivate: [authGuard]
   },
   {
     path: 'projects',
@@ -54,19 +53,27 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'projects/create',
+    component: ProjectCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [authGuard]
   },
   {
-    path: 'vendors/create',
-    component: VendorCreateComponent,
-    canActivate: [authGuard]
-  },
-  {
     path: 'vendors',
     component: VendorListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['REQUESTER', 'PROCUREMENT_OFFICER'] }
+  },
+  {
+    path: 'vendors/create',
+    component: VendorCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
   },
   { path: 'requisition/new', redirectTo: '/dashboard' }, //change later to the right page
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
