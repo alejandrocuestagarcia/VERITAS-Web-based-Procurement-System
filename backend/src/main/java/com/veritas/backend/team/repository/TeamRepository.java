@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface TeamRepository extends JpaRepository<Team, Long> {
     // Added to ensure a team name isn't already taken
 	boolean existsByNameIgnoreCase(String name);
+    boolean existsByLeaderId(Long leaderId);
+    boolean existsByLeaderIdAndTeamIdNot(Long leaderId, Long teamId);
 }

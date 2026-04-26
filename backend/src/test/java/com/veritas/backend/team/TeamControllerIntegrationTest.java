@@ -21,10 +21,12 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -175,15 +177,52 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         TeamCreateDto request = createTeamRequest("Leadership Team");
         request.setLeaderId(leader.getId());
 
-        mockMvc.perform(post("/teams")
+        MvcResult result = mockMvc.perform(post("/teams")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.leaderId").value(leader.getId()));
+                .andExpect(jsonPath("$.leaderId").value(leader.getId()))
+                .andReturn();
+
+        Long createdTeamId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
 
         User persistedLeader = userRepository.findById(leader.getId()).orElseThrow();
-        assertNull(persistedLeader.getTeam());
+        assertNotNull(persistedLeader.getTeam());
+        assertEquals(createdTeamId, persistedLeader.getTeam().getTeamId());
+    }
+
+    @Test
+    void GetAllTeams_AsAdministrator_ReturnsListOfTeams() throws Exception {
+        String token = createTokenForRole(UserRole.ADMINISTRATOR);
+
+        mockMvc.perform(post("/teams")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createTeamRequest("Alpha Team"))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/teams")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createTeamRequest("Beta Team"))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/teams")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("Alpha Team"))
+                .andExpect(jsonPath("$[1].name").value("Beta Team"));
+    }
+
+    @Test
+    void GetAllTeams_AsRequester_ReturnsForbidden() throws Exception {
+        String token = createTokenForRole(UserRole.REQUESTER);
+
+        mockMvc.perform(get("/teams")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
     }
 
     private String createTokenForRole(UserRole role) {

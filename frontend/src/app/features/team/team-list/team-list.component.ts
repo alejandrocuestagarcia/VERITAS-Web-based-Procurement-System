@@ -151,7 +151,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
         projectsText: this.formatProjects(projectNames),
         statusLabel: isActive ? 'ACTIVE' : 'ON HOLD',
         isActive,
-        membersCount: 0, // Mock members count for now
+        membersCount: team.members?.length ?? 0,
         icon: this.resolveIcon(department.filter)
       };
     });

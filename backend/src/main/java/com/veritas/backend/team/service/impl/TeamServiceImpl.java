@@ -1,5 +1,7 @@
 package com.veritas.backend.team.service.impl;
 
+import com.veritas.backend.user.dto.UserDto;
+import com.veritas.backend.user.mapper.UserMapper;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.team.dto.TeamCreateDto;
@@ -10,6 +12,8 @@ import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.team.service.TeamService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.repository.UserRepository;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,12 +60,37 @@ public class TeamServiceImpl implements TeamService {
         team.setIsActive(true);
 
         if (request.getLeaderId() != null) {
-            User leader = userRepository.findById(Objects.requireNonNull(request.getLeaderId()))
-                    .orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
+            User leader = userRepository.findById(Objects.requireNonNull(request.getLeaderId())).orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
+
+            if (teamRepository.existsByLeaderId(request.getLeaderId())) {
+                throw new EntityExistsException("User '" + leader.getName() + "' is already a leader of another team");
+            }
+
             team.setLeader(leader);
         }
 
         Team savedTeam = teamRepository.save(Objects.requireNonNull(team));
+
+        List<Long> allMemberIds = new ArrayList<>();
+        if (request.getLeaderId() != null)
+            allMemberIds.add(request.getLeaderId());
+        if (request.getMemberIds() != null)
+            allMemberIds.addAll(request.getMemberIds());
+
+        if (!allMemberIds.isEmpty()) {
+            List<User> usersToAssign = userRepository.findAllById(allMemberIds);
+
+            for (User user : usersToAssign) {
+                boolean isLeaderOfAnotherTeam = teamRepository.existsByLeaderIdAndTeamIdNot(user.getId(), savedTeam.getTeamId());
+                if (isLeaderOfAnotherTeam) {
+                    throw new IllegalStateException("User '" + user.getName() + "' is already a leader of another team and cannot be assigned as a member.");
+                }
+            }
+
+            usersToAssign.forEach(user -> user.setTeam(savedTeam));
+            userRepository.saveAll(usersToAssign);
+        }
+
         return convertTeamToTeamDto(savedTeam);
     }
 
@@ -89,12 +119,18 @@ public class TeamServiceImpl implements TeamService {
     }
 
     private TeamDto convertTeamToTeamDto(Team team) {
+        List<UserDto> members = this.userRepository.findAllByTeamTeamId(team.getTeamId())
+                .stream()
+                .map(userMapper::toUserDto)
+                .toList();
+
         TeamDto dto = new TeamDto();
         dto.setId(team.getTeamId());
         dto.setName(team.getName());
         dto.setDescription(team.getDescription());
         dto.setDepartment(team.getDepartment() != null ? team.getDepartment().name() : null);
         dto.setLeaderId(team.getLeader() != null ? team.getLeader().getId() : null);
+        dto.setMembers(members);
         dto.setIsActive(team.getIsActive());
         dto.setExpiresAt(team.getExpiresAt());
         dto.setCreatedAt(team.getCreatedAt());

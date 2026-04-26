@@ -15,6 +15,7 @@ interface TeamMemberOption {
   displayName: string;
   subtitle: string;
   initials: string;
+  currentTeam: string | null;
 }
 
 @Component({
@@ -85,7 +86,8 @@ export class TeamCreateComponent implements OnInit {
     const payload: TeamCreateDto = {
       name: formValues.name.trim(),
       description: formValues.description.trim(),
-      department: formValues.department
+      department: formValues.department,
+      memberIds: this.additionalMembers.map(member => member.id)
     };
 
     const leaderId = this.normalizeLeaderId(formValues.leaderId);
@@ -229,7 +231,8 @@ export class TeamCreateComponent implements OnInit {
       id: user.id,
       displayName,
       subtitle,
-      initials: this.getInitials(displayName)
+      initials: this.getInitials(displayName),
+      currentTeam: user.teamName ?? null
     };
   }
 
@@ -263,6 +266,10 @@ export class TeamCreateComponent implements OnInit {
   }
 
   private extractErrorMessage(err: any): string {
+    if (typeof err?.error === 'string' && err.error.length > 0) {
+      return err.error;
+    }
+
     const backendMessage = err?.error?.message;
     if (backendMessage && typeof backendMessage === 'string') {
       return backendMessage;
@@ -289,5 +296,16 @@ export class TeamCreateComponent implements OnInit {
     }
 
     return [];
+  }
+
+  get selectedLeadOption(): TeamMemberOption | null {
+    const leaderId = this.normalizeLeaderId(this.teamForm?.value?.leaderId);
+    if (leaderId === null) return null;
+    return this.leadOptions.find(o => o.id === leaderId) ?? null;
+  }
+
+  get selectedMemberCandidateOption(): TeamMemberOption | null {
+    if (this.selectedMemberCandidateId === null) return null;
+    return this.availableMemberCandidates.find(c => c.id === this.selectedMemberCandidateId) ?? null;
   }
 }
