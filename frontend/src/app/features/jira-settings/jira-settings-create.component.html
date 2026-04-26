@@ -1,0 +1,95 @@
+<div [formGroup]="settingsForm">
+  <app-shared-form
+    [title]="isEditing ? 'Edit Configuration' : 'New Configuration'"
+    [subtitle]="isEditing ? 'Update the details for this Jira sync configuration.' : 'Create a new dynamic polling configuration for Jira.'"
+    routingSubtitle="INTEGRATIONS > JIRA CONFIGS"
+    [submitButtonLabel]="isEditing ? 'Update Config' : 'Save Config'"
+    submitButtonIcon="save"
+    [loading]="loading"
+    (submitted)="onSubmit()"
+    (cancelled)="onCancel()">
+
+    <app-shared-form-card icon="api" title="Connection Settings">
+      <app-shared-form-field label="CONFIG NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>label</mat-icon>
+          <input matInput formControlName="name" placeholder="e.g. Production Procurement Sync">
+          <mat-error *ngIf="settingsForm.get('name')?.hasError('required')">Name is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="JIRA URL">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>link</mat-icon>
+          <input matInput formControlName="jiraUrl" placeholder="https://your-domain.atlassian.net">
+          <mat-error *ngIf="settingsForm.get('jiraUrl')?.hasError('required')">Jira URL is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="USERNAME / EMAIL">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="username" placeholder="admin@domain.com">
+          <mat-error *ngIf="settingsForm.get('username')?.hasError('required')">Username is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="API TOKEN">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>vpn_key</mat-icon>
+          <input matInput formControlName="apiToken" type="password" [placeholder]="isEditing ? 'Leave blank to keep current' : 'Jira API Token'">
+          <mat-error *ngIf="!isEditing && settingsForm.get('apiToken')?.hasError('required')">Token is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <div class="col-span-1 md:col-span-2 pt-2">
+        <button mat-stroked-button color="primary" type="button" [disabled]="testingConnection" (click)="testConnection()">
+            <mat-icon>electrical_services</mat-icon>
+            {{ testingConnection ? 'Testing...' : 'Test Connection' }}
+        </button>
+      </div>
+    </app-shared-form-card>
+
+    <app-shared-form-card icon="sync" title="Polling & Sync Behavior">
+      <div class="col-span-1 md:col-span-2">
+        <app-shared-form-field label="JQL QUERY">
+            <mat-form-field appearance="outline" class="w-full">
+            <mat-icon matPrefix>search</mat-icon>
+            <textarea matInput formControlName="jql" rows="2" placeholder="project = 'PROC'"></textarea>
+            <mat-error *ngIf="settingsForm.get('jql')?.hasError('required')">JQL is required</mat-error>
+            </mat-form-field>
+        </app-shared-form-field>
+      </div>
+
+      <app-shared-form-field label="SYNC INTERVAL (MINS)">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>timer</mat-icon>
+          <input matInput type="number" formControlName="syncIntervalMinutes" min="1">
+          <mat-error *ngIf="settingsForm.get('syncIntervalMinutes')?.hasError('required')">Interval is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="CUSTOM FIELD ID (HANDSHAKE)">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>data_object</mat-icon>
+          <input matInput formControlName="customFieldId" placeholder="e.g., 10015 or customfield_10015">
+          <mat-error *ngIf="settingsForm.get('customFieldId')?.hasError('required')">Custom Field ID is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
+        <ng-container infoPanel>
+      <div class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
+        <mat-icon class="text-blue-700 mt-0.5 flex-shrink-0">info</mat-icon>
+        <div class="flex flex-col">
+          <span class="font-bold text-sm text-slate-800">Dynamic 2-Phase Handshake</span>
+          <span class="text-xs text-slate-600 mt-1 leading-relaxed">
+            The polling service will append `<span class="font-mono bg-blue-100 px-1 rounded">AND cf[ID] IS EMPTY</span>` to your JQL.
+            Matching issues will be imported, and their Jira custom field will be updated with the local ID.
+          </span>
+        </div>
+      </div>
+    </ng-container>
+
+  </app-shared-form>
+</div>

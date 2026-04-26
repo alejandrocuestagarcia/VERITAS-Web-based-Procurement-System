@@ -41,6 +41,9 @@ export class NavigationService {
 
     { label: 'User Management', icon: 'manage_accounts', route: '/users',
       roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] },
+
+    { label: 'Integrations', icon: 'integration_instructions', route: '/integrations',
+      roles: ['ADMINISTRATOR'] },
   ];
 
   getLinksForRole(userRole: string): NavItem[] {

@@ -46,6 +46,8 @@ import { TeamCreateComponent } from './features/team/team-create/team-create.com
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
 import { UserEditComponent } from './features/user/user-edit/user-edit.component';
+import {JiraSettingsListComponent} from "./features/jira-settings/jira-settings-list.component";
+import {JiraSettingsCreateComponent} from "./features/jira-settings/jira-settings-create.component";
 import { ResetPasswordDialogComponent } from './features/login/reset-password-dialog/reset-password-dialog.component';
 import {MatDialogModule} from "@angular/material/dialog";
 
@@ -74,7 +76,9 @@ import {MatDialogModule} from "@angular/material/dialog";
     TeamCreateComponent,
     VendorCreateComponent,
     UserEditComponent,
-    ResetPasswordDialogComponent
+    ResetPasswordDialogComponent,
+    JiraSettingsListComponent,
+    JiraSettingsCreateComponent
   ],
   imports: [
     BrowserModule,
