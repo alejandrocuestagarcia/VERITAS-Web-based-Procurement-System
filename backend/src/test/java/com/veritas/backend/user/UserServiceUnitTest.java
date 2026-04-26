@@ -3,6 +3,7 @@ package com.veritas.backend.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,8 +29,10 @@ import java.util.Optional;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -48,8 +51,8 @@ class UserServiceUnitTest {
     @Mock
     private TeamRepository teamRepository;
 
-    @Mock
-    private UserMapper userMapper;
+    @Spy
+    private UserMapper userMapper = Mappers.getMapper(UserMapper.class);
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -173,7 +176,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, null, null, true));
+        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, true));
 
         assertEquals(user, team.getLeader());
         verify(teamRepository).save(team);
@@ -192,7 +195,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, null, null,false));
+        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null,false));
 
         assertNull(team.getLeader());
         verify(teamRepository).save(team);

@@ -68,6 +68,11 @@ public class UserServiceImpl implements UserService {
   public UserDto editUser(Long id, UserEditDto edits) {
     User user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
 
+    boolean changingTeam = edits.teamId() != null && (user.getTeam() == null || !edits.teamId().equals(user.getTeam().getTeamId()));
+    if (changingTeam && Boolean.TRUE.equals(edits.isTeamLeader())) {
+      throw new IllegalArgumentException("Cannot change team and promote to leader in the same request. Change team first, then promote.");
+    }
+
     if (edits.email() != null && !edits.email().equals(user.getEmail())) {
       if (userRepository.existsByEmail(edits.email())) {
         throw new EntityExistsException("Email already registered");
@@ -75,47 +80,40 @@ public class UserServiceImpl implements UserService {
       user.setEmail(edits.email());
     }
 
-    if (edits.name() != null) {
+    if (edits.name() != null)
       user.setName(edits.name());
-    }
+
+    if (edits.role() != null)
+      user.setRole(edits.role());
+
+    if (edits.department() != null)
+      user.setDepartment(edits.department());
 
     if (edits.teamId() != null) {
-      // If user is team leader, prevent team change unless demoted
-      if (user.getTeam() != null && user.getTeam().getLeader() != null && user.getTeam().getLeader().getId().equals(user.getId())
-          && !edits.teamId().equals(user.getTeam().getTeamId())) {
-        throw new IllegalArgumentException("Cannot change team while user is team leader. Demote first.");
+      if (changingTeam) {
+        Team newTeam = teamRepository.findById(edits.teamId()).orElseThrow(() -> new EntityNotFoundException("Team not found"));
+        user.setTeam(newTeam);
       }
-
-      Team newTeam = teamRepository.findById(edits.teamId()).orElseThrow(() -> new EntityNotFoundException("Team not found"));
-      user.setTeam(newTeam);
-    }
-
-    if (edits.isTeamLeader() != null) {
-      if (edits.isTeamLeader()) {
-        if (user.getTeam() == null) {
-          throw new IllegalStateException("Cannot set team leader: user has no team assigned.");
-        }
-
-        user.getTeam().setLeader(user);
-        teamRepository.save(user.getTeam());
-      } else {
-        if (user.getTeam() != null && user.getTeam().getLeader() != null &&
-                user.getTeam().getLeader().getId().equals(user.getId())) {
-          user.getTeam().setLeader(null);
-          teamRepository.save(user.getTeam());
-        }
-      }
-    }
-
-    if (edits.role() != null) {
-      user.setRole(edits.role());
-    }
-
-    if (edits.department() != null) {
-      user.setDepartment(edits.department());
+    } else {
+      user.setTeam(null);
     }
 
     User saved = userRepository.save(user);
+
+    boolean isCurrentlyLeader = saved.getTeam() != null && saved.getTeam().getLeader() != null
+            && saved.getTeam().getLeader().getId().equals(saved.getId());
+    if (isCurrentlyLeader && (edits.isTeamLeader() == null || !edits.isTeamLeader())) {
+      saved.getTeam().setLeader(null);
+      teamRepository.save(saved.getTeam());
+    } else if (Boolean.TRUE.equals(edits.isTeamLeader())) {
+      if (saved.getTeam() == null) {
+        throw new IllegalStateException("Cannot set team leader: user has no team assigned.");
+      }
+
+      saved.getTeam().setLeader(saved);
+      teamRepository.save(saved.getTeam());
+    }
+
     return userMapper.toUserDto(saved);
   }
 
@@ -129,14 +127,7 @@ public class UserServiceImpl implements UserService {
             && user.getTeam().getLeader() != null
             && user.getTeam().getLeader().getId().equals(user.getId());
 
-    return new UserEditDto(
-            user.getEmail(),
-            user.getName(),
-            user.getRole(),
-            user.getTeam() != null ? user.getTeam().getTeamId() : null,
-            user.getDepartment(),
-            isTeamLeader
-    );
+    return userMapper.toUserEditDto(user, isTeamLeader);
   }
 
   @Override

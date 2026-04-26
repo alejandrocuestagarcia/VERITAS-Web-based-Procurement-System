@@ -43,7 +43,7 @@ export class UserEditComponent implements OnInit {
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       role: [null, Validators.required],
-      teamId: [null, Validators.required],
+      teamId: [null],
       department: [null, Validators.required],
       isTeamLeader: [false],
     });
@@ -54,6 +54,15 @@ export class UserEditComponent implements OnInit {
         teamControl?.disable();
       } else {
         teamControl?.enable();
+      }
+    });
+
+    this.userForm.get('teamId')?.valueChanges.subscribe(teamId => {
+      const leaderControl = this.userForm.get('isTeamLeader');
+      if (!teamId) {
+        leaderControl?.disable();
+      } else {
+        leaderControl?.enable();
       }
     });
   }

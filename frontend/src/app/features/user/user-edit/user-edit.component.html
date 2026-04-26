@@ -51,6 +51,7 @@
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>groups</mat-icon>
           <mat-select formControlName="teamId" placeholder="Select assigned team">
+            <mat-option [value]="null">None</mat-option>
             <mat-option *ngFor="let team of teams" [value]="team.id">{{ team.name }}</mat-option>
           </mat-select>
           <mat-hint *ngIf="userForm.get('isTeamLeader')?.value">
@@ -72,7 +73,7 @@
       </app-shared-form-field>
 
       <div class="flex items-center gap-4 col-span-2">
-        <mat-slide-toggle formControlName="isTeamLeader" color="primary"></mat-slide-toggle>
+        <mat-slide-toggle formControlName="isTeamLeader" color="primary" [disabled]="!userForm.get('teamId')?.value"></mat-slide-toggle>
         <div class="flex flex-col">
           <span class="text-sm font-semibold">Team Leader</span>
           <span class="text-xs text-slate-500">Toggle off to demote and allow team reassignment.</span>
