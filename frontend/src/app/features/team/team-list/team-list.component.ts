@@ -102,7 +102,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
   }
 
   navigateToAddTeam(): void {
-    this.router.navigate(['/teams/add']);
+    this.router.navigate(['/teams/create']);
   }
 
   private loadData(): void {

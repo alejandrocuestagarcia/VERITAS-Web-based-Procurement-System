@@ -43,18 +43,20 @@ const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'teams',
-    component: TeamListComponent,
-    canActivate: [authGuard]
-  },
-  {
-    path: 'teams/add',
-    component: TeamCreateComponent,
-    canActivate: [authGuard]
-  },
-  {
     path: 'projects/create',
     component: ProjectCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'teams',
+    component: TeamListComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'teams/create',
+    component: TeamCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },

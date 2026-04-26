@@ -1,4 +1,4 @@
-package com.veritas.backend.team;
+package com.veritas.backend.team.controller;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.team.dto.TeamCreateDto;
