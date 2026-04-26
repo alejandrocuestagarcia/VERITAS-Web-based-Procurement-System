@@ -1,0 +1,85 @@
+<div [formGroup]="userForm">
+  <app-shared-form
+    title="Edit User"
+    subtitle="Update account details, team assignment and team leadership status."
+    routingSubtitle="USERS > EDIT USER"
+    submitButtonLabel="Save Changes"
+    submitButtonIcon="save"
+    [loading]="loading"
+    (submitted)="onSubmit()"
+    (cancelled)="onCancel()">
+
+    <app-shared-form-card icon="manage_accounts" title="Account Details">
+      <app-shared-form-field label="FULL NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>person_outline</mat-icon>
+          <input matInput formControlName="name" placeholder="e.g. Alexander Sterling">
+          <mat-error *ngIf="userForm.get('name')?.hasError('required') && userForm.get('name')?.touched">
+            Name is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="EMAIL ADDRESS">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>alternate_email</mat-icon>
+          <input matInput formControlName="email" type="email" placeholder="a.sterling@veritas.corp">
+          <mat-error *ngIf="userForm.get('email')?.hasError('required') && userForm.get('email')?.touched">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="userForm.get('email')?.hasError('email') && userForm.get('email')?.touched">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="USER ROLE" *appHasRole="['ADMINISTRATOR']">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>shield_person</mat-icon>
+          <mat-select formControlName="role" placeholder="Select an access level">
+            <mat-option *ngFor="let role of roles" [value]="role">{{ role | titlecase }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="userForm.get('role')?.hasError('required') && userForm.get('role')?.touched">
+            User role is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
+    <app-shared-form-card icon="corporate_fare" title="Organisational Assignment">
+      <app-shared-form-field label="ASSIGNED TEAM">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>groups</mat-icon>
+          <mat-select formControlName="teamId" placeholder="Select assigned team">
+            <mat-option [value]="null">None</mat-option>
+            <mat-option *ngFor="let team of teams" [value]="team.id">{{ team.name }}</mat-option>
+          </mat-select>
+          <mat-hint *ngIf="userForm.get('isTeamLeader')?.value">
+            Demote from team leader to change team
+          </mat-hint>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="DEPARTMENT">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>corporate_fare</mat-icon>
+          <mat-select formControlName="department" placeholder="Select department">
+            <mat-option *ngFor="let dept of departments" [value]="dept">{{ dept }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="userForm.get('department')?.hasError('required') && userForm.get('department')?.touched">
+            Department is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <div class="flex items-center gap-4 col-span-2">
+        <mat-slide-toggle formControlName="isTeamLeader" color="primary" [disabled]="!userForm.get('teamId')?.value"></mat-slide-toggle>
+        <div class="flex flex-col">
+          <span class="text-sm font-semibold">Team Leader</span>
+          <span class="text-xs text-slate-500">Toggle off to demote and allow team reassignment.</span>
+        </div>
+      </div>
+    </app-shared-form-card>
+
+  </app-shared-form>
+</div>

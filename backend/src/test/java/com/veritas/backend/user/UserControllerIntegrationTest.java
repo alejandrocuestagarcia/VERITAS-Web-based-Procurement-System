@@ -1,5 +1,6 @@
 package com.veritas.backend.user;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -7,11 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.common.model.Department;
-import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
+import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
@@ -54,9 +55,6 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   private Team testTeam;
 
-  @Autowired
-  private RefreshTokenRepository refreshTokenRepository;
-
   @BeforeEach
   void setUp() {
     projectRepository.deleteAll();
@@ -73,6 +71,11 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @AfterEach
   void tearDown() {
+    teamRepository.findAll().forEach(team -> {
+      team.setLeader(null);
+      teamRepository.save(team);
+    });
+
     userRepository.deleteAll();
     teamRepository.deleteAll();
   }
@@ -199,5 +202,109 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   @WithMockUser(roles = "REQUESTER")
   void UserStats_AsRequester_ReturnsForbidden() throws Exception {
     mockMvc.perform(get("/users/stats")).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
+  void UserEdit_ValidInput_ReturnsUpdatedUser() throws Exception {
+    User finance = User.builder()
+            .name("Test Finance")
+            .email("finance@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+    userRepository.save(finance);
+
+    UserEditDto edit = new UserEditDto("new@test.com", "New Name", null, null, null, null);
+    mockMvc.perform(patch("/users/" + finance.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(edit)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("New Name"))
+            .andExpect(jsonPath("$.email").value("new@test.com"));
+  }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
+  void UserEdit_DuplicateEmail_ReturnsConflict() throws Exception {
+    User user1 = User.builder()
+            .name("First Finance User")
+            .email("finance1@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+
+    User user2 = User.builder()
+            .name("Second Finance User")
+            .email("finance2@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+
+    userRepository.save(user1);
+    userRepository.save(user2);
+
+    UserEditDto edit = new UserEditDto("finance2@test.com", "First Finance User", null, null, null, null);
+    mockMvc.perform(patch("/users/" + user1.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(edit)))
+            .andExpect(status().isConflict());
+  }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
+  void UserEdit_AsTeamLeaderChangingTeam_ReturnsBadRequest() throws Exception {
+    User user = User.builder()
+            .name("Leader")
+            .email("leader@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+
+    userRepository.save(user);
+
+    testTeam.setLeader(user);
+    teamRepository.save(testTeam);
+
+    Team newTeam = new Team();
+    newTeam.setName("Other Team");
+    newTeam.setDepartment(Department.IT);
+    newTeam.setDescription("IT Department Team");
+    teamRepository.save(newTeam);
+
+    UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
+    mockMvc.perform(patch("/users/" + user.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(edit)))
+            .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
+  void UserRetrievalById_UserExists_ReturnsUser() throws Exception {
+    User user = User.builder()
+            .name("Test Requester")
+            .email("requester@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+    userRepository.save(user);
+
+    mockMvc.perform(get("/users/" + user.getId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("requester@test.com"))
+            .andExpect(jsonPath("$.name").value("Test Requester"))
+            .andExpect(jsonPath("$.teamId").value(testTeam.getTeamId()))
+            .andExpect(jsonPath("$.isTeamLeader").value(false));
   }
 }

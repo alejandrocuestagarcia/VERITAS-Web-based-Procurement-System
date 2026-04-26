@@ -1,4 +1,4 @@
-package com.veritas.backend.user;
+package com.veritas.backend.user.controller;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -52,16 +52,17 @@ public class UserController {
 
     @Operation(summary = "Get user", description = "Retrieves a user.")
     @IsFinanceOfficer
-    @GetMapping("/{id}")
-    public UserDto getUser(@PathVariable Long id) {
-        return null;
+    @GetMapping(path = "/{id}", produces = "application/json")
+    public ResponseEntity<UserEditDto> getUserByIdForEdit(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserByIdForEdit(id));
     }
 
     @Operation(summary = "Edit user", description = "Edits a users basic info.")
     @IsFinanceOfficer
-    @PatchMapping("/{id}")
+    @PatchMapping(path = "/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<UserDto> editUser(@PathVariable Long id, @RequestBody UserEditDto edits) {
-        return null;
+        UserDto updated = userService.editUser(id, edits);
+        return ResponseEntity.ok(updated);
     }
 
     @Operation(summary = "Create user", description = "Creates a new user.")
@@ -70,8 +71,7 @@ public class UserController {
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreationRequestDto user) {
         UserDto userDto = userService.createUser(user);
 
-        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id())
-                .toUri();
+        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id()).toUri();
         return ResponseEntity.created(userUri).body(userDto);
     }
 
