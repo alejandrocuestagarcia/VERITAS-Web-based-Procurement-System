@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/requisitions/{requestId}/audit")
+@RequestMapping("/requisitions/{requestId}/audit")
 @Tag(name = "Audit Module", description = "Traceability and history for procurement requests")
 public class AuditController {
 

@@ -27,7 +27,8 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  private static final String[] WHITELIST_URLS = { "/api/v1/auth/**", "/login", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+  private static final String[] WHITELIST_URLS = {
+          "/api/v1/auth/**", "/login", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
           "/api/v1/api.json", "/api/v1/api.json/**",
           // UI Entry Points
           "/",

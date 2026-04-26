@@ -4,7 +4,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base class for all integration tests that require a real PostgreSQL database.
@@ -26,7 +25,6 @@ public abstract class BaseDBIntegrationTest {
     static {
 
         if (System.getenv("CI") == null) {
-            // Only start Docker if we are NOT on the 'test' profile (e.g., local dev)
             POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
             POSTGRES.start();
         } else {

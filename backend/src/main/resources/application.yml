@@ -18,7 +18,7 @@ server:
 
 springdoc:
   swagger-ui:
-    path: /swagger-ui.html    # Access via /api/v1/swagger-ui.html
+    path: /swagger-ui.html    # Access via /swagger-ui.html
     operations-sorter: alpha   # Sorts endpoints alphabetically
   api-docs:
     path: /api/v1/api.json

@@ -16,7 +16,6 @@ test-backend:
   stage: test
   image: gradle:9.4.1-jdk21
   variables:
-    # This activates the application-test.yml file
     SPRING_PROFILES_ACTIVE: "test"
   script:
     - cd backend && ./gradlew test jacocoTestReport --console=plain --quiet
@@ -28,20 +27,35 @@ test-backend:
     reports:
       junit: backend/build/test-results/test/TEST-*.xml
 
-# Compiles Angular into static files
+gen-api:
+  stage: build
+  image: gradle:9.4.1-jdk21
+  script:
+    - cd backend
+    - ./gradlew generateOpenApiDocs --console=plain --quiet
+    - ./gradlew openApiGenerate --console=plain --quiet
+  artifacts:
+    paths:
+      - frontend/src/app/core/api/
+      - frontend/openapi.json
+    expire_in: 1 hour
+
 build-frontend:
   stage: build
-  image: node:20-alpine
+  image: node:20
+  needs: ["gen-api"]
   script:
     - cd frontend
-    - npm install --no-audit --no-fund --loglevel=error
+    - ls -la
+    - ls -la ./src/app/core
+    - ls -la ./src/app/core/api
+    - ls -la ./src/app/core/api/model
+    - npm ci --no-audit --no-fund --loglevel=error
     - npm run build -- --progress=false
   artifacts:
     paths:
       - frontend/dist/veritas-app/
     expire_in: 1 hour
-  only:
-    - master
 
 build-image:
   stage: build
@@ -53,6 +67,7 @@ build-image:
     - cd backend && ./gradlew jib -Djib.to.image=$IMAGE_TAG
   only:
     - master
+    - feature/Issue-103/ci-cd-pipeline
 
 deploy-to-k8s:
   stage: deploy
@@ -62,12 +77,10 @@ deploy-to-k8s:
   image: bitnami/kubectl:latest
   needs: ["build-image"]
   script:
-    - kubectl delete pods -l "app in (veritas-db, veritas)" --ignore-not-found -n veritas
-
     - sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" kubernetes.yaml
     - kubectl apply -f kubernetes.yaml
 
-    - sleep 60
+    - kubectl rollout status deployment/veritas -n veritas --timeout=300s
     - echo "--- POD STATUS ---"
     - kubectl get pods -n veritas
     - echo "--- DATABASE LOGS ---"
@@ -76,3 +89,4 @@ deploy-to-k8s:
     - kubectl logs -l app=veritas -n veritas --tail=50 || true
   only:
     - master
+    - feature/Issue-103/ci-cd-pipeline

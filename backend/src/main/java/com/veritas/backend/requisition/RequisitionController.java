@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/requisitions")
+@RequestMapping("/requisitions")
 @Tag(name = "Requisition Module", description = "Management of procurement requests")
 public class RequisitionController {
     @Operation(summary = "Create a request", description = "Creates a new procurement request.")

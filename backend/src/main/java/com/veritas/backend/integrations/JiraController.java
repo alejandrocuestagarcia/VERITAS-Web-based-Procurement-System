@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/integrations/jira")
+@RequestMapping("/integrations/jira")
 @Tag(name = "Integrations", description = "Endpoints for Jira Cloud")
 public class JiraController {
     @Operation(summary = "Jira Webhook Receiver", description = "Listens for Jira 'Issue Created' events to auto-generate procurements.")

@@ -7,7 +7,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "api:gen": "openapi-generator-cli generate -i http://localhost:8080/api/v1/api.json -g typescript-angular -o src/app/core/api --additional-properties=stringEnums=true"
+    "api:gen": "openapi-generator-cli generate -i http://localhost:8080/api/v1/api.json -g typescript-angular -o src/app/core/api --additional-properties=stringEnums=true",
+    "prebuild": "npm run api:gen || echo 'Warning: API generation failed. Using existing files.'",
+    "prestart": "npm run api:gen || echo 'Warning: API generation failed. Is the backend running?'"
   },
   "private": true,
   "dependencies": {

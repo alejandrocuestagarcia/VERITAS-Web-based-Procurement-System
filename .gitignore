@@ -2,3 +2,5 @@
 .idea/
 *.iml
 .vscode/
+frontend/openapi.json
+frontend/src/app/core/api/
