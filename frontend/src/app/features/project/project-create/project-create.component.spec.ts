@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { ProjectCreateComponent } from './project-create.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('ProjectCreateComponent', () => {
   let component: ProjectCreateComponent;
@@ -8,7 +11,9 @@ describe('ProjectCreateComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [ProjectCreateComponent]
+      declarations: [ProjectCreateComponent],
+      imports: [HttpClientTestingModule, ReactiveFormsModule, MatSnackBarModule],
+      schemas: [NO_ERRORS_SCHEMA]
     });
     fixture = TestBed.createComponent(ProjectCreateComponent);
     component = fixture.componentInstance;

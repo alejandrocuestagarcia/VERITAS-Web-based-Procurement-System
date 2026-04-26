@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -23,6 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Page<User> findAllFiltered(@Param("search") String search, @Param("role") UserRole role,
                              Pageable pageable);
 
-
   long countByIsActiveFalse();
+
+  List<User> findAllByTeamTeamId(Long teamId);
 }

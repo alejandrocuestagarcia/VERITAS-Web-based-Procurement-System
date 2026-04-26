@@ -94,7 +94,7 @@ class ProjectServiceUnitTest {
         ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, "Team A");
 
         when(projectRepository.existsByNameOrProjectKey("Secret Project", "KEY-123")).thenReturn(false);
-        when(teamRepository.findAll()).thenReturn(List.of(team));
+        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(team));
         when(projectMapper.toProject(dto)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(saved);
         when(projectMapper.toProjectDto(saved)).thenReturn(mapped);
@@ -117,12 +117,12 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void CreateProject_NoTeamsAvailable_ThrowsIllegalStateException() {
+    void CreateProject_TeamNotFound_ThrowsEntityNotFoundException() {
         ProjectCreationDto dto = new ProjectCreationDto("Secret New", "SEC-KEY", 1L, null, null, null);
 
         when(projectRepository.existsByNameOrProjectKey("Secret New", "SEC-KEY")).thenReturn(false);
-        when(teamRepository.findAll()).thenReturn(List.of());
+        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.empty());
 
-        assertThrows(IllegalStateException.class, () -> projectService.createProject(dto));
+        assertThrows(jakarta.persistence.EntityNotFoundException.class, () -> projectService.createProject(dto));
     }
 }
