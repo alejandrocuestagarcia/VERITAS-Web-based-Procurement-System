@@ -80,4 +80,7 @@ public class Request {
 
     @Column(name = "jira_status")
     private String jiraStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

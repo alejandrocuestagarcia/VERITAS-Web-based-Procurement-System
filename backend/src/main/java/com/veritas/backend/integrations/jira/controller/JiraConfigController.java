@@ -1,11 +1,13 @@
 package com.veritas.backend.integrations.jira.controller;
 
+import com.veritas.backend.config.annotations.IsAdministrator;
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
 import com.veritas.backend.integrations.jira.service.JiraConfigService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,8 +20,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(value = "/api/admin/jira-configs", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/jira-configs", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
+@IsAdministrator
 public class JiraConfigController {
 
     private final JiraConfigService service;
@@ -36,13 +39,13 @@ public class JiraConfigController {
     }
 
     @PostMapping
-    public ResponseEntity<JiraConfigDto> createConfig(@RequestBody JiraConfigDto dto) {
+    public ResponseEntity<JiraConfigDto> createConfig(@Valid @RequestBody JiraConfigDto dto) {
         return ResponseEntity.ok(service.createConfig(dto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<JiraConfigDto> updateConfig(@PathVariable Long id,
-                                                      @RequestBody JiraConfigDto dto) {
+            @Valid @RequestBody JiraConfigDto dto) {
         return ResponseEntity.ok(service.updateConfig(id, dto));
     }
 
@@ -58,7 +61,7 @@ public class JiraConfigController {
     }
 
     @PostMapping("/test")
-    public ResponseEntity<Map<String, Boolean>> testConnection(@RequestBody JiraConfigDto dto) {
+    public ResponseEntity<Map<String, Boolean>> testConnection(@Valid @RequestBody JiraConfigDto dto) {
         boolean success = syncService.testConnection(dto);
         return ResponseEntity.ok(Map.of("success", success));
     }

@@ -37,6 +37,12 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     @Override
     @Transactional
     public JiraConfigDto createConfig(JiraConfigDto dto) {
+        if (repository.existsByJiraUrlAndJql(dto.jiraUrl(), dto.jql())) {
+            throw new RuntimeException("A configuration with this Jira URL and JQL already exists.");
+        }
+        if (dto.apiToken() == null || dto.apiToken().isBlank()) {
+            throw new RuntimeException("API Token is required for new configurations.");
+        }
         JiraConfig entity = mapper.toEntity(dto);
         JiraConfig saved = repository.save(entity);
         scheduler.scheduleConfig(saved);
@@ -46,6 +52,12 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     @Override
     @Transactional
     public JiraConfigDto updateConfig(Long id, JiraConfigDto dto) {
+        repository.findByJiraUrlAndJql(dto.jiraUrl(), dto.jql()).ifPresent(existing -> {
+            if (!existing.getId().equals(id)) {
+                throw new RuntimeException("Another configuration already uses this Jira URL and JQL.");
+            }
+        });
+
         JiraConfig entity = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Config not found"));
 
