@@ -67,6 +67,7 @@ build-image:
     - cd backend && ./gradlew jib -Djib.to.image=$IMAGE_TAG
   only:
     - master
+    - feature/Issue-103/ci-cd-pipeline
 
 deploy-to-k8s:
   stage: deploy
@@ -88,3 +89,4 @@ deploy-to-k8s:
     - kubectl logs -l app=veritas -n veritas --tail=50 || true
   only:
     - master
+    - feature/Issue-103/ci-cd-pipeline
