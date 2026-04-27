@@ -27,18 +27,18 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  private static final String[] WHITELIST_URLS = {
-          "/api/v1/auth/**", "/login", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+  private static final String[] PUBLIC_API_URLS = {
+          "/api/v1/auth/**",
+          "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
           "/api/v1/api.json", "/api/v1/api.json/**",
-          // UI Entry Points
-          "/",
-          "/index.html",
-          "/favicon.ico",
-          "/*.js",
-          "/*.css",
-          "/assets/**",
-          // Infrastructure for Kubernetes
-          "/api/v1/health" };
+          "/api/v1/health"
+  };
+
+  private static final String[] PUBLIC_FRONTEND_URLS = {
+          "/assets/**", "/*.js", "/*.css", "/*.ico", "/favicon.ico",
+          "/", "/index.html",
+          "/**"
+  };
 
   @Bean
   public RoleHierarchy roleHierarchy() {
@@ -62,9 +62,11 @@ public class SecurityConfig {
       return config;
     })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            authorizeRequests -> authorizeRequests.requestMatchers(WHITELIST_URLS).permitAll()
-                .anyRequest().authenticated()
-
+            authorizeRequests -> authorizeRequests
+                    .requestMatchers(PUBLIC_API_URLS).permitAll()
+                    .requestMatchers("/api/**").authenticated()
+                    .requestMatchers(PUBLIC_FRONTEND_URLS).permitAll()
+                    .anyRequest().authenticated()
         ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }

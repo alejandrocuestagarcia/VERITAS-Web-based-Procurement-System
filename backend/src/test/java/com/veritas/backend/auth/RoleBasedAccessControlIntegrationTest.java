@@ -116,13 +116,13 @@ class RoleBasedAccessControlIntegrationTest extends BaseDBIntegrationTest {
 
         @Test
         void RoleBasedAccessControl_Unauthenticated_CannotAccessAnything() throws Exception {
-                mockMvc.perform(get("/test-security/admin"))
+                mockMvc.perform(get("/api/v1/test-security/admin"))
                                 .andExpect(status().isForbidden());
-                mockMvc.perform(get("/test-security/finance"))
+                mockMvc.perform(get("/api/v1/test-security/finance"))
                                 .andExpect(status().isForbidden());
-                mockMvc.perform(get("/test-security/procurement"))
+                mockMvc.perform(get("/api/v1/test-security/procurement"))
                                 .andExpect(status().isForbidden());
-                mockMvc.perform(get("/test-security/requester"))
+                mockMvc.perform(get("/api/v1/test-security/requester"))
                                 .andExpect(status().isForbidden());
         }
 }
