@@ -2,8 +2,7 @@ package com.veritas.backend.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,7 +21,6 @@ import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.impl.UserServiceImpl;
 import jakarta.persistence.EntityExistsException;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -271,6 +269,25 @@ class UserServiceUnitTest {
 
         assertEquals(1L, result.teamId());
         assertFalse(result.isTeamLeader());
+    }
+
+    @Test
+    void createUser_ShouldSetRequiresPasswordChangeToTrue() {
+        UserCreationRequestDto request = new UserCreationRequestDto("newuser@veritas.com", "New User", "tempPass123", UserRole.REQUESTER, 1L, Department.IT, false);
+
+        Team team = Team.builder().teamId(1L).department(Department.IT).build();
+
+        User user = new User();
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+        when(userMapper.toUser(request)).thenReturn(user);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedPass");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        userService.createUser(request);
+
+        assertTrue(user.getRequiresPasswordChange());
     }
 
 }

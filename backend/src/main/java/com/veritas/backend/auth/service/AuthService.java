@@ -10,4 +10,9 @@ public interface AuthService {
   AuthResponseDto refreshToken(RefreshTokenDto refreshTokenRequest);
 
   void logout(RefreshTokenDto refreshToken);
+
+  void adminResetPassword(Long targetUserId, String tempPassword);
+
+  void completePasswordChange(String newPassword);
+
 }

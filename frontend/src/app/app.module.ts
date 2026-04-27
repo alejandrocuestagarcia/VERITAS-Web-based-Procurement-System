@@ -5,6 +5,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginComponent } from './features/login/login.component';
+import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { HTTP_INTERCEPTORS, HttpClientModule } from "@angular/common/http";
@@ -50,6 +51,7 @@ import { UserEditComponent } from './features/user/user-edit/user-edit.component
   declarations: [
     AppComponent,
     LoginComponent,
+    ForcePasswordResetComponent,
     DashboardComponent,
     UserCreateComponent,
     SharedTableComponent,

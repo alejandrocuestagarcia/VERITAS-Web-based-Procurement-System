@@ -62,6 +62,11 @@ public class User implements UserDetails {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @Column(name = "requires_password_change", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean requiresPasswordChange = false;
+
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

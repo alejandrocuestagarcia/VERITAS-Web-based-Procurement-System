@@ -43,6 +43,7 @@ public class BackendApplication {
 						.role(UserRole.ADMINISTRATOR)
 						.department(Department.IT)
 						.isActive(true)
+						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(admin);
 			}
@@ -54,6 +55,7 @@ public class BackendApplication {
 						.role(UserRole.FINANCE_OFFICER)
 						.department(Department.IT)
 						.isActive(true)
+						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(finance);
 			}
@@ -65,6 +67,7 @@ public class BackendApplication {
 						.role(UserRole.PROCUREMENT_OFFICER)
 						.department(Department.IT)
 						.isActive(true)
+						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(procurement);
 			}
@@ -76,6 +79,7 @@ public class BackendApplication {
 						.role(UserRole.REQUESTER)
 						.department(Department.IT)
 						.isActive(true)
+						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(requester);
 

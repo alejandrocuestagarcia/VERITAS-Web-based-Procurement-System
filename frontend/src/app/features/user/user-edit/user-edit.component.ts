@@ -6,6 +6,7 @@ import {
   UserModuleService
 } from "../../../core/api";
 import {ActivatedRoute, Router} from "@angular/router";
+import { AuthService } from '../../../core/services/auth.service';
 import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
@@ -28,6 +29,7 @@ export class UserEditComponent implements OnInit {
     private route: ActivatedRoute,
     private userService: UserModuleService,
     private teamService: TeamsModuleService,
+    private authService: AuthService,
     private snackBar: MatSnackBar
   ) {}
 
@@ -138,5 +140,25 @@ export class UserEditComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/users']);
+  }
+
+  onResetPassword(): void {
+    const tempPassword = window.prompt("Enter a temporary password for this user (min 8 chars):");
+
+    if (tempPassword && tempPassword.length >= 8) {
+      this.authService.adminResetPassword(this.userId, tempPassword).subscribe({
+        next: () => {
+          this.snackBar.open('Password reset successful. Account flagged for mandatory change.', 'Close', {
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          });
+        },
+        error: (err: any) => {
+          this.snackBar.open(err.error?.message || 'Failed to reset password', 'Close');
+        }
+      });
+    } else if (tempPassword) {
+      alert("Password must be at least 8 characters long.");
+    }
   }
 }

@@ -1,6 +1,7 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {LoginComponent} from "./features/login/login.component";
+import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
 import {authGuard} from "./core/guards/auth.guard";
 import {DashboardComponent} from "./features/dashboard/dashboard.component";
 import {ProjectListComponent} from "./features/project/project-list/project-list.component";
@@ -19,6 +20,11 @@ const routes: Routes = [
   { path: 'login',
     component: LoginComponent,
     canActivate: [guestGuard]
+  },
+  {
+    path: 'force-password-reset',
+    component: ForcePasswordResetComponent,
+    canActivate: [authGuard]
   },
   {
     path: 'users',
