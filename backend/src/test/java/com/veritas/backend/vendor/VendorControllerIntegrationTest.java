@@ -54,7 +54,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
 
         when(vendorService.createVendor(any(VendorDto.class))).thenReturn(inputDto);
 
-        mockMvc.perform(post("/vendors")
+        mockMvc.perform(post("/api/v1/vendors")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDto)))
@@ -77,7 +77,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
                 null, null, null
         );
 
-        mockMvc.perform(post("/vendors")
+        mockMvc.perform(post("/api/v1/vendors")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDto)))
@@ -98,7 +98,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
                 null, null, null
         );
 
-        mockMvc.perform(post("/vendors")
+        mockMvc.perform(post("/api/v1/vendors")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDto)))
@@ -121,7 +121,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
 
         when(vendorService.createVendor(any(VendorDto.class))).thenReturn(inputDto);
 
-        mockMvc.perform(post("/vendors")
+        mockMvc.perform(post("/api/v1/vendors")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(inputDto)))
@@ -159,7 +159,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
         when(vendorService.findVendorsByStringAndRating(any(Pageable.class), any(), any()))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/vendors")
+        mockMvc.perform(get("/api/v1/vendors")
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -176,7 +176,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
         when(vendorService.findVendorsByStringAndRating(any(Pageable.class), any(String.class), any(Double.class)))
                 .thenReturn(emptyPage);
 
-        mockMvc.perform(get("/vendors")
+        mockMvc.perform(get("/api/v1/vendors")
                 .param("search", "test")
                 .param("minimumRating", "4.5"))
                 .andExpect(status().isOk());

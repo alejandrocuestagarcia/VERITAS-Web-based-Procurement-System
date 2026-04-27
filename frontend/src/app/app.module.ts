@@ -34,6 +34,8 @@ import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatNativeDateModule, MatOptionModule } from "@angular/material/core";
 import { MatSelectModule } from "@angular/material/select";
 import { SidebarComponent } from './core/components/sidebar/sidebar.component';
+import { BASE_PATH } from './core/api';
+import { environment } from '../environments/environment';
 import { SharedFormComponent } from './shared/components/creation/shared-form/shared-form.component';
 import { SharedFormCardComponent } from './shared/components/creation/shared-form-card/shared-form-card.component';
 import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
@@ -101,6 +103,10 @@ import { UserEditComponent } from './features/user/user-edit/user-edit.component
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
       multi: true
+    },
+    {
+      provide: BASE_PATH,
+      useValue: environment.apiUrl
     }
   ],
   bootstrap: [AppComponent]

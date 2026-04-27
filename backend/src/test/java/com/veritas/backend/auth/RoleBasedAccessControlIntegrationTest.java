@@ -68,61 +68,61 @@ class RoleBasedAccessControlIntegrationTest extends BaseDBIntegrationTest {
 
         @Test
         void RoleBasedAccessControl_Admin_CanAccessEverything() throws Exception {
-                mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + adminToken))
+                mockMvc.perform(get("/api/v1/test-security/admin").header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk());
-                mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + adminToken))
+                mockMvc.perform(get("/api/v1/test-security/finance").header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk());
-                mockMvc.perform(get("/test-security/procurement").header("Authorization", "Bearer " + adminToken))
+                mockMvc.perform(get("/api/v1/test-security/procurement").header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk());
-                mockMvc.perform(get("/test-security/requester").header("Authorization", "Bearer " + adminToken))
+                mockMvc.perform(get("/api/v1/test-security/requester").header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk());
         }
 
         @Test
         void RoleBasedAccessControl_Finance_CanAccessFinanceAndBelow() throws Exception {
-                mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + financeToken))
+                mockMvc.perform(get("/api/v1/test-security/admin").header("Authorization", "Bearer " + financeToken))
                                 .andExpect(status().isForbidden()); // Higher level
-                mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + financeToken))
+                mockMvc.perform(get("/api/v1/test-security/finance").header("Authorization", "Bearer " + financeToken))
                                 .andExpect(status().isOk());
-                mockMvc.perform(get("/test-security/procurement").header("Authorization", "Bearer " + financeToken))
+                mockMvc.perform(get("/api/v1/test-security/procurement").header("Authorization", "Bearer " + financeToken))
                                 .andExpect(status().isOk());
-                mockMvc.perform(get("/test-security/requester").header("Authorization", "Bearer " + financeToken))
+                mockMvc.perform(get("/api/v1/test-security/requester").header("Authorization", "Bearer " + financeToken))
                                 .andExpect(status().isOk());
         }
 
         @Test
         void RoleBasedAccessControl_Procurement_CanAccessProcurementAndBelow() throws Exception {
-                mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + procurementToken))
+                mockMvc.perform(get("/api/v1/test-security/admin").header("Authorization", "Bearer " + procurementToken))
                                 .andExpect(status().isForbidden()); // Higher level
-                mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + procurementToken))
+                mockMvc.perform(get("/api/v1/test-security/finance").header("Authorization", "Bearer " + procurementToken))
                                 .andExpect(status().isForbidden()); // Higher level
-                mockMvc.perform(get("/test-security/procurement").header("Authorization", "Bearer " + procurementToken))
+                mockMvc.perform(get("/api/v1/test-security/procurement").header("Authorization", "Bearer " + procurementToken))
                                 .andExpect(status().isOk());
-                mockMvc.perform(get("/test-security/requester").header("Authorization", "Bearer " + procurementToken))
+                mockMvc.perform(get("/api/v1/test-security/requester").header("Authorization", "Bearer " + procurementToken))
                                 .andExpect(status().isOk());
         }
 
         @Test
         void RoleBasedAccessControl_Requester_CanOnlyAccessRequester() throws Exception {
-                mockMvc.perform(get("/test-security/admin").header("Authorization", "Bearer " + requesterToken))
+                mockMvc.perform(get("/api/v1/test-security/admin").header("Authorization", "Bearer " + requesterToken))
                                 .andExpect(status().isForbidden()); // Higher level
-                mockMvc.perform(get("/test-security/finance").header("Authorization", "Bearer " + requesterToken))
+                mockMvc.perform(get("/api/v1/test-security/finance").header("Authorization", "Bearer " + requesterToken))
                                 .andExpect(status().isForbidden()); // Higher level
-                mockMvc.perform(get("/test-security/procurement").header("Authorization", "Bearer " + requesterToken))
+                mockMvc.perform(get("/api/v1/test-security/procurement").header("Authorization", "Bearer " + requesterToken))
                                 .andExpect(status().isForbidden()); // Higher level
-                mockMvc.perform(get("/test-security/requester").header("Authorization", "Bearer " + requesterToken))
+                mockMvc.perform(get("/api/v1/test-security/requester").header("Authorization", "Bearer " + requesterToken))
                                 .andExpect(status().isOk());
         }
 
         @Test
         void RoleBasedAccessControl_Unauthenticated_CannotAccessAnything() throws Exception {
-                mockMvc.perform(get("/test-security/admin"))
+                mockMvc.perform(get("/api/v1/test-security/admin"))
                                 .andExpect(status().isForbidden());
-                mockMvc.perform(get("/test-security/finance"))
+                mockMvc.perform(get("/api/v1/test-security/finance"))
                                 .andExpect(status().isForbidden());
-                mockMvc.perform(get("/test-security/procurement"))
+                mockMvc.perform(get("/api/v1/test-security/procurement"))
                                 .andExpect(status().isForbidden());
-                mockMvc.perform(get("/test-security/requester"))
+                mockMvc.perform(get("/api/v1/test-security/requester"))
                                 .andExpect(status().isForbidden());
         }
 }

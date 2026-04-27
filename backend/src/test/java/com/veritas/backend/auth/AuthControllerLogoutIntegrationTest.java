@@ -56,7 +56,7 @@ class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
                 .isActive(true)
                 .build());
 
-        String response = mockMvc.perform(post("/auth/login")
+        String response = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginRequestDto("requester@test.com", "password123"))))
                 .andReturn()
@@ -70,7 +70,7 @@ class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
     void Logout_ValidToken_ReturnsNoContentAndDeletesToken() throws Exception {
         assertThat(refreshTokenRepository.findByToken(refreshToken)).isPresent();
 
-        mockMvc.perform(post("/auth/logout")
+        mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshTokenDto(refreshToken))))
                 .andExpect(status().isNoContent());
@@ -80,7 +80,7 @@ class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void Logout_InvalidToken_ReturnsNoContent() throws Exception {
-        mockMvc.perform(post("/auth/logout")
+        mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshTokenDto("non-existent-token-123"))))
                 .andExpect(status().isNoContent());

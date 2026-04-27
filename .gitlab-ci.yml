@@ -1,0 +1,90 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_PIPELINE_ID
+  GRADLE_USER_HOME: ".gradle"
+
+cache:
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
+
+test-backend:
+  stage: test
+  image: gradle:9.4.1-jdk21
+  variables:
+    SPRING_PROFILES_ACTIVE: "test"
+  script:
+    - cd backend && ./gradlew test jacocoTestReport --console=plain --quiet
+  artifacts:
+    when: always
+    paths:
+      - backend/build/reports/jacoco/test/html/
+      - backend/build/test-results/test/*.xml
+    reports:
+      junit: backend/build/test-results/test/TEST-*.xml
+
+gen-api:
+  stage: build
+  image: gradle:9.4.1-jdk21
+  script:
+    - cd backend
+    - ./gradlew generateOpenApiDocs --console=plain --quiet
+    - ./gradlew openApiGenerate --console=plain --quiet
+  artifacts:
+    paths:
+      - frontend/src/app/core/api/
+      - frontend/openapi.json
+    expire_in: 1 hour
+
+build-frontend:
+  stage: build
+  image: node:20
+  needs: ["gen-api"]
+  script:
+    - cd frontend
+    - ls -la
+    - ls -la ./src/app/core
+    - ls -la ./src/app/core/api
+    - ls -la ./src/app/core/api/model
+    - npm ci --no-audit --no-fund --loglevel=error
+    - npm run build -- --progress=false
+  artifacts:
+    paths:
+      - frontend/dist/veritas-app/
+    expire_in: 1 hour
+
+build-image:
+  stage: build
+  image: gradle:9.4.1-jdk21
+  needs: ["build-frontend"]
+  script:
+    - mkdir -p backend/src/main/resources/static
+    - cp -r frontend/dist/veritas-app/* backend/src/main/resources/static/
+    - cd backend && ./gradlew jib -Djib.to.image=$IMAGE_TAG
+  only:
+    - master
+
+deploy-to-k8s:
+  stage: deploy
+  environment:
+    name: production
+    url: https://veritas.apps.student.inso-w.at
+  image: bitnami/kubectl:latest
+  needs: ["build-image"]
+  script:
+    - sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" kubernetes.yaml
+    - kubectl apply -f kubernetes.yaml
+
+    - kubectl rollout status deployment/veritas -n veritas --timeout=300s
+    - echo "--- POD STATUS ---"
+    - kubectl get pods -n veritas
+    - echo "--- DATABASE LOGS ---"
+    - kubectl logs -l app=veritas-db -n veritas --tail=50 || true
+    - echo "--- BACKEND LOGS ---"
+    - kubectl logs -l app=veritas -n veritas --tail=50 || true
+  only:
+    - master

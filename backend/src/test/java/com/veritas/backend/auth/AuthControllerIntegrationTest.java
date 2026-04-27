@@ -62,7 +62,7 @@ class AuthControllerIntegrationTest extends BaseDBIntegrationTest {
     void Login_ValidCredentials_ReturnsTokensAndRole() throws Exception {
         LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, CORRECT_PASSWORD);
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -75,7 +75,7 @@ class AuthControllerIntegrationTest extends BaseDBIntegrationTest {
     void Login_InvalidCredentials_ReturnsUnauthorized() throws Exception {
         LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, FALSE_PASSWORD);
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -85,7 +85,7 @@ class AuthControllerIntegrationTest extends BaseDBIntegrationTest {
     void Login_UserNotFound_ReturnsUnauthorized() throws Exception {
         LoginRequestDto request = new LoginRequestDto(FALSE_EMAIL, CORRECT_PASSWORD);
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());

@@ -3,6 +3,9 @@ plugins {
 	id 'org.springframework.boot' version '3.5.13'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
+	id 'com.google.cloud.tools.jib' version '3.4.1'
+	id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
+	id 'org.openapi.generator' version '7.21.0'
 }
 
 group = 'com.veritas'
@@ -16,7 +19,6 @@ java {
 }
 
 configurations {
-	// We exclude the default Spring Boot logger (Logback) to use Log4j2
 	all {
 		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
 	}
@@ -27,38 +29,29 @@ repositories {
 }
 
 dependencies {
-
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
-	// Testing
 	testImplementation 'org.assertj:assertj-core:3.27.7'
 	testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	runtimeOnly 'org.postgresql:postgresql'
 
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
 	implementation 'org.apache.pdfbox:pdfbox:3.0.7'
-
 	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
 	runtimeOnly 'com.h2database:h2'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
-
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
@@ -71,8 +64,23 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+openApi {
+	apiDocsUrl = "http://localhost:8080/api/v1/api.json"
+	outputDir = file("$projectDir/../frontend")
+	outputFileName = "openapi.json"
+	waitTimeInSeconds = 60
+	customBootRun {
+		args = ["--spring.profiles.active=openapi"]
+	}
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+	testLogging {
+		events "passed", "skipped", "failed"
+		showStandardStreams = true
+		exceptionFormat = "full"
+	}
 	finalizedBy jacocoTestReport
 }
 
@@ -87,10 +95,43 @@ jacocoTestReport {
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs = [
 			'-Amapstruct.suppressGeneratorTimestamp=true',
-			'-Amapstruct.defaultComponentModel=spring' // This makes @Mapper default to Spring
+			'-Amapstruct.defaultComponentModel=spring'
 	]
 }
 
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs << '-parameters'
+}
+
+jib {
+	from {
+		image = 'eclipse-temurin:21-jre-alpine'
+	}
+	to {
+		image = System.getProperty('jib.to.image') ?: 'veritas-backend:latest'
+		auth {
+			username = System.getenv('CI_REGISTRY_USER') ?: ""
+			password = System.getenv('CI_REGISTRY_PASSWORD') ?: ""
+		}
+	}
+	container {
+		mainClass = 'com.veritas.backend.BackendApplication'
+		ports = ['8080']
+		creationTime = 'USE_CURRENT_TIMESTAMP'
+		jvmFlags = ['-Djava.security.egd=file:/dev/./urandom']
+	}
+}
+
+openApiGenerate {
+	generatorName = "typescript-angular"
+	inputSpec = "$projectDir/../frontend/openapi.json".toString()
+	outputDir = "$projectDir/../frontend/src/app/core/api".toString()
+
+	configOptions = [
+			"enumNameSuffix": "Enum",
+			"stringEnums": "true",
+			"supportsES6": "true",
+			"withInterfaces": "true",
+			"useInheritance": "true"
+	]
 }

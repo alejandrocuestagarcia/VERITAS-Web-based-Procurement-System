@@ -27,8 +27,18 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  private static final String[] WHITELIST_URLS = { "/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-      "/api.json/**" };
+  private static final String[] PUBLIC_API_URLS = {
+          "/api/v1/auth/**",
+          "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+          "/api/v1/api.json", "/api/v1/api.json/**",
+          "/api/v1/health"
+  };
+
+  private static final String[] PUBLIC_FRONTEND_URLS = {
+          "/assets/**", "/*.js", "/*.css", "/*.ico", "/favicon.ico",
+          "/", "/index.html",
+          "/**"
+  };
 
   @Bean
   public RoleHierarchy roleHierarchy() {
@@ -45,16 +55,18 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable).cors(cors -> cors.configurationSource(request -> {
       CorsConfiguration config = new CorsConfiguration();
-      config.setAllowedOrigins(List.of("http://localhost:4200"));
+      config.setAllowedOrigins(List.of("http://localhost:4200", "https://veritas.apps.student.inso-w.at"));
       config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
       config.setAllowedHeaders(List.of("*"));
       config.setAllowCredentials(true);
       return config;
     })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            authorizeRequests -> authorizeRequests.requestMatchers(WHITELIST_URLS).permitAll()
-                .anyRequest().authenticated()
-
+            authorizeRequests -> authorizeRequests
+                    .requestMatchers(PUBLIC_API_URLS).permitAll()
+                    .requestMatchers("/api/**").authenticated()
+                    .requestMatchers(PUBLIC_FRONTEND_URLS).permitAll()
+                    .anyRequest().authenticated()
         ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
