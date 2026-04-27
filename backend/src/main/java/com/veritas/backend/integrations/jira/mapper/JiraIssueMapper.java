@@ -34,6 +34,7 @@ public interface JiraIssueMapper {
     @Mapping(target = "requestKey", ignore = true)
     @Mapping(target = "totalQuantity", ignore = true)
     @Mapping(target = "costCenter", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     Request toRequest(JiraIssueRecord issueRecord);
 
     @Named("mapDescription")

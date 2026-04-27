@@ -53,7 +53,6 @@ public class JiraIssueMapperTest {
         assertEquals("https://api.test/1", request.getJiraIssueUrl());
         assertEquals("Summary Test", request.getRequestName());
         assertEquals(Priority.HIGH, request.getPriority());
-        assertNotNull(request.getCreatedAt());
         assertEquals(adfDescription.toString(), request.getDescription());
         assertEquals("PENDING_SYNC", request.getJiraStatus());
     }

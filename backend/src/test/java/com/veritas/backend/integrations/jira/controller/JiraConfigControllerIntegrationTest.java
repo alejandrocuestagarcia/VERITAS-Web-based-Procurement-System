@@ -29,7 +29,7 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void getAllConfigs_ShouldReturnOk() throws Exception {
-        mockMvc.perform(get("/jira-configs"))
+        mockMvc.perform(get("/api/v1/jira-configs"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -39,16 +39,16 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
     void createConfig_InvalidData_ShouldReturnBadRequest() throws Exception {
         JiraConfigDto invalidDto = new JiraConfigDto(null, "", "", "", "", "", 0, "", null, null);
 
-        mockMvc.perform(post("/jira-configs")
+        mockMvc.perform(post("/api/v1/jira-configs")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidDto)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "REQUESTER")
     void getAllConfigs_UserRole_ShouldReturnForbidden() throws Exception {
-        mockMvc.perform(get("/jira-configs"))
+        mockMvc.perform(get("/api/v1/jira-configs"))
                 .andExpect(status().isForbidden());
     }
 }
