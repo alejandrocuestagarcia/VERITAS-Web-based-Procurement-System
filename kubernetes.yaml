@@ -91,13 +91,13 @@ spec:
             httpGet:
               path: /api/v1/health
               port: 8080
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /api/v1/health
               port: 8080
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
       imagePullSecrets:
         - name: secret-dockercfg
