@@ -8,6 +8,8 @@ import {
 import {ActivatedRoute, Router} from "@angular/router";
 import { AuthService } from '../../../core/services/auth.service';
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {ResetPasswordDialogComponent} from "../../login/reset-password-dialog/reset-password-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
 
 @Component({
   selector: 'app-user-edit',
@@ -30,6 +32,7 @@ export class UserEditComponent implements OnInit {
     private userService: UserModuleService,
     private teamService: TeamsModuleService,
     private authService: AuthService,
+    private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
@@ -143,22 +146,26 @@ export class UserEditComponent implements OnInit {
   }
 
   onResetPassword(): void {
-    const tempPassword = window.prompt("Enter a temporary password for this user (min 8 chars):");
+    const dialogRef = this.dialog.open(ResetPasswordDialogComponent, {
+      width: '600px',
+      data: { user: this.userForm.get('email')?.value }
+    });
 
-    if (tempPassword && tempPassword.length >= 8) {
+    dialogRef.afterClosed().subscribe((tempPassword: string | null) => {
+      if (!tempPassword) return;
+
       this.authService.adminResetPassword(this.userId, tempPassword).subscribe({
         next: () => {
-          this.snackBar.open('Password reset successful. Account flagged for mandatory change.', 'Close', {
-            duration: 5000,
-            panelClass: ['success-snackbar']
-          });
+          this.snackBar.open(
+            'Password reset successful. Account flagged for mandatory change.',
+            'Close',
+            { duration: 5000, panelClass: ['success-snackbar'] }
+          );
         },
         error: (err: any) => {
           this.snackBar.open(err.error?.message || 'Failed to reset password', 'Close');
         }
       });
-    } else if (tempPassword) {
-      alert("Password must be at least 8 characters long.");
-    }
+    });
   }
 }

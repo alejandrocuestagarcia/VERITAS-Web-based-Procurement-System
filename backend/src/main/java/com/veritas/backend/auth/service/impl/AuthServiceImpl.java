@@ -79,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
         auditService.createPasswordResetLog(
                 user,
                 "PASSWORD_CHANGED_BY_USER",
-                "User successfully updated their password following an administrative reset."
+                "User " + user.getEmail() + " successfully updated their password following an administrative reset."
         );
     }
 

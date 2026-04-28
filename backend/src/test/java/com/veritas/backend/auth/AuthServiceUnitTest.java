@@ -223,7 +223,7 @@ class AuthServiceUnitTest {
   }
 
   @Test
-  void adminResetPassword_ShouldFlagUserAndCallAudit() {
+  void AdminResetPassword_ValidRequest_FlagsUserAndCallsAudit() {
     Long userId = 10L;
     User target = User.builder().id(userId).email("target@v.com").build();
     User admin = User.builder().id(1L).email("admin@v.com").build();

@@ -1,8 +1,8 @@
 import {Component} from '@angular/core';
-import {AuthResponseDto, LoginRequestDto} from "../../core/api";
+import {AuthResponseDto, LoginRequestDto} from "../../../core/api";
 import {Router} from "@angular/router";
 import {MatSnackBar} from "@angular/material/snack-bar";
-import {AuthService} from "../../core/services/auth.service";
+import {AuthService} from "../../../core/services/auth.service";
 
 @Component({
   selector: 'app-login',

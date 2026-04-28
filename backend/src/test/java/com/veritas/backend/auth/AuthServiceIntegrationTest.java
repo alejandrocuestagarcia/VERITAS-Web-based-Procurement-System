@@ -36,7 +36,7 @@ class AuthServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void adminResetPassword_ShouldPersistStateAndAuditLog() {
+    void AdminPasswordReset_ValidRequest_PersistsStateAndAuditLog() {
         User admin = userRepository.save(User.builder()
                 .name("Integration Admin")
                 .email("admin-test-" + java.util.UUID.randomUUID() + "@veritas.com") // Unique email

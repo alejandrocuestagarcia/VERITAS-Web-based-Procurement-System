@@ -4,7 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { LoginComponent } from './features/login/login.component';
+import { LoginComponent } from './features/login/login/login.component';
 import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -46,6 +46,8 @@ import { TeamCreateComponent } from './features/team/team-create/team-create.com
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
 import { UserEditComponent } from './features/user/user-edit/user-edit.component';
+import { ResetPasswordDialogComponent } from './features/login/reset-password-dialog/reset-password-dialog.component';
+import {MatDialogModule} from "@angular/material/dialog";
 
 @NgModule({
   declarations: [
@@ -71,7 +73,8 @@ import { UserEditComponent } from './features/user/user-edit/user-edit.component
     TeamListComponent,
     TeamCreateComponent,
     VendorCreateComponent,
-    UserEditComponent
+    UserEditComponent,
+    ResetPasswordDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -98,7 +101,8 @@ import { UserEditComponent } from './features/user/user-edit/user-edit.component
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatSliderModule
+    MatSliderModule,
+    MatDialogModule
   ],
   providers: [
     {

@@ -5,6 +5,7 @@ import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
 import com.veritas.backend.auth.service.AuthService;
 import com.veritas.backend.config.annotations.IsAdministrator;
+import com.veritas.backend.config.annotations.IsRequester;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -62,6 +63,7 @@ public class AuthController {
 
     @Operation(summary = "Complete Password Change", description = "Finalizes the mandatory password reset process for a user.")
     @PostMapping("/complete-password-change")
+    @IsRequester
     public ResponseEntity<String> completePasswordChange(@RequestBody String newPassword) {
         authService.completePasswordChange(newPassword);
         return ResponseEntity.ok("Password reset successful");

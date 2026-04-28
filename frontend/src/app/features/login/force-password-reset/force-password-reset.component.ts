@@ -12,6 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class ForcePasswordResetComponent {
   resetForm: FormGroup;
   hidePassword = true;
+  hideConfirmPassword = true;
   loading = false;
 
   constructor(

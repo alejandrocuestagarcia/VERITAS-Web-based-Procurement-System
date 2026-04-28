@@ -1,4 +1,4 @@
-package com.veritas.backend.audit;
+package com.veritas.backend.audit.controller;
 
 import com.veritas.backend.audit.dto.AuditLogDto;
 import com.veritas.backend.config.annotations.IsRequester;

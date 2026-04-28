@@ -272,7 +272,7 @@ class UserServiceUnitTest {
     }
 
     @Test
-    void createUser_ShouldSetRequiresPasswordChangeToTrue() {
+    void CreateUser_NewAccount_SetsRequiresPasswordChangeToTrue() {
         UserCreationRequestDto request = new UserCreationRequestDto("newuser@veritas.com", "New User", "tempPass123", UserRole.REQUESTER, 1L, Department.IT, false);
 
         Team team = Team.builder().teamId(1L).department(Department.IT).build();
