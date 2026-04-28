@@ -1,11 +1,11 @@
 package com.veritas.backend.auth;
 
 import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
+import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.auth.dto.AuthResponseDto;
 import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
@@ -19,6 +19,8 @@ import com.veritas.backend.user.repository.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.core.Authentication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,8 @@ import static org.mockito.Mockito.never;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +57,9 @@ class AuthServiceUnitTest {
   @InjectMocks
   private AuthServiceImpl authService;
 
+  @Mock
+  private AuditService auditService;
+
   private User testUser;
 
   @BeforeEach
@@ -63,6 +70,11 @@ class AuthServiceUnitTest {
     testUser.setPasswordHash(HASHED_PASSWORD);
     testUser.setRole(UserRole.REQUESTER);
   }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
   @Test
   void Login_ValidCredentials_ReturnsAuthResponse() {
@@ -208,6 +220,28 @@ class AuthServiceUnitTest {
     user.setPasswordHash("hashed_password");
     user.setRole(role);
     return user;
+  }
+
+  @Test
+  void AdminResetPassword_ValidRequest_FlagsUserAndCallsAudit() {
+    Long userId = 10L;
+    User target = User.builder().id(userId).email("target@v.com").build();
+    User admin = User.builder().id(1L).email("admin@v.com").build();
+
+    Authentication auth = mock(Authentication.class);
+    SecurityContext securityContext = mock(SecurityContext.class);
+
+    when(securityContext.getAuthentication()).thenReturn(auth);
+    when(auth.getPrincipal()).thenReturn(admin);
+    SecurityContextHolder.setContext(securityContext);
+
+    when(userRepository.findById(userId)).thenReturn(Optional.of(target));
+    when(passwordEncoder.encode(anyString())).thenReturn("newHashedPass");
+
+    authService.adminResetPassword(userId, "newTempPass");
+
+    assertTrue(target.getRequiresPasswordChange());
+    verify(auditService).createPasswordResetLog(eq(admin), eq("ADMIN_PASSWORD_RESET"), anyString());
   }
 
 }

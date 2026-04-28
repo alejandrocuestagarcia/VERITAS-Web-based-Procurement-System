@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
-import { AuthModuleService, LoginRequestDto } from "../../core/api";
-import { Router } from "@angular/router";
-import { MatSnackBar } from "@angular/material/snack-bar";
+import {Component} from '@angular/core';
+import {AuthResponseDto, LoginRequestDto} from "../../../core/api";
+import {Router} from "@angular/router";
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {AuthService} from "../../../core/services/auth.service";
 
 @Component({
   selector: 'app-login',
@@ -16,28 +17,27 @@ export class LoginComponent {
   }
 
   constructor(
-    private authApi: AuthModuleService,
+    private authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar
-  ) { }
+  ) {
+  }
 
   onLogin() {
-    this.authApi.login(this.loginRequest).subscribe({
-      next: data => {
-        if (data.accessToken && data.refreshToken) {
-          localStorage.setItem('access_token', data.accessToken);
-          localStorage.setItem('refresh_token', data.refreshToken);
-
+    this.authService.login(this.loginRequest).subscribe({
+      next: (res: AuthResponseDto) => {
+        if (res.requiresPasswordChange) {
+          this.router.navigate(['/force-password-reset']);
+        } else {
           const returnUrl = localStorage.getItem('redirectUrl') || '/dashboard';
           this.router.navigate([returnUrl]);
         }
       },
-      error: err => {
-        console.log(err);
-        this.showError(err.error);
+      error: (err: any) => {
+        console.error(err);
+        this.showError(err.error?.message || 'Login failed');
       }
-    })
-
+    });
   }
 
   private showError(message: string) {

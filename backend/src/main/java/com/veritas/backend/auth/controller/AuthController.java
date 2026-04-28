@@ -4,6 +4,8 @@ import com.veritas.backend.auth.dto.AuthResponseDto;
 import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
 import com.veritas.backend.auth.service.AuthService;
+import com.veritas.backend.config.annotations.IsAdministrator;
+import com.veritas.backend.config.annotations.IsRequester;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -48,6 +50,22 @@ public class AuthController {
     @Operation(summary = "Reset password", description = "Reset password as user and receive reset email.")
     @PostMapping("/passwordreset")
     public AuthResponseDto resetPassword() {
-        return new AuthResponseDto(null, null, null);
+        return new AuthResponseDto(null, null, null, false);
+    }
+
+    @Operation(summary = "Admin Password Reset", description = "Allows an admin to set a temporary password for a user.")
+    @PostMapping("/admin/reset-password/{id}")
+    @IsAdministrator
+    public ResponseEntity<String> adminResetPassword(@PathVariable Long id, @RequestBody String tempPassword) {
+        authService.adminResetPassword(id, tempPassword);
+        return ResponseEntity.ok("Password reset successful");
+    }
+
+    @Operation(summary = "Complete Password Change", description = "Finalizes the mandatory password reset process for a user.")
+    @PostMapping("/complete-password-change")
+    @IsRequester
+    public ResponseEntity<String> completePasswordChange(@RequestBody String newPassword) {
+        authService.completePasswordChange(newPassword);
+        return ResponseEntity.ok("Password reset successful");
     }
 }

@@ -61,6 +61,8 @@ class RoleBasedAccessControlIntegrationTest extends BaseDBIntegrationTest {
                 user.setName(role.name() + " User");
                 user.setPasswordHash("hashed_password");
                 user.setRole(role);
+                user.setIsActive(true);
+                user.setRequiresPasswordChange(false);
                 userRepository.save(user);
 
                 return jwtService.generateAccessToken(user);

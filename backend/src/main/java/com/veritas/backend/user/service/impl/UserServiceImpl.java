@@ -50,6 +50,7 @@ public class UserServiceImpl implements UserService {
     user.setTeam(team);
     user.setIsActive(true);
     user.setDepartment(userDto.department());
+    user.setRequiresPasswordChange(true);
 
     User savedUser = userRepository.save(user);
 
