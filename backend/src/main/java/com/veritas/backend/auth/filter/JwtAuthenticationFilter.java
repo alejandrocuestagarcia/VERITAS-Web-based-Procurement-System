@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +18,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -45,7 +43,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     try {
       userEmail = jwtService.extractEmail(jwt);
     } catch (ExpiredJwtException e) {
-      log.warn("JWT token expired for request: {} {}", request.getMethod(), request.getRequestURI());
       sendError(response, "Token expired");
       return;
     }
@@ -59,9 +56,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 userDetails.getAuthorities());
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
-        log.debug("Authenticated user: {} for {} {}", userEmail, request.getMethod(), request.getRequestURI());
-      } else {
-        log.warn("Invalid JWT token for user: {}", userEmail);
       }
     }
     filterChain.doFilter(request, response);
@@ -77,4 +71,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ));
   }
 }
-

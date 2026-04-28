@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-@Slf4j
 @RestController
 @RequestMapping(path = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
@@ -42,7 +40,6 @@ public class UserController {
     @GetMapping
     public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable, @RequestParam(required = false) String search, @RequestParam(required = false)
                                                      UserRole userRole) {
-        log.info("GET /users – page: {}, size: {}, search: '{}', role: {}", pageable.getPageNumber(), pageable.getPageSize(), search, userRole);
         return ResponseEntity.ok(userService.getAllUsersFiltered(pageable, search, userRole));
     }
 
@@ -50,7 +47,6 @@ public class UserController {
     @IsFinanceOfficer
     @GetMapping("/stats")
     public ResponseEntity<UserStatsDto> getUserStats() {
-        log.info("GET /users/stats");
         return ResponseEntity.ok(userService.getUserStats());
     }
 
@@ -58,7 +54,6 @@ public class UserController {
     @IsFinanceOfficer
     @GetMapping(path = "/{id}", produces = "application/json")
     public ResponseEntity<UserEditDto> getUserByIdForEdit(@PathVariable Long id) {
-        log.info("GET /users/{}", id);
         return ResponseEntity.ok(userService.getUserByIdForEdit(id));
     }
 
@@ -67,7 +62,6 @@ public class UserController {
     @PatchMapping(path = "/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<UserDto> editUser(@PathVariable Long id, @RequestBody UserEditDto edits) {
         UserDto updated = userService.editUser(id, edits);
-        log.info("PATCH /users/{}", id);
         return ResponseEntity.ok(updated);
     }
 
@@ -75,13 +69,10 @@ public class UserController {
     @IsFinanceOfficer
     @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreationRequestDto user) {
-        log.info("POST /users – creating user with email: {}", user.email());
         UserDto userDto = userService.createUser(user);
 
         URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id()).toUri();
-        log.info("User created successfully – id: {}, email: {}", userDto.id(), userDto.email());
         return ResponseEntity.created(userUri).body(userDto);
     }
 
 }
-
