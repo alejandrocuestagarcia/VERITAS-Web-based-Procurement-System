@@ -14,12 +14,14 @@ import com.veritas.backend.user.service.UserService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -33,15 +35,19 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public UserDto createUser(UserCreationRequestDto userDto) {
+    log.info("Creating user with email: {}, role: {}", userDto.email(), userDto.role());
 
     if (userRepository.existsByEmail(userDto.email())) {
+      log.warn("User creation failed – email already registered: {}", userDto.email());
       throw new EntityExistsException("Email already registered");
     }
 
     Team team = teamRepository.findById(userDto.teamId())
         .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
+    log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
 
     if (userDto.promoteToTeamLeader() && !team.getDepartment().equals(userDto.department())) {
+      log.warn("Team leader promotion rejected – department mismatch: user={}, team={}", userDto.department(), team.getDepartment());
       throw new IllegalArgumentException("A team leader must belong to the same department as the team.");
     }
 
@@ -52,10 +58,12 @@ public class UserServiceImpl implements UserService {
     user.setDepartment(userDto.department());
 
     User savedUser = userRepository.save(user);
+    log.info("User persisted – id: {}, email: {}", savedUser.getId(), savedUser.getEmail());
 
     if (userDto.promoteToTeamLeader()) {
       team.setLeader(savedUser);
       teamRepository.save(team);
+      log.info("User promoted to team leader for team: {} (id={})", team.getName(), team.getTeamId());
     }
 
     return userMapper.toUserDto(savedUser);
@@ -133,7 +141,7 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public Page<UserDto> getAllUsers(Pageable pageable) {
-
+    log.debug("Fetching all users – page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
     return userRepository.findAll(pageable).map(userMapper::toUserDto);
 
   }
@@ -144,15 +152,17 @@ public class UserServiceImpl implements UserService {
 
     long inactive = userRepository.countByIsActiveFalse();
 
+    log.debug("User stats – total: {}, inactive: {}", total, inactive);
     return new UserStatsDto(total, inactive, 0);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Page<UserDto> getAllUsersFiltered(Pageable pageable, String filter, UserRole userRole) {
-
+    log.debug("Fetching filtered users – filter: '{}', role: {}, page: {}", filter, userRole, pageable.getPageNumber());
     String query = (filter != null && !filter.isBlank()) ? "%" + filter.trim().toLowerCase() + "%" : null;
 
     return userRepository.findAllFiltered(query, userRole, pageable).map(userMapper::toUserDto);
   }
 }
+
