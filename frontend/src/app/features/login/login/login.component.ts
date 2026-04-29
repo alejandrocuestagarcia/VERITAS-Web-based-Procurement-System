@@ -34,8 +34,7 @@ export class LoginComponent {
         }
       },
       error: (err: any) => {
-        console.error(err);
-        this.showError(err.error?.message || 'Login failed');
+        this.showError(err.error);
       }
     });
   }
@@ -43,8 +42,8 @@ export class LoginComponent {
   private showError(message: string) {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: "bottom",
+      horizontalPosition: 'end',
+      verticalPosition: "top",
       panelClass: ['error-snackbar']
     })
   }
