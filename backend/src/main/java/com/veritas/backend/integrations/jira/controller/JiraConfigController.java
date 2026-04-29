@@ -61,7 +61,7 @@ public class JiraConfigController {
     }
 
     @PostMapping("/test")
-    public ResponseEntity<Map<String, Boolean>> testConnection(@Valid @RequestBody JiraConfigDto dto) {
+    public ResponseEntity<Map<String, Boolean>> testConnection(@RequestBody JiraConfigDto dto) {
         boolean success = syncService.testConnection(dto);
         return ResponseEntity.ok(Map.of("success", success));
     }

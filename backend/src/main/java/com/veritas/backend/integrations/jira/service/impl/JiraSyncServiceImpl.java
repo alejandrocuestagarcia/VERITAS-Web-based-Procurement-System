@@ -53,6 +53,10 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
     @Override
     public boolean testConnection(JiraConfigDto dto) {
+        if (dto.jiraUrl() == null || dto.username() == null || dto.apiToken() == null) {
+            log.warn("Test connection failed: missing required fields (URL, username, or token)");
+            return false;
+        }
         String url = dto.jiraUrl().replaceAll("/+$", "") + "/rest/api/3/myself";
         HttpHeaders headers = createHeaders(dto.username(), dto.apiToken());
         HttpEntity<String> entity = new HttpEntity<>(headers);
