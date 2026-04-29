@@ -75,6 +75,12 @@ public class Request {
     @Column(name = "jira_issue_key", unique = true)
     private String jiraIssueKey;
 
+    @Column(name = "jira_issue_url")
+    private String jiraIssueUrl;
+
     @Column(name = "jira_status")
     private String jiraStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }
