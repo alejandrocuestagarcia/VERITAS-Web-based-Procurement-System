@@ -1,0 +1,21 @@
+:host ::ng-deep {
+  .bjs-powered-by { display: none !important; }
+
+
+  .djs-connection .djs-visual {
+    path {
+      fill: none !important;
+      stroke: #737685 !important;
+      stroke-width: 2px !important;
+    }
+
+  }
+
+  .highlight-orange .djs-visual  {
+    path {
+      stroke: #7c3aed !important;
+      stroke-width: 2px !important;
+    }
+  }
+
+}

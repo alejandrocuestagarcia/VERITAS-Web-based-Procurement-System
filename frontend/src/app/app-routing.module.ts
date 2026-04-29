@@ -17,6 +17,7 @@ import { TeamListComponent } from "./features/team/team-list/team-list.component
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 import { JiraSettingsListComponent } from "./features/jira-settings/jira-settings-list.component";
 import { JiraSettingsCreateComponent } from "./features/jira-settings/jira-settings-create.component";
+import {WorkflowEditorComponent} from "./features/workflow-editor/workflow-editor.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -88,6 +89,11 @@ const routes: Routes = [
     component: VendorCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['PROCUREMENT_OFFICER'] }
+  },
+  {
+    path: 'workflows/view',
+    component: WorkflowEditorComponent,
+    canActivate: [authGuard]
   },
   { path: 'requisition/new', redirectTo: '/dashboard' }, //change later to the right page
   {
