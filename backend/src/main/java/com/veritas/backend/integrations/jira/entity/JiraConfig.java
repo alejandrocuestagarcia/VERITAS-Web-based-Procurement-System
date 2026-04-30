@@ -1,6 +1,7 @@
 package com.veritas.backend.integrations.jira.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +14,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.veritas.backend.config.JpaEncryptionConverter;
 
 @Entity
 @Table(name = "jira_configs", uniqueConstraints = {
@@ -38,7 +40,8 @@ public class JiraConfig {
     @Column(nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1024)
+    @Convert(converter = JpaEncryptionConverter.class)
     private String apiToken;
 
     @Column(nullable = false, length = 1000)
