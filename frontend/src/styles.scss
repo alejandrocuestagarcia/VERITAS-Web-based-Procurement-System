@@ -1,6 +1,8 @@
 //AI-REFACTORED
 
 @use '@angular/material' as mat;
+@import 'bpmn-js/dist/assets/diagram-js.css';
+@import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
