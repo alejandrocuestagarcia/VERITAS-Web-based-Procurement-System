@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 //AI-GENERATED
 
 class EncryptionUtilsUnitTest {
@@ -38,9 +39,10 @@ class EncryptionUtilsUnitTest {
     }
 
     @Test
-    void Decrypt_InvalidCiphertext_ReturnsOriginalText() {
+    void Decrypt_InvalidCiphertext_ThrowsIllegalStateException() {
         String notEncrypted = "not-encrypted-text";
-        String decrypted = encryptionUtils.decrypt(notEncrypted);
-        assertThat(decrypted).isEqualTo(notEncrypted);
+        assertThrows(IllegalStateException.class, () -> {
+            encryptionUtils.decrypt(notEncrypted);
+        });
     }
 }
