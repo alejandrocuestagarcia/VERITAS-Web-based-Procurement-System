@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild, OnDestroy } from '@angular/core';
-import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
-import customRenderer from './custom-renderer';
+import BpmnModeler from 'bpmn-js/lib/Modeler';
+import { editorModules } from '../custom-renderer';
 
 @Component({
   selector: 'app-workflow-editor',
@@ -12,11 +12,12 @@ import customRenderer from './custom-renderer';
 
 export class WorkflowEditorComponent implements OnInit, OnDestroy {
   @ViewChild('canvas', { static: true }) private canvas!: ElementRef;
-  private bpmnViewer: any;
+  private bpmnEditor: any;
   workflowTitle = '';
   workflowId = '';
 
   public showPropertiesPanel: boolean = false;
+  public selectedElementId: string = '';
   public currentRule: any = {
     isPdfRequired: false,
     minRequiredVendors: 0,
@@ -26,28 +27,28 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
 
-    this.bpmnViewer = new BpmnViewer({
+    this.bpmnEditor = new BpmnModeler({
       container: this.canvas.nativeElement,
       additionalModules: [
-        customRenderer
+        editorModules
       ]
     });
 
     try {
-      await this.bpmnViewer.importXML(dummyBpmnXml);
-      const canvas = this.bpmnViewer.get('canvas');
+      await this.bpmnEditor.importXML(dummyBpmnXml);
+      const canvas = this.bpmnEditor.get('canvas');
       const rootElement = canvas.getRootElement();
 
       this.workflowTitle = rootElement.businessObject.name;
       this.workflowId = rootElement.businessObject.id;
       this.applyTransitionRuleCss();
-      canvas.zoom('fit-viewport','auto');
+      canvas.zoom('fit-viewport', 'auto');
 
     } catch (err) {
       console.error('Failed to render workflow', err);
     }
 
-    this.bpmnViewer.on('selection.changed', (event: any) => {
+    this.bpmnEditor.on('selection.changed', (event: any) => {
       const selection = event.newSelection[0];
 
       if (selection && selection.type === 'bpmn:SequenceFlow') {
@@ -60,16 +61,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  zoomIn() { this.bpmnViewer.get('zoomScroll').stepZoom(1); }
-  zoomOut() { this.bpmnViewer.get('zoomScroll').stepZoom(-1); }
-  resetZoom() { this.bpmnViewer.get('canvas').zoom('fit-viewport','auto'); }
+  zoomIn() { this.bpmnEditor.get('zoomScroll').stepZoom(1); }
+  zoomOut() { this.bpmnEditor.get('zoomScroll').stepZoom(-1); }
+  resetZoom() { this.bpmnEditor.get('canvas').zoom('fit-viewport', 'auto'); }
 
-  ngOnDestroy() { this.bpmnViewer?.destroy(); }
+  ngOnDestroy() { this.bpmnEditor?.destroy(); }
 
   loadTransitionRules(selection: any) {
     const elementId = selection.id;
+    this.selectedElementId = elementId;
 
-    const elementRegistry = this.bpmnViewer.get('elementRegistry');
+    const elementRegistry = this.bpmnEditor.get('elementRegistry');
     const element = elementRegistry.get(elementId);
 
     if (!element || !element.businessObject) {
@@ -103,8 +105,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '' };
   }
   private applyTransitionRuleCss() {
-    const canvas = this.bpmnViewer.get('canvas');
-    const elementRegistry = this.bpmnViewer.get('elementRegistry');
+    const canvas = this.bpmnEditor.get('canvas');
+    const elementRegistry = this.bpmnEditor.get('elementRegistry');
 
     elementRegistry.forEach((element: any) => {
 

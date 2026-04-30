@@ -1,5 +1,5 @@
 import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
-import { append as svgAppend, attr as svgAttr, create as svgCreate , remove as svgRemove } from 'tiny-svg';
+import { append as svgAppend, attr as svgAttr, create as svgCreate, remove as svgRemove } from 'tiny-svg';
 import { getRoundRectPath } from 'bpmn-js/lib/draw/BpmnRenderUtil';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
@@ -31,7 +31,7 @@ export default class CustomRenderer extends BaseRenderer {
 
     if (is(element, 'bpmn:Task')) {
       svgAttr(shape, {
-        stroke: '#003d9b',
+        stroke: '#0052CC',
         strokeWidth: 2,
         rx: 20,
         ry: 20,
