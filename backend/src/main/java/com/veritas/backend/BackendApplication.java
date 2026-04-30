@@ -10,12 +10,14 @@ import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+@Slf4j
 @SpringBootApplication
 public class BackendApplication {
 
@@ -26,12 +28,14 @@ public class BackendApplication {
 	@Bean
 	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder, TeamRepository teamRepo, ProjectRepository projectRepo) {
 		return args -> {
+			log.info("Starting seed data initialization...");
 
 			Team teamOne = teamRepo.findById(1L).orElseGet(() -> {
 				Team team = new Team();
 				team.setName("Procurement Alpha");
 				team.setDepartment(Department.IT);
 				team.setDescription("Handles procurement for the alpha team");
+				log.info("Seeded team: {}", team.getName());
 				return teamRepo.save(team);
 			});
 
@@ -46,6 +50,7 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(admin);
+				log.info("Seeded user: {} (role={})", admin.getEmail(), admin.getRole());
 			}
 			if (userRepo.findByEmail("finance@veritas.com").isEmpty()) {
 				User finance = User.builder()
@@ -58,6 +63,7 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(finance);
+				log.info("Seeded user: {} (role={})", finance.getEmail(), finance.getRole());
 			}
 			if (userRepo.findByEmail("procurement@veritas.com").isEmpty()) {
 				User procurement = User.builder()
@@ -70,6 +76,7 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(procurement);
+				log.info("Seeded user: {} (role={})", procurement.getEmail(), procurement.getRole());
 			}
 			if (userRepo.findByEmail("requester@veritas.com").isEmpty()) {
 				User requester = User.builder()
@@ -82,6 +89,7 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(requester);
+				log.info("Seeded user: {} (role={})", requester.getEmail(), requester.getRole());
 
 			}
 
@@ -106,8 +114,12 @@ public class BackendApplication {
 
 				projectRepo.save(p1);
 				projectRepo.save(p2);
+				log.info("Seeded {} projects", 2);
 			}
+
+			log.info("Seed data initialization complete.");
 		};
 	}
 
 }
+
