@@ -2,28 +2,57 @@
 
   <header class="flex justify-between items-end mb-6 border-b border-slate-200 pb-4">
     <div>
-      <div class="flex items-center gap-3">
-        <h1 class="font-manrope text-3xl font-extrabold text-[#191c1e] tracking-tight">
-          {{ workflowTitle || 'Untitled Workflow' }}
-        </h1>
+      <div class="flex items-center gap-3 flex-1">
+        <div class="grid items-center max-w-[600px] overflow-hidden">
+          <span
+            class="invisible whitespace-pre col-start-1 row-start-1 text-2xl font-bold px-3 py-2 pointer-events-none">{{
+            workflowTitle || 'Untitled Workflow' }}</span>
+          <input class="col-start-1 row-start-1 text-2xl font-bold text-black bg-white border 
+            border-[rgba(195,198,214,0.30)] rounded px-3 py-2 outline-none 
+            hover:bg-[#f4f4f4] hover:border-[rgba(195,198,214,0.5)] focus:bg-white w-full" [value]="workflowTitle"
+            (input)="workflowTitle = $any($event.target).value" placeholder="Untitled Workflow">
+        </div>
       </div>
     </div>
 
-    <div class="flex gap-2">
-      <button (click)="zoomIn()"
-        class="flex items-center justify-center p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all">
-        <mat-icon class="text-slate-600 scale-90">zoom_in</mat-icon>
+    <div class="flex gap-4 items-center">
+      <button mat-flat-button class="v-btn-secondary justify-center">
+        <span>Discard</span>
       </button>
-      <button (click)="zoomOut()"
-        class="flex items-center justify-center p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all">
-        <mat-icon class="text-slate-600 scale-90">zoom_out</mat-icon>
-      </button>
-      <button (click)="resetZoom()"
-        class="flex items-center justify-center p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all">
-        <mat-icon class="text-slate-600 scale-90">center_focus_strong</mat-icon>
+      <button mat-flat-button class="v-btn-brand justify-center">
+        <mat-icon>save</mat-icon>
+        <span>Save Workflow</span>
       </button>
     </div>
   </header>
+
+  <div class="flex justify-between items-center w-full mb-4">
+    <div class="flex gap-2">
+      <button (click)="zoomIn()" mat-flat-button class="ml-6 v-btn-secondary">
+        <mat-icon>zoom_in</mat-icon>
+        <span>Zoom In</span>
+      </button>
+      <button (click)="zoomOut()" mat-flat-button class="v-btn-secondary">
+        <mat-icon>zoom_out</mat-icon>
+        <span>Zoom Out</span>
+      </button>
+      <button (click)="resetZoom()" mat-flat-button class="v-btn-secondary">
+        <mat-icon>center_focus_strong</mat-icon>
+        <span>Reset View</span>
+      </button>
+    </div>
+    <div class="flex gap-2">
+      <input type="file" #fileInput (change)="onFileSelected($event)" accept=".bpmn, .xml" class="hidden">
+      <button class="v-btn-secondary" mat-flat-button (click)="fileInput.click()">
+        <mat-icon class="mr-2">upload</mat-icon>
+        Import XML
+      </button>
+      <button class="v-btn-secondary" mat-flat-button (click)="exportXML()">
+        <mat-icon class="mr-2">download</mat-icon>
+        Export XML
+      </button>
+    </div>
+  </div>
 
   <div class="flex flex-1 overflow-hidden bg-white rounded-2xl border-2 border-[#e4e7ef] shadow-sm">
 
@@ -31,12 +60,12 @@
       <div #canvas class="w-full h-full"></div>
     </main>
 
-    <aside *ngIf="showPropertiesPanel"
+    <aside *ngIf="showPropertiesPanelTransition"
       class="w-80 border-l border-[#e4e7ef] bg-slate-50/50 flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-300">
 
       <div class="p-6 border-b border-[#e4e7ef] flex justify-between items-center bg-white">
         <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Transition Logic</h3>
-        <button (click)="showPropertiesPanel = false" class="text-slate-400 hover:text-slate-600">
+        <button (click)="showPropertiesPanelTransition = false" class="text-slate-400 hover:text-slate-600">
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -70,6 +99,34 @@
         </div>
       </div>
     </aside>
+    <aside *ngIf="showPropertiesPanelTask"
+      class="w-80 border-l border-[#e4e7ef] bg-slate-50/50 flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-300">
 
+      <div class="p-6 border-b border-[#e4e7ef] flex justify-between items-center bg-white">
+        <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Transition Logic</h3>
+        <button (click)="showPropertiesPanelTask = false" class="text-slate-400 hover:text-slate-600">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6 overflow-y-auto pointer-events-none opacity-80">
+
+        <div class="space-y-4">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assigned Person</label>
+            <div class="flex items-center gap-3 p-4 mt-2 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <span class="text-sm font-semibold text-slate-700">Placeholder</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</label>
+            <div class="mt-2 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+              <p class="text-xs text-blue-800 italic leading-relaxed">Placeholder</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>

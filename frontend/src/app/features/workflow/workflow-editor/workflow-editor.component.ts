@@ -16,7 +16,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   workflowTitle = '';
   workflowId = '';
 
-  public showPropertiesPanel: boolean = false;
+  public showPropertiesPanelTransition: boolean = false;
+  public showPropertiesPanelTask: boolean = false;
   public selectedElementId: string = '';
   public currentRule: any = {
     isPdfRequired: false,
@@ -51,11 +52,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.bpmnEditor.on('selection.changed', (event: any) => {
       const selection = event.newSelection[0];
 
-      if (selection && selection.type === 'bpmn:SequenceFlow') {
-        this.showPropertiesPanel = true;
-        this.loadTransitionRules(selection);
+      if (selection) {
+        if (selection.type == 'bpmn:SequenceFlow') {
+          this.showPropertiesPanelTask = false;
+          this.showPropertiesPanelTransition = true;
+          this.loadTransitionRules(selection);
+        } else {
+          this.showPropertiesPanelTransition = false;
+          this.showPropertiesPanelTask = true;
+        }
       } else {
-        this.showPropertiesPanel = false;
+        this.showPropertiesPanelTransition = false;
+        this.showPropertiesPanelTask = false;
         this.resetRule();
       }
     });
@@ -64,6 +72,46 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   zoomIn() { this.bpmnEditor.get('zoomScroll').stepZoom(1); }
   zoomOut() { this.bpmnEditor.get('zoomScroll').stepZoom(-1); }
   resetZoom() { this.bpmnEditor.get('canvas').zoom('fit-viewport', 'auto'); }
+
+  async exportXML() {
+    try {
+      const { xml } = await this.bpmnEditor.saveXML({ format: true });
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${this.workflowTitle || 'workflow'}.bpmn`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to export XML', err);
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e: any) => {
+        try {
+          const xml = e.target.result;
+          await this.bpmnEditor.importXML(xml);
+          const canvas = this.bpmnEditor.get('canvas');
+          const rootElement = canvas.getRootElement();
+          this.workflowTitle = rootElement?.businessObject?.name || 'Imported Workflow';
+          this.workflowId = rootElement?.businessObject?.id || '';
+          this.applyTransitionRuleCss();
+          canvas.zoom('fit-viewport', 'auto');
+        } catch (err) {
+          console.error('Failed to import XML', err);
+        }
+      };
+      reader.readAsText(file);
+    }
+    event.target.value = '';
+  }
 
   ngOnDestroy() { this.bpmnEditor?.destroy(); }
 
@@ -118,7 +166,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         );
 
         if (hasConstraint) {
-          canvas.addMarker(element.id, 'highlight-orange');
+          canvas.addMarker(element.id, 'highlight');
         }
       }
     });

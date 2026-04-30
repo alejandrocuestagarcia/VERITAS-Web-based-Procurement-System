@@ -16,7 +16,8 @@ export class WorkflowViewerComponent implements OnInit, OnDestroy {
   workflowTitle = '';
   workflowId = '';
 
-  public showPropertiesPanel: boolean = false;
+  public showPropertiesPanelTransition: boolean = false;
+  public showPropertiesPanelTask: boolean = false;
   public currentRule: any = {
     isPdfRequired: false,
     minRequiredVendors: 0,
@@ -50,11 +51,18 @@ export class WorkflowViewerComponent implements OnInit, OnDestroy {
     this.bpmnViewer.on('selection.changed', (event: any) => {
       const selection = event.newSelection[0];
 
-      if (selection && selection.type === 'bpmn:SequenceFlow') {
-        this.showPropertiesPanel = true;
-        this.loadTransitionRules(selection);
+      if (selection) {
+        if (selection.type == 'bpmn:SequenceFlow') {
+          this.showPropertiesPanelTask = false;
+          this.showPropertiesPanelTransition = true;
+          this.loadTransitionRules(selection);
+        } else {
+          this.showPropertiesPanelTransition = false;
+          this.showPropertiesPanelTask = true;
+        }
       } else {
-        this.showPropertiesPanel = false;
+        this.showPropertiesPanelTransition = false;
+        this.showPropertiesPanelTask = false;
         this.resetRule();
       }
     });
@@ -116,7 +124,7 @@ export class WorkflowViewerComponent implements OnInit, OnDestroy {
         );
 
         if (hasConstraint) {
-          canvas.addMarker(element.id, 'highlight-orange');
+          canvas.addMarker(element.id, 'highlight');
         }
       }
     });

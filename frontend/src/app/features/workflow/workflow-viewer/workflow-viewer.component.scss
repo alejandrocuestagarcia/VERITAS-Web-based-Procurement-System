@@ -1,22 +1,24 @@
+@import '../workflow-shared';
+
 :host ::ng-deep {
-  .bjs-powered-by {
-    display: none !important;
-  }
 
+    .djs-connection,
+    .djs-shape {
+        cursor: pointer !important;
 
-  .djs-connection .djs-visual {
-    path {
-      stroke: #737685 !important;
-      stroke-width: 2px !important;
+        * {
+            cursor: pointer !important;
+        }
     }
 
-  }
+    .djs-shape {
+        .djs-visual> :nth-child(1) {
+            transition: stroke-width 0.2s ease, stroke 0.2s ease;
+        }
 
-  .highlight-orange .djs-visual {
-    path {
-      stroke: #7c3aed !important;
-      stroke-width: 2px !important;
+        &:hover .djs-visual> :nth-child(1),
+        &.hover .djs-visual> :nth-child(1) {
+            stroke-width: 3px !important;
+        }
     }
-  }
-
 }
