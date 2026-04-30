@@ -1,15 +1,16 @@
 package com.veritas.backend.integrations.jira.service;
 
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
+import com.veritas.backend.integrations.jira.dto.JiraConfigResponseDto;
 import java.util.List;
 
 public interface JiraConfigService {
-    List<JiraConfigDto> getAllConfigs();
+    List<JiraConfigResponseDto> getAllConfigs();
 
-    JiraConfigDto getConfigById(Long id);
+    JiraConfigResponseDto getConfigById(Long id);
 
-    JiraConfigDto createConfig(JiraConfigDto dto);
+    JiraConfigResponseDto createConfig(JiraConfigDto dto);
 
-    JiraConfigDto updateConfig(Long id, JiraConfigDto dto);
+    JiraConfigResponseDto updateConfig(Long id, JiraConfigDto dto);
 
 }

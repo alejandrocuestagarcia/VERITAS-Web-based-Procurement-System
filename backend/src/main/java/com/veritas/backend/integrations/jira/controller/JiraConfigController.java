@@ -2,6 +2,7 @@ package com.veritas.backend.integrations.jira.controller;
 
 import com.veritas.backend.config.annotations.IsAdministrator;
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
+import com.veritas.backend.integrations.jira.dto.JiraConfigResponseDto;
 import com.veritas.backend.integrations.jira.service.JiraConfigService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import java.util.List;
@@ -29,22 +30,22 @@ public class JiraConfigController {
     private final JiraSyncService syncService;
 
     @GetMapping
-    public ResponseEntity<List<JiraConfigDto>> getAllConfigs() {
+    public ResponseEntity<List<JiraConfigResponseDto>> getAllConfigs() {
         return ResponseEntity.ok(service.getAllConfigs());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<JiraConfigDto> getConfigById(@PathVariable Long id) {
+    public ResponseEntity<JiraConfigResponseDto> getConfigById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getConfigById(id));
     }
 
     @PostMapping
-    public ResponseEntity<JiraConfigDto> createConfig(@Valid @RequestBody JiraConfigDto dto) {
+    public ResponseEntity<JiraConfigResponseDto> createConfig(@Valid @RequestBody JiraConfigDto dto) {
         return ResponseEntity.ok(service.createConfig(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<JiraConfigDto> updateConfig(@PathVariable Long id,
+    public ResponseEntity<JiraConfigResponseDto> updateConfig(@PathVariable Long id,
             @Valid @RequestBody JiraConfigDto dto) {
         return ResponseEntity.ok(service.updateConfig(id, dto));
     }

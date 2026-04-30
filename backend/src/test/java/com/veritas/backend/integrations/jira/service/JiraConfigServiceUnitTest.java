@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
+import com.veritas.backend.integrations.jira.dto.JiraConfigResponseDto;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import com.veritas.backend.integrations.jira.mapper.JiraConfigMapper;
 import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
@@ -42,6 +43,7 @@ public class JiraConfigServiceUnitTest {
 
     private JiraConfig config;
     private JiraConfigDto configDto;
+    private JiraConfigResponseDto responseDto;
 
     @BeforeEach
     void setUp() {
@@ -54,27 +56,30 @@ public class JiraConfigServiceUnitTest {
         configDto =
             new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", "token",
                 "project = TEST", 60, "field_123", null, null);
+
+        responseDto = new JiraConfigResponseDto(1L, "Test Config", "https://test.atlassian.net", "user",
+            "project = TEST", 60, "field_123", null, null, true);
     }
 
     @Test
-    void getAllConfigs_ShouldReturnList() {
+    void GetAllConfigs_ExistingConfigs_ReturnsList() {
         when(repository.findAll()).thenReturn(List.of(config));
-        when(mapper.toDto(any())).thenReturn(configDto);
+        when(mapper.toDto(any())).thenReturn(responseDto);
 
-        List<JiraConfigDto> result = service.getAllConfigs();
+        List<JiraConfigResponseDto> result = service.getAllConfigs();
 
         assertEquals(1, result.size());
         verify(repository).findAll();
     }
 
     @Test
-    void createConfig_ShouldSaveAndSchedule() {
+    void CreateConfig_ValidInput_SavesAndSchedules() {
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
         when(mapper.toEntity(any())).thenReturn(config);
         when(repository.save(any())).thenReturn(config);
-        when(mapper.toDto(any())).thenReturn(configDto);
+        when(mapper.toDto(any())).thenReturn(responseDto);
 
-        JiraConfigDto result = service.createConfig(configDto);
+        JiraConfigResponseDto result = service.createConfig(configDto);
 
         assertNotNull(result);
         verify(repository).save(any());
@@ -82,7 +87,7 @@ public class JiraConfigServiceUnitTest {
     }
 
     @Test
-    void createConfig_Duplicate_ShouldThrowException() {
+    void CreateConfig_DuplicateConfig_ThrowsException() {
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(true);
 
         assertThrows(RuntimeException.class, () -> service.createConfig(configDto));
@@ -90,13 +95,13 @@ public class JiraConfigServiceUnitTest {
     }
 
     @Test
-    void updateConfig_ShouldSaveAndSchedule() {
+    void UpdateConfig_ValidInput_SavesAndSchedules() {
         when(repository.findById(1L)).thenReturn(Optional.of(config));
         when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.empty());
         when(repository.save(any())).thenReturn(config);
-        when(mapper.toDto(any())).thenReturn(configDto);
+        when(mapper.toDto(any())).thenReturn(responseDto);
 
-        JiraConfigDto result = service.updateConfig(1L, configDto);
+        JiraConfigResponseDto result = service.updateConfig(1L, configDto);
 
         assertNotNull(result);
         verify(repository).save(any());

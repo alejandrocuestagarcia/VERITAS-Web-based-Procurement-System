@@ -68,7 +68,7 @@ public class JiraSyncServiceUnitTest {
     }
 
     @Test
-    void testConnection_ShouldReturnTrueOnSuccess() {
+    void TestConnection_SuccessfulResponse_ReturnsTrue() {
         JiraConfigDto dto =
             new JiraConfigDto(1L, "Test", "https://test.atlassian.net", "user", "token", "jql", 60,
                 "field", null, null);
@@ -82,7 +82,7 @@ public class JiraSyncServiceUnitTest {
     }
 
     @Test
-    void runManualSync_ShouldProcessIssues() {
+    void RunManualSync_ExistingIssues_ProcessesAndSaves() {
         when(configRepository.findById(1L)).thenReturn(Optional.of(config));
 
         JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(

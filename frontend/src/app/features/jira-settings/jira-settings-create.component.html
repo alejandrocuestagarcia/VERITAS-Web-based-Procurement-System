@@ -37,7 +37,7 @@
       <app-shared-form-field label="API TOKEN">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>vpn_key</mat-icon>
-          <input matInput formControlName="apiToken" type="password" [placeholder]="isEditing ? 'Leave blank to keep current' : 'Jira API Token'">
+          <input matInput formControlName="apiToken" type="password" [placeholder]="isTokenSet ? 'Token is set. Enter new to change.' : 'Jira API Token'">
           <mat-error *ngIf="!isEditing && settingsForm.get('apiToken')?.hasError('required')">Token is required</mat-error>
         </mat-form-field>
       </app-shared-form-field>
