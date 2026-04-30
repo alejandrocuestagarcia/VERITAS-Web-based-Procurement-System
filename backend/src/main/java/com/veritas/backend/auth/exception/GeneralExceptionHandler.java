@@ -4,6 +4,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,16 +15,19 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GeneralExceptionHandler {
 
   @ExceptionHandler(BadCredentialsException.class)
   public ResponseEntity<String> handleBadCredentialsException(final BadCredentialsException exception) {
+    log.warn("Bad credentials: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
   }
 
   @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
   public ResponseEntity<String> handleAccessDenied(Exception exception) {
+    log.warn("Access denied: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access Denied");
   }
 
@@ -34,27 +38,33 @@ public class GeneralExceptionHandler {
       errors.put(error.getField(), error.getDefaultMessage());
     }
 
+    log.warn("Validation failed: {}", errors);
     return ResponseEntity.badRequest().body(errors);
   }
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<String> handleIllegalArgumentError(Exception exception) {
+    log.warn("Illegal argument: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
   }
 
   @ExceptionHandler(EntityNotFoundException.class)
   public ResponseEntity<String> handleNotFound(Exception ex) {
+    log.warn("Entity not found: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
   }
 
   @ExceptionHandler(EntityExistsException.class)
   public ResponseEntity<String> handleConflict(Exception ex) {
+    log.warn("Entity conflict: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleGeneralError(Exception exception) {
+    log.error("Unhandled exception: {}", exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
   }
 
 
 }
+
