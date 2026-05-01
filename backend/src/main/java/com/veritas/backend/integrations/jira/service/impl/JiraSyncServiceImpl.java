@@ -169,7 +169,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             if (auth != null && auth.getPrincipal() instanceof User user) {
                 actor = user;
             }
-            auditService.createJiraSyncLog(actor, request, "JIRA_SYNC", "Synced from Jira issue " + key + " | Created in Jira: " + offsetDateTime.toLocalDateTime());
+            auditService.createJiraSyncLog(actor, request, "Synced from Jira issue " + key + " | Created in Jira: " + offsetDateTime.toLocalDateTime());
         } else {
             log.warn("Failed to update Jira custom field for issue: {}", key);
         }

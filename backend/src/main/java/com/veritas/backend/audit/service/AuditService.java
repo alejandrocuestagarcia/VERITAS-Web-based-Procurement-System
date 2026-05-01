@@ -9,5 +9,5 @@ public interface AuditService {
      * Required for administrative traceability.
      */
     void createPasswordResetLog(User actor, String action, String details);
-    void createJiraSyncLog(User actor, Request request, String action, String details);
+    void createJiraSyncLog(User actor, Request request, String details);
 }

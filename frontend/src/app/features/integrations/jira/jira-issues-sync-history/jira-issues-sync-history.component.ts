@@ -1,13 +1,13 @@
 import {Component, OnInit} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import { Location } from '@angular/common';
-import {JiraConfigControllerService} from "../../../core/api";
+import {JiraConfigControllerService} from "../../../../core/api";
 
 @Component({
   selector: 'app-jira-settings-sync-history',
-  templateUrl: './jira-settings-sync-history.component.html'
+  templateUrl: './jira-issues-sync-history.component.html'
 })
-export class JiraSettingsSyncHistoryComponent implements OnInit {
+export class JiraIssuesSyncHistoryComponent implements OnInit {
   loading = false;
   totalElements = 0;
   displayedColumns = ['requestName', 'requestKey', 'user', 'timestamp', 'action'];
@@ -38,5 +38,9 @@ export class JiraSettingsSyncHistoryComponent implements OnInit {
     this.location.back();
   }
 
-  onPageChange(event: any) {}
+  onSearchChanged(value: string): void {
+    this.dataSource.filter = value.trim().toLowerCase();
+    if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+  }
+
 }

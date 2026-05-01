@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
+
 @Service
 @RequiredArgsConstructor
 public class AuditServiceImpl implements AuditService {
@@ -39,13 +41,13 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional
-    public void createJiraSyncLog(User actor, Request request, String action, String details) {
+    public void createJiraSyncLog(User actor, Request request, String details) {
         String mockHash = UUID.randomUUID().toString();
 
         AuditLog log = AuditLog.builder()
                 .request(request)
                 .actor(actor)
-                .action(action)
+                .action(JIRA_SYNC)
                 .description(details)
                 .entryHash(mockHash)
                 .timestamp(LocalDateTime.now())
