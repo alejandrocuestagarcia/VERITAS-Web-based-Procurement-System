@@ -4,9 +4,13 @@ import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.requisition.dto.*;
+import com.veritas.backend.requisition.service.RequisitionService;
+import com.veritas.backend.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,13 +18,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/requisitions")
+@RequiredArgsConstructor
 @Tag(name = "Requisition Module", description = "Management of procurement requests")
 public class RequisitionController {
+    private final RequisitionService requisitionService;
+
     @Operation(summary = "Create a request", description = "Creates a new procurement request.")
     @IsRequester
     @PostMapping
-    public RequisitionDto createRequest(@RequestBody RequisitionCreateDto requestBody) {
-        return new RequisitionDto();
+    public RequisitionDto createRequest(@RequestBody RequisitionCreateDto requestBody,
+            @AuthenticationPrincipal User user) {
+        return requisitionService.createRequest(requestBody, user);
     }
 
     @Operation(summary = "Get all requests (Search/Filter)", description = "List requests with filters for status and search terms.")

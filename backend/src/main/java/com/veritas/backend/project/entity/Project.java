@@ -39,6 +39,10 @@ public class Project {
     @Column(nullable = false)
     private BigDecimal budget;
 
+    @Column(name = "request_counter", nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private Integer requestCounter = 0;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -1,10 +1,13 @@
 package com.veritas.backend.requisition.dto;
 
+import com.veritas.backend.requisition.entity.Priority;
 import lombok.Data;
 
 @Data
 public class RequisitionCreateDto {
-    private String title;
+    private String requestName;
     private String description;
-    private Double amount;
+    private Long projectId;
+    private Long workflowDefinitionId;
+    private Priority priority;
 }
