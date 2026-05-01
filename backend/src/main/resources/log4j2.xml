@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
     <Properties>
-        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <Property name="LOG_PATTERN">%style{%d{yyyy-MM-dd HH:mm:ss.SSS}}{white} %highlight{%-5level} [%style{%t}{cyan}] %style{%logger{36}}{yellow} - %msg%n</Property>
     </Properties>
 
     <Appenders>
         <!-- Console appender -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="${LOG_PATTERN}" />
+            <PatternLayout pattern="${LOG_PATTERN}" disableAnsi="false" />
         </Console>
 
         <!-- Rolling file appender -->
