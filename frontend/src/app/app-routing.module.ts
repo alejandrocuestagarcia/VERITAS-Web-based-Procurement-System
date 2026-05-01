@@ -17,10 +17,11 @@ import {UserEditComponent} from "./features/user/user-edit/user-edit.component";
 import {roleGuard} from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
-import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
-import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
-import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workflow-editor.component";
 import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
+import { JiraSettingsListComponent } from "./features/jira-settings/jira-settings-list.component";
+import { JiraSettingsCreateComponent } from "./features/jira-settings/jira-settings-create.component";
+import {WorkflowEditorComponent} from "./features/workflow-editor/workflow-editor.component";
+import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
 
 const routes: Routes = [
   {
@@ -33,12 +34,12 @@ const routes: Routes = [
     component: ForcePasswordResetComponent,
     canActivate: [authGuard]
   },
-  { path: 'forgot-password', 
-    component: ForgotPasswordComponent, 
-    canActivate: [guestGuard] 
+  { path: 'forgot-password',
+    component: ForgotPasswordComponent,
+    canActivate: [guestGuard]
   },
-  { path: 'reset-password', 
-    component: ResetPasswordComponent, 
+  { path: 'reset-password',
+    component: ResetPasswordComponent,
     canActivate: [guestGuard] },
   {
     path: 'users',
@@ -116,7 +117,11 @@ const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { mode: 'edit', roles: ['FINANCE_OFFICER'] }
   },
-  { path: 'requisition/new', redirectTo: '/dashboard' }, //change later to the right page
+  { path: 'requisition/create',
+    component: RequisitionCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['REQUESTER', 'ADMINISTRATOR'] }
+  },
   {
     path: 'integrations',
     component: JiraSettingsListComponent,
@@ -141,7 +146,6 @@ const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR'] }
   },
-  { path: 'requisition/new', redirectTo: '/dashboard' },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];
