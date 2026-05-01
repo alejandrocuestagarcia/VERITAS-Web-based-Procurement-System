@@ -8,6 +8,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
 import com.veritas.backend.integrations.jira.dto.JiraIssueRecord;
 import com.veritas.backend.integrations.jira.dto.JiraSearchResponseRecord;
@@ -45,6 +46,8 @@ public class JiraSyncServiceUnitTest {
     private JiraIssueMapper issueMapper;
     @Mock
     private RestTemplate restTemplate;
+    @Mock
+    private AuditServiceImpl auditService;
 
     @InjectMocks
     private JiraSyncServiceImpl service;
@@ -88,7 +91,7 @@ public class JiraSyncServiceUnitTest {
         JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
             new JiraIssueRecord("10001", "TEST-1", "https://api/1",
                 new com.veritas.backend.integrations.jira.dto.JiraFieldsRecord("Summary", null,
-                    null, null,
+                    null, "2026-05-01T16:06:19.433+02:00",
                     null, null, null))));
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),

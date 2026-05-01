@@ -57,7 +57,7 @@ public class Request {
     @Enumerated(EnumType.STRING)
     private Department department;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

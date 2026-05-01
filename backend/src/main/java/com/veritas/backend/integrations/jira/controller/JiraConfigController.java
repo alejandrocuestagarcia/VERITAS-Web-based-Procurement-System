@@ -1,5 +1,7 @@
 package com.veritas.backend.integrations.jira.controller;
 
+import com.veritas.backend.audit.dto.AuditLogDto;
+import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.config.annotations.IsAdministrator;
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
 import com.veritas.backend.integrations.jira.dto.JiraConfigResponseDto;
@@ -28,6 +30,7 @@ public class JiraConfigController {
 
     private final JiraConfigService service;
     private final JiraSyncService syncService;
+    private final AuditServiceImpl auditService;
 
     @GetMapping
     public ResponseEntity<List<JiraConfigResponseDto>> getAllConfigs() {
@@ -65,5 +68,10 @@ public class JiraConfigController {
     public ResponseEntity<Map<String, Boolean>> testConnection(@RequestBody JiraConfigDto dto) {
         boolean success = syncService.testConnection(dto);
         return ResponseEntity.ok(Map.of("success", success));
+    }
+
+    @GetMapping("/audit")
+    public ResponseEntity<List<AuditLogDto>> getJiraSyncAudit() {
+        return ResponseEntity.ok(auditService.getJiraIssueLogsByAction("JIRA_SYNC"));
     }
 }

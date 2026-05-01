@@ -18,6 +18,9 @@ import { TeamCreateComponent } from "./features/team/team-create/team-create.com
 import { JiraSettingsListComponent } from "./features/jira-settings/jira-settings-list.component";
 import { JiraSettingsCreateComponent } from "./features/jira-settings/jira-settings-create.component";
 import {WorkflowEditorComponent} from "./features/workflow-editor/workflow-editor.component";
+import {
+  JiraSettingsSyncHistoryComponent
+} from "./features/jira-settings/jira-settings-sync-history/jira-settings-sync-history.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -99,17 +102,26 @@ const routes: Routes = [
   {
     path: 'integrations',
     component: JiraSettingsListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
   },
   {
     path: 'integrations/create',
     component: JiraSettingsCreateComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
   },
   {
     path: 'integrations/edit/:id',
     component: JiraSettingsCreateComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
+  },
+  {
+    path: 'integrations/sync-history',
+    component: JiraSettingsSyncHistoryComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
   },
   { path: 'requisition/new', redirectTo: '/dashboard' },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },

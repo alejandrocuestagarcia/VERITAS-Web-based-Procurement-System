@@ -51,6 +51,7 @@ import {JiraSettingsCreateComponent} from "./features/jira-settings/jira-setting
 import { ResetPasswordDialogComponent } from './features/login/reset-password-dialog/reset-password-dialog.component';
 import {MatDialogModule} from "@angular/material/dialog";
 import { WorkflowEditorComponent } from './features/workflow-editor/workflow-editor.component';
+import { JiraSettingsSyncHistoryComponent } from './features/jira-settings/jira-settings-sync-history/jira-settings-sync-history.component';
 
 @NgModule({
   declarations: [
@@ -80,7 +81,8 @@ import { WorkflowEditorComponent } from './features/workflow-editor/workflow-edi
     ResetPasswordDialogComponent,
     JiraSettingsListComponent,
     JiraSettingsCreateComponent,
-    WorkflowEditorComponent
+    WorkflowEditorComponent,
+    JiraSettingsSyncHistoryComponent
   ],
   imports: [
     BrowserModule,

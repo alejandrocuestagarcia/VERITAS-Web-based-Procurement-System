@@ -32,6 +32,8 @@ public class AuditLog {
     @Column(nullable = false)
     private String action;
 
+    private String description;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "previous_step_id")
     private WorkflowStep previousStep;
