@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/workflows")
@@ -35,12 +37,14 @@ public class WorkflowController {
     @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id) {
+        log.info("GET /workflows/{}", id);
         return ResponseEntity.ok(workflowService.getWorkflow(id));
     }
 
     @Operation(summary = "Save workflow", description = "Saves a new workflow configuration (BPMN/XML) created in the editor.")
     @PostMapping(consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> saveWorkflow(@Valid @RequestBody WorkflowSaveDto workflowData) {
+        log.info("POST /workflows");
         WorkflowDto workflowDto = workflowService.createWorkflow(workflowData);
         URI workflowURI = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(workflowDto.id()).toUri();
         return ResponseEntity.created(workflowURI).body(workflowDto);
@@ -49,6 +53,7 @@ public class WorkflowController {
     @Operation(summary = "Edit Workflow", description = "Edits an existing workflow.")
     @PatchMapping(path = "/{id}", consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> editWorkflow(@PathVariable Long id, @Valid @RequestBody WorkflowEditDto workflowEditDto) {
+        log.info("PATCH /workflows/{}", id);
         WorkflowDto workflowDto = workflowService.editWorkflow(id, workflowEditDto);
         return ResponseEntity.ok(workflowDto);
     }
