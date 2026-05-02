@@ -111,6 +111,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       const canvas = this.bpmnInstance.get('canvas');
 
       canvas.zoom('fit-viewport', 'auto');
+      setTimeout(() => {
+        canvas.resized();
+        canvas.zoom('fit-viewport', 'auto');
+      }, 1);
+
       this.applyTransitionRuleCss();
     } catch (err) {
       console.error('Failed to render workflow', err);
