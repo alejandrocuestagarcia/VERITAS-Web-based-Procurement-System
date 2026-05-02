@@ -1,1 +1,5 @@
 @import '../workflow-shared';
+
+::ng-deep .bg-white-field .mat-mdc-text-field-wrapper {
+  background-color: white;
+}

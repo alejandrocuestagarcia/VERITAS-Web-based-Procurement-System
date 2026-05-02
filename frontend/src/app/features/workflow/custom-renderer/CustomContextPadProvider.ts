@@ -39,22 +39,46 @@ export default class CustomContextPadProvider {
       title: 'Delete',
       action: { click: deleteElement },
     };
+    const textAnnotationEntry = {
+      group: 'edit',
+      className: 'bpmn-icon-text-annotation',
+      title: 'Add Text Annotation',
+      action: {
+        click: appendTextAnnotation,
+        dragstart: startAppendTextAnnotation,
+      },
+    };
+    const connectEntry = {
+      group: 'connect',
+      className: 'bpmn-icon-connection-multi',
+      title: 'Connect to Element',
+      action: { click: startConnect, dragstart: startConnect },
+    };
 
     if (is(element, 'bpmn:SequenceFlow')) {
-      return { delete: deleteEntry };
+      return {
+        textAnnotationEntry,
+        delete: deleteEntry
+      };
     }
 
     function startConnect(event: any, el: any) {
       connect.start(event, el);
     }
 
+    function appendTextAnnotation(_event: any, el: any) {
+      const shape = elementFactory.createShape({ type: 'bpmn:TextAnnotation' });
+      autoPlace.append(el, shape);
+    }
+
+    function startAppendTextAnnotation(event: any, el: any) {
+      const shape = elementFactory.createShape({ type: 'bpmn:TextAnnotation' });
+      create.start(event, shape, { source: el });
+    }
+
     return {
-      connect: {
-        group: 'connect',
-        className: 'bpmn-icon-connection-multi',
-        title: 'Connect to Element',
-        action: { click: startConnect, dragstart: startConnect },
-      },
+      textAnnotationEntry,
+      connect: connectEntry,
       delete: deleteEntry,
     };
   }

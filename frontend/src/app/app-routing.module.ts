@@ -93,14 +93,22 @@ const routes: Routes = [
     data: { roles: ['PROCUREMENT_OFFICER'] }
   },
   {
-    path: 'workflows/view',
-    component: WorkflowViewerComponent,
-    canActivate: [authGuard]
+    path: 'workflows/view/:id',
+    component: WorkflowEditorComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { mode: 'view', roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER'] }
   },
   {
-    path: 'workflows/new',
+    path: 'workflows/create',
     component: WorkflowEditorComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { mode: 'create', roles: ['FINANCE_OFFICER'] }
+  },
+  {
+    path: 'workflows/edit/:id',
+    component: WorkflowEditorComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { mode: 'edit', roles: ['FINANCE_OFFICER'] }
   },
   { path: 'requisition/new', redirectTo: '/dashboard' }, //change later to the right page
   {

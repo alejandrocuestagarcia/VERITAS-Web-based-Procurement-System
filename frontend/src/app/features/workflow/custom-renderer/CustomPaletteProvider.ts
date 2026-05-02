@@ -98,6 +98,18 @@ export default class CustomPaletteProvider {
           click: startDrag('bpmn:EndEvent'),
         },
       },
+
+      'elements-separator': { group: 'elements', separator: true },
+
+      'create.text-annotation': {
+        group: 'elements',
+        className: 'bpmn-icon-text-annotation',
+        title: 'Text Annotation',
+        action: {
+          dragstart: startDrag('bpmn:TextAnnotation'),
+          click: startDrag('bpmn:TextAnnotation'),
+        },
+      },
     };
   }
 }
