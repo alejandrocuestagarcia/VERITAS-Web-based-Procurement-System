@@ -73,9 +73,15 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
         workflowDefinition.setBpmnXml(xml);
 
-        BpmnModelInstance modelInstance = Bpmn.readModelFromStream(
-                new ByteArrayInputStream(xml.getBytes())
-        );
+        BpmnModelInstance modelInstance;
+        try {
+            modelInstance = Bpmn.readModelFromStream(
+                    new ByteArrayInputStream(xml.getBytes())
+            );
+            Bpmn.validateModel(modelInstance);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while parsing input xml");
+        }
         Optional<Process> process = modelInstance.getModelElementsByType(Process.class)
                 .stream().findFirst();
         if (process.isEmpty()) {
