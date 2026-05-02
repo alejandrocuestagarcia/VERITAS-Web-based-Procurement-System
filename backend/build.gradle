@@ -47,6 +47,7 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
 	implementation 'org.apache.pdfbox:pdfbox:3.0.7'
 	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+	implementation 'org.camunda.bpm.model:camunda-bpmn-model:7.20.0'
 
 	runtimeOnly 'com.h2database:h2'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
