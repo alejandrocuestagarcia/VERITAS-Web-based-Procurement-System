@@ -11,6 +11,10 @@ public class WorkflowTransition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String name;
+
+    private String description;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_step_id")
     private WorkflowStep fromStep;
@@ -19,5 +23,4 @@ public class WorkflowTransition {
     @JoinColumn(name = "to_step_id")
     private WorkflowStep toStep;
 
-    private String transitionName;
 }

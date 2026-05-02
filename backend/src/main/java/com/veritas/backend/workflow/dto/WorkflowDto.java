@@ -1,10 +1,10 @@
 package com.veritas.backend.workflow.dto;
 
-import lombok.Data;
-
-@Data
-public class WorkflowDto {
-    private Long id;
-    private String name;
-    private String version;
-}
+public record WorkflowDto (
+    Long id,
+    String name,
+    String bpmnXml,
+    Long version,
+    String description,
+    Boolean isActive
+){}
