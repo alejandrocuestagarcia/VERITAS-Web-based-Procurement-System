@@ -126,30 +126,35 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   zoomOut() { this.bpmnInstance.get('zoomScroll').stepZoom(-1); }
   resetZoom() { this.bpmnInstance.get('canvas').zoom('fit-viewport', 'auto'); }
 
+  private async getUpdatedBpmnXml(): Promise<string> {
+    const modeling = this.bpmnInstance.get('modeling');
+    const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
+    const rootElement = this.bpmnInstance.get('canvas').getRootElement();
+
+    const title = this.workflowForm.value.title;
+    const description = this.workflowForm.value.description;
+
+    const documentation = bpmnFactory.create('bpmn:Documentation', { text: description || '' });
+    modeling.updateProperties(rootElement, {
+      name: title,
+      documentation: [documentation]
+    });
+
+    const { xml } = await this.bpmnInstance.saveXML({ format: true });
+    return xml;
+  }
+
   async submitWorkflow() {
     if (this.workflowForm.invalid) {
       this.workflowForm.markAllAsTouched();
       return;
     }
 
-    if (this.mode == 'edit') {
-      try {
-        const modeling = this.bpmnInstance.get('modeling');
-        const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
-        const rootElement = this.bpmnInstance.get('canvas').getRootElement();
+    try {
+      const xml = await this.getUpdatedBpmnXml();
+      const payload: WorkflowSaveDto = { bpmnXml: xml };
 
-        const title = this.workflowForm.value.title;
-        const description = this.workflowForm.value.description;
-
-        const documentation = bpmnFactory.create('bpmn:Documentation', { text: description || '' });
-        modeling.updateProperties(rootElement, {
-          name: title,
-          documentation: [documentation]
-        });
-
-        const { xml } = await this.bpmnInstance.saveXML({ format: true });
-        const payload: WorkflowSaveDto = { bpmnXml: xml };
-
+      if (this.mode === 'edit') {
         this.workflowService.editWorkflow(this.workflowId ?? 0, payload).subscribe({
           next: (workflow) => {
             this.snackBar.open('Workflow updated successfully!', 'Close', { duration: 2000 });
@@ -160,28 +165,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
             this.snackBar.open('Failed to update workflow', 'Close', { duration: 3000 });
           }
         });
-      } catch (err) {
-        console.error('Failed to update workflow', err);
-        this.snackBar.open('Failed to update workflow', 'Close', { duration: 3000 });
-      }
-    } else {
-      try {
-        const modeling = this.bpmnInstance.get('modeling');
-        const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
-        const rootElement = this.bpmnInstance.get('canvas').getRootElement();
-
-        const title = this.workflowForm.value.title;
-        const description = this.workflowForm.value.description;
-
-        const documentation = bpmnFactory.create('bpmn:Documentation', { text: description || '' });
-        modeling.updateProperties(rootElement, {
-          name: title,
-          documentation: [documentation]
-        });
-
-        const { xml } = await this.bpmnInstance.saveXML({ format: true });
-        const payload: WorkflowSaveDto = { bpmnXml: xml };
-
+      } else {
         this.workflowService.saveWorkflow(payload).subscribe({
           next: () => {
             this.snackBar.open('Workflow saved successfully!', 'Close', { duration: 2000 });
@@ -192,33 +176,21 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
             this.snackBar.open('Failed to save workflow', 'Close', { duration: 3000 });
           }
         });
-      } catch (err) {
-        console.error('Failed to save workflow', err);
-        this.snackBar.open('Failed to save workflow', 'Close', { duration: 3000 });
       }
+    } catch (err) {
+      console.error('Failed to process workflow', err);
+      this.snackBar.open('Failed to process workflow', 'Close', { duration: 3000 });
     }
   }
 
   async exportXML() {
     try {
-      const modeling = this.bpmnInstance.get('modeling');
-      const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
-      const rootElement = this.bpmnInstance.get('canvas').getRootElement();
-
-      const title = this.workflowForm.value.title;
-      const description = this.workflowForm.value.description;
-
-      const documentation = bpmnFactory.create('bpmn:Documentation', { text: description || '' });
-      modeling.updateProperties(rootElement, {
-        name: title,
-        documentation: [documentation]
-      });
-
-      const { xml } = await this.bpmnInstance.saveXML({ format: true });
+      const xml = await this.getUpdatedBpmnXml();
       const blob = new Blob([xml], { type: 'application/xml' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
+      const title = this.workflowForm.value.title;
       a.download = `${title || 'workflow'}.bpmn`;
       document.body.appendChild(a);
       a.click();
