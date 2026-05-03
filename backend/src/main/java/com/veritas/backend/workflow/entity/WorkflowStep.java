@@ -15,6 +15,7 @@ public class WorkflowStep {
     @JoinColumn(name = "workflow_definition_id")
     private WorkflowDefinition workflowDefinition;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WorkflowComponent workflowComponent;
 
