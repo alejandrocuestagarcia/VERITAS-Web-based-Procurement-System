@@ -46,11 +46,12 @@ import { TeamCreateComponent } from './features/team/team-create/team-create.com
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
 import { UserEditComponent } from './features/user/user-edit/user-edit.component';
-import {JiraSettingsListComponent} from "./features/jira-settings/jira-settings-list.component";
-import {JiraSettingsCreateComponent} from "./features/jira-settings/jira-settings-create.component";
+import {JiraSettingsListComponent} from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
+import {JiraSettingsCreateComponent} from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
 import { ResetPasswordDialogComponent } from './features/login/reset-password-dialog/reset-password-dialog.component';
 import {MatDialogModule} from "@angular/material/dialog";
 import { WorkflowEditorComponent } from './features/workflow-editor/workflow-editor.component';
+import { JiraIssuesSyncHistoryComponent } from './features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component';
 
 @NgModule({
   declarations: [
@@ -80,7 +81,8 @@ import { WorkflowEditorComponent } from './features/workflow-editor/workflow-edi
     ResetPasswordDialogComponent,
     JiraSettingsListComponent,
     JiraSettingsCreateComponent,
-    WorkflowEditorComponent
+    WorkflowEditorComponent,
+    JiraIssuesSyncHistoryComponent
   ],
   imports: [
     BrowserModule,

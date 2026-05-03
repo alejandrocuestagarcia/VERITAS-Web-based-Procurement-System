@@ -1,6 +1,7 @@
 package com.veritas.backend.auth;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
 import com.veritas.backend.auth.repository.RefreshTokenRepository;
@@ -31,12 +32,16 @@ class AuthServiceLogoutIntegrationTest extends BaseDBIntegrationTest {
     UserRepository userRepository;
 
     @Autowired
+    AuditLogRepository auditLogRepository;
+
+    @Autowired
     PasswordEncoder encoder;
 
     String refreshToken;
 
     @BeforeEach
     void setup() {
+        auditLogRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 

@@ -9,6 +9,11 @@
     <span>Add Integration</span>
   </button>
 
+  <button filters mat-stroked-button [routerLink]="['/integrations/sync-history']">
+    <mat-icon>history</mat-icon>
+    <span>Sync History</span>
+  </button>
+
   <!-- Columns -->
   <ng-container columns>
     <ng-container matColumnDef="name">
@@ -43,7 +48,7 @@
       <th mat-header-cell *matHeaderCellDef>NEXT SYNC</th>
       <td mat-cell *matCellDef="let config" class="text-slate-500">
         <div class="flex items-center gap-1" *ngIf="isRunning(config)">
-          <mat-icon class="text-[14px] w-[14px] h-[14px]">schedule</mat-icon>
+          <mat-icon class="text-[14px] w-[14px] h-[14px] pt-1.5">schedule</mat-icon>
           {{ getNextSyncTime(config) | date:'shortTime' }}
         </div>
         <span *ngIf="!isRunning(config)">-</span>

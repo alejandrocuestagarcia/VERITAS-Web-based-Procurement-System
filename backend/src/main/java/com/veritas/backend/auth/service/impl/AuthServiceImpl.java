@@ -21,6 +21,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import static com.veritas.backend.common.model.AuditActionConstants.ADMIN_PASSWORD_RESET;
+import static com.veritas.backend.common.model.AuditActionConstants.PASSWORD_CHANGED_BY_USER;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -74,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
 
         auditService.createPasswordResetLog(
                 admin,
-                "ADMIN_PASSWORD_RESET",
+                ADMIN_PASSWORD_RESET,
                 "Reset password for user: " + targetUser.getEmail()
         );
 
@@ -96,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
 
         auditService.createPasswordResetLog(
                 user,
-                "PASSWORD_CHANGED_BY_USER",
+                PASSWORD_CHANGED_BY_USER,
                 "User " + user.getEmail() + " successfully updated their password following an administrative reset."
         );
     }

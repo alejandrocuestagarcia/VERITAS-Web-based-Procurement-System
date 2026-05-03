@@ -1,6 +1,7 @@
 package com.veritas.backend.integrations.jira.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
 import com.veritas.backend.integrations.jira.dto.JiraIssueRecord;
 import com.veritas.backend.integrations.jira.dto.JiraSearchResponseRecord;
@@ -12,8 +13,13 @@ import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Base64;
 import java.util.Optional;
+
+import com.veritas.backend.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -21,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -33,8 +40,16 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
     private final JiraConfigRepository configRepository;
     private final RequestRepository requestRepository;
+    private final AuditServiceImpl auditService;
     private final JiraIssueMapper issueMapper;
     private final RestTemplate restTemplate = new RestTemplate();
+
+    private static final DateTimeFormatter JIRA_DATE_FORMATTER = new DateTimeFormatterBuilder()
+            .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            .optionalStart().appendOffset("+HH:MM", "Z").optionalEnd()
+            .optionalStart().appendOffset("+HHMM", "Z").optionalEnd()
+            .optionalStart().appendOffset("+HH", "Z").optionalEnd()
+            .toFormatter();
 
     @Override
     @Transactional
@@ -139,8 +154,22 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         if (success) {
             request.setJiraStatus("SYNCED");
+
+            OffsetDateTime offsetDateTime = OffsetDateTime.parse(
+                    issueRecord.fields().created(),
+                    JIRA_DATE_FORMATTER
+            );
+            request.setCreatedAt(offsetDateTime.toLocalDateTime());
+
             requestRepository.saveAndFlush(request);
             log.info("Successfully synced Jira issue: {}", key);
+
+            User actor = null;
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof User user) {
+                actor = user;
+            }
+            auditService.createJiraSyncLog(actor, request, "Synced from Jira issue " + key + " | Created in Jira: " + offsetDateTime.toLocalDateTime());
         } else {
             log.warn("Failed to update Jira custom field for issue: {}", key);
         }

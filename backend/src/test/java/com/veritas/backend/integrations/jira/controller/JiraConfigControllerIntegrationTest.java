@@ -51,4 +51,19 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
         mockMvc.perform(get("/api/v1/jira-configs"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void GetJiraSyncAudit_Administrator_ShouldReturnOk() throws Exception {
+        mockMvc.perform(get("/api/v1/jira-configs/audit"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @WithMockUser(roles = "REQUESTER")
+    void GetJiraSyncAudit_RequesterRole_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/jira-configs/audit"))
+                .andExpect(status().isForbidden());
+    }
 }

@@ -15,9 +15,12 @@ import {UserEditComponent} from "./features/user/user-edit/user-edit.component";
 import {roleGuard} from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
-import { JiraSettingsListComponent } from "./features/jira-settings/jira-settings-list.component";
-import { JiraSettingsCreateComponent } from "./features/jira-settings/jira-settings-create.component";
+import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
+import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
 import {WorkflowEditorComponent} from "./features/workflow-editor/workflow-editor.component";
+import {
+  JiraIssuesSyncHistoryComponent
+} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -99,17 +102,26 @@ const routes: Routes = [
   {
     path: 'integrations',
     component: JiraSettingsListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
   },
   {
     path: 'integrations/create',
     component: JiraSettingsCreateComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
   },
   {
     path: 'integrations/edit/:id',
     component: JiraSettingsCreateComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
+  },
+  {
+    path: 'integrations/sync-history',
+    component: JiraIssuesSyncHistoryComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR'] }
   },
   { path: 'requisition/new', redirectTo: '/dashboard' },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },

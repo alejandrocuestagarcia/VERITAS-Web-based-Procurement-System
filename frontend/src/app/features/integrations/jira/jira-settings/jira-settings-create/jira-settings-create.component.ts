@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
-import {JiraConfigControllerService} from '../../core/api/api/jiraConfigController.service';
+import {JiraConfigControllerService} from '../../../../../core/api/api/jiraConfigController.service';
 
 @Component({
   selector: 'app-jira-settings-create',
