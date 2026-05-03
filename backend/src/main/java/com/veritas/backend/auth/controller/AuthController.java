@@ -2,12 +2,16 @@ package com.veritas.backend.auth.controller;
 
 import com.veritas.backend.auth.dto.AuthResponseDto;
 import com.veritas.backend.auth.dto.LoginRequestDto;
+import com.veritas.backend.auth.dto.PasswordResetConfirmDto;
+import com.veritas.backend.auth.dto.PasswordResetRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
 import com.veritas.backend.auth.service.AuthService;
+import com.veritas.backend.auth.service.PasswordResetService;
 import com.veritas.backend.config.annotations.IsAdministrator;
 import com.veritas.backend.config.annotations.IsRequester;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     @Operation(summary = "Login", description = "Login as a user and receive token.")
     @PostMapping(path = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -46,11 +51,21 @@ public class AuthController {
         authService.logout(refreshToken);
     }
 
-    @Operation(summary = "Reset password", description = "Reset password as user and receive reset email.")
+    @Operation(summary = "Request password reset", description = "Request a password reset link by email.")
     @PostMapping("/passwordreset")
-    public AuthResponseDto resetPassword() {
+    public ResponseEntity<String> requestPasswordReset(@Valid @RequestBody PasswordResetRequestDto request) {
         log.info("POST /auth/passwordreset");
-        return new AuthResponseDto(null, null, null, false);
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+            .body("If the email exists, a reset link has been sent.");
+    }
+
+    @Operation(summary = "Confirm password reset", description = "Reset password using a valid token.")
+    @PostMapping("/passwordreset/confirm")
+    public ResponseEntity<String> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmDto request) {
+        log.info("POST /auth/passwordreset/confirm");
+        passwordResetService.confirmReset(request.token(), request.newPassword());
+        return ResponseEntity.ok("Password reset successful");
     }
 
     @Operation(summary = "Admin Password Reset", description = "Allows an admin to set a temporary password for a user.")
