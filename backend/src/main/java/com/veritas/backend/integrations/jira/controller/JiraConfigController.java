@@ -11,16 +11,14 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
 
 @RestController
 @RequestMapping(value = "/jira-configs", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -71,7 +69,10 @@ public class JiraConfigController {
     }
 
     @GetMapping("/audit")
-    public ResponseEntity<List<AuditLogDto>> getJiraSyncAudit() {
-        return ResponseEntity.ok(auditService.getJiraIssueLogsByAction("JIRA_SYNC"));
+    public ResponseEntity<Page<AuditLogDto>> getJiraSyncAudit(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String search) {
+        return ResponseEntity.ok(auditService.getJiraIssueLogsByAction(JIRA_SYNC, PageRequest.of(page, size, Sort.by("timestamp").descending()), search));
     }
 }

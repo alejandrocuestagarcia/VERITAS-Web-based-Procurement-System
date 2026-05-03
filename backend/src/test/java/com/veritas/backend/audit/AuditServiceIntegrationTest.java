@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -99,24 +101,24 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         auditService.createJiraSyncLog(testActor, testRequest, "Synced issue SCRUM-1");
         auditService.createJiraSyncLog(testActor, testRequest, "Synced issue SCRUM-2");
 
-        List<AuditLogDto> result = auditService.getJiraIssueLogsByAction(JIRA_SYNC);
+        Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction(JIRA_SYNC, PageRequest.of(0, 10), "");
 
-        assertThat(result).hasSize(2);
+        assertThat(result.getContent()).hasSize(2);
     }
 
     @Test
     void GetJiraIssueLogsByAction_NoLogsExist_ReturnsEmptyList() {
-        List<AuditLogDto> result = auditService.getJiraIssueLogsByAction(JIRA_SYNC);
+        Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction(JIRA_SYNC, PageRequest.of(0, 10), "");
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
     void GetJiraIssueLogsByAction_WithUnrelatedAction_ReturnsEmptyList() {
         auditService.createJiraSyncLog(testActor, testRequest, "Some sync");
 
-        List<AuditLogDto> result = auditService.getJiraIssueLogsByAction("SOME_OTHER_ACTION");
+        Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction("SOME_OTHER_ACTION", PageRequest.of(0, 10), "");
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 }

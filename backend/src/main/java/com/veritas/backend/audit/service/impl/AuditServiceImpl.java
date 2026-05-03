@@ -9,10 +9,11 @@ import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.user.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
@@ -58,9 +59,8 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional
-    public List<AuditLogDto> getJiraIssueLogsByAction(String action) {
-        return auditLogRepository.findAllByAction(action).stream()
-                .map(auditLogMapper::jiraSyncLogtoDto)
-                .toList();
+    public Page<AuditLogDto> getJiraIssueLogsByAction(String action, Pageable pageable, String search) {
+        return auditLogRepository.findAllByAction(action, pageable, search)
+                .map(auditLogMapper::jiraSyncLogtoDto);
     }
 }

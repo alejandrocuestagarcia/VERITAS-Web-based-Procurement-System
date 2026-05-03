@@ -1,7 +1,9 @@
-import {Component, OnInit} from '@angular/core';
-import {MatTableDataSource} from "@angular/material/table";
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { MatTableDataSource } from "@angular/material/table";
 import { Location } from '@angular/common';
-import {JiraConfigControllerService} from "../../../../core/api";
+import { JiraConfigControllerService } from "../../../../core/api";
+import { PageEvent } from "@angular/material/paginator";
+import { SharedTableComponent } from "../../../../shared/components/table/shared-table.component";
 
 @Component({
   selector: 'app-jira-settings-sync-history',
@@ -11,6 +13,11 @@ export class JiraIssuesSyncHistoryComponent implements OnInit {
   loading = false;
   displayedColumns = ['requestName', 'requestKey', 'user', 'timestamp', 'action'];
   dataSource = new MatTableDataSource<any>([]);
+  totalElements = 0;
+  currentSearchString = "";
+  private readonly PAGE_SIZE = 10;
+
+  @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
   constructor(
     private jiraConfigService: JiraConfigControllerService,
@@ -18,27 +25,33 @@ export class JiraIssuesSyncHistoryComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadAuditLogs();
+    this.loadAuditLogs(0, this.PAGE_SIZE);
   }
 
-  loadAuditLogs() {
+  loadAuditLogs(page: number, size: number) {
     this.loading = true;
-    this.jiraConfigService.getJiraSyncAudit().subscribe({
-      next: (logs) => {
-        this.dataSource.data = logs;
+
+    this.jiraConfigService.getJiraSyncAudit(page, size, this.currentSearchString).subscribe({
+      next: (response) => {
+        this.dataSource.data = response.content || [];
+        this.totalElements = response.totalElements || 0;
         this.loading = false;
       },
       error: () => this.loading = false
     });
   }
 
-  goBack() {
-    this.location.back();
+  onPageChange(event: PageEvent): void {
+    this.loadAuditLogs(event.pageIndex, event.pageSize);
   }
 
   onSearchChanged(value: string): void {
-    this.dataSource.filter = value.trim().toLowerCase();
-    if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+    this.currentSearchString = value;
+    this.sharedTable.resetToFirstPage();
+    this.loadAuditLogs(0, this.PAGE_SIZE);
   }
 
+  goBack() {
+    this.location.back();
+  }
 }

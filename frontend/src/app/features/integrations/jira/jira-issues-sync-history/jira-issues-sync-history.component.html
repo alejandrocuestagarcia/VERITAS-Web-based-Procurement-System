@@ -16,13 +16,14 @@
       subtitle=""
       [dataSource]="dataSource"
       [displayedColumns]="displayedColumns"
-      [totalElements]="dataSource.data.length"
+      [totalElements]="totalElements"
       [loading]="loading"
+      (pageChanged)="onPageChange($event)"
       (searchChanged)="onSearchChanged($event)">
 
       <!-- Stats -->
       <ng-container stats>
-        <app-stat-card label="Synced Requests" [value]="dataSource.data.length" />
+        <app-stat-card label="Synced Requests" [value]="totalElements" />
       </ng-container>
 
       <ng-container columns>

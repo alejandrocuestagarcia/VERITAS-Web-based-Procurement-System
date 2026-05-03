@@ -3,8 +3,8 @@ package com.veritas.backend.audit.service;
 import com.veritas.backend.audit.dto.AuditLogDto;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.user.entity.User;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AuditService {
     /**
@@ -13,5 +13,5 @@ public interface AuditService {
      */
     void createPasswordResetLog(User actor, String action, String details);
     void createJiraSyncLog(User actor, Request request, String details);
-    List<AuditLogDto> getJiraIssueLogsByAction(String action);
+    Page<AuditLogDto> getJiraIssueLogsByAction(String action, Pageable pageable, String search);
 }
