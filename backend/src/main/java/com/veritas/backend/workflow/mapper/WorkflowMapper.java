@@ -5,7 +5,7 @@ import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import org.mapstruct.Mapper;
 
-@Mapper
+@Mapper(unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public interface WorkflowMapper {
 
     WorkflowDefinition toWorkflowDefinition(WorkflowSaveDto workflowSaveDto);
