@@ -1,0 +1,51 @@
+:host ::ng-deep {
+  .bjs-powered-by {
+    display: none !important;
+  }
+
+
+  .djs-connection {
+
+    .djs-visual path {
+      stroke: #737685 !important;
+      stroke-width: 2px !important;
+      transition: stroke-width 0.2s ease, stroke 0.2s ease;
+    }
+
+    &:hover .djs-visual path,
+    &.hover .djs-visual path {
+      stroke-width: 3px !important;
+      stroke: #5a5d6a !important;
+    }
+  }
+
+  .highlight {
+    .djs-visual path {
+      stroke: #7c3aed !important;
+      stroke-width: 2px !important;
+    }
+
+    &:hover .djs-visual path,
+    &.hover .djs-visual path {
+      stroke: #6d28d9 !important;
+      stroke-width: 3px !important;
+    }
+  }
+
+  .djs-label {
+    font-size: 14px;
+  }
+
+  .djs-label {
+    fill: #191c1e !important;
+    paint-order: stroke fill;
+    stroke: #ffffff !important;
+    stroke-width: 3px !important;
+  }
+
+  .djs-container {
+    .djs-palette-toggle {
+      display: none !important;
+    }
+  }
+}

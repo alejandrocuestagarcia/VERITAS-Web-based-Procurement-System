@@ -10,8 +10,8 @@
         <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">{{ title }}</h1>
         <p *ngIf="subtitle" class="text-sm text-slate-500 m-0">{{ subtitle }}</p>
       </div>
-      <div class="flex gap-2 items-center shrink-0 pt-1">
-        <button mat-button type="button" (click)="cancelled.emit()">Discard</button>
+      <div class="flex gap-4 items-center shrink-0 pt-1">
+        <button mat-flat-button type="button" (click)="cancelled.emit()" class="v-btn-secondary">Discard</button>
         <button mat-flat-button class="v-btn-brand" type="submit" [disabled]="loading">
           {{ submitButtonLabel }}
           <mat-icon *ngIf="submitButtonIcon">{{ submitButtonIcon }}</mat-icon>

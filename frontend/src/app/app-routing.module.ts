@@ -17,10 +17,8 @@ import { TeamListComponent } from "./features/team/team-list/team-list.component
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
 import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
-import {WorkflowEditorComponent} from "./features/workflow-editor/workflow-editor.component";
-import {
-  JiraIssuesSyncHistoryComponent
-} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
+import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workflow-editor.component";
+import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -42,7 +40,8 @@ const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },
-  { path: 'users/create',
+  {
+    path: 'users/create',
     component: UserCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
@@ -94,9 +93,22 @@ const routes: Routes = [
     data: { roles: ['PROCUREMENT_OFFICER'] }
   },
   {
-    path: 'workflows/view',
+    path: 'workflows/view/:id',
     component: WorkflowEditorComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: { mode: 'view', roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'workflows/create',
+    component: WorkflowEditorComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { mode: 'create', roles: ['FINANCE_OFFICER'] }
+  },
+  {
+    path: 'workflows/edit/:id',
+    component: WorkflowEditorComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { mode: 'edit', roles: ['FINANCE_OFFICER'] }
   },
   { path: 'requisition/new', redirectTo: '/dashboard' }, //change later to the right page
   {

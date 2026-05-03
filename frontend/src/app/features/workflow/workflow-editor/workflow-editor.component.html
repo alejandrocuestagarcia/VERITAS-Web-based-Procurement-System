@@ -1,0 +1,179 @@
+<div class="flex flex-col h-screen bg-[#f7f9fb] p-8 font-inter" [formGroup]="workflowForm">
+
+  <header class="flex justify-between items-end mb-6 border-b border-slate-200 pb-4 mt-2">
+    <div class="flex-1 w-full max-w-xl">
+      <div class="flex items-center w-full">
+
+        <div *ngIf="isEditable" class="w-full flex flex-col gap-2">
+          <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Workflow Title</label>
+
+          <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
+            <mat-icon matPrefix>badge</mat-icon>
+            <input matInput formControlName="title" placeholder="Workflow Title">
+            <mat-error *ngIf="workflowForm.get('title')?.hasError('required') && workflowForm.get('title')?.touched">
+              Workflow Title is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div *ngIf="!isEditable">
+
+
+          <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">
+            {{ workflowForm.value.title || 'Untitled Workflow' }}
+          </h1>
+          <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">
+            <span class="mr-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
+              [ngClass]="workflowIsActive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-100 text-slate-600 border border-slate-200'">
+              <span class="w-1.5 h-1.5 rounded-full"
+                [ngClass]="workflowIsActive ? 'bg-green-500' : 'bg-slate-400'"></span>
+              {{ workflowIsActive ? 'Active' : 'Inactive' }}
+            </span>
+            Version {{workflowVersion}}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-4 self-start">
+      <button *ngIf="mode === 'view'" mat-flat-button class="v-btn-brand" (click)="navigateToEdit()">
+        <mat-icon>edit</mat-icon>
+        <span>Edit Workflow</span>
+      </button>
+
+      <ng-container *ngIf="isEditable">
+        <button mat-flat-button class="v-btn-secondary" (click)="router.navigate(['/workflows'])">
+          <span>Discard</span>
+        </button>
+        <button mat-flat-button class="v-btn-brand" (click)="submitWorkflow()">
+          <mat-icon>save</mat-icon>
+          <span>Save Workflow</span>
+        </button>
+      </ng-container>
+    </div>
+  </header>
+
+  <div class="flex justify-between items-center w-full mb-4">
+    <div class="flex gap-2">
+      <button (click)="zoomIn()" mat-flat-button class="ml-6 v-btn-secondary">
+        <mat-icon>zoom_in</mat-icon>
+        <span>Zoom In</span>
+      </button>
+      <button (click)="zoomOut()" mat-flat-button class="v-btn-secondary">
+        <mat-icon>zoom_out</mat-icon>
+        <span>Zoom Out</span>
+      </button>
+      <button (click)="resetZoom()" mat-flat-button class="v-btn-secondary">
+        <mat-icon>center_focus_strong</mat-icon>
+        <span>Reset View</span>
+      </button>
+    </div>
+
+    <div class="flex gap-2">
+      <div *ngIf="isEditable">
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept=".bpmn, .xml" class="hidden">
+        <button class="v-btn-secondary" mat-flat-button (click)="fileInput.click()">
+          <mat-icon class="mr-2">upload</mat-icon>
+          Import XML
+        </button>
+      </div>
+      <button class="v-btn-secondary" mat-flat-button (click)="exportXML()">
+        <mat-icon class="mr-2">download</mat-icon>
+        Export XML
+      </button>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden bg-white rounded-2xl border-2 border-[#e4e7ef] shadow-sm">
+
+    <main class="relative flex-1 min-w-0 h-full overflow-hidden">
+      <div #canvas class="w-full h-full"></div>
+    </main>
+
+    <aside *ngIf="showPropertiesPanelTransition"
+      class="w-80 border-l border-[#e4e7ef] bg-slate-50/50 flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-300">
+
+      <div class="p-6 border-b border-[#e4e7ef] flex justify-between items-center bg-white">
+        <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Transition Logic</h3>
+        <button (click)="showPropertiesPanelTransition = false" class="text-slate-400 hover:text-slate-600">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6 overflow-y-auto pointer-events-none opacity-80">
+        <div class="space-y-4">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
+            <div class="flex items-center gap-3 p-4 mt-2 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <input type="checkbox" [checked]="currentRule.isPdfRequired" disabled
+                class="w-4 h-4 rounded text-blue-600 border-slate-300">
+              <span class="text-sm font-semibold text-slate-700">PDF Document Required</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minimum Vendors</label>
+            <div class="mt-2 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minRequiredVendors }}</span>
+              <span class="ml-2 text-xs text-slate-500 uppercase">Vendors</span>
+            </div>
+          </div>
+
+          <div *ngIf="currentRule.optionalFailureMessage">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Constraint Message</label>
+            <div class="mt-2 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+              <p class="text-xs text-blue-800 italic leading-relaxed">"{{ currentRule.optionalFailureMessage }}"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <aside *ngIf="showPropertiesPanelTask"
+      class="w-80 border-l border-[#e4e7ef] bg-slate-50/50 flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-300">
+
+      <div class="p-6 border-b border-[#e4e7ef] flex justify-between items-center bg-white">
+        <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Task Details</h3>
+        <button (click)="showPropertiesPanelTask = false" class="text-slate-400 hover:text-slate-600">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6 overflow-y-auto pointer-events-none opacity-80">
+        <div class="space-y-4">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assigned Person</label>
+            <div class="flex items-center gap-3 p-4 mt-2 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <span class="text-sm font-semibold text-slate-700">Placeholder</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</label>
+            <div class="mt-2 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+              <p class="text-xs text-blue-800 italic leading-relaxed">Placeholder</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+  <div *ngIf="isEditable" class="mt-6 flex flex-col gap-2">
+    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Workflow Description</label>
+    <mat-form-field appearance="outline" class="w-full bg-white-field rounded-xl shadow-sm" subscriptSizing="dynamic">
+      <mat-icon matPrefix>article</mat-icon>
+      <textarea matInput formControlName="description"
+        placeholder="Enter optional description or notes about this workflow..." cdkTextareaAutosize
+        cdkAutosizeMinRows="2" cdkAutosizeMaxRows="5"></textarea>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="!isEditable && workflowForm.value.description"
+    class="mt-6 p-6 bg-white rounded-2xl shadow-sm border border-[#e4e7ef]">
+    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Workflow Description</h3>
+    <div class="max-h-[120px] overflow-y-auto pr-2">
+      <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{ workflowForm.value.description }}</p>
+    </div>
+  </div>
+</div>
