@@ -19,7 +19,6 @@ public record JiraConfigDto(
     @NotBlank(message = "Username/Email is required")
     String username,
 
-    // Not @NotBlank because it can be empty on updates to preserve existing token
     String apiToken,
 
     @NotBlank(message = "JQL query is required")

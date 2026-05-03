@@ -14,6 +14,7 @@ export class JiraSettingsCreateComponent implements OnInit {
   isEditing = false;
   loading = false;
   testingConnection = false;
+  isTokenSet = false;
 
   constructor(
     private fb: FormBuilder,
@@ -54,6 +55,7 @@ export class JiraSettingsCreateComponent implements OnInit {
     this.loading = true;
     this.jiraConfigService.getConfigById(id).subscribe({
       next: (config) => {
+        this.isTokenSet = config.isTokenSet || false;
         this.settingsForm.patchValue({
           name: config.name,
           jiraUrl: config.jiraUrl,

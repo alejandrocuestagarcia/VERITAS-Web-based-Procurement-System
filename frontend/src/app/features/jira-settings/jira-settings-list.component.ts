@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { JiraConfigControllerService } from '../../core/api/api/jiraConfigController.service';
-import { JiraConfigDto } from '../../core/api/model/jiraConfigDto';
+import { JiraConfigResponseDto } from '../../core/api/model/jiraConfigResponseDto';
 import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
@@ -14,7 +14,7 @@ export class JiraSettingsListComponent implements OnInit {
   subtitle = 'Manage your dynamic Jira polling configurations.';
 
   displayedColumns = ['name', 'jiraUrl', 'syncInterval', 'status', 'nextSync', 'actions'];
-  dataSource = new MatTableDataSource<JiraConfigDto>();
+  dataSource = new MatTableDataSource<JiraConfigResponseDto>();
 
   loading = false;
   totalPageElements = 0;
@@ -44,27 +44,27 @@ export class JiraSettingsListComponent implements OnInit {
     });
   }
 
-  isRunning(config: JiraConfigDto): boolean {
-    return (config.syncIntervalMinutes ?? 0) > 0;
+  isRunning(config: JiraConfigResponseDto): boolean {
+    return config.syncIntervalMinutes > 0;
   }
 
-  getNextSyncTime(config: JiraConfigDto): Date | null {
+  getNextSyncTime(config: JiraConfigResponseDto): Date | null {
     return config.nextSyncTime ? new Date(config.nextSyncTime) : null;
   }
 
-  editConfig(config: JiraConfigDto): void {
+  editConfig(config: JiraConfigResponseDto): void {
     this.router.navigate(['/integrations/edit', config.id]);
   }
 
-  triggerSync(config: JiraConfigDto): void {
+  triggerSync(config: JiraConfigResponseDto): void {
     this.snackBar.open('Triggering sync...', '', { duration: 2000 });
-    this.jiraConfigService.triggerSync(config.id!).subscribe({
+    this.jiraConfigService.triggerSync(config.id).subscribe({
       next: () => this.snackBar.open('Sync completed successfully', 'Close', { duration: 3000 }),
       error: () => this.snackBar.open('Sync failed. Please check logs.', 'Close', { duration: 3000 })
     });
   }
 
-  deleteConfig(config: JiraConfigDto): void {
+  deleteConfig(config: JiraConfigResponseDto): void {
     return;
   }
 

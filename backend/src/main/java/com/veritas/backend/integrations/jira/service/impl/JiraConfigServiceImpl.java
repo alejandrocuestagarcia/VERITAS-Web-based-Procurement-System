@@ -1,6 +1,7 @@
 package com.veritas.backend.integrations.jira.service.impl;
 
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
+import com.veritas.backend.integrations.jira.dto.JiraConfigResponseDto;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import com.veritas.backend.integrations.jira.mapper.JiraConfigMapper;
 import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
@@ -21,14 +22,14 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     private final DynamicJiraScheduler scheduler;
 
     @Override
-    public List<JiraConfigDto> getAllConfigs() {
+    public List<JiraConfigResponseDto> getAllConfigs() {
         return repository.findAll().stream()
             .map(mapper::toDto)
             .collect(Collectors.toList());
     }
 
     @Override
-    public JiraConfigDto getConfigById(Long id) {
+    public JiraConfigResponseDto getConfigById(Long id) {
         JiraConfig entity = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Config not found"));
         return mapper.toDto(entity);
@@ -36,7 +37,7 @@ public class JiraConfigServiceImpl implements JiraConfigService {
 
     @Override
     @Transactional
-    public JiraConfigDto createConfig(JiraConfigDto dto) {
+    public JiraConfigResponseDto createConfig(JiraConfigDto dto) {
         if (repository.existsByJiraUrlAndJql(dto.jiraUrl(), dto.jql())) {
             throw new RuntimeException("A configuration with this Jira URL and JQL already exists.");
         }
@@ -51,7 +52,7 @@ public class JiraConfigServiceImpl implements JiraConfigService {
 
     @Override
     @Transactional
-    public JiraConfigDto updateConfig(Long id, JiraConfigDto dto) {
+    public JiraConfigResponseDto updateConfig(Long id, JiraConfigDto dto) {
         repository.findByJiraUrlAndJql(dto.jiraUrl(), dto.jql()).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
                 throw new RuntimeException("Another configuration already uses this Jira URL and JQL.");
