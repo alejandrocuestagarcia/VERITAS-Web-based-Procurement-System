@@ -64,6 +64,9 @@ public class WorkflowServiceImpl implements WorkflowService {
         } else {
             WorkflowDefinition oldWorkflowDefinition = workflowDefinitionRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
+            if (!oldWorkflowDefinition.getIsActive()) {
+                throw new IllegalArgumentException("Workflow '" + oldWorkflowDefinition.getName() + "' is not active and can't be edited");
+            }
             workflowDefinition.setVersion(oldWorkflowDefinition.getVersion() + 1);
             workflowDefinition.setPreviousVersion(oldWorkflowDefinition);
 
