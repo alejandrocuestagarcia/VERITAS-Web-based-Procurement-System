@@ -99,6 +99,7 @@ class WorkflowServiceUnitTest {
         WorkflowDefinition oldWd = new WorkflowDefinition();
         oldWd.setId(1L);
         oldWd.setName("Old Name");
+        oldWd.setIsActive(true);
         oldWd.setVersion(1);
 
         WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML);
