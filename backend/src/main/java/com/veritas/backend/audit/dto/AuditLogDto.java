@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record AuditLogDto(
         String requestName,
         String requestKey,
+        String jiraIssueUrl,
         String user,
         LocalDateTime timestamp,
         String action,

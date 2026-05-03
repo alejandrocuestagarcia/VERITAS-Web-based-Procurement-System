@@ -9,7 +9,6 @@ import {JiraConfigControllerService} from "../../../../core/api";
 })
 export class JiraIssuesSyncHistoryComponent implements OnInit {
   loading = false;
-  totalElements = 0;
   displayedColumns = ['requestName', 'requestKey', 'user', 'timestamp', 'action'];
   dataSource = new MatTableDataSource<any>([]);
 
@@ -27,7 +26,6 @@ export class JiraIssuesSyncHistoryComponent implements OnInit {
     this.jiraConfigService.getJiraSyncAudit().subscribe({
       next: (logs) => {
         this.dataSource.data = logs;
-        this.totalElements = logs.length;
         this.loading = false;
       },
       error: () => this.loading = false

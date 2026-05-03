@@ -10,6 +10,7 @@ public interface AuditLogMapper {
 
     @Mapping(target = "requestName", expression = "java(log.getRequest() != null ? log.getRequest().getRequestName() : null)")
     @Mapping(target = "requestKey", expression = "java(log.getRequest() != null ? log.getRequest().getJiraIssueKey() : null)")
+    @Mapping(target = "jiraIssueUrl", expression = "java(log.getRequest() != null ? log.getRequest().getJiraIssueUrl() : null)")
     @Mapping(target = "user", expression = "java(log.getActor() != null ? log.getActor().getEmail() : \"System\")")
     @Mapping(target = "currentHash", source = "entryHash")
     AuditLogDto jiraSyncLogtoDto(AuditLog log);
