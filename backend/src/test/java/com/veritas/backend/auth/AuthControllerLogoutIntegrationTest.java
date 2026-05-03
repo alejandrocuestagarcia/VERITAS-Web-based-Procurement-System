@@ -2,6 +2,7 @@ package com.veritas.backend.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
 import com.veritas.backend.auth.repository.RefreshTokenRepository;
@@ -32,6 +33,9 @@ class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
     UserRepository userRepository;
 
     @Autowired
+    AuditLogRepository auditLogRepository;
+
+    @Autowired
     RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
@@ -44,6 +48,7 @@ class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setup() throws Exception {
+        auditLogRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 

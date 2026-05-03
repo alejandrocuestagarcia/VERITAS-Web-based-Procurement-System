@@ -56,6 +56,8 @@ public class AuditServiceImpl implements AuditService {
         auditLogRepository.save(log);
     }
 
+    @Override
+    @Transactional
     public List<AuditLogDto> getJiraIssueLogsByAction(String action) {
         return auditLogRepository.findAllByAction(action).stream()
                 .map(auditLogMapper::jiraSyncLogtoDto)
