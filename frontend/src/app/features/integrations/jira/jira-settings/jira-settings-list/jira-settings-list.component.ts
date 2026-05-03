@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { JiraConfigControllerService } from '../../core/api/api/jiraConfigController.service';
-import { JiraConfigResponseDto } from '../../core/api/model/jiraConfigResponseDto';
+import { JiraConfigControllerService } from '../../../../../core/api';
+import { JiraConfigResponseDto } from '../../../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
