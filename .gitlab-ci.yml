@@ -7,11 +7,6 @@ variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_PIPELINE_ID
   GRADLE_USER_HOME: ".gradle"
 
-cache:
-  paths:
-    - .gradle/wrapper
-    - .gradle/caches
-
 test-backend:
   stage: test
   image: gradle:9.4.1-jdk21
