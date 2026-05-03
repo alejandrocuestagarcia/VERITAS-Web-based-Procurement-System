@@ -21,7 +21,4 @@ public class WorkflowStep {
     private String name;
 
     private String description;
-
-    @Enumerated(EnumType.STRING)
-    private WorkflowComponent stepType;
 }

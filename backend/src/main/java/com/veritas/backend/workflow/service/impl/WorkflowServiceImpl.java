@@ -44,7 +44,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     public WorkflowDto getWorkflow(Long id) {
         return workflowDefinitionRepository.findById(id)
                 .map(workflowMapper::toWorkflowDto)
-                .orElseThrow(() -> new EntityNotFoundException("Workflow with id " + id + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
     }
 
     @Override
@@ -63,7 +63,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             workflowDefinition.setVersion(1);
         } else {
             WorkflowDefinition oldWorkflowDefinition = workflowDefinitionRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Workflow with id " + id + " not found"));
+                    .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
             workflowDefinition.setVersion(oldWorkflowDefinition.getVersion() + 1);
             workflowDefinition.setPreviousVersion(oldWorkflowDefinition);
 
@@ -107,9 +107,11 @@ public class WorkflowServiceImpl implements WorkflowService {
             switch (node) {
                 case StartEvent startEvent -> step.setWorkflowComponent(WorkflowComponent.START_EVENT);
                 case EndEvent endEvent -> step.setWorkflowComponent(WorkflowComponent.END_EVENT);
-                case Task task -> step.setWorkflowComponent(WorkflowComponent.STEP);
                 case Gateway gateway -> step.setWorkflowComponent(WorkflowComponent.BRANCH);
-                default -> step.setWorkflowComponent(WorkflowComponent.UNKNOWN);
+                case Task task -> step.setWorkflowComponent(WorkflowComponent.STEP);
+                default ->
+                        throw new IllegalArgumentException("The BPMN element '" + node.getElementType().getTypeName() +
+                                "' is not supported in our procurement system");
             }
 
             stepsMap.put(node.getId(), step);
