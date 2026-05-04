@@ -6,6 +6,8 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginComponent } from './features/login/login/login.component';
 import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
+import { ForgotPasswordComponent } from './features/login/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './features/login/reset-password/reset-password.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { HTTP_INTERCEPTORS, HttpClientModule } from "@angular/common/http";
@@ -58,6 +60,8 @@ import { JiraIssuesSyncHistoryComponent } from './features/integrations/jira/jir
     AppComponent,
     LoginComponent,
     ForcePasswordResetComponent,
+    ForgotPasswordComponent,
+    ResetPasswordComponent,
     DashboardComponent,
     UserCreateComponent,
     SharedTableComponent,

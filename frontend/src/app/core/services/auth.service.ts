@@ -1,7 +1,7 @@
-import {Injectable} from '@angular/core';
-import {Router} from "@angular/router";
-import {AuthModuleService, RefreshTokenDto, LoginRequestDto, AuthResponseDto} from "../api";
-import {tap} from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Router } from "@angular/router";
+import { AuthModuleService, RefreshTokenDto, LoginRequestDto, AuthResponseDto } from "../api";
+import { tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -97,6 +97,14 @@ export class AuthService {
 
   completePasswordChange(newPassword: string) {
     return this.authApi.completePasswordChange(newPassword);
+  }
+
+  requestPasswordReset(email: string) {
+    return this.authApi.requestPasswordReset({ email });
+  }
+
+  confirmPasswordReset(token: string, newPassword: string) {
+    return this.authApi.confirmPasswordReset({ token, newPassword });
   }
 
 }
