@@ -43,7 +43,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Value("${security.password-reset.reset-link-base}")
     private String resetLinkBase;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String fromAddress;
 
     @Value("${security.password-reset.subject:Reset your Veritas password}")
@@ -138,6 +138,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     private void sendResetEmail(User user, String resetLink) {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            log.warn("Skipping password reset email for {} because spring.mail.username is not configured", user.getEmail());
+            return;
+        }
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromAddress);
         message.setTo(user.getEmail());
