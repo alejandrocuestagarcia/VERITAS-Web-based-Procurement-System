@@ -1,6 +1,9 @@
 <!--//AI-REFACTORED (Tailwind)-->
 
 <div class="flex flex-col" [class.col-span-2]="fullWidth">
-  <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{{ label }}</label>
+  <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+    {{ label }}
+    <span *ngIf="required" class="text-red-500 ml-0.5">*</span>
+  </label>
   <ng-content></ng-content>
 </div>
