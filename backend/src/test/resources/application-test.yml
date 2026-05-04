@@ -16,6 +16,10 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
+  mail:
+    host: localhost
+    port: 1025
+
 security:
   jwt:
     # Dummy key
