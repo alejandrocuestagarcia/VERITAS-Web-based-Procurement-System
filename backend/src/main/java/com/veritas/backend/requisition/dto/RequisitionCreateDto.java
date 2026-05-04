@@ -1,13 +1,13 @@
 package com.veritas.backend.requisition.dto;
 
 import com.veritas.backend.requisition.entity.Priority;
-import lombok.Data;
+import java.util.List;
 
-@Data
-public class RequisitionCreateDto {
-    private String requestName;
-    private String description;
-    private Long projectId;
-    private Long workflowDefinitionId;
-    private Priority priority;
-}
+public record RequisitionCreateDto(
+    String requestName,
+    String description,
+    Long projectId,
+    Long workflowDefinitionId,
+    Priority priority,
+    List<RequisitionItemCreateDto> items
+) {}

@@ -12,7 +12,7 @@
 
       <div [formGroup]="basicInfoForm" class="py-9 space-y-8">
         <app-shared-form-card icon="assignment" title="General Details">
-          <app-shared-form-field label="REQUEST NAME" [fullWidth]="true">
+          <app-shared-form-field label="REQUEST NAME" [fullWidth]="true" [required]="true">
             <mat-form-field appearance="outline" class="w-full">
               <mat-icon matPrefix>description</mat-icon>
               <input matInput formControlName="requestName" placeholder="e.g. New Laptops for Marketing Team">
@@ -21,7 +21,7 @@
             </mat-form-field>
           </app-shared-form-field>
 
-          <app-shared-form-field label="PROJECT">
+          <app-shared-form-field label="PROJECT" [required]="true">
             <mat-form-field appearance="outline" class="w-full">
               <mat-icon matPrefix>business</mat-icon>
               <mat-select formControlName="projectId" placeholder="Select project"
@@ -54,17 +54,10 @@
               <mat-icon matPrefix>priority_high</mat-icon>
               <mat-select formControlName="priority">
                 <mat-select-trigger>
-                  <div class="flex items-center gap-2">
-                    <mat-icon [class]="getPriorityColor(basicInfoForm.get('priority')?.value)">{{
-                      getPriorityIcon(basicInfoForm.get('priority')?.value) }}</mat-icon>
-                    <span>{{ basicInfoForm.get('priority')?.value | titlecase }}</span>
-                  </div>
+                  <app-priority-badge [priority]="basicInfoForm.get('priority')?.value"></app-priority-badge>
                 </mat-select-trigger>
                 <mat-option *ngFor="let p of priorities" [value]="p">
-                  <div class="flex items-center gap-2">
-                    <mat-icon [class]="getPriorityColor(p)">{{ getPriorityIcon(p) }}</mat-icon>
-                    <span>{{ p | titlecase }}</span>
-                  </div>
+                  <app-priority-badge [priority]="p"></app-priority-badge>
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -159,9 +152,8 @@
 
     <!-- Step 2: Vendor Quotes -->
     <mat-step>
-      <ng-template matStepLabel>Vendor Quotes</ng-template>
+      <ng-template matStepLabel>Vendor Quotes (optional)</ng-template>
       <div class="py-10">
-        <!-- Hidden File Input -->
         <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" multiple>
 
         <div (click)="triggerFileInput()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
@@ -207,37 +199,55 @@
     <mat-step [stepControl]="lineItemsForm">
       <ng-template matStepLabel>Line Items</ng-template>
       <div [formGroup]="lineItemsForm" class="py-6 space-y-4">
-        <div formArrayName="items" class="space-y-4">
-          <div *ngFor="let item of items.controls; let i=index" [formGroupName]="i"
-            class="grid grid-cols-12 gap-4 items-start bg-slate-50 p-4 rounded-lg border border-slate-200">
-            <div class="col-span-6">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Item Name</mat-label>
-                <input matInput formControlName="name">
-              </mat-form-field>
-            </div>
-            <div class="col-span-2">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Qty</mat-label>
-                <input matInput type="number" formControlName="quantity">
-              </mat-form-field>
-            </div>
-            <div class="col-span-3">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Est. Price</mat-label>
-                <input matInput type="number" formControlName="estimatedPrice" prefix="$">
-                <span matPrefix class="mr-1">$</span>
-              </mat-form-field>
-            </div>
-            <div class="col-span-1 pt-2 text-center">
-              <button mat-icon-button color="warn" (click)="removeItem(i)" [disabled]="items.length === 1">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
+        <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
+          <p class="text-sm text-blue-800 m-0 flex items-center gap-2">
+            <mat-icon class="text-blue-500 h-5 w-5 leading-5 text-[20px]">info</mat-icon>
+            List your required items below. Use the quotes you attached in Step 2 to provide an estimated budget.
+            Procurement will finalize the exact prices later.
+          </p>
+        </div>
+
+        <div formArrayName="items" class="space-y-6">
+          <div *ngFor="let item of items.controls; let i=index" [formGroupName]="i" class="relative">
+            <app-shared-form-card [title]="'Item #' + (i + 1)" icon="inventory_2">
+              <div header-actions>
+                <button mat-icon-button color="warn" (click)="removeItem(i)" [disabled]="items.length === 1"
+                  class="scale-125 hover:bg-red-50 transition-colors" matTooltip="Remove this item">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+
+
+              <app-shared-form-field label="Item Name" [fullWidth]="true" [required]="true">
+                <mat-form-field appearance="outline" class="w-full">
+                  <input matInput formControlName="name" placeholder="e.g. Dell XPS 15">
+                </mat-form-field>
+              </app-shared-form-field>
+
+              <app-shared-form-field label="Quantity" [required]="true">
+                <mat-form-field appearance="outline" class="w-full">
+                  <input matInput type="number" formControlName="quantity">
+                </mat-form-field>
+              </app-shared-form-field>
+
+              <app-shared-form-field label="Est. Budget per Item" [required]="true">
+                <mat-form-field appearance="outline" class="w-full">
+                  <span matPrefix class="mr-3 ml-1">€</span>
+                  <input matInput type="number" formControlName="estimatedPrice">
+                </mat-form-field>
+              </app-shared-form-field>
+
+              <app-shared-form-field label="Item Specifications / Description (Optional)" [fullWidth]="true">
+                <mat-form-field appearance="outline" class="w-full">
+                  <textarea matInput formControlName="description" rows="2"
+                    placeholder="e.g. 32GB RAM, i7 Processor, 1TB SSD"></textarea>
+                </mat-form-field>
+              </app-shared-form-field>
+            </app-shared-form-card>
           </div>
         </div>
 
-        <button mat-stroked-button color="primary" class="w-full py-2 border-dashed" (click)="addItem()">
+        <button mat-stroked-button color="primary" class="w-full py-2 border-dashed rounded-xl" (click)="addItem()">
           <mat-icon>add</mat-icon> Add Another Item
         </button>
 
@@ -273,11 +283,7 @@
               <div>
                 <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Priority</div>
                 <div>
-                  <span [class]="'px-2 py-0.5 rounded text-[10px] font-bold ' +
-                    (basicInfoForm.value.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                     basicInfoForm.value.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700')">
-                    {{ basicInfoForm.value.priority }}
-                  </span>
+                  <app-priority-badge [priority]="basicInfoForm.get('priority')?.value"></app-priority-badge>
                 </div>
               </div>
             </div>

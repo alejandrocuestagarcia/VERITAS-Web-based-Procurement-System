@@ -2,6 +2,8 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   ProjectModuleService,
   RequisitionModuleService,
@@ -76,29 +78,6 @@ export class RequisitionCreateComponent implements OnInit {
   getTotalCost(): number {
     return this.items.value.reduce((acc: number, item: any) => acc + (item.quantity * item.estimatedPrice), 0);
   }
-
-  getPriorityIcon(priority: string | null | undefined): string {
-    if (!priority) return 'remove';
-    switch (priority) {
-      case 'LOW': return 'arrow_downward';
-      case 'MEDIUM': return 'remove';
-      case 'HIGH': return 'arrow_upward';
-      case 'CRITICAL': return 'warning';
-      default: return 'remove';
-    }
-  }
-
-  getPriorityColor(priority: string | null | undefined): string {
-    if (!priority) return 'text-slate-500';
-    switch (priority) {
-      case 'LOW': return 'text-slate-500';
-      case 'MEDIUM': return 'text-blue-500';
-      case 'HIGH': return 'text-orange-500';
-      case 'CRITICAL': return 'text-red-500';
-      default: return 'text-slate-500';
-    }
-  }
-
   onOpenedChange(opened: boolean): void {
     if (!opened) {
       this.projectSearch = '';
@@ -180,7 +159,8 @@ export class RequisitionCreateComponent implements OnInit {
     return this.fb.group({
       name: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
-      estimatedPrice: [0, [Validators.required, Validators.min(0)]]
+      estimatedPrice: [0, [Validators.required, Validators.min(0.01)]],
+      description: ['']
     });
   }
 
@@ -211,27 +191,58 @@ export class RequisitionCreateComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.basicInfoForm.valid) {
+    if (this.basicInfoForm.valid && this.lineItemsForm.valid) {
       this.loading = true;
       const request: RequisitionCreateDto = {
         requestName: this.basicInfoForm.value.requestName,
         projectId: this.basicInfoForm.value.projectId,
         workflowDefinitionId: this.basicInfoForm.value.workflowDefinitionId,
         priority: this.basicInfoForm.value.priority as any,
-        description: this.basicInfoForm.value.description
+        description: this.basicInfoForm.value.description,
+        items: this.items.value.map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          estimatedPrice: item.estimatedPrice,
+          description: item.description
+        }))
       };
 
       this.requisitionService.createRequest(request).subscribe({
-        next: () => {
-          this.loading = false;
-          this.snackBar.open('Procurement request created successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/dashboard']);
+        next: (createdRequest) => {
+          if (this.uploadedFiles.length > 0 && createdRequest.id) {
+            const uploadTasks: Observable<any>[] = this.uploadedFiles.map(file => {
+              return this.requisitionService.uploadQuotes(createdRequest.id!, file as any).pipe(
+                catchError(err => {
+                  return of(null);
+                })
+              );
+            });
+
+            forkJoin(uploadTasks).subscribe({
+              next: (results) => {
+                this.loading = false;
+                this.snackBar.open('Procurement request & attachments saved successfully', 'Close', { duration: 3000 });
+                this.router.navigate(['/dashboard']);
+              },
+              error: (err) => {
+                this.loading = false;
+              }
+            });
+          } else {
+            this.loading = false;
+            this.snackBar.open('Procurement request created successfully', 'Close', { duration: 3000 });
+            this.router.navigate(['/dashboard']);
+          }
         },
         error: (err) => {
           this.loading = false;
           this.snackBar.open('Failed to create request: ' + (err.error?.message || 'Unknown error'), 'Close', { duration: 5000 });
         }
       });
+    } else {
+      this.snackBar.open('Please fill out all required fields properly.', 'Close', { duration: 3000 });
+      this.basicInfoForm.markAllAsTouched();
+      this.lineItemsForm.markAllAsTouched();
     }
   }
 
