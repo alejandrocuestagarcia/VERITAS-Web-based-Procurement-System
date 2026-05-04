@@ -1,11 +1,17 @@
 <!--//AI-REFACTORED (Tailwind)-->
 
 <section class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
-  <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-    <div class="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-lg">
-      <mat-icon class="text-blue-900">{{ icon }}</mat-icon>
+  <div *ngIf="title || icon" class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+    <div class="flex items-center gap-3">
+      <div *ngIf="icon" class="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-lg">
+        <mat-icon class="text-blue-900">{{ icon }}</mat-icon>
+      </div>
+      <h3 *ngIf="title" class="text-base font-semibold text-slate-800 m-0">{{ title }}</h3>
     </div>
-    <h3 class="text-base font-semibold text-slate-800 m-0">{{ title }}</h3>
+
+    <div class="flex items-center">
+      <ng-content select="[header-actions]"></ng-content>
+    </div>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
     <ng-content></ng-content>
