@@ -58,6 +58,7 @@ import { JiraIssuesSyncHistoryComponent } from './features/integrations/jira/jir
 import { ConfirmationDialogComponent } from './shared/components/confirmation-dialog/confirmation-dialog.component';
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
 import { MatStepperModule } from "@angular/material/stepper";
+import { PriorityBadgeComponent } from './shared/components/priority-badge/priority-badge.component';
 
 @NgModule({
   declarations: [
@@ -92,7 +93,8 @@ import { MatStepperModule } from "@angular/material/stepper";
     JiraSettingsCreateComponent,
     WorkflowEditorComponent,
     JiraIssuesSyncHistoryComponent,
-    RequisitionCreateComponent
+    RequisitionCreateComponent,
+    PriorityBadgeComponent
   ],
   imports: [
     BrowserModule,
