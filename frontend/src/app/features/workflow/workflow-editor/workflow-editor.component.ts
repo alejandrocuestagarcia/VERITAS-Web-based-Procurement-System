@@ -2,7 +2,7 @@ import { Component, ElementRef, OnInit, ViewChild, OnDestroy } from '@angular/co
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { editorModules, viewerModules } from '../custom-renderer';
-import { WorkflowModuleService, WorkflowSaveDto } from 'src/app/core/api';
+import { WorkflowModuleService, WorkflowSaveDto, UserDtoRoleEnum } from 'src/app/core/api';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -32,8 +32,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public showPropertiesPanelTask = false;
   public selectedElementId = '';
   public currentTask: any = {
-    assignedPerson: ''
+    role: ''
   };
+  public roles = Object.values(UserDtoRoleEnum);
   public currentRule: any = {
     isPdfRequired: false,
     minRequiredVendors: 0,
@@ -91,6 +92,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         this.resetTask();
       }
     });
+
+    if (this.mode !== 'view') {
+      this.bpmnInstance.on('commandStack.shape.create.postExecuted', (event: any) => {
+        const { context } = event;
+        const { shape } = context;
+        if (shape.type === 'bpmn:ExclusiveGateway') {
+          setTimeout(() => {
+            this.bpmnInstance.get('directEditing').activate(shape);
+          }, 50);
+        }
+      });
+    }
 
     if (this.mode === 'create') {
       await this.loadXml(dummyBpmnXml);
@@ -277,15 +290,20 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const assignee = assigneeDoc ? assigneeDoc.text.substring(10) : '';
 
     this.currentTask = {
-      assignedPerson: assignee
+      role: assignee
     };
   }
 
   private resetTask() {
-    this.currentTask = { assignedPerson: '' };
+    this.currentTask = { role: '' };
   }
 
-  updateTaskProperty(key: 'assignedPerson', value: string) {
+  updateTaskProperty(key: 'role', value: string) {
+    const directEditing = this.bpmnInstance.get('directEditing');
+    if (directEditing.isActive()) {
+      directEditing.complete();
+    }
+
     const modeling = this.bpmnInstance.get('modeling');
     const elementRegistry = this.bpmnInstance.get('elementRegistry');
     const element = elementRegistry.get(this.selectedElementId);
@@ -295,7 +313,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
     let docs = bo.get('documentation') || [];
     
-    if (key === 'assignedPerson') {
+    if (key === 'role') {
       docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[ASSIGNEE]'));
       if (value) {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: `[ASSIGNEE]${value}` });

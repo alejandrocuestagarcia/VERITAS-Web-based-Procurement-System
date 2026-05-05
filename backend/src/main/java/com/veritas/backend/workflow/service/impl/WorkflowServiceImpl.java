@@ -1,5 +1,6 @@
 package com.veritas.backend.workflow.service.impl;
 
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -117,7 +118,12 @@ public class WorkflowServiceImpl implements WorkflowService {
                     task.getDocumentations().forEach(doc -> {
                         String text = doc.getTextContent();
                         if (text != null && !text.isBlank() && text.startsWith(ASSIGNEE_PREFIX)) {
-                            step.setAssignedPerson(text.substring(ASSIGNEE_PREFIX.length()));
+                            String roleName = text.substring(ASSIGNEE_PREFIX.length());
+                            try {
+                                step.setRole(UserRole.valueOf(roleName));
+                            } catch (IllegalArgumentException e) {
+                                throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
+                            }
                         }
                     });
                 }

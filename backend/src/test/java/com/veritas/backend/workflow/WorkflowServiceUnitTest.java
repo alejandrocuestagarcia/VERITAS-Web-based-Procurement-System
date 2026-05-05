@@ -1,5 +1,6 @@
 package com.veritas.backend.workflow;
 
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -127,7 +128,7 @@ class WorkflowServiceUnitTest {
     void CreateWorkflow_WithAssignee_SetsAssignedPerson() {
         String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
                 "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
-                "  <bpmn:documentation>[ASSIGNEE]John Doe</bpmn:documentation>\n" +
+                "  <bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>\n" +
                 "</bpmn:task>");
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
@@ -142,7 +143,7 @@ class WorkflowServiceUnitTest {
         savedSteps.forEach(stepsList::add);
         
         assertThat(stepsList).hasSize(3);
-        assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getAssignedPerson())
-                .isEqualTo("John Doe");
+        assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getRole())
+                .isEqualTo(UserRole.ADMINISTRATOR);
     }
 }

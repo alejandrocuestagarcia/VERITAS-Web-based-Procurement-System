@@ -23,6 +23,7 @@ public class WorkflowStep {
 
     private String description;
 
-    @Column(name = "assigned_person")
-    private String assignedPerson;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_role")
+    private com.veritas.backend.user.entity.UserRole role;
 }
