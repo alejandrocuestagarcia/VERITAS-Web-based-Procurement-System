@@ -1,9 +1,6 @@
 BACKEND_DIR = ./backend
 FRONTEND_DIR = ./frontend
 
--include .env
-export
-
 .PHONY: help up down restart db-only run-be run-fe install-fe build-all clean
 
 # DOCKER

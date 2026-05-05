@@ -17,9 +17,6 @@ services:
     container_name: veritas-backend
     environment:
       DB_HOST: db
-      SMTP_USERNAME: ${MAIL_USERNAME:}
-      SMTP_PASSWORD: ${MAIL_PASSWORD:}
-      PASSWORD_RESET_LINK_BASE: ${PASSWORD_RESET_LINK_BASE:-http://localhost:4200/reset-password}
     ports:
       - "8080:8080"
     depends_on:

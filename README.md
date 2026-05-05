@@ -43,4 +43,3 @@ make clean
 
 - Once the Backend is started, the API is available at: http://localhost:8080/api/v1/swagger-ui.html
 - After running `make test-backend` a test report is generated at `./backend/build/reports/jacoco/test/html/`
-- Local secrets should be provided as environment variables in .env before starting the backend or Compose: `SMTP_USERNAME`, `SMTP_PASSWORD`, and optionally `PASSWORD_RESET_LINK_BASE`.
