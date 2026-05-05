@@ -5,12 +5,13 @@ stages:
 
 variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_PIPELINE_ID
-  GRADLE_USER_HOME: ".gradle"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/backend/.gradle"
 
 cache:
+  key: gradle-cache
   paths:
-    - .gradle/wrapper
-    - .gradle/caches
+    - backend/.gradle/wrapper
+    - backend/.gradle/caches
 
 test-backend:
   stage: test
