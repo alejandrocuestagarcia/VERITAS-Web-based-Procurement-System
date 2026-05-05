@@ -117,18 +117,17 @@ public class WorkflowServiceImpl implements WorkflowService {
                     step.setWorkflowComponent(WorkflowComponent.STEP);
                     task.getDocumentations().forEach(doc -> {
                         String text = doc.getTextContent();
-<<<<<<< HEAD
-                        if (text != null && !text.isBlank() && text.startsWith(ASSIGNEE_PREFIX)) {
-                            String roleName = text.substring(ASSIGNEE_PREFIX.length());
-                            try {
-                                step.setRole(UserRole.valueOf(roleName));
-                            } catch (IllegalArgumentException e) {
-                                throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
+                        if (text != null && !text.isBlank()) {
+                            if (text.startsWith(ASSIGNEE_PREFIX)) {
+                                String roleName = text.substring(ASSIGNEE_PREFIX.length());
+                                try {
+                                    step.setRole(UserRole.valueOf(roleName));
+                                } catch (IllegalArgumentException e) {
+                                    throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
+                                }
+                            } else {
+                                step.setDescription(text);
                             }
-=======
-                        if (text != null && !text.isBlank() && !text.startsWith(ASSIGNEE_PREFIX)) {
-                            step.setDescription(text);
->>>>>>> 631c6c5 (#36: Add custom instructions to workflow step)
                         }
                     });
                 }

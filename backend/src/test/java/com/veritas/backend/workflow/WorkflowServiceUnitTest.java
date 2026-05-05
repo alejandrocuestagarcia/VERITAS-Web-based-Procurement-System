@@ -6,10 +6,7 @@ import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
-<<<<<<< HEAD
-=======
 import com.veritas.backend.workflow.entity.WorkflowTransition;
->>>>>>> 631c6c5 (#36: Add custom instructions to workflow step)
 import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
@@ -51,12 +48,9 @@ class WorkflowServiceUnitTest {
     @Captor
     private ArgumentCaptor<Iterable<WorkflowStep>> stepsCaptor;
 
-<<<<<<< HEAD
-=======
     @Captor
     private ArgumentCaptor<Iterable<WorkflowTransition>> transitionsCaptor;
 
->>>>>>> 631c6c5 (#36: Add custom instructions to workflow step)
     @InjectMocks
     private WorkflowServiceImpl workflowService;
 
@@ -134,21 +128,11 @@ class WorkflowServiceUnitTest {
         verify(workflowDefinitionRepository, times(2)).save(any(WorkflowDefinition.class));
     }
 
-<<<<<<< HEAD
     @Test
     void CreateWorkflow_WithAssignee_SetsAssignedPerson() {
         String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
                 "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
                 "  <bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>\n" +
-=======
-
-
-    @Test
-    void CreateWorkflow_WithTaskDescription_SetsDescription() {
-        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
-                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
-                "  <bpmn:documentation>Task Description Text</bpmn:documentation>\n" +
->>>>>>> 631c6c5 (#36: Add custom instructions to workflow step)
                 "</bpmn:task>");
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
@@ -162,11 +146,29 @@ class WorkflowServiceUnitTest {
         java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
         savedSteps.forEach(stepsList::add);
         
-<<<<<<< HEAD
         assertThat(stepsList).hasSize(3);
         assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getRole())
                 .isEqualTo(UserRole.ADMINISTRATOR);
-=======
+    }
+
+    @Test
+    void CreateWorkflow_WithTaskDescription_SetsDescription() {
+        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
+                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                "  <bpmn:documentation>Task Description Text</bpmn:documentation>\n" +
+                "</bpmn:task>");
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
+        verify(workflowStepRepository).saveAll(stepsCaptor.capture());
+        Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
+        
+        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
+        savedSteps.forEach(stepsList::add);
+        
         assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getDescription())
                 .isEqualTo("Task Description Text");
     }
@@ -192,6 +194,5 @@ class WorkflowServiceUnitTest {
         assertThat(transitionsList).hasSize(2);
         assertThat(transitionsList.stream().filter(t -> t.getDescription() != null).findFirst().get().getDescription())
                 .isEqualTo("Transition Description Text");
->>>>>>> 631c6c5 (#36: Add custom instructions to workflow step)
     }
 }
