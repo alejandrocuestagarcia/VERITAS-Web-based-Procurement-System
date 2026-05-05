@@ -18,6 +18,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.net.URI;
 import java.util.List;
@@ -33,19 +35,23 @@ public class WorkflowController {
     private final WorkflowMapper workflowMapper;
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
 
-    @Operation(summary = "List workflows", description = "Retrieves a list of all available procurement workflow templates.")
+    @Operation(summary = "List workflows", description = "Retrieves a list of workflows with optional filtering.")
     @GetMapping
-    @IsRequester
-    public List<WorkflowDto> getAllWorkflows() {
-        // TODO: Implement pagination and server-side search.
-        return workflowDefinitionRepository.findAllByIsActiveTrue().stream()
-            .map(workflowMapper::toWorkflowDto)
-            .collect(Collectors.toList());
+    public ResponseEntity<Page<WorkflowDto>> getAllWorkflows(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive
+    ) {
+        log.info("GET /workflows – page: {}, size: {}, search: '{}', isActive", pageable.getPageNumber(), pageable.getPageSize(), search, isActive);
+        Page<WorkflowDto> workflows = workflowService.getAllWorkflows(pageable, search,isActive);
+
+        return ResponseEntity.ok(workflows);
     }
 
     @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @IsRequester
+    @IsFinanceOfficer
     public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id) {
         log.info("GET /workflows/{}", id);
         return ResponseEntity.ok(workflowService.getWorkflow(id));

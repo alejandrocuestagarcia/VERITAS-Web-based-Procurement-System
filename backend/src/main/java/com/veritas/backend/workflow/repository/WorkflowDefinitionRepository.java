@@ -3,10 +3,18 @@ package com.veritas.backend.workflow.repository;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface WorkflowDefinitionRepository extends JpaRepository<WorkflowDefinition, Long> {
-    List<WorkflowDefinition> findAllByIsActiveTrue();
+
+    @Query("SELECT w FROM WorkflowDefinition w WHERE " +
+            "(:query IS NULL OR LOWER(w.name) LIKE :query OR LOWER(w.description) LIKE :query)" +
+            "AND" +
+            "(:isActive IS NULL OR w.isActive = :isActive)")
+    Page<WorkflowDefinition> findAllFiltered(@Param("query") String query,Boolean isActive, Pageable pageable);
+
 }

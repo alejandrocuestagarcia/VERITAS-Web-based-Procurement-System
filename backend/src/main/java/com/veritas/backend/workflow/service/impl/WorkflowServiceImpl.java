@@ -24,11 +24,15 @@ import org.camunda.bpm.model.xml.instance.DomElement;
 import org.camunda.bpm.model.bpmn.instance.Process;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkflowServiceImpl implements WorkflowService {
@@ -201,5 +205,14 @@ public class WorkflowServiceImpl implements WorkflowService {
         transitionRuleRepository.saveAll(transitionRulesMap.values());
 
         return workflowDefinition;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<WorkflowDto> getAllWorkflows(Pageable pageable, String filter, Boolean isActive) {
+        log.debug("Fetching filtered workflows – filter: '{}', page: {}, isActive: {}", filter, pageable.getPageNumber(),isActive);
+        String query = (filter != null && !filter.isBlank()) ? "%" + filter.trim().toLowerCase() + "%" : null;
+
+        return workflowDefinitionRepository.findAllFiltered(query,isActive, pageable).map(workflowMapper::toWorkflowDto);
     }
 }
