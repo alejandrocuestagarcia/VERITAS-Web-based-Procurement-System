@@ -28,6 +28,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class WorkflowServiceImpl implements WorkflowService {
+    private static final String ASSIGNEE_PREFIX = "[ASSIGNEE]";
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
@@ -111,7 +112,15 @@ public class WorkflowServiceImpl implements WorkflowService {
                 case StartEvent startEvent -> step.setWorkflowComponent(WorkflowComponent.START_EVENT);
                 case EndEvent endEvent -> step.setWorkflowComponent(WorkflowComponent.END_EVENT);
                 case Gateway gateway -> step.setWorkflowComponent(WorkflowComponent.BRANCH);
-                case Task task -> step.setWorkflowComponent(WorkflowComponent.STEP);
+                case Task task -> {
+                    step.setWorkflowComponent(WorkflowComponent.STEP);
+                    task.getDocumentations().forEach(doc -> {
+                        String text = doc.getTextContent();
+                        if (text != null && !text.isBlank() && text.startsWith(ASSIGNEE_PREFIX)) {
+                            step.setAssignedPerson(text.substring(ASSIGNEE_PREFIX.length()));
+                        }
+                    });
+                }
                 default ->
                         throw new IllegalArgumentException("The BPMN element '" + node.getElementType().getTypeName() +
                                 "' is not supported in our procurement system");

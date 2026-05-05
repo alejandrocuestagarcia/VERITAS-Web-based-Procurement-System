@@ -22,4 +22,7 @@ public class WorkflowStep {
     private String name;
 
     private String description;
+
+    @Column(name = "assigned_person")
+    private String assignedPerson;
 }
