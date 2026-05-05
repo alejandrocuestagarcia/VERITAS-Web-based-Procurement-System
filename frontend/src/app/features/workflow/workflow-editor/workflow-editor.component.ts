@@ -342,6 +342,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   updateRuleProperty(key: 'description', value: string) {
+    const directEditing = this.bpmnInstance.get('directEditing');
+    if (directEditing.isActive()) {
+      directEditing.complete();
+    }
+
     const modeling = this.bpmnInstance.get('modeling');
     const elementRegistry = this.bpmnInstance.get('elementRegistry');
     const element = elementRegistry.get(this.selectedElementId);
