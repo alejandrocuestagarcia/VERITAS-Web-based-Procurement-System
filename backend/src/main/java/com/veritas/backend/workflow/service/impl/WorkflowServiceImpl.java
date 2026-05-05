@@ -117,12 +117,16 @@ public class WorkflowServiceImpl implements WorkflowService {
                     step.setWorkflowComponent(WorkflowComponent.STEP);
                     task.getDocumentations().forEach(doc -> {
                         String text = doc.getTextContent();
-                        if (text != null && !text.isBlank() && text.startsWith(ASSIGNEE_PREFIX)) {
-                            String roleName = text.substring(ASSIGNEE_PREFIX.length());
-                            try {
-                                step.setRole(UserRole.valueOf(roleName));
-                            } catch (IllegalArgumentException e) {
-                                throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
+                        if (text != null && !text.isBlank()) {
+                            if (text.startsWith(ASSIGNEE_PREFIX)) {
+                                String roleName = text.substring(ASSIGNEE_PREFIX.length());
+                                try {
+                                    step.setRole(UserRole.valueOf(roleName));
+                                } catch (IllegalArgumentException e) {
+                                    throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
+                                }
+                            } else {
+                                step.setDescription(text);
                             }
                         }
                     });
@@ -142,6 +146,10 @@ public class WorkflowServiceImpl implements WorkflowService {
             transition.setName(sequenceFlow.getName());
             transition.setFromStep(stepsMap.get(sequenceFlow.getSource().getId()));
             transition.setToStep(stepsMap.get(sequenceFlow.getTarget().getId()));
+
+            sequenceFlow.getDocumentations().stream()
+                    .findFirst()
+                    .ifPresent(doc -> transition.setDescription(doc.getTextContent()));
 
             workflowTransitions.add(transition);
         });

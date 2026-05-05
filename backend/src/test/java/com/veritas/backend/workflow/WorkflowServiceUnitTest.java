@@ -6,6 +6,7 @@ import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.workflow.entity.WorkflowTransition;
 import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
@@ -46,6 +47,9 @@ class WorkflowServiceUnitTest {
 
     @Captor
     private ArgumentCaptor<Iterable<WorkflowStep>> stepsCaptor;
+
+    @Captor
+    private ArgumentCaptor<Iterable<WorkflowTransition>> transitionsCaptor;
 
     @InjectMocks
     private WorkflowServiceImpl workflowService;
@@ -145,5 +149,50 @@ class WorkflowServiceUnitTest {
         assertThat(stepsList).hasSize(3);
         assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getRole())
                 .isEqualTo(UserRole.ADMINISTRATOR);
+    }
+
+    @Test
+    void CreateWorkflow_WithTaskDescription_SetsDescription() {
+        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
+                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                "  <bpmn:documentation>Task Description Text</bpmn:documentation>\n" +
+                "</bpmn:task>");
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
+        verify(workflowStepRepository).saveAll(stepsCaptor.capture());
+        Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
+        
+        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
+        savedSteps.forEach(stepsList::add);
+        
+        assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getDescription())
+                .isEqualTo("Task Description Text");
+    }
+
+    @Test
+    void CreateWorkflow_WithTransitionDescription_SetsTransitionDescription() {
+        String xml = VALID_BPMN_XML.replace("<bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />",
+                "<bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
+                "  <bpmn:documentation>Transition Description Text</bpmn:documentation>\n" +
+                "</bpmn:sequenceFlow>");
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
+        verify(workflowTransitionRepository).saveAll(transitionsCaptor.capture());
+        Iterable<WorkflowTransition> savedTransitions = transitionsCaptor.getValue();
+        
+        java.util.List<WorkflowTransition> transitionsList = new java.util.ArrayList<>();
+        savedTransitions.forEach(transitionsList::add);
+        
+        assertThat(transitionsList).hasSize(2);
+        assertThat(transitionsList.stream().filter(t -> t.getDescription() != null).findFirst().get().getDescription())
+                .isEqualTo("Transition Description Text");
     }
 }
