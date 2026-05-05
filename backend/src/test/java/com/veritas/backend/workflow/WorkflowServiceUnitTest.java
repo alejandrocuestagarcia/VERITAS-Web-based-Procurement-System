@@ -1,9 +1,11 @@
 package com.veritas.backend.workflow;
 
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
+import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
@@ -12,6 +14,8 @@ import com.veritas.backend.workflow.service.impl.WorkflowServiceImpl;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,6 +40,12 @@ class WorkflowServiceUnitTest {
 
     @Mock
     private WorkflowMapper workflowMapper;
+
+    @Captor
+    private ArgumentCaptor<WorkflowDefinition> workflowCaptor;
+
+    @Captor
+    private ArgumentCaptor<Iterable<WorkflowStep>> stepsCaptor;
 
     @InjectMocks
     private WorkflowServiceImpl workflowService;
@@ -112,5 +122,28 @@ class WorkflowServiceUnitTest {
 
         assertThat(result).isEqualTo(dto);
         verify(workflowDefinitionRepository, times(2)).save(any(WorkflowDefinition.class));
+    }
+
+    @Test
+    void CreateWorkflow_WithAssignee_SetsAssignedPerson() {
+        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
+                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                "  <bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>\n" +
+                "</bpmn:task>");
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
+        verify(workflowStepRepository).saveAll(stepsCaptor.capture());
+        Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
+        
+        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
+        savedSteps.forEach(stepsList::add);
+        
+        assertThat(stepsList).hasSize(3);
+        assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getRole())
+                .isEqualTo(UserRole.ADMINISTRATOR);
     }
 }
