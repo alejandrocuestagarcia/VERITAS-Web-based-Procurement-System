@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -21,7 +21,7 @@ export class ResetPasswordComponent {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {
     this.resetForm = this.fb.group({
       newPassword: ['', [Validators.required, Validators.minLength(8)]],
@@ -51,11 +51,7 @@ export class ResetPasswordComponent {
     this.authService.confirmPasswordReset(this.token, password).subscribe({
       next: () => {
         this.loading = false;
-        this.snackBar.open('Password reset successful. You can now log in.', 'Close', {
-          duration: 4000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
+        this.toastService.showSuccess('Password reset successful. You can now log in.');
         this.router.navigate(['/login']);
       },
       error: (err: any) => this.handleResetError(err)
@@ -80,10 +76,6 @@ export class ResetPasswordComponent {
   }
 
   private showError(message: string): void {
-    this.snackBar.open(message, 'Close', {
-      duration: 4000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.toastService.showError(message);
   }
 }
