@@ -4,6 +4,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { ToastService } from '../../../core/services/toast.service';
 
 describe('UserCreateComponent', () => {
   let component: UserCreateComponent;
@@ -13,6 +14,9 @@ describe('UserCreateComponent', () => {
     TestBed.configureTestingModule({
       declarations: [UserCreateComponent],
       imports: [HttpClientTestingModule, ReactiveFormsModule, MatSnackBarModule],
+      providers: [
+        { provide: ToastService, useValue: { showSuccess: jasmine.createSpy(), showError: jasmine.createSpy() } }
+      ],
       schemas: [NO_ERRORS_SCHEMA]
     });
     fixture = TestBed.createComponent(UserCreateComponent);

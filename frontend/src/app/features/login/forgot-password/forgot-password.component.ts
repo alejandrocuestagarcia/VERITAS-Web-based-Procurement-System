@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -16,7 +16,7 @@ export class ForgotPasswordComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {
     this.requestForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]]
@@ -44,10 +44,6 @@ export class ForgotPasswordComponent {
 
   private handleCompletion() {
     this.loading = false;
-    this.snackBar.open('If the email exists, a reset link has been sent.', 'Close', {
-      duration: 4000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.toastService.showInfo('If the email exists, a reset link has been sent.');
   }
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../core/services/toast.service';
 import {
   TeamCreateDto,
   TeamCreateDtoDepartmentEnum,
@@ -47,7 +47,7 @@ export class TeamCreateComponent implements OnInit {
     private userService: UserModuleService,
     private teamsService: TeamsModuleService,
     private router: Router,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private fb: FormBuilder
   ) { }
 
@@ -98,9 +98,7 @@ export class TeamCreateComponent implements OnInit {
     this.teamsService.createTeam(payload).subscribe({
       next: () => {
         this.submitting = false;
-        this.snackBar.open('Team created successfully.', 'Close', {
-          duration: 3500
-        });
+        this.toastService.showSuccess('Team created successfully.');
         this.router.navigate(['/teams']);
       },
       error: (err) => {

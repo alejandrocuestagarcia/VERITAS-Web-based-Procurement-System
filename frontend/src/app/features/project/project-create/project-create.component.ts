@@ -4,7 +4,7 @@ import {
   ProjectCreationDto, ProjectModuleService, TeamsModuleService, TeamDto
 } from "../../../core/api";
 import {Router} from "@angular/router";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {ToastService} from "../../../core/services/toast.service";
 
 @Component({
   selector: 'app-project-create',
@@ -21,7 +21,7 @@ export class ProjectCreateComponent implements OnInit {
               private router: Router,
               private projectService: ProjectModuleService,
               private teamService: TeamsModuleService,
-              private snackBar: MatSnackBar) {
+              private toastService: ToastService) {
   }
 
   ngOnInit(): void {
@@ -35,7 +35,7 @@ export class ProjectCreateComponent implements OnInit {
         this.teams = teams;
       },
       error: () => {
-        this.snackBar.open('Failed to load teams', 'Close', { duration: 3000 });
+        this.toastService.showError('Failed to load teams');
       }
     });
   }
@@ -71,7 +71,7 @@ export class ProjectCreateComponent implements OnInit {
       this.projectService.createProject(request).subscribe({
         next: () => {
           this.loading = false;
-          this.snackBar.open('Project created successfully', 'Close', { duration: 3000 });
+          this.toastService.showSuccess('Project created successfully');
           this.router.navigate(['/projects']);
         },
         error: err => {
@@ -81,12 +81,12 @@ export class ProjectCreateComponent implements OnInit {
             ? Object.values(err.error).join(', ')
             : err?.error || 'Unknown error';
 
-          this.snackBar.open('Failed: ' + message, 'Close', { duration: 5000 });
+          this.toastService.showError('Failed: ' + message);
         }
       })
     } else {
       this.projectForm.markAllAsTouched();
-      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', { duration: 4000 });
+      this.toastService.showError('Please correct the highlighted errors before submitting.');
     }
   }
 

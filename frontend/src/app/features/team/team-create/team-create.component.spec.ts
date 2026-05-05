@@ -15,6 +15,7 @@ import {
   UserModuleService
 } from '../../../core/api';
 import { TeamCreateComponent } from './team-create.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 describe('TeamCreateComponent', () => {
   let component: TeamCreateComponent;
@@ -48,7 +49,8 @@ describe('TeamCreateComponent', () => {
       ],
       providers: [
         { provide: UserModuleService, useValue: userModuleServiceStub },
-        { provide: TeamsModuleService, useValue: teamsModuleServiceStub }
+        { provide: TeamsModuleService, useValue: teamsModuleServiceStub },
+        { provide: ToastService, useValue: { showSuccess: jasmine.createSpy(), showError: jasmine.createSpy(), showInfo: jasmine.createSpy() } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();

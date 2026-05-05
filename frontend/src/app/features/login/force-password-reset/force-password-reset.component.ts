@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-force-password-reset',
@@ -19,7 +19,7 @@ export class ForcePasswordResetComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {
     this.resetForm = this.fb.group({
       newPassword: ['', [Validators.required, Validators.minLength(8)]],
@@ -42,11 +42,11 @@ export class ForcePasswordResetComponent {
         next: () => {
           localStorage.removeItem('requires_password_change');
           this.router.navigate(['/dashboard']);
-          this.snackBar.open('Password successfully updated.', 'Close', { duration: 3000 });
+          this.toastService.showSuccess('Password successfully updated.');
         },
         error: (err: any) => {
           this.loading = false;
-          this.snackBar.open(err.error?.message || 'Update failed', 'Close');
+          this.toastService.showError(err.error?.message || 'Update failed');
         }
       });
     }

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../../../core/services/toast.service';
 import { JiraConfigControllerService } from '../../../../../core/api';
 import { JiraConfigResponseDto } from '../../../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
@@ -21,7 +21,7 @@ export class JiraSettingsListComponent implements OnInit {
 
   constructor(
     private jiraConfigService: JiraConfigControllerService,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private router: Router
   ) {}
 
@@ -39,7 +39,7 @@ export class JiraSettingsListComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.snackBar.open('Failed to load Jira configs', 'Close', { duration: 3000 });
+        this.toastService.showError('Failed to load Jira configs');
       }
     });
   }
@@ -57,10 +57,10 @@ export class JiraSettingsListComponent implements OnInit {
   }
 
   triggerSync(config: JiraConfigResponseDto): void {
-    this.snackBar.open('Triggering sync...', '', { duration: 2000 });
+    this.toastService.showInfo('Triggering sync...');
     this.jiraConfigService.triggerSync(config.id).subscribe({
-      next: () => this.snackBar.open('Sync completed successfully', 'Close', { duration: 3000 }),
-      error: () => this.snackBar.open('Sync failed. Please check logs.', 'Close', { duration: 3000 })
+      next: () => this.toastService.showSuccess('Sync completed successfully'),
+      error: () => this.toastService.showError('Sync failed. Please check logs.')
     });
   }
 

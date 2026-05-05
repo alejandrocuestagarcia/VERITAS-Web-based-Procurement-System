@@ -3,7 +3,7 @@ import BpmnModeler from 'bpmn-js/lib/Modeler';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { editorModules, viewerModules } from '../custom-renderer';
 import { WorkflowModuleService, WorkflowSaveDto } from 'src/app/core/api';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -44,7 +44,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private workflowService: WorkflowModuleService,
     public router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private fb: FormBuilder
   ) {
     this.workflowForm = this.fb.group({
@@ -98,7 +98,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to load workflow', err);
-          this.snackBar.open('Failed to load workflow', 'Close', { duration: 3000 });
+          this.toastService.showError('Failed to load workflow');
           this.router.navigate(['/workflows']);
         }
       });
@@ -157,29 +157,29 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       if (this.mode === 'edit') {
         this.workflowService.editWorkflow(this.workflowId ?? 0, payload).subscribe({
           next: (workflow) => {
-            this.snackBar.open('Workflow updated successfully!', 'Close', { duration: 2000 });
+            this.toastService.showSuccess('Workflow updated successfully!');
             this.router.navigate(['/workflows/view/', workflow.id]);
           },
           error: (err) => {
             console.error('Failed to update workflow', err);
-            this.snackBar.open('Failed to update workflow', 'Close', { duration: 3000 });
+            this.toastService.showError('Failed to update workflow');
           }
         });
       } else {
         this.workflowService.saveWorkflow(payload).subscribe({
           next: () => {
-            this.snackBar.open('Workflow saved successfully!', 'Close', { duration: 2000 });
+            this.toastService.showSuccess('Workflow saved successfully!');
             this.router.navigate(['/workflows']);
           },
           error: (err) => {
             console.error('Failed to save workflow', err);
-            this.snackBar.open('Failed to save workflow', 'Close', { duration: 3000 });
+            this.toastService.showError('Failed to save workflow');
           }
         });
       }
     } catch (err) {
       console.error('Failed to process workflow', err);
-      this.snackBar.open('Failed to process workflow', 'Close', { duration: 3000 });
+      this.toastService.showError('Failed to process workflow');
     }
   }
 
