@@ -87,7 +87,6 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           this.showPropertiesPanelTransition = false;
           this.showPropertiesPanelTask = false;
         }
-        }
       } else {
         this.showPropertiesPanelTransition = false;
         this.showPropertiesPanelTask = false;
