@@ -117,6 +117,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                     step.setWorkflowComponent(WorkflowComponent.STEP);
                     task.getDocumentations().forEach(doc -> {
                         String text = doc.getTextContent();
+<<<<<<< HEAD
                         if (text != null && !text.isBlank() && text.startsWith(ASSIGNEE_PREFIX)) {
                             String roleName = text.substring(ASSIGNEE_PREFIX.length());
                             try {
@@ -124,6 +125,10 @@ public class WorkflowServiceImpl implements WorkflowService {
                             } catch (IllegalArgumentException e) {
                                 throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
                             }
+=======
+                        if (text != null && !text.isBlank() && !text.startsWith(ASSIGNEE_PREFIX)) {
+                            step.setDescription(text);
+>>>>>>> 631c6c5 (#36: Add custom instructions to workflow step)
                         }
                     });
                 }
@@ -142,6 +147,10 @@ public class WorkflowServiceImpl implements WorkflowService {
             transition.setName(sequenceFlow.getName());
             transition.setFromStep(stepsMap.get(sequenceFlow.getSource().getId()));
             transition.setToStep(stepsMap.get(sequenceFlow.getTarget().getId()));
+
+            sequenceFlow.getDocumentations().stream()
+                    .findFirst()
+                    .ifPresent(doc -> transition.setDescription(doc.getTextContent()));
 
             workflowTransitions.add(transition);
         });

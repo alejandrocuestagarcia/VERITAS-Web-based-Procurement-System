@@ -32,13 +32,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public showPropertiesPanelTask = false;
   public selectedElementId = '';
   public currentTask: any = {
-    role: ''
+    role: '',
+    description: ''
   };
   public roles = Object.values(UserDtoRoleEnum);
   public currentRule: any = {
     isPdfRequired: false,
     minRequiredVendors: 0,
-    optionalFailureMessage: ''
+    optionalFailureMessage: '',
+    description: ''
   };
 
   get isEditable(): boolean {
@@ -84,6 +86,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         } else {
           this.showPropertiesPanelTransition = false;
           this.showPropertiesPanelTask = false;
+        }
         }
       } else {
         this.showPropertiesPanelTransition = false;
@@ -255,7 +258,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const extensions = element.businessObject.extensionElements;
+    const bo = element.businessObject;
+    const doc = bo.get('documentation')?.[0]?.text || '';
+    const extensions = bo.extensionElements;
     if (extensions?.values) {
       const rule = extensions.values.find((e: any) =>
         e.$type === 'veritas:transitionRule' || e.type === 'veritas:transitionRule'
@@ -264,19 +269,21 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         this.currentRule = {
           isPdfRequired: String(rule.isPdfRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
-          optionalFailureMessage: rule.failureMessage || ''
+          optionalFailureMessage: rule.failureMessage || '',
+          description: doc
         };
         return;
       }
     }
-    this.resetRule();
+    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '', description: doc };
   }
 
   private resetRule() {
-    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '' };
+    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '', description: '' };
   }
 
   loadTaskDetails(selection: any) {
+    this.selectedElementId = selection.id;
     const elementRegistry = this.bpmnInstance.get('elementRegistry');
     const element = elementRegistry.get(selection.id);
     if (!element?.businessObject) {
@@ -289,16 +296,20 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const assigneeDoc = docs.find((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
     const assignee = assigneeDoc ? assigneeDoc.text.substring(10) : '';
 
+    const descDoc = docs.find((d: any) => !d.text || !d.text.startsWith('[ASSIGNEE]'));
+    const description = descDoc ? descDoc.text : '';
+
     this.currentTask = {
-      role: assignee
+      role: assignee,
+      description: description
     };
   }
 
   private resetTask() {
-    this.currentTask = { role: '' };
+    this.currentTask = { role: '', description: '' };
   }
 
-  updateTaskProperty(key: 'role', value: string) {
+  updateTaskProperty(key: 'role' | 'description', value: string) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -319,10 +330,30 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: `[ASSIGNEE]${value}` });
         docs.push(doc);
       }
+    } else if (key === 'description') {
+      docs = docs.filter((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
+      if (value) {
+        const doc = bpmnFactory.create('bpmn:Documentation', { text: value });
+        docs.push(doc);
+      }
     }
     
     modeling.updateProperties(element, { documentation: docs });
     this.currentTask[key] = value;
+  }
+
+  updateRuleProperty(key: 'description', value: string) {
+    const modeling = this.bpmnInstance.get('modeling');
+    const elementRegistry = this.bpmnInstance.get('elementRegistry');
+    const element = elementRegistry.get(this.selectedElementId);
+    if (!element) return;
+    
+    if (key === 'description') {
+      const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
+      const documentation = bpmnFactory.create('bpmn:Documentation', { text: value });
+      modeling.updateProperties(element, { documentation: [documentation] });
+    }
+    this.currentRule[key] = value;
   }
 
   private applyTransitionRuleCss() {
