@@ -2,6 +2,8 @@ import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {LoginComponent} from "./features/login/login/login.component";
 import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
+import { ForgotPasswordComponent } from './features/login/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './features/login/reset-password/reset-password.component';
 import {authGuard} from "./core/guards/auth.guard";
 import {DashboardComponent} from "./features/dashboard/dashboard.component";
 import {ProjectListComponent} from "./features/project/project-list/project-list.component";
@@ -21,9 +23,6 @@ import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workf
 import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
 
 const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'users/create', component: UserCreateComponent },
-  { path: 'users', component: UserListComponent },
   {
     path: 'login',
     component: LoginComponent,
@@ -34,6 +33,13 @@ const routes: Routes = [
     component: ForcePasswordResetComponent,
     canActivate: [authGuard]
   },
+  { path: 'forgot-password', 
+    component: ForgotPasswordComponent, 
+    canActivate: [guestGuard] 
+  },
+  { path: 'reset-password', 
+    component: ResetPasswordComponent, 
+    canActivate: [guestGuard] },
   {
     path: 'users',
     component: UserListComponent,

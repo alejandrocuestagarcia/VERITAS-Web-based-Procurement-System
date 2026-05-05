@@ -1,0 +1,89 @@
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService } from '../../../core/services/auth.service';
+
+@Component({
+  selector: 'app-reset-password',
+  templateUrl: './reset-password.component.html'
+})
+export class ResetPasswordComponent {
+  resetForm: FormGroup;
+  hidePassword = true;
+  hideConfirmPassword = true;
+  loading = false;
+  token = '';
+  tokenMissing = false;
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private snackBar: MatSnackBar
+  ) {
+    this.resetForm = this.fb.group({
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
+
+    this.route.queryParamMap.subscribe(params => {
+      this.token = params.get('token') || '';
+      this.tokenMissing = !this.token;
+    });
+  }
+
+  passwordMatchValidator(g: FormGroup) {
+    return g.get('newPassword')?.value === g.get('confirmPassword')?.value
+      ? null : { mismatch: true };
+  }
+
+  onSubmit() {
+    if (this.resetForm.invalid || this.tokenMissing) {
+      this.resetForm.markAllAsTouched();
+      return;
+    }
+
+    this.loading = true;
+    const password = this.resetForm.value.newPassword as string;
+
+    this.authService.confirmPasswordReset(this.token, password).subscribe({
+      next: () => {
+        this.loading = false;
+        this.snackBar.open('Password reset successful. You can now log in.', 'Close', {
+          duration: 4000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+        this.router.navigate(['/login']);
+      },
+      error: (err: any) => this.handleResetError(err)
+    });
+  }
+
+  onRequestNew() {
+    this.router.navigate(['/forgot-password']);
+  }
+
+  private handleResetError(err: any): void {
+    this.loading = false;
+
+    if (err.error instanceof Blob) {
+      err.error.text().then((message: string) => this.showError(message));
+      return;
+    }
+
+    this.showError(
+      typeof err.error === 'string' ? err.error : 'Reset failed. Please request a new link.'
+    );
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 4000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top'
+    });
+  }
+}

@@ -41,5 +41,8 @@ public abstract class BaseDBIntegrationTest {
             registry.add("spring.datasource.username", POSTGRES::getUsername);
             registry.add("spring.datasource.password", POSTGRES::getPassword);
         }
+
+        registry.add("spring.mail.username", () -> "test@veritas.local");
+        registry.add("spring.mail.password", () -> "test-password");
     }
 }

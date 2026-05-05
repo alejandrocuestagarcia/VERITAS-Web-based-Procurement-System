@@ -7,6 +7,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -57,6 +58,13 @@ public class GeneralExceptionHandler {
   public ResponseEntity<String> handleConflict(Exception ex) {
     log.warn("Entity conflict: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+  }
+
+  @ExceptionHandler(MailException.class)
+  public ResponseEntity<String> handleMailException(MailException ex) {
+    log.error("Mail delivery failed: {}", ex.getMessage(), ex);
+    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+        .body("Unable to send password reset email. Please try again later.");
   }
 
   @ExceptionHandler(Exception.class)
