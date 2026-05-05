@@ -14,8 +14,11 @@ import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
+import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +41,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final UserRepository userRepository;
     private final RequestItemRepository requestItemRepository;
     private final AttachmentRepository attachmentRepository;
+    private final WorkflowStepRepository workflowStepRepository;
     private final RequisitionMapper requisitionMapper;
 
     private static final String UPLOAD_DIR = "uploads/requisitions";
@@ -62,6 +66,12 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setProjectID(project);
         request.setWorkflowDefinitionID(workflow);
         request.setPriority(createDto.priority());
+
+        // Set initial workflow step
+        WorkflowStep startStep = workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(workflow, WorkflowComponent.START_EVENT)
+                .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
+        request.setCurrentStepID(startStep);
+
         request.setUserID(user);
         request.setTeamID(user.getTeam());
 
@@ -69,9 +79,6 @@ public class RequisitionServiceImpl implements RequisitionService {
         projectRepository.save(project);
 
         request.setRequestKey(project.getProjectKey() + "-" + project.getRequestCounter());
-
-        request.setCreatedAt(LocalDateTime.now());
-        request.setUpdatedAt(LocalDateTime.now());
 
         Request savedRequest = requestRepository.save(request);
 
