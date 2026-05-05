@@ -22,6 +22,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.veritas.backend.common.model.AuditActionConstants.PASSWORD_RESET_EMAIL;
 
 @Slf4j
 @Service
@@ -106,7 +107,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         auditService.createPasswordResetLog(
             user,
-            "PASSWORD_RESET_EMAIL",
+            PASSWORD_RESET_EMAIL,
             "User " + user.getEmail() + " reset their password via email."
         );
     }

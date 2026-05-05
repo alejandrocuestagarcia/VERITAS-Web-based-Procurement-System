@@ -58,18 +58,32 @@ export class ResetPasswordComponent {
         });
         this.router.navigate(['/login']);
       },
-      error: (err: any) => {
-        this.loading = false;
-        this.snackBar.open(err.error || 'Reset failed. Please request a new link.', 'Close', {
-          duration: 4000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
-      }
+      error: (err: any) => this.handleResetError(err)
     });
   }
 
   onRequestNew() {
     this.router.navigate(['/forgot-password']);
+  }
+
+  private handleResetError(err: any): void {
+    this.loading = false;
+
+    if (err.error instanceof Blob) {
+      err.error.text().then((message: string) => this.showError(message));
+      return;
+    }
+
+    this.showError(
+      typeof err.error === 'string' ? err.error : 'Reset failed. Please request a new link.'
+    );
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 4000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top'
+    });
   }
 }

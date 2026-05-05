@@ -23,11 +23,6 @@ import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workf
 import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
 
 const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [guestGuard] },
-  { path: 'reset-password', component: ResetPasswordComponent, canActivate: [guestGuard] },
-  { path: 'users/create', component: UserCreateComponent },
-  { path: 'users', component: UserListComponent },
   {
     path: 'login',
     component: LoginComponent,
@@ -38,6 +33,13 @@ const routes: Routes = [
     component: ForcePasswordResetComponent,
     canActivate: [authGuard]
   },
+  { path: 'forgot-password', 
+    component: ForgotPasswordComponent, 
+    canActivate: [guestGuard] 
+  },
+  { path: 'reset-password', 
+    component: ResetPasswordComponent, 
+    canActivate: [guestGuard] },
   {
     path: 'users',
     component: UserListComponent,
