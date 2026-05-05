@@ -11,21 +11,27 @@ export class ToastService {
   showSuccess(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      panelClass: ['toast-success']
+      panelClass: ['success-snackbar'],
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
     });
   }
 
   showError(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 5000,
-      panelClass: ['toast-error']
+      panelClass: ['error-snackbar'],
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
     });
   }
 
   showInfo(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      panelClass: ['toast-info']
+      panelClass: ['info-snackbar'],
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
     });
   }
 }
