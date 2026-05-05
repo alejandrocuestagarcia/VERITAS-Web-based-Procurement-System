@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import { ToastService } from '../../../../../core/services/toast.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {JiraConfigControllerService} from '../../../../../core/api/api/jiraConfigController.service';
 
@@ -19,7 +19,7 @@ export class JiraSettingsCreateComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private jiraConfigService: JiraConfigControllerService,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private route: ActivatedRoute,
     private router: Router
   ) {
@@ -69,7 +69,7 @@ export class JiraSettingsCreateComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.snackBar.open('Failed to load config', 'Close', {duration: 3000});
+        this.toastService.showError('Failed to load config');
         this.router.navigate(['/integrations']);
       }
     });
@@ -87,29 +87,29 @@ export class JiraSettingsCreateComponent implements OnInit {
       if (this.isEditing && this.selectedSettingsId) {
         this.jiraConfigService.updateConfig(this.selectedSettingsId, formValue).subscribe({
           next: () => {
-            this.snackBar.open('Config updated successfully', 'Close', {duration: 3000});
+            this.toastService.showSuccess('Config updated successfully');
             this.router.navigate(['/integrations']);
           },
           error: () => {
             this.loading = false;
-            this.snackBar.open('Failed to update config', 'Close', {duration: 3000});
+            this.toastService.showError('Failed to update config');
           }
         });
       } else {
         this.jiraConfigService.createConfig(formValue).subscribe({
           next: () => {
-            this.snackBar.open('Config created successfully', 'Close', {duration: 3000});
+            this.toastService.showSuccess('Config created successfully');
             this.router.navigate(['/integrations']);
           },
           error: () => {
             this.loading = false;
-            this.snackBar.open('Failed to create config', 'Close', {duration: 3000});
+            this.toastService.showError('Failed to create config');
           }
         });
       }
     } else {
       this.settingsForm.markAllAsTouched();
-      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', {duration: 4000});
+      this.toastService.showError('Please correct the highlighted errors before submitting.');
     }
   }
 
@@ -134,20 +134,14 @@ export class JiraSettingsCreateComponent implements OnInit {
       next: (res: any) => {
         this.testingConnection = false;
         if (res && res.success) {
-          this.snackBar.open('Connection successful!', 'Close', {
-            duration: 3000,
-            panelClass: ['bg-green-600', 'text-white']
-          });
+          this.toastService.showSuccess('Connection successful!');
         } else {
-          this.snackBar.open('Connection failed. Check credentials.', 'Close', {
-            duration: 4000,
-            panelClass: ['bg-red-600', 'text-white']
-          });
+          this.toastService.showError('Connection failed. Check credentials.');
         }
       },
       error: () => {
         this.testingConnection = false;
-        this.snackBar.open('Error testing connection.', 'Close', {duration: 3000});
+        this.toastService.showError('Error testing connection.');
       }
     });
   }

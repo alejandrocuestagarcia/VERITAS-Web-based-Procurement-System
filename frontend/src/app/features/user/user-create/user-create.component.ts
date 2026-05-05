@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../core/services/toast.service';
 import {
   TeamsModuleService,
   UserCreationRequestDto,
@@ -28,7 +28,7 @@ export class UserCreateComponent implements OnInit {
               private router: Router,
               private userService: UserModuleService,
               private teamService: TeamsModuleService,
-              private snackBar: MatSnackBar) {
+              private toastService: ToastService) {
   }
 
   ngOnInit(): void {
@@ -42,7 +42,7 @@ export class UserCreateComponent implements OnInit {
         this.teams = teams;
       },
       error: () => {
-        this.snackBar.open('Failed to load teams', 'Close', { duration: 3000 });
+        this.toastService.showError('Failed to load teams');
       }
     });
   }
@@ -77,17 +77,17 @@ export class UserCreateComponent implements OnInit {
       this.userService.createUser(request).subscribe({
         next: () => {
           this.loading = false;
-          this.snackBar.open('User created successfully', 'Close', { duration: 3000 });
+          this.toastService.showSuccess('User created successfully');
           this.router.navigate(['/users']);
         },
         error: err => {
           this.loading = false;
-          this.snackBar.open('Failed to create user. Please try again.', 'Close', { duration: 5000 });
+          this.toastService.showError('Failed to create user. Please try again.');
         }
       })
     } else {
       this.userForm.markAllAsTouched();
-      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', { duration: 4000 });
+      this.toastService.showError('Please correct the highlighted errors before submitting.');
     }
   }
 

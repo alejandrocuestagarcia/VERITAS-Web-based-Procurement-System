@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { VendorModuleService } from '../../../core/api';
 import { VendorDto } from '../../../core/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatSnackBar } from "@angular/material/snack-bar";
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-vendor-create',
@@ -18,7 +18,7 @@ export class VendorCreateComponent implements OnInit {
     private fb: FormBuilder,
     private vendorService: VendorModuleService,
     private router: Router,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
   ) { }
 
   ngOnInit(): void {
@@ -54,17 +54,17 @@ export class VendorCreateComponent implements OnInit {
       this.vendorService.createVendor(request).subscribe({
         next: () => {
           this.loading = false;
-          this.snackBar.open('Vendor added successfully', 'Close', { duration: 3000 });
+          this.toastService.showSuccess('Vendor added successfully');
           this.router.navigate(['/vendors']);
         },
         error: err => {
           this.loading = false;
-          this.snackBar.open('Failed to add vendor. Please try again.', 'Close', { duration: 5000 });
+          this.toastService.showError('Failed to add vendor. Please try again.');
         }
       })
     } else {
       this.vendorForm.markAllAsTouched();
-      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', { duration: 4000 });
+      this.toastService.showError('Please correct the highlighted errors before submitting.');
     }
   }
 

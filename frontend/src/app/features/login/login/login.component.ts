@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {AuthResponseDto, LoginRequestDto} from "../../../core/api";
 import {Router} from "@angular/router";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {ToastService} from "../../../core/services/toast.service";
 import {AuthService} from "../../../core/services/auth.service";
 
 @Component({
@@ -19,7 +19,7 @@ export class LoginComponent {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {
   }
 
@@ -40,11 +40,6 @@ export class LoginComponent {
   }
 
   private showError(message: string) {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: "top",
-      panelClass: ['error-snackbar']
-    })
+    this.toastService.showError(message);
   }
 }

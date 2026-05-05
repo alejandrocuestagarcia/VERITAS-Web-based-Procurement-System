@@ -7,7 +7,7 @@ import {
 } from "../../../core/api";
 import {ActivatedRoute, Router} from "@angular/router";
 import { AuthService } from '../../../core/services/auth.service';
-import {MatSnackBar} from "@angular/material/snack-bar";
+import { ToastService } from '../../../core/services/toast.service';
 import {ResetPasswordDialogComponent} from "../../login/reset-password-dialog/reset-password-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
 
@@ -33,7 +33,7 @@ export class UserEditComponent implements OnInit {
     private teamService: TeamsModuleService,
     private authService: AuthService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -75,7 +75,7 @@ export class UserEditComponent implements OnInit {
   private loadTeams(): void {
     this.teamService.getAllTeams().subscribe({
       next: (teams) => this.teams = teams,
-      error: () => this.snackBar.open('Failed to load teams.', 'Close', { duration: 3000 })
+      error: () => this.toastService.showError('Failed to load teams.')
     });
   }
 
@@ -101,7 +101,7 @@ export class UserEditComponent implements OnInit {
 
       },
       error: () => {
-        this.snackBar.open('Failed to load user.', 'Close', { duration: 3000 });
+        this.toastService.showError('Failed to load user.');
         this.router.navigate(['/users']);
       }
     });
@@ -125,19 +125,19 @@ export class UserEditComponent implements OnInit {
       this.userService.editUser(this.userId, request).subscribe({
         next: () => {
           this.loading = false;
-          this.snackBar.open('User updated successfully', 'Close', { duration: 3000 });
+          this.toastService.showSuccess('User updated successfully');
           this.router.navigate(['/users']);
         },
         error: (err) => {
           this.loading = false;
           const message = err.status === 409 ? 'Email is already in use.'
             : err.status === 400 ? err.error : 'Failed to update user. Please try again.';
-          this.snackBar.open(message, 'Close', { duration: 5000 });
+          this.toastService.showError(message);
         }
       });
     } else {
       this.userForm.markAllAsTouched();
-      this.snackBar.open('Please correct the highlighted errors before submitting.', 'Close', { duration: 4000 });
+      this.toastService.showError('Please correct the highlighted errors before submitting.');
     }
   }
 
@@ -156,14 +156,12 @@ export class UserEditComponent implements OnInit {
 
       this.authService.adminResetPassword(this.userId, tempPassword).subscribe({
         next: () => {
-          this.snackBar.open(
-            'Password reset successful. Account flagged for mandatory change.',
-            'Close',
-            { duration: 5000, panelClass: ['success-snackbar'] }
+          this.toastService.showSuccess(
+            'Password reset successful. Account flagged for mandatory change.'
           );
         },
         error: (err: any) => {
-          this.snackBar.open(err.error?.message || 'Failed to reset password', 'Close');
+          this.toastService.showError(err.error?.message || 'Failed to reset password');
         }
       });
     });
