@@ -12,7 +12,7 @@ public interface RequisitionMapper {
     @Mapping(target = "projectName", source = "projectID.name")
     @Mapping(target = "teamName", source = "teamID.name")
     @Mapping(target = "requesterName", source = "userID.name")
-    @Mapping(target = "status", expression = "java(request.getCurrentStepID() != null ? request.getCurrentStepID().getStepName() : \"DRAFT\")")
+    @Mapping(target = "status", expression = "java(request.getCurrentStepID() != null ? request.getCurrentStepID().getName() : \"DRAFT\")")
     @Mapping(target = "requestName", source = "requestName")
     @Mapping(target = "priority", source = "priority")
     RequisitionDto toDto(Request request);

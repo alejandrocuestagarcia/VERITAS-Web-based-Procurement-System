@@ -13,7 +13,7 @@ import {
   RequisitionCreateDto, RequisitionCreateDtoPriorityEnum
 } from '../../../core/api';
 import { MatDialog } from '@angular/material/dialog';
-import { WorkflowEditorComponent } from '../../workflow-editor/workflow-editor.component';
+import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
 
 @Component({
   selector: 'app-requisition-create',

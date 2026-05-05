@@ -4,10 +4,13 @@ import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
+import com.veritas.backend.workflow.mapper.WorkflowMapper;
+import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -21,17 +24,21 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/workflows")
+@RequestMapping(path = "/workflows", produces = MediaType.APPLICATION_JSON_VALUE)
 @IsFinanceOfficer
 @Tag(name = "Workflow Module", description = "Management of procurement process templates and BPMN logic")
 public class WorkflowController {
 
     private final WorkflowService workflowService;
+    private final WorkflowMapper workflowMapper;
+    private final WorkflowDefinitionRepository workflowDefinitionRepository;
 
     @Operation(summary = "List workflows", description = "Retrieves a list of all available procurement workflow templates.")
     @GetMapping
     public List<WorkflowDto> getAllWorkflows() {
-        return List.of();
+        return workflowDefinitionRepository.findAllByIsActiveTrue().stream()
+            .map(workflowMapper::toWorkflowDto)
+            .collect(Collectors.toList());
     }
 
     @Operation(summary = "Get workflow", description = "Retrieves a workflow.")

@@ -18,10 +18,10 @@ import {roleGuard} from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
-import { JiraSettingsListComponent } from "./features/jira-settings/jira-settings-list.component";
-import { JiraSettingsCreateComponent } from "./features/jira-settings/jira-settings-create.component";
-import {WorkflowEditorComponent} from "./features/workflow-editor/workflow-editor.component";
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
+import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workflow-editor.component";
+import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
+import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
 
 const routes: Routes = [
   {
