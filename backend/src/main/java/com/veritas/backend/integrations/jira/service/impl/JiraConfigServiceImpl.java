@@ -12,7 +12,11 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JiraConfigServiceImpl implements JiraConfigService {
@@ -22,10 +26,10 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     private final DynamicJiraScheduler scheduler;
 
     @Override
-    public List<JiraConfigResponseDto> getAllConfigs() {
-        return repository.findAll().stream()
-            .map(mapper::toDto)
-            .collect(Collectors.toList());
+    public Page<JiraConfigResponseDto> getAllConfigs(Pageable pageable, String filter) {
+        log.debug("Fetching filtered users – filter: '{}', page: {}", filter, pageable.getPageNumber());
+        String query = (filter != null && !filter.isBlank()) ? "%" + filter.trim().toLowerCase() + "%" : null;
+        return repository.findAllFiltered(query, pageable).map(mapper::toDto);
     }
 
     @Override

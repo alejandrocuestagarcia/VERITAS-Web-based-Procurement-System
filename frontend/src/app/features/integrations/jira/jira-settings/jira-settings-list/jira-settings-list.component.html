@@ -13,6 +13,10 @@
     <mat-icon>history</mat-icon>
     <span>Sync History</span>
   </button>
+  <button filters mat-stroked-button color="accent" (click)="syncAll()" [disabled]="loading">
+    <mat-icon [class.animate-spin]="loading">sync</mat-icon>
+    <span>Sync All</span>
+  </button>
 
   <!-- Columns -->
   <ng-container columns>
@@ -32,8 +36,8 @@
     </ng-container>
 
     <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>STATUS</th>
-      <td mat-cell *matCellDef="let config">
+      <th class = "!text-center"  mat-header-cell *matHeaderCellDef>STATUS</th>
+      <td class = "!text-center" mat-cell *matCellDef="let config">
         <span *ngIf="isRunning(config)" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <span class="w-1.5 h-1.5 mr-1.5 bg-green-500 rounded-full animate-pulse"></span>
           Active
@@ -45,9 +49,9 @@
     </ng-container>
 
     <ng-container matColumnDef="nextSync">
-      <th mat-header-cell *matHeaderCellDef>NEXT SYNC</th>
+      <th class = "!text-center"  mat-header-cell *matHeaderCellDef>NEXT SYNC</th>
       <td mat-cell *matCellDef="let config" class="text-slate-500">
-        <div class="flex items-center gap-1" *ngIf="isRunning(config)">
+        <div class="justify-center flex items-center gap-1" *ngIf="isRunning(config)">
           <mat-icon class="text-[14px] w-[14px] h-[14px] pt-1.5">schedule</mat-icon>
           {{ getNextSyncTime(config) | date:'shortTime' }}
         </div>
@@ -56,9 +60,9 @@
     </ng-container>
 
     <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
+      <th class = "!text-center" mat-header-cell *matHeaderCellDef>ACTIONS</th>
       <td mat-cell *matCellDef="let config">
-        <div class="flex items-center gap-1">
+        <div class="flex justify-center items-center gap-1">
           <button mat-icon-button color="accent" (click)="triggerSync(config)" matTooltip="Sync Now">
             <mat-icon>sync</mat-icon>
           </button>
