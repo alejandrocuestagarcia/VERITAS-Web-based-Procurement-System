@@ -57,6 +57,7 @@ public class WorkflowController {
         return ResponseEntity.ok(workflowService.getWorkflow(id));
     }
 
+    @IsFinanceOfficer
     @Operation(summary = "Save workflow", description = "Saves a new workflow configuration (BPMN/XML) created in the editor.")
     @IsFinanceOfficer
     @PostMapping(consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -67,6 +68,7 @@ public class WorkflowController {
         return ResponseEntity.created(workflowURI).body(workflowDto);
     }
 
+    @IsFinanceOfficer
     @Operation(summary = "Edit Workflow", description = "Edits an existing workflow.")
     @IsFinanceOfficer
     @PatchMapping(path = "/{id}", consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)

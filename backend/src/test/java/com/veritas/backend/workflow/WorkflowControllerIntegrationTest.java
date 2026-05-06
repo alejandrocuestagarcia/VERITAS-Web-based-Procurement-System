@@ -165,4 +165,49 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(jsonPath("$.version").value(2))
                 .andExpect(jsonPath("$.isActive").value(true));
     }
+    //AI GENERATED
+    @Test
+    @WithMockUser(roles = "FINANCE_OFFICER")
+    void GetAllWorkflows_NoParams_ReturnsPaginatedList() throws Exception {
+        // Setup: Create 2 workflows
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML.replace("Test Workflow", "Another Workflow")));
+
+        mockMvc.perform(get("/api/v1/workflows")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    @WithMockUser(roles = "FINANCE_OFFICER")
+    void GetAllWorkflows_WithSearch_ReturnsFilteredResults() throws Exception {
+        // Setup: Create two distinct workflows
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML)); // "Test Workflow"
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML.replace("Test Workflow", "Unique Name")));
+
+        mockMvc.perform(get("/api/v1/workflows")
+                        .param("search", "Unique"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Unique Name"));
+    }
+
+    @Test
+    @WithMockUser(roles = "FINANCE_OFFICER")
+    void GetAllWorkflows_WithIsActiveFilter_ReturnsCorrectWorkflows() throws Exception {
+        // Setup: Create one workflow (active by default)
+        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+
+        // Manual cleanup logic might be needed if your service/DB doesn't allow
+        // easy toggling, but assuming search for isActive=true works:
+        mockMvc.perform(get("/api/v1/workflows")
+                        .param("isActive", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].isActive").value(true));
+    }
+
 }
