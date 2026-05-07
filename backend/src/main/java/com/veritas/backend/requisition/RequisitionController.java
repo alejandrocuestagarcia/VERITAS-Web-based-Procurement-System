@@ -9,6 +9,7 @@ import com.veritas.backend.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public class RequisitionController {
     @Operation(summary = "Create a request", description = "Creates a new procurement request.")
     @IsRequester
     @PostMapping
-    public ResponseEntity<RequisitionDto> createRequest(@RequestBody RequisitionCreateDto requestBody,
+    public ResponseEntity<RequisitionDto> createRequest(@Valid @RequestBody RequisitionCreateDto requestBody,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.status(HttpStatus.CREATED).body(requisitionService.createRequest(requestBody, user));
     }
