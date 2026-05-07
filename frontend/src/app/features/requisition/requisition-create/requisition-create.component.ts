@@ -75,9 +75,7 @@ export class RequisitionCreateComponent implements OnInit {
     return workflow?.name || 'Not selected';
   }
 
-  getTotalCost(): number {
-    return this.items.value.reduce((acc: number, item: any) => acc + (item.quantity * item.estimatedPrice), 0);
-  }
+
   onOpenedChange(opened: boolean): void {
     if (!opened) {
       this.projectSearch = '';
@@ -159,7 +157,6 @@ export class RequisitionCreateComponent implements OnInit {
     return this.fb.group({
       name: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
-      estimatedPrice: [0, [Validators.required, Validators.min(0.01)]],
       description: ['']
     });
   }
@@ -202,7 +199,6 @@ export class RequisitionCreateComponent implements OnInit {
         items: this.items.value.map((item: any) => ({
           name: item.name,
           quantity: item.quantity,
-          estimatedPrice: item.estimatedPrice,
           description: item.description
         }))
       };

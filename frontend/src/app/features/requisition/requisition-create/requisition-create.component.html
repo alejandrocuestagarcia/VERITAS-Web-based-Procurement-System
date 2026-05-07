@@ -202,8 +202,8 @@
         <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
           <p class="text-sm text-blue-800 m-0 flex items-center gap-2">
             <mat-icon class="text-blue-500 h-5 w-5 leading-5 text-[20px]">info</mat-icon>
-            List your required items below. Use the quotes you attached in Step 2 to provide an estimated budget.
-            Procurement will finalize the exact prices later.
+            List your required items below. Use the quotes you attached in Step 2 for reference.
+            Procurement will handle the technical specifications and pricing later.
           </p>
         </div>
 
@@ -230,12 +230,7 @@
                 </mat-form-field>
               </app-shared-form-field>
 
-              <app-shared-form-field label="Est. Budget per Item" [required]="true">
-                <mat-form-field appearance="outline" class="w-full">
-                  <span matPrefix class="mr-3 ml-1">€</span>
-                  <input matInput type="number" formControlName="estimatedPrice">
-                </mat-form-field>
-              </app-shared-form-field>
+
 
               <app-shared-form-field label="Item Specifications / Description (Optional)" [fullWidth]="true">
                 <mat-form-field appearance="outline" class="w-full">
@@ -328,24 +323,15 @@
               <tr>
                 <th class="px-6 py-3">Description</th>
                 <th class="px-6 py-3 text-center w-24">Qty</th>
-                <th class="px-6 py-3 text-right w-40">Est. Price</th>
-                <th class="px-6 py-3 text-right w-40">Total</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr *ngFor="let item of items.value">
                 <td class="px-6 py-4 text-slate-800 font-medium">{{ item.name }}</td>
                 <td class="px-6 py-4 text-center text-slate-600">{{ item.quantity }}</td>
-                <td class="px-6 py-4 text-right text-slate-600">${{ item.estimatedPrice | number:'1.2-2' }}</td>
-                <td class="px-6 py-4 text-right text-slate-900 font-bold">${{ (item.quantity * item.estimatedPrice) | number:'1.2-2' }}</td>
               </tr>
             </tbody>
-            <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
-              <tr>
-                <td colspan="3" class="px-6 py-4 text-right text-slate-500">Estimated Total Cost</td>
-                <td class="px-6 py-4 text-right text-blue-700 text-lg">${{ getTotalCost() | number:'1.2-2' }}</td>
-              </tr>
-            </tfoot>
+
           </table>
         </div>
 
