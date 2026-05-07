@@ -157,8 +157,7 @@ body {
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f4f4f4 !important;
-    border-color: rgba(195, 198, 214, 0.5) !important;
+    opacity: 0.9;
   }
 }
 

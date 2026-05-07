@@ -3,6 +3,8 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Pageable, VendorDto, VendorModuleService } from "../../../core/api";
 import { PageEvent } from "@angular/material/paginator";
 import { SharedTableComponent } from "../../../shared/components/table/shared-table.component";
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-vendor-list',
@@ -24,8 +26,10 @@ export class VendorListComponent implements OnInit {
 
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  constructor(private readonly vendorService: VendorModuleService) {
-  }
+  constructor(
+    private readonly vendorService: VendorModuleService,
+    private dialog: MatDialog
+  ) { }
 
   ngOnInit(): void {
     this.loadVendors(0, 10);
@@ -81,7 +85,14 @@ export class VendorListComponent implements OnInit {
   }
 
   deleteVendor(vendor: VendorDto) {
-    return ""
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: { title: 'Delete Vendor', message: `Are you sure you want to delete "${vendor.vendorName}"?` }
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        // TODO: call deleteVendor
+      }
+    });
   }
 
   private loadVendorStats() {
