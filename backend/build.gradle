@@ -76,22 +76,43 @@ openApi {
 	}
 }
 
-tasks.named('test') {
+tasks.withType(Test).configureEach {
 	useJUnitPlatform()
 	testLogging {
 		events "passed", "skipped", "failed"
 		showStandardStreams = true
 		exceptionFormat = "full"
 	}
+}
+
+tasks.named('test') {
 	finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
-	dependsOn test
+	dependsOn(tasks.named('test'))
 	reports {
 		xml.required = true
 		html.required = true
 	}
+}
+
+tasks.register('unitTest', Test) {
+	group = 'verification'
+	description = 'Runs only unit tests'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	include '**/*UnitTest.class'
+	exclude '**/*IntegrationTest.class', '**/*IT.class'
+}
+
+tasks.register('integrationTest', Test) {
+	group = 'verification'
+	description = 'Runs only integration tests'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	include '**/*IntegrationTest.class', '**/*IT.class'
+	shouldRunAfter tasks.named('unitTest')
 }
 
 tasks.withType(JavaCompile).configureEach {
