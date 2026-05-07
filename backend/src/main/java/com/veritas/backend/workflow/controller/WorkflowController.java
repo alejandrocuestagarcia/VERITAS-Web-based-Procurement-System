@@ -36,6 +36,7 @@ public class WorkflowController {
     @Operation(summary = "List workflows", description = "Retrieves a list of all available procurement workflow templates.")
     @GetMapping
     public List<WorkflowDto> getAllWorkflows() {
+        // TODO: Implement pagination and server-side search.
         return workflowDefinitionRepository.findAllByIsActiveTrue().stream()
             .map(workflowMapper::toWorkflowDto)
             .collect(Collectors.toList());

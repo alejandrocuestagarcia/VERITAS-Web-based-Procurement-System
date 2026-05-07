@@ -89,6 +89,8 @@ export class RequisitionCreateComponent implements OnInit {
   }
   viewWorkflow(id: number | undefined): void {
     if (id) {
+      // TODO: Change this to a read-only component, once viewing workflows by ID is implemented.
+      // Currently using WorkflowEditorComponent as a placeholder.
       this.dialog.open(WorkflowEditorComponent, {
         width: '90vw',
         height: '90vh',
@@ -157,6 +159,7 @@ export class RequisitionCreateComponent implements OnInit {
     return this.fb.group({
       name: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
+      unit: ['', Validators.required],
       description: ['']
     });
   }
@@ -181,6 +184,7 @@ export class RequisitionCreateComponent implements OnInit {
       error: () => this.snackBar.open('Failed to load projects', 'Close', { duration: 3000 })
     });
 
+    // TODO: Implement pagination and server-side search for workflows.
     this.workflowService.getAllWorkflows().subscribe({
       next: (workflows) => this.workflows = workflows,
       error: () => this.snackBar.open('Failed to load workflows', 'Close', { duration: 3000 })
@@ -199,6 +203,7 @@ export class RequisitionCreateComponent implements OnInit {
         items: this.items.value.map((item: any) => ({
           name: item.name,
           quantity: item.quantity,
+          unit: item.unit,
           description: item.description
         }))
       };

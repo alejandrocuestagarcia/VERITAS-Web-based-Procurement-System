@@ -88,6 +88,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                 item.setRequest(savedRequest);
                 item.setName(itemDto.name());
                 item.setQuantity(itemDto.quantity());
+                item.setUnit(itemDto.unit());
                 item.setDescription(itemDto.description());
                 requestItemRepository.save(item);
                 savedRequest.getItems().add(item);

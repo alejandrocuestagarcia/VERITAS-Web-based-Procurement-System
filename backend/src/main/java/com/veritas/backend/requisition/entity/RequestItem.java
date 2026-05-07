@@ -3,8 +3,6 @@ package com.veritas.backend.requisition.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "request_items")
 @Data
@@ -23,8 +21,8 @@ public class RequestItem {
     @Column(nullable = false)
     private Integer quantity;
 
-    @Column(nullable = false, precision = 19, scale = 4)
-    private BigDecimal estimatedPrice;
+    @Column(nullable = false)
+    private String unit;
 
     @Column(columnDefinition = "TEXT")
     private String description;

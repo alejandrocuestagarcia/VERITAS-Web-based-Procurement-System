@@ -12,5 +12,8 @@ public record RequisitionItemCreateDto(
     @Positive(message = "Quantity must be greater than zero")
     Integer quantity,
 
+    @NotBlank(message = "Unit is required")
+    String unit,
+
     String description
 ) {}
