@@ -89,7 +89,7 @@ public class RequisitionController {
 
     @Operation(summary = "Bulk upload quotes", description = "Uploads a CSV file containing multiple vendor quotes for a specific request.")
     @IsRequester
-    @PostMapping(value = "/{id}/quotes/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadQuotes(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         requisitionService.saveAttachment(id, file);
         return ResponseEntity.ok("File " + file.getOriginalFilename() + " uploaded for request " + id);

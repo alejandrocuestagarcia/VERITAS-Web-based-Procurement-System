@@ -227,7 +227,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "quote.pdf", "application/pdf", "PDF data".getBytes());
 
-        mockMvc.perform(multipart("/api/v1/requisitions/" + requestId + "/quotes/bulk")
+        mockMvc.perform(multipart("/api/v1/requisitions/" + requestId + "/attachments")
                         .file(file)
                         .header("Authorization", "Bearer " + requesterToken))
                 .andExpect(status().isOk())
