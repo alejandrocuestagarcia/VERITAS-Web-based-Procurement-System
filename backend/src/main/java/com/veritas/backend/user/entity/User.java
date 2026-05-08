@@ -93,4 +93,9 @@ public class User implements UserDetails {
     public String getUsername() {
         return this.email;
     }
+
+    @Override
+    public boolean isEnabled() {
+        return Boolean.TRUE.equals(this.isActive);
+    }
 }
