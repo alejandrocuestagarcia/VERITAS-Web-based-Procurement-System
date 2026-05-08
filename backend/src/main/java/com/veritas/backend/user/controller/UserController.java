@@ -1,5 +1,6 @@
 package com.veritas.backend.user.controller;
 
+import com.veritas.backend.config.annotations.IsAdministrator;
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -81,6 +83,15 @@ public class UserController {
         URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id()).toUri();
         log.info("User created successfully – id: {}, email: {}", userDto.id(), userDto.email());
         return ResponseEntity.created(userUri).body(userDto);
+    }
+
+    @Operation(summary = "Delete user", description = "Deletes a user.")
+    @IsAdministrator
+    @DeleteMapping(path = "/{id}")
+    public ResponseEntity<Object> deleteByUserId(@PathVariable Long id) {
+        log.info("DELETE /users/{}", id);
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

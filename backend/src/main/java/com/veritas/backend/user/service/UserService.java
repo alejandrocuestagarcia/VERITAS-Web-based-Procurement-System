@@ -20,4 +20,6 @@ public interface UserService {
   UserStatsDto getUserStats();
 
   Page<UserDto> getAllUsersFiltered(Pageable pageable, String filter, UserRole userRole);
+
+  void deleteUser(Long id);
 }

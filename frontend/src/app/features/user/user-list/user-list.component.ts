@@ -7,6 +7,7 @@ import { AuthService } from "../../../core/services/auth.service";
 import { Router } from "@angular/router";
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import {ToastService} from "../../../core/services/toast.service";
 
 @Component({
   selector: 'app-user-list',
@@ -34,7 +35,8 @@ export class UserListComponent implements OnInit {
     private readonly userService: UserModuleService,
     private router: Router,
     protected authService: AuthService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private toastService: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -103,7 +105,16 @@ export class UserListComponent implements OnInit {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        // TODO: call deleteUser
+        this.userService.deleteByUserId(user.id!).subscribe({
+          next: () => {
+            this.toastService.showSuccess('User deactivated successfully');
+            this.loadUsers(0, 10);
+            this.loadUserStats();
+          },
+          error: (err) => {
+            this.toastService.showError("User Deactivation failed: " + err);
+          }
+        })
       }
     });
   }

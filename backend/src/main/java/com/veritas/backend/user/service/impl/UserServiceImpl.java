@@ -1,5 +1,6 @@
 package com.veritas.backend.user.service.impl;
 
+import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -13,6 +14,8 @@ import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.UserService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +33,7 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final TeamRepository teamRepository;
+  private final RefreshTokenRepository refreshTokenRepository;
   private final UserMapper userMapper;
 
   @Override
@@ -149,12 +153,11 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserStatsDto getUserStats() {
-    long total = userRepository.count();
-
+    long active = userRepository.countByIsActiveTrue();
     long inactive = userRepository.countByIsActiveFalse();
 
-    log.debug("User stats – total: {}, inactive: {}", total, inactive);
-    return new UserStatsDto(total, inactive, 0);
+    log.debug("User stats – active: {}, inactive: {}", active, inactive);
+    return new UserStatsDto(active, inactive, 0);
   }
 
   @Override
@@ -165,5 +168,22 @@ public class UserServiceImpl implements UserService {
 
     return userRepository.findAllFiltered(query, userRole, pageable).map(userMapper::toUserDto);
   }
-}
 
+  @Override
+  @Transactional
+  public void deleteUser(Long id) {
+
+    Optional<User> user = userRepository.findById(id);
+
+    if (user.isPresent()) {
+      User actualUser = user.get();
+      actualUser.setIsActive(false);
+      actualUser.setDeletedAt(LocalDateTime.now());
+
+      refreshTokenRepository.deleteByUserId(actualUser.getId());
+
+      userRepository.save(actualUser);
+    }
+
+  }
+}

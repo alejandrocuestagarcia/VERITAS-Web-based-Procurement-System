@@ -18,13 +18,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   boolean existsByEmail(String email);
 
-  @Query("SELECT u from User u where " +
+  @Query("SELECT u from User u where u.isActive = true and " +
       "(:role is null or u.role = :role) and " +
       "(:search IS NULL OR (LOWER(u.name) LIKE :search OR LOWER(u.email) LIKE :search))")
   Page<User> findAllFiltered(@Param("search") String search, @Param("role") UserRole role,
                              Pageable pageable);
 
   long countByIsActiveFalse();
+
+  long countByIsActiveTrue();
 
   List<User> findAllByTeamTeamId(Long teamId);
 }
