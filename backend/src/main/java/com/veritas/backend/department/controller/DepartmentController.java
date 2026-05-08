@@ -55,4 +55,22 @@ public class DepartmentController {
         URI departmentURI = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(departmentDto.id()).toUri();
         return ResponseEntity.created(departmentURI).body(departmentDto);
     }
+
+    @Operation(summary = "Update department", description = "Updates an existing department.")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @IsFinanceOfficer
+    public ResponseEntity<DepartmentDto> updateDepartment(@PathVariable Long id, @Valid @RequestBody DepartmentCreateDto request) {
+        log.info("PUT /departments/{} – updating department with name: {}", id, request.name());
+        return ResponseEntity.ok(departmentService.updateDepartment(id, request));
+    }
+
+    @Operation(summary = "Delete department", description = "Deletes an existing department.")
+    @DeleteMapping(value = "/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @IsFinanceOfficer
+    public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
+        log.info("DELETE /departments/{}", id);
+        departmentService.deleteDepartment(id);
+        return ResponseEntity.noContent().build();
+    }
 }

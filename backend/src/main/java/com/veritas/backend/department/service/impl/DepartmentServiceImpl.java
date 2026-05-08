@@ -39,4 +39,23 @@ public class DepartmentServiceImpl implements DepartmentService {
     public DepartmentDto getDepartmentById(Long id) {
         return departmentMapper.toDepartmentDto(departmentRepository.getDepartmentByDepartmentId(id));
     }
+
+    @Override
+    public DepartmentDto updateDepartment(Long id, DepartmentCreateDto request) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Department not found with id " + id));
+        if (departmentRepository.existsByName(request.name()) && !department.getName().equals(request.name())) {
+            throw new EntityExistsException("Department with name " + request.name() + " already exists");
+        }
+        department.setName(request.name());
+        return departmentMapper.toDepartmentDto(departmentRepository.save(department));
+    }
+
+    @Override
+    public void deleteDepartment(Long id) {
+        if (!departmentRepository.existsById(id)) {
+            throw new jakarta.persistence.EntityNotFoundException("Department not found with id " + id);
+        }
+        departmentRepository.deleteById(id);
+    }
 }
