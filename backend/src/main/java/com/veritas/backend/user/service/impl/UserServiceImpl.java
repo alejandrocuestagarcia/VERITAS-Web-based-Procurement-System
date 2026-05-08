@@ -206,6 +206,18 @@ public class UserServiceImpl implements UserService {
           requestRepository.saveAll(activeRequests);
       }
 
+      if (actualUser.getTeam() != null) {
+
+        Team team = actualUser.getTeam();
+
+        if (team.getLeader().equals(actualUser)) {
+          team.setLeader(null);
+          teamRepository.save(team);
+        }
+        actualUser.setTeam(null);
+
+      }
+
       refreshTokenRepository.deleteByUserId(actualUser.getId());
 
       userRepository.save(actualUser);
