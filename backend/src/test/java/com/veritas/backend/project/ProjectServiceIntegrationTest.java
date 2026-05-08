@@ -1,7 +1,6 @@
 package com.veritas.backend.project;
 
 import com.veritas.backend.BaseDBIntegrationTest;
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
@@ -81,7 +80,6 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.FINANCE_OFFICER)
                 .team(testingTeam)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 
@@ -99,7 +97,6 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.REQUESTER)
                 .team(testingTeam)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 
@@ -117,7 +114,6 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.PROCUREMENT_OFFICER)
                 .team(developmentTeam)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 

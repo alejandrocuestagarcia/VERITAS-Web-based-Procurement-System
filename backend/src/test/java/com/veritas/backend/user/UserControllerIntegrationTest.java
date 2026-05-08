@@ -3,7 +3,6 @@ package com.veritas.backend.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
@@ -76,7 +75,6 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     testTeam = new Team();
     testTeam.setName("Test Team");
-    testTeam.setDepartment(Department.IT);
     testTeam.setDescription("Description Placeholder");
 
     testTeam = teamRepository.save(testTeam);
@@ -242,7 +240,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   void UserCreation_ValidInput_ReturnsCreated() throws Exception {
     UserCreationRequestDto request = new UserCreationRequestDto(
         "newuser@veritas.com", "New User", "securePassword123",
-        UserRole.ADMINISTRATOR, testTeam.getTeamId(), Department.IT, false);
+        UserRole.ADMINISTRATOR, testTeam.getTeamId(), 1L, false);
 
     mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -257,7 +255,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   void UserCreation_DuplicateEmail_ReturnsConflict() throws Exception {
     UserCreationRequestDto request1 = new UserCreationRequestDto(
         "duplicate@veritas.com", "First User", "securePassword123",
-        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), Department.IT, false);
+        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), 1L, false);
 
     mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -266,7 +264,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     UserCreationRequestDto request2 = new UserCreationRequestDto(
         "duplicate@veritas.com", "Second User", "securePassword456",
-        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), Department.IT, false);
+        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), 1L, false);
 
     mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -416,7 +414,6 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     Team newTeam = new Team();
     newTeam.setName("Other Team");
-    newTeam.setDepartment(Department.IT);
     newTeam.setDescription("IT Department Team");
     teamRepository.save(newTeam);
 

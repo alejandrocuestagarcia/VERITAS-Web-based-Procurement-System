@@ -5,7 +5,6 @@ import com.veritas.backend.audit.dto.AuditLogDto;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.AuditService;
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -59,7 +58,6 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
                 .email("actor@yahoo.com")
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.PROCUREMENT_OFFICER)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 

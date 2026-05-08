@@ -6,7 +6,6 @@ import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
 import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.auth.service.AuthService;
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
@@ -50,7 +49,6 @@ class AuthServiceLogoutIntegrationTest extends BaseDBIntegrationTest {
                 .email("requester@test.com")
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.REQUESTER)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 

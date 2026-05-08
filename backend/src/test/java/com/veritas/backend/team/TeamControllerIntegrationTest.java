@@ -3,7 +3,6 @@ package com.veritas.backend.team;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.dto.TeamCreateDto;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -118,7 +117,6 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         String token = createTokenForRole(UserRole.FINANCE_OFFICER);
         TeamCreateDto request = new TeamCreateDto();
         request.setName("Incomplete Team");
-        request.setDepartment(Department.IT);
 
         mockMvc.perform(post("/api/v1/teams")
                         .header("Authorization", "Bearer " + token)
@@ -170,7 +168,6 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 .email("leader-" + UUID.randomUUID() + "@veritas.com")
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.PROCUREMENT_OFFICER)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 
@@ -231,7 +228,6 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 .email(role.name().toLowerCase() + "-" + UUID.randomUUID() + "@veritas.com")
                 .passwordHash(encoder.encode("password123"))
                 .role(role)
-                .department(Department.IT)
                 .isActive(true)
                 .build());
 
@@ -242,7 +238,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         TeamCreateDto request = new TeamCreateDto();
         request.setName(name);
         request.setDescription("Owns internal developer platform");
-        request.setDepartment(Department.IT);
+        request.setDepartmentId(1L);
         request.setExpiresAt(LocalDateTime.now().plusDays(30));
         return request;
     }
