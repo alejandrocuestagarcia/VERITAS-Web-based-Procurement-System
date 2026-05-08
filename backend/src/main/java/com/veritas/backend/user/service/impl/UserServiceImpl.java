@@ -24,6 +24,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.requisition.mapper.RequisitionMapper;
+import com.veritas.backend.requisition.dto.RequisitionDto;
+import com.veritas.backend.requisition.entity.Request;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,6 +41,8 @@ public class UserServiceImpl implements UserService {
   private final TeamRepository teamRepository;
   private final RefreshTokenRepository refreshTokenRepository;
   private final UserMapper userMapper;
+  private final RequestRepository requestRepository;
+  private final RequisitionMapper requisitionMapper;
 
   @Override
   @Transactional
@@ -170,8 +178,16 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public List<RequisitionDto> getPendingRequisitionsForUser(Long userId) {
+      return requestRepository.findActiveRequestsByUserId(userId).stream()
+              .map(requisitionMapper::toDto)
+              .toList();
+  }
+
+  @Override
   @Transactional
-  public void deleteUser(Long id) {
+  public void deleteUser(Long id, Long fallbackUserId) {
 
     Optional<User> user = userRepository.findById(id);
 
@@ -179,6 +195,16 @@ public class UserServiceImpl implements UserService {
       User actualUser = user.get();
       actualUser.setIsActive(false);
       actualUser.setDeletedAt(LocalDateTime.now());
+
+      if (fallbackUserId != null) {
+          User fallbackUser = userRepository.findById(fallbackUserId)
+                  .orElseThrow(() -> new EntityNotFoundException("Fallback user not found"));
+          List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
+          for (Request req : activeRequests) {
+              req.setUserID(fallbackUser);
+          }
+          requestRepository.saveAll(activeRequests);
+      }
 
       refreshTokenRepository.deleteByUserId(actualUser.getId());
 

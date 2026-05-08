@@ -2,6 +2,7 @@ package com.veritas.backend.user.controller;
 
 import com.veritas.backend.config.annotations.IsAdministrator;
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
+import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.dto.UserEditDto;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -85,12 +88,19 @@ public class UserController {
         return ResponseEntity.created(userUri).body(userDto);
     }
 
+    @Operation(summary = "Get pending requests for user", description = "Returns a list of pending requests assigned to the user.")
+    @GetMapping(path = "/{id}/pending-requests", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RequisitionDto>> getPendingRequisitions(@PathVariable Long id) {
+        log.info("GET /users/{}/pending-requests", id);
+        return ResponseEntity.ok(userService.getPendingRequisitionsForUser(id));
+    }
+
     @Operation(summary = "Delete user", description = "Deletes a user.")
     @IsAdministrator
     @DeleteMapping(path = "/{id}")
-    public ResponseEntity<Object> deleteByUserId(@PathVariable Long id) {
-        log.info("DELETE /users/{}", id);
-        userService.deleteUser(id);
+    public ResponseEntity<Object> deleteByUserId(@PathVariable Long id, @RequestParam(required = false) Long fallbackUserId) {
+        log.info("DELETE /users/{} with fallbackUserId: {}", id, fallbackUserId);
+        userService.deleteUser(id, fallbackUserId);
         return ResponseEntity.noContent().build();
     }
 
