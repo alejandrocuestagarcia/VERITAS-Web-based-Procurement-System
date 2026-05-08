@@ -3,6 +3,8 @@ package com.veritas.backend.team;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.dto.TeamCreateDto;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -51,13 +53,18 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
     UserRepository userRepository;
 
     @Autowired
+    DepartmentRepository departmentRepository;
+
+    @Autowired
     JwtService jwtService;
 
     @Autowired
-    PasswordEncoder encoder;
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    private PasswordEncoder encoder;
+
+    private Long departmentId;
 
     @BeforeEach
     void setup() {
@@ -69,6 +76,11 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
         userRepository.deleteAll();
         teamRepository.deleteAll();
+        departmentRepository.deleteAll();
+
+        Department department = Department.builder().name("IT").build();
+        department = departmentRepository.save(department);
+        departmentId = department.getDepartmentId();
     }
 
     @Test
@@ -238,7 +250,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         TeamCreateDto request = new TeamCreateDto();
         request.setName(name);
         request.setDescription("Owns internal developer platform");
-        request.setDepartmentId(1L);
+        request.setDepartmentId(departmentId);
         request.setExpiresAt(LocalDateTime.now().plusDays(30));
         return request;
     }
