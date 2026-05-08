@@ -1,6 +1,5 @@
 package com.veritas.backend.budget.entity;
 
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -15,9 +14,6 @@ public class InternalBudget {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "budget_id")
     private Long id;
-
-    @Enumerated(EnumType.STRING)
-    private Department department;
 
     @Column(name = "fiscal_year")
     private Integer fiscalYear;

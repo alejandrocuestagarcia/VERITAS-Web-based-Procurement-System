@@ -1,6 +1,6 @@
 package com.veritas.backend.team.entity;
 
-import com.veritas.backend.common.model.Department;
+import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -42,7 +42,7 @@ public class Team {
     private LocalDateTime expiresAt;
     private LocalDateTime createdAt;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(fetch = FetchType.LAZY)
     private Department department;
 
     /*

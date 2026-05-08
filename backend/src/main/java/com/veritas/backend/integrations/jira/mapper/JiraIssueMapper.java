@@ -8,10 +8,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-
 @Mapper(componentModel = "spring")
 public interface JiraIssueMapper {
 
@@ -30,7 +26,6 @@ public interface JiraIssueMapper {
     @Mapping(target = "workflowDefinitionID", ignore = true)
     @Mapping(target = "currentStepID", ignore = true)
     @Mapping(target = "projectID", ignore = true)
-    @Mapping(target = "department", ignore = true)
     @Mapping(target = "requestKey", ignore = true)
     @Mapping(target = "totalQuantity", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

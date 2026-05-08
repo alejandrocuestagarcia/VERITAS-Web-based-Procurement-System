@@ -1,5 +1,7 @@
 package com.veritas.backend.team.service.impl;
 
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.mapper.UserMapper;
 import jakarta.persistence.EntityExistsException;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -52,10 +55,13 @@ public class TeamServiceImpl implements TeamService {
             throw new EntityExistsException("Team with name '" + teamName + "' already exists");
         }
 
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new EntityNotFoundException("Department with id '" + request.getDepartmentId() + "' not found"));
+
         Team team = new Team();
         team.setName(teamName);
         team.setDescription(request.getDescription().trim());
-        team.setDepartment(request.getDepartment());
+        team.setDepartment(department);
         team.setExpiresAt(request.getExpiresAt());
         team.setIsActive(true);
 
@@ -128,7 +134,7 @@ public class TeamServiceImpl implements TeamService {
         dto.setId(team.getTeamId());
         dto.setName(team.getName());
         dto.setDescription(team.getDescription());
-        dto.setDepartment(team.getDepartment() != null ? team.getDepartment().name() : null);
+        dto.setDepartment(team.getDepartment() != null ? team.getDepartment().getName() : null);
         dto.setLeaderId(team.getLeader() != null ? team.getLeader().getId() : null);
         dto.setMembers(members);
         dto.setIsActive(team.getIsActive());
