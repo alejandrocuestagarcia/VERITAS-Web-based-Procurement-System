@@ -1,4 +1,4 @@
-package com.veritas.backend.requisition;
+package com.veritas.backend.requisition.controller;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.config.annotations.IsProcurementOfficer;
