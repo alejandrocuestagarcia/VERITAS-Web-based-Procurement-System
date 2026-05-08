@@ -33,8 +33,8 @@ gen-api:
   image: gradle:9.4.1-jdk21
   script:
     - cd backend
-    - ./gradlew generateOpenApiDocs --console=plain --quiet
-    - ./gradlew openApiGenerate --console=plain --quiet
+    - ./gradlew generateOpenApiDocs --console=plain --quiet --no-configuration-cache
+    - ./gradlew openApiGenerate --console=plain --quiet --no-configuration-cache
   artifacts:
     paths:
       - frontend/src/app/core/api/
