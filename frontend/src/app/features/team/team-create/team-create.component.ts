@@ -4,10 +4,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
 import {
   TeamCreateDto,
-  TeamCreateDtoDepartmentEnum,
   TeamsModuleService,
   UserDto,
-  UserModuleService
+  UserModuleService,
+  DepartmentsModuleService,
+  DepartmentDto
 } from '../../../core/api';
 
 interface TeamMemberOption {
@@ -26,13 +27,7 @@ interface TeamMemberOption {
 export class TeamCreateComponent implements OnInit {
   teamForm!: FormGroup;
 
-  readonly departmentOptions: Array<{ value: TeamCreateDtoDepartmentEnum; label: string }> = [
-    { value: TeamCreateDtoDepartmentEnum.It, label: 'Technology' },
-    { value: TeamCreateDtoDepartmentEnum.Rd, label: 'Research and Development' },
-    { value: TeamCreateDtoDepartmentEnum.Hr, label: 'Human Resources' },
-    { value: TeamCreateDtoDepartmentEnum.Sales, label: 'Sales' },
-    { value: TeamCreateDtoDepartmentEnum.Legal, label: 'Legal' }
-  ];
+  departments: DepartmentDto[] = [];
 
   leadOptions: TeamMemberOption[] = [];
   loadingLeads = false;
@@ -46,6 +41,7 @@ export class TeamCreateComponent implements OnInit {
   constructor(
     private userService: UserModuleService,
     private teamsService: TeamsModuleService,
+    private departmentsService: DepartmentsModuleService,
     private router: Router,
     private toastService: ToastService,
     private fb: FormBuilder
@@ -55,7 +51,7 @@ export class TeamCreateComponent implements OnInit {
     this.teamForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       leaderId: [null],
-      department: [null, Validators.required],
+      departmentId: [null, Validators.required],
       description: ['', [Validators.required, Validators.maxLength(500)]]
     });
 
@@ -64,6 +60,18 @@ export class TeamCreateComponent implements OnInit {
     });
 
     this.loadLeadOptions();
+    this.loadDepartments();
+  }
+
+  private loadDepartments(): void {
+    this.departmentsService.getAllDepartments().subscribe({
+      next: (depts) => {
+        this.departments = this.toArray<DepartmentDto>(depts);
+      },
+      error: () => {
+        this.toastService.showError('Failed to load departments.');
+      }
+    });
   }
 
   cancel(): void {
@@ -86,7 +94,7 @@ export class TeamCreateComponent implements OnInit {
     const payload: TeamCreateDto = {
       name: formValues.name.trim(),
       description: formValues.description.trim(),
-      department: formValues.department,
+      departmentId: formValues.departmentId,
       memberIds: this.additionalMembers.map(member => member.id)
     };
 
