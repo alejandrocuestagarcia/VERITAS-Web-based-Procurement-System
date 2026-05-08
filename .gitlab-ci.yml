@@ -65,7 +65,7 @@ build-image:
   script:
     - mkdir -p backend/src/main/resources/static
     - cp -r frontend/dist/veritas-app/* backend/src/main/resources/static/
-    - cd backend && ./gradlew jib -Djib.to.image=$IMAGE_TAG
+    - cd backend && ./gradlew jib --no-configuration-cache -Djib.to.image=$IMAGE_TAG
   only:
     - master
 
