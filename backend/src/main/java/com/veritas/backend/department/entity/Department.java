@@ -1,5 +1,6 @@
 package com.veritas.backend.department.entity;
 
+import com.veritas.backend.budget.entity.InternalBudget;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -21,8 +22,6 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long departmentId;
 
-    @NotBlank(message = "Department name is required")
-    @Size(max = 120, message = "Department name must be at most 120 characters")
     @Column(nullable = false, unique = true)
     private String name;
 

@@ -63,7 +63,6 @@ public class BackendApplication {
 						.email("admin@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.ADMINISTRATOR)
-						.department(department)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
@@ -76,7 +75,6 @@ public class BackendApplication {
 						.email("finance@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.FINANCE_OFFICER)
-						.department(department)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
@@ -89,7 +87,6 @@ public class BackendApplication {
 						.email("procurement@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.PROCUREMENT_OFFICER)
-						.department(department)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
@@ -102,7 +99,6 @@ public class BackendApplication {
 						.email("requester@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.REQUESTER)
-						.department(department)
 						.isActive(true)
 						.team(teamOne)
 						.requiresPasswordChange(false)

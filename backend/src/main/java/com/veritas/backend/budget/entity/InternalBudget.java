@@ -29,8 +29,4 @@ public class InternalBudget {
 
     @Column(name = "safety_buffer")
     private BigDecimal safetyBuffer = BigDecimal.ZERO;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
-    private Project project;
 }
