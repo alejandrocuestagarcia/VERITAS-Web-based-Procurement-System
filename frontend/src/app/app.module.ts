@@ -56,6 +56,8 @@ import { ResetPasswordDialogComponent } from './features/login/reset-password-di
 import { MatDialogModule } from "@angular/material/dialog";
 import { WorkflowEditorComponent } from './features/workflow/workflow-editor/workflow-editor.component';
 import { JiraIssuesSyncHistoryComponent } from './features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component';
+import { DepartmentListComponent } from './features/department/department-list/department-list.component';
+import { DepartmentCreateComponent } from './features/department/department-create/department-create.component';
 import { ConfirmationDialogComponent } from './shared/components/confirmation-dialog/confirmation-dialog.component';
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
 import { MatStepperModule } from "@angular/material/stepper";
@@ -99,7 +101,9 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
     JiraIssuesSyncHistoryComponent,
     RequisitionCreateComponent,
     PriorityBadgeComponent,
-    UserDeletionDialogComponent
+    UserDeletionDialogComponent,
+    DepartmentListComponent,
+    DepartmentCreateComponent
   ],
   imports: [
     BrowserModule,

@@ -18,11 +18,13 @@ import { VendorEditComponent } from "./features/vendor/vendor-edit/vendor-edit.c
 import {roleGuard} from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
-import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
 import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workflow-editor.component";
-import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
 import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
+import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
+import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
+import { DepartmentListComponent } from './features/department/department-list/department-list.component';
+import { DepartmentCreateComponent } from './features/department/department-create/department-create.component';
 
 const routes: Routes = [
   {
@@ -80,6 +82,24 @@ const routes: Routes = [
   {
     path: 'teams/create',
     component: TeamCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'departments',
+    component: DepartmentListComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'departments/create',
+    component: DepartmentCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'departments/edit/:id',
+    component: DepartmentCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },
