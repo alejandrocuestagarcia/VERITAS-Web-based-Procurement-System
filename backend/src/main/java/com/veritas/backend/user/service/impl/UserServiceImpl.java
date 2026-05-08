@@ -58,11 +58,6 @@ public class UserServiceImpl implements UserService {
         .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
     log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
 
-    if (userDto.promoteToTeamLeader() && !team.getDepartment().getDepartmentId().equals(userDto.departmentId())) {
-      log.warn("Team leader promotion rejected – department mismatch: user={}, team={}", userDto.departmentId(), team.getDepartment());
-      throw new IllegalArgumentException("A team leader must belong to the same department as the team.");
-    }
-
     User user = userMapper.toUser(userDto);
     user.setPasswordHash(passwordEncoder.encode(userDto.password()));
     user.setTeam(team);

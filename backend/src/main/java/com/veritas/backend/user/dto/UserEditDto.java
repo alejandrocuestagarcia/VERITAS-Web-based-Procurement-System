@@ -7,6 +7,5 @@ public record UserEditDto (
         String name,
         UserRole role,
         Long teamId,
-        Long departmentId,
         Boolean isTeamLeader
 ) { }
