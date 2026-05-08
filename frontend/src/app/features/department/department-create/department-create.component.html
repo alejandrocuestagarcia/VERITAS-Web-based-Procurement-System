@@ -9,12 +9,6 @@
     (submitted)="submit()"
     (cancelled)="cancel()">
 
-    <!-- Error -->
-    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm flex items-center gap-2 mb-6">
-      <mat-icon>error_outline</mat-icon>
-      <span>{{ error }}</span>
-    </div>
-
     <app-shared-form-card icon="badge" title="Core Department Details">
       <app-shared-form-field label="DEPARTMENT NAME">
         <mat-form-field appearance="outline" class="w-full">

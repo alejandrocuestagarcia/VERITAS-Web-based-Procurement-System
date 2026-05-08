@@ -5,25 +5,15 @@
   [totalElements]="dataSource.data.length" [loading]="loading"
   (searchChanged)="onSearchChanged($event)">
 
-  <!-- Stats -->
   <ng-container stats>
     <app-stat-card label="Total Departments" [value]="totalDepartments" />
     <app-stat-card label="Total Teams" [value]="totalTeams" />
   </ng-container>
 
-  <!-- Actions -->
   <button actions mat-flat-button class="v-btn-brand" (click)="navigateToAddDepartment()">
-    <mat-icon>add_business</mat-icon>
     <span>Add Department</span>
   </button>
 
-  <!-- Error -->
-  <div *ngIf="error" filters
-       class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">
-    {{ error }}
-  </div>
-
-  <!-- Columns -->
   <ng-container columns>
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef>DEPARTMENT NAME</th>
