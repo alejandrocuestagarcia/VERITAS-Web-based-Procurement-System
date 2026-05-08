@@ -59,6 +59,8 @@ import { ConfirmationDialogComponent } from './shared/components/confirmation-di
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
 import { MatStepperModule } from "@angular/material/stepper";
 import { PriorityBadgeComponent } from './shared/components/priority-badge/priority-badge.component';
+import { UserDeletionDialogComponent } from './features/user/user-deletion-dialog/user-deletion-dialog.component';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 @NgModule({
   declarations: [
@@ -94,7 +96,8 @@ import { PriorityBadgeComponent } from './shared/components/priority-badge/prior
     WorkflowEditorComponent,
     JiraIssuesSyncHistoryComponent,
     RequisitionCreateComponent,
-    PriorityBadgeComponent
+    PriorityBadgeComponent,
+    UserDeletionDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -124,7 +127,8 @@ import { PriorityBadgeComponent } from './shared/components/priority-badge/prior
     MatSliderModule,
     MatDialogModule,
     MatStepperModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatAutocompleteModule
   ],
   providers: [
     {

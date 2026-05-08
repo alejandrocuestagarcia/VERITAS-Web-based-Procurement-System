@@ -1,0 +1,53 @@
+<h2 mat-dialog-title class="!text-xl !font-bold">Delete User</h2>
+
+<mat-dialog-content class="!pt-2">
+  <p class="mb-4 ">Are you sure you want to delete <strong>{{ data.user.name }}</strong>?</p>
+
+  <ng-container *ngIf="data.pendingRequests.length > 0">
+    <div class="bg-amber-50 border border-amber-200 rounded-md p-4 mb-4">
+      <div class="flex items-start gap-2 text-amber-800">
+        <mat-icon class="mt-0.5">warning</mat-icon>
+        <div>
+          <h3 class="font-bold text-sm m-0">Pending Requests</h3>
+          <p class="text-sm m-0 mt-1">This user has {{ data.pendingRequests.length }} active request(s). You must select
+            a fallback user to reassign them to.</p>
+        </div>
+      </div>
+
+      <ul class="mt-3 pl-5 list-disc text-sm  max-h-32 overflow-y-auto">
+        <li *ngFor="let req of data.pendingRequests" class="mb-1">
+          <a [routerLink]="['/requests', req.id]" target="_blank"
+            class="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+            {{ req.requestKey }}
+          </a>: {{ req.requestName }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="mt-4">
+      <label class="block text-sm font-medium mb-1">Reassign to User</label>
+      <div
+        class="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-3 py-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+        <mat-icon class="text-gray-400 text-sm h-5 w-5 leading-5">search</mat-icon>
+        <input type="text"
+          class="border-0 outline-none bg-transparent w-full text-sm text-gray-900 placeholder-gray-400"
+          placeholder="Search and select a user..." [formControl]="userSearchControl" [matAutocomplete]="auto" required>
+      </div>
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="formatUserSelection" (optionSelected)="onUserSelected($event)">
+        <mat-option *ngFor="let fallbackUser of filteredUsers | async" [value]="fallbackUser">
+          {{ fallbackUser.name }} ({{ fallbackUser.email }})
+        </mat-option>
+      </mat-autocomplete>
+      <div *ngIf="!selectedFallbackUserId && userSearchControl.touched" class="text-red-500 text-xs mt-1">You must
+        select a user.</div>
+    </div>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="!pb-4 !pr-6">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="warn" [disabled]="data.pendingRequests.length > 0 && !selectedFallbackUserId"
+    (click)="onConfirm()">
+    Confirm Deletion
+  </button>
+</mat-dialog-actions>
