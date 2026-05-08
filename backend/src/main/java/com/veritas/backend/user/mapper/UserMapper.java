@@ -12,6 +12,7 @@ public interface UserMapper {
 
   User toUser(UserCreationRequestDto userCreationRequestDto);
 
+  @Mapping(source = "isActive", target = "active")
   @Mapping(source = "team.name", target = "teamName")
   UserDto toUserDto(User user);
 

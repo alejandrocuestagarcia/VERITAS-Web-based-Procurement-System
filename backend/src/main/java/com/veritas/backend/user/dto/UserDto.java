@@ -7,6 +7,7 @@ public record UserDto(
         Long id,
         String name,
         String email,
+        boolean active,
         UserRole role,
         String teamName,
         LocalDateTime createdAt
