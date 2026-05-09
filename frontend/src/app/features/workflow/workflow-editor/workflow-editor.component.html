@@ -100,7 +100,7 @@
         </button>
       </div>
 
-      <div class="p-6 space-y-6 overflow-y-auto pointer-events-none opacity-80">
+      <div class="p-6 space-y-6 overflow-y-auto" [ngClass]="{'pointer-events-none opacity-80': !isEditable}">
         <div class="space-y-4">
           <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
@@ -113,7 +113,13 @@
 
           <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minimum Vendors</label>
-            <div class="mt-2 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+            <div *ngIf="isEditable" class="mt-2">
+              <input type="number" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                [ngModelOptions]="{standalone: true}"
+                [ngModel]="currentRule.minRequiredVendors" (ngModelChange)="updateRuleProperty('minRequiredVendors', $event)"
+                min="0" placeholder="0">
+            </div>
+            <div *ngIf="!isEditable" class="mt-2 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
               <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minRequiredVendors }}</span>
               <span class="ml-2 text-xs text-slate-500 uppercase">Vendors</span>
             </div>

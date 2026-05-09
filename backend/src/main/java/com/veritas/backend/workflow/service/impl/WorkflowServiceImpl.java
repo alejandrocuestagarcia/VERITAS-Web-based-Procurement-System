@@ -8,6 +8,8 @@ import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
+import com.veritas.backend.workflow.entity.TransitionRule;
+import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
+import org.camunda.bpm.model.xml.instance.DomElement;
 import org.camunda.bpm.model.bpmn.instance.Process;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
+    private final TransitionRuleRepository transitionRuleRepository;
     private final WorkflowMapper workflowMapper;
 
     @Override
@@ -140,6 +144,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         });
 
         Collection<WorkflowTransition> workflowTransitions = new ArrayList<>();
+        Map<WorkflowTransition, TransitionRule> transitionRulesMap = new HashMap<>();
         Collection<SequenceFlow> sequenceFlows = modelInstance.getModelElementsByType(SequenceFlow.class);
         sequenceFlows.forEach(sequenceFlow -> {
             WorkflowTransition transition = new WorkflowTransition();
@@ -151,6 +156,29 @@ public class WorkflowServiceImpl implements WorkflowService {
                     .findFirst()
                     .ifPresent(doc -> transition.setDescription(doc.getTextContent()));
 
+            ExtensionElements extensionElements = sequenceFlow.getExtensionElements();
+            if (extensionElements != null) {
+                DomElement domElement = extensionElements.getDomElement();
+                for (DomElement child : domElement.getChildElements()) {
+                    if ("transitionRule".equals(child.getLocalName())) {
+                        TransitionRule rule = new TransitionRule();
+                        String minVendors = child.getAttribute("minRequiredVendors");
+                        if (minVendors != null && !minVendors.isBlank()) {
+                            rule.setMinRequiredVendors(Integer.parseInt(minVendors));
+                        }
+                        String pdfRequired = child.getAttribute("isPdfRequired");
+                        if (pdfRequired != null) {
+                            rule.setIsPdfRequired(Boolean.parseBoolean(pdfRequired));
+                        }
+                        String failureMessage = child.getAttribute("failureMessage");
+                        if (failureMessage != null && !failureMessage.isBlank()) {
+                            rule.setOptionalFailureMessage(failureMessage);
+                        }
+                        transitionRulesMap.put(transition, rule);
+                    }
+                }
+            }
+
             workflowTransitions.add(transition);
         });
 
@@ -160,6 +188,9 @@ public class WorkflowServiceImpl implements WorkflowService {
         workflowStepRepository.saveAll(stepsMap.values());
 
         workflowTransitionRepository.saveAll(workflowTransitions);
+
+        transitionRulesMap.forEach((transition, rule) -> rule.setTransition(transition));
+        transitionRuleRepository.saveAll(transitionRulesMap.values());
 
         return workflowDefinition;
     }
