@@ -36,7 +36,7 @@
     </div>
 
     <div class="flex gap-4 self-start">
-      <button *ngIf="mode === 'view'" mat-flat-button class="v-btn-brand" (click)="navigateToEdit()">
+      <button *ngIf="mode === 'view' && workflowIsActive" mat-flat-button class="v-btn-brand" (click)="navigateToEdit()">
         <mat-icon>edit</mat-icon>
         <span>Edit Workflow</span>
       </button>
