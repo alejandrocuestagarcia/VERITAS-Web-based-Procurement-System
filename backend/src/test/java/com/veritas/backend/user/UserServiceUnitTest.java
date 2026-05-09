@@ -1,13 +1,28 @@
 package com.veritas.backend.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.common.model.Department;
+import com.veritas.backend.requisition.dto.RequisitionDto;
+import com.veritas.backend.requisition.entity.Priority;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.mapper.RequisitionMapper;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -20,14 +35,16 @@ import com.veritas.backend.user.mapper.UserMapper;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.impl.UserServiceImpl;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -36,7 +53,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
-//AI-GENERATED
+
 @ExtendWith(MockitoExtension.class)
 class UserServiceUnitTest {
 
@@ -49,12 +66,237 @@ class UserServiceUnitTest {
     @Mock
     private TeamRepository teamRepository;
 
+    @Mock
+    private RequisitionMapper requisitionMapper;
+
+    @Mock
+    private RequestRepository requestRepository;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
     @Spy
     private UserMapper userMapper = Mappers.getMapper(UserMapper.class);
 
     @InjectMocks
     private UserServiceImpl userService;
 
+    @Captor
+    private ArgumentCaptor<User> userCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<Request>> requestCaptor;
+
+    @Captor
+    private ArgumentCaptor<Team> teamCaptor;
+
+    private User testUser;
+    private User testFallBackUser;
+    private Request testRequest;
+    private Team testTeam;
+
+    @BeforeEach
+    void setUp() {
+        testTeam = new Team();
+        testTeam.setTeamId(1L);
+        testTeam.setName("Engineering");
+        testTeam.setLeader(null);
+
+
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setName("Test User");
+        testUser.setTeam(testTeam);
+
+        testFallBackUser = new User();
+        testFallBackUser.setId(2L);
+        testFallBackUser.setName("Test FallBack User");
+        testFallBackUser.setTeam(testTeam);
+
+
+        testRequest = new Request();
+        testRequest.setRequestID(1L);
+        testRequest.setRequestName("Test Request");
+        testRequest.setUserID(testUser);
+        testRequest.setTeamID(testTeam);
+    }
+
+    @Test
+    void GetPendingRequisitionForUser_ValidUser_ReturnOneRequest() {
+        when(requestRepository.findActiveRequestsByUserId(1L)).thenReturn(List.of(testRequest));
+
+
+        RequisitionDto expectedDto =
+            new RequisitionDto(1L, "Test Request", "", "", Priority.MEDIUM, "", "", "", null);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+
+        List<RequisitionDto> result = userService.getPendingRequisitionsForUser(1L);
+
+        assertNotNull(result);
+        assertThat(result).hasSize(1);
+        assertEquals("Test Request", result.getFirst().requestName());
+
+
+    }
+
+    @Test
+    void DeleteUser_ValidUserWithoutFallBackUser_DeactivatesUser() {
+
+        testUser.setTeam(null);
+
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        userService.deleteUser(1L, null);
+
+        verify(userRepository).save(userCaptor.capture());
+
+        User savedUser = userCaptor.getValue();
+
+        assertFalse(savedUser.getIsActive());
+        assertNotNull(savedUser.getDeletedAt());
+
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(refreshTokenRepository, times(1)).deleteByUserId(1L);
+        verify(teamRepository, never()).save(any(Team.class));
+
+
+    }
+
+
+    @Test
+    void DeleteUser_ValidUserWithFallBackUserAndWithoutTeam_DeactivatesUser() {
+
+        testUser.setTeam(null);
+
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(testFallBackUser));
+        when(requestRepository.findActiveRequestsByUserId(1L)).thenReturn(List.of(testRequest));
+
+        userService.deleteUser(1L, 2L);
+
+        verify(userRepository).save(userCaptor.capture());
+
+        verify(requestRepository).saveAll(requestCaptor.capture());
+
+        List<Request> requests = requestCaptor.getValue();
+        assertNotNull(requests);
+        assertThat(requests).hasSize(1);
+        assertEquals("Test Request", requests.getFirst().getRequestName());
+        assertEquals(testFallBackUser, requests.getFirst().getUserID());
+
+        verify(requestRepository, times(1)).findActiveRequestsByUserId(1L);
+
+
+        User savedUser = userCaptor.getValue();
+
+        assertFalse(savedUser.getIsActive());
+        assertNotNull(savedUser.getDeletedAt());
+
+        verify(teamRepository, never()).save(any(Team.class));
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(refreshTokenRepository, times(1)).deleteByUserId(1L);
+
+
+    }
+
+
+    @Test
+    void DeleteUser_ValidUserWithFallBackUserAndWithTeamAndNotTeamLeader_DeactivatesUser() {
+
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        userService.deleteUser(1L, null);
+
+
+        verify(userRepository).save(userCaptor.capture());
+
+
+        User savedUser = userCaptor.getValue();
+
+        assertNull(savedUser.getTeam());
+        assertFalse(savedUser.getIsActive());
+        assertNotNull(savedUser.getDeletedAt());
+
+        verify(teamRepository, never()).save(any(Team.class));
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(refreshTokenRepository, times(1)).deleteByUserId(1L);
+
+
+    }
+
+    @Test
+    void DeleteUser_ValidUserWithFallBackUserAndWithTeamAndTeamLeader_DeactivatesUser() {
+
+        testTeam.setLeader(testUser);
+
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        userService.deleteUser(1L, null);
+
+
+        verify(userRepository).save(userCaptor.capture());
+
+
+        verify(teamRepository).save(teamCaptor.capture());
+
+
+        Team savedTeam = teamCaptor.getValue();
+
+        assertNull(savedTeam.getLeader());
+
+        User savedUser = userCaptor.getValue();
+
+        assertNull(savedUser.getTeam());
+        assertFalse(savedUser.getIsActive());
+        assertNotNull(savedUser.getDeletedAt());
+
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(refreshTokenRepository, times(1)).deleteByUserId(1L);
+
+
+    }
+
+    @Test
+    void DeleteUser_FallbackUserDoesNotExist_ThrowsEntityNotFoundException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> {
+            userService.deleteUser(1L, 999L);
+        });
+
+        verify(requestRepository, never()).save(any(Request.class));
+        verify(requestRepository, never()).saveAll(anyList());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+
+    @Test
+    void DeleteUser_InValidUser_DoesNotDeactivateAnyUser() {
+
+
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        userService.deleteUser(999L, null);
+
+
+        verify(userRepository).findById(999L);
+        verify(refreshTokenRepository, never()).deleteByUserId(anyLong());
+        verify(userRepository, never()).save(any(User.class));
+
+
+    }
+
+    //AI-GENERATED
     @Test
     void CreateUser_ValidUser_SavesAndReturnsUser() {
         UserCreationRequestDto request = new UserCreationRequestDto(
@@ -66,8 +308,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.com", UserRole.FINANCE_OFFICER, "IT Team",
-                LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.com", true, UserRole.FINANCE_OFFICER, "IT Team", LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(mockTeam));
@@ -122,7 +363,7 @@ class UserServiceUnitTest {
 
     @Test
     void GetUserStats_Called_ReturnsMappedStats() {
-        when(userRepository.count()).thenReturn(100L);
+        when(userRepository.countByIsActiveTrue()).thenReturn(100L);
         when(userRepository.countByIsActiveFalse()).thenReturn(15L);
 
         UserStatsDto stats = userService.getUserStats();

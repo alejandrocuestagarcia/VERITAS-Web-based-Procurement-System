@@ -1,14 +1,13 @@
 package com.veritas.backend.user;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.common.model.Department;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.entity.Priority;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -16,6 +15,9 @@ import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
+import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +30,11 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -51,13 +57,20 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   private ProjectRepository projectRepository;
 
   @Autowired
+  private RequestRepository requestRepository;
+
+  @Autowired
   private PasswordEncoder encoder;
 
   private Team testTeam;
 
+  @Autowired
+  private WorkflowStepRepository workflowStepRepository;
+
   @BeforeEach
   void setUp() {
     projectRepository.deleteAll();
+    requestRepository.deleteAll();
     userRepository.deleteAll();
     teamRepository.deleteAll();
 
@@ -75,10 +88,137 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
       team.setLeader(null);
       teamRepository.save(team);
     });
-
+    requestRepository.deleteAll();
     userRepository.deleteAll();
     teamRepository.deleteAll();
   }
+
+  @Test
+  @WithMockUser(roles = "ADMINISTRATOR")
+  void DeleteByUserId_UserIdAndFallBackUserProvided_DeactivatesUserAndReassignsRequests()
+          throws Exception {
+
+    User alex = User.builder().name("Alexander Sterling").email("alex@test.com").team(testTeam)
+            .isActive(true).passwordHash(encoder.encode("password123")).role(UserRole.REQUESTER)
+            .build();
+
+    User john =
+            User.builder().name("John Doe").email("john@test.com").team(testTeam).isActive(true)
+                    .passwordHash(encoder.encode("password123")).role(UserRole.FINANCE_OFFICER).build();
+
+    userRepository.saveAll(java.util.List.of(alex, john));
+
+
+    Long userId = alex.getId();
+    Long fallBackUserId = john.getId();
+
+    mockMvc.perform(
+                    delete("/api/v1/users/" + userId)
+                            .param("fallbackUserId", fallBackUserId.toString()))
+            .andExpect(status().isNoContent());
+
+    User afterOperationAlex = userRepository.findById(userId).get();
+
+    assertFalse(afterOperationAlex.getIsActive());
+
+
+  }
+
+  @Test
+  @WithMockUser(roles = "PROCUREMENT_OFFICER")
+  void DeleteByUserId_AsProcurementOfficer_IsForbidden() throws Exception {
+
+    User alex = User.builder().name("Alexander Sterling").email("alex@test.com").team(testTeam)
+            .isActive(true).passwordHash(encoder.encode("password123")).role(UserRole.REQUESTER)
+            .build();
+
+    User john =
+            User.builder().name("John Doe").email("john@test.com").team(testTeam).isActive(true)
+                    .passwordHash(encoder.encode("password123")).role(UserRole.FINANCE_OFFICER).build();
+
+    userRepository.saveAll(java.util.List.of(alex, john));
+
+
+    Long userId = alex.getId();
+    Long fallBackUserId = john.getId();
+
+    mockMvc.perform(
+                    delete("/api/v1/users/" + userId)
+                            .param("fallbackUserId", fallBackUserId.toString()))
+            .andExpect(status().isForbidden());
+
+    User afterOperationAlex = userRepository.findById(userId).get();
+
+    assertTrue(afterOperationAlex.getIsActive());
+
+
+  }
+
+  @Test
+  void DeleteByUserId_WithoutAuthenticatedUser_IsForbidden() throws Exception {
+
+
+    mockMvc.perform(
+            delete("/api/v1/users/" + 1)
+    ).andExpect(status().isForbidden());
+
+  }
+
+
+  @Test
+  @WithMockUser(roles = "ADMINISTRATOR")
+  void GetPendingRequisitions_UserHasRequests_ReturnsList() throws Exception {
+
+    User alex = User.builder()
+            .name("Alexander Sterling")
+            .email("alex@test.com")
+            .isActive(true)
+            .passwordHash(encoder.encode("password123"))
+            .role(UserRole.REQUESTER)
+            .build();
+    alex = userRepository.save(alex);
+
+    WorkflowStep startStep = new WorkflowStep();
+    startStep.setName("Start");
+    startStep.setWorkflowComponent(WorkflowComponent.START_EVENT);
+    startStep = workflowStepRepository.save(startStep);
+
+    Request dummyRequest = new Request();
+    dummyRequest.setRequestName("New Laptop for Alex");
+    dummyRequest.setUserID(alex);
+    dummyRequest.setPriority(Priority.MEDIUM);
+    dummyRequest.setCurrentStepID(startStep);
+
+    requestRepository.save(dummyRequest);
+
+    mockMvc.perform(get("/api/v1/users/" + alex.getId() + "/pending-requests"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isNotEmpty())
+            .andExpect(jsonPath("$[0].requestName").value("New Laptop for Alex"));
+  }
+
+  @Test
+  @WithMockUser(roles = "PROCUREMENT_OFFICER")
+  void GetPendingRequisitions_AsProcurementOfficer_IsForbidden() throws Exception {
+
+
+    mockMvc.perform(
+            get("/api/v1/users/" + 1 + "/pending-requests")).andExpect(status().isForbidden());
+
+
+  }
+
+  @Test
+  void GetPendingRequisitions_WithoutAuthenticatedUser_IsForbidden() throws Exception {
+
+
+    mockMvc.perform(
+            delete("/api/v1/users/" + 1 + "/pending-requests")
+    ).andExpect(status().isForbidden());
+
+  }
+
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")

@@ -210,7 +210,7 @@ public class UserServiceImpl implements UserService {
 
         Team team = actualUser.getTeam();
 
-        if (team.getLeader().equals(actualUser)) {
+        if (actualUser.equals(team.getLeader())) {
           team.setLeader(null);
           teamRepository.save(team);
         }

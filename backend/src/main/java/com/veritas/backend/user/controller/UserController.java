@@ -90,6 +90,7 @@ public class UserController {
 
     @Operation(summary = "Get pending requests for user", description = "Returns a list of pending requests assigned to the user.")
     @GetMapping(path = "/{id}/pending-requests", produces = MediaType.APPLICATION_JSON_VALUE)
+    @IsAdministrator
     public ResponseEntity<List<RequisitionDto>> getPendingRequisitions(@PathVariable Long id) {
         log.info("GET /users/{}/pending-requests", id);
         return ResponseEntity.ok(userService.getPendingRequisitionsForUser(id));
