@@ -218,7 +218,7 @@ class WorkflowServiceUnitTest {
                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
                 "      <bpmn:extensionElements>\n" +
-                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"true\" />\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"false\" optionalFailureMessage=\"Need everything!\" />\n" +
                 "      </bpmn:extensionElements>\n" +
                 "    </bpmn:sequenceFlow>\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
@@ -239,7 +239,8 @@ class WorkflowServiceUnitTest {
         assertThat(rulesList.getFirst().getMinRequiredVendors()).isEqualTo(3);
         assertThat(rulesList.getFirst().getIsPdfRequired()).isTrue();
         assertThat(rulesList.getFirst().getIsCsvRequired()).isTrue();
-        assertThat(rulesList.getFirst().getIsImageRequired()).isTrue();
+        assertThat(rulesList.getFirst().getIsImageRequired()).isFalse();
+        assertThat(rulesList.getFirst().getOptionalFailureMessage()).isEqualTo("Need everything!");
     }
 
     @Test

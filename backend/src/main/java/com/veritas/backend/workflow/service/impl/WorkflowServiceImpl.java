@@ -178,9 +178,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                         if (imageRequired != null) {
                             rule.setIsImageRequired(Boolean.parseBoolean(imageRequired));
                         }
-                        String failureMessage = child.getAttribute("failureMessage");
-                        if (failureMessage != null && !failureMessage.isBlank()) {
-                            rule.setOptionalFailureMessage(failureMessage);
+                        String optionalFailureMessage = child.getAttribute("optionalFailureMessage");
+                        if (optionalFailureMessage != null && !optionalFailureMessage.isBlank()) {
+                            rule.setOptionalFailureMessage(optionalFailureMessage);
                         }
                         transitionRulesMap.put(transition, rule);
                     }

@@ -35,7 +35,7 @@ export const dummyBpmnXml = `
 </bpmn:task>
 <bpmn:sequenceFlow id="Flow_1kxm0s8" name="budget > $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_05zq0ij">
   <bpmn:extensionElements>
-    <veritas:transitionRule minRequiredVendors="3" />
+    <veritas:transitionRule minRequiredVendors="3" optionalFailureMessage="Please provide at least 3 vendor quotes in order for the request to advance!" />
   </bpmn:extensionElements>
 </bpmn:sequenceFlow>
 <bpmn:sequenceFlow id="Flow_0z8w32s" name="$500 > budget > $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i">

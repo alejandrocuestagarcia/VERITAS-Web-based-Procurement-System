@@ -272,7 +272,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           isCsvRequired: String(rule.isCsvRequired) === 'true',
           isImageRequired: String(rule.isImageRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
-          optionalFailureMessage: rule.failureMessage || '',
+          optionalFailureMessage: rule.optionalFailureMessage || '',
           description: doc
         };
         return;
@@ -359,7 +359,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
-  updateRuleProperty(key: 'description' | 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired', value: any) {
+  updateRuleProperty(key: 'description' | 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'optionalFailureMessage', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -374,7 +374,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
       const documentation = bpmnFactory.create('bpmn:Documentation', { text: value });
       modeling.updateProperties(element, { documentation: [documentation] });
-    } else if (key === 'minRequiredVendors' || key === 'isPdfRequired' || key === 'isCsvRequired' || key === 'isImageRequired') {
+    } else if (key === 'minRequiredVendors' || key === 'isPdfRequired' || key === 'isCsvRequired' || key === 'isImageRequired' || key === 'optionalFailureMessage') {
       const moddle = this.bpmnInstance.get('moddle');
       let extensionElements = element.businessObject.extensionElements;
       if (!extensionElements) {
