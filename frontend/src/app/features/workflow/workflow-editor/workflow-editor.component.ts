@@ -38,6 +38,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public roles = Object.values(UserDtoRoleEnum);
   public currentRule: any = {
     isPdfRequired: false,
+    isCsvRequired: false,
+    isImageRequired: false,
     minRequiredVendors: 0,
     optionalFailureMessage: '',
     description: ''
@@ -267,6 +269,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       if (rule) {
         this.currentRule = {
           isPdfRequired: String(rule.isPdfRequired) === 'true',
+          isCsvRequired: String(rule.isCsvRequired) === 'true',
+          isImageRequired: String(rule.isImageRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
           optionalFailureMessage: rule.failureMessage || '',
           description: doc
@@ -274,11 +278,25 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '', description: doc };
+    this.currentRule = { 
+      isPdfRequired: false, 
+      isCsvRequired: false, 
+      isImageRequired: false, 
+      minRequiredVendors: 0, 
+      optionalFailureMessage: '', 
+      description: doc 
+    };
   }
 
   private resetRule() {
-    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '', description: '' };
+    this.currentRule = { 
+      isPdfRequired: false, 
+      isCsvRequired: false, 
+      isImageRequired: false, 
+      minRequiredVendors: 0, 
+      optionalFailureMessage: '', 
+      description: '' 
+    };
   }
 
   loadTaskDetails(selection: any) {
@@ -341,7 +359,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
-  updateRuleProperty(key: 'description' | 'minRequiredVendors', value: any) {
+  updateRuleProperty(key: 'description' | 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -356,7 +374,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
       const documentation = bpmnFactory.create('bpmn:Documentation', { text: value });
       modeling.updateProperties(element, { documentation: [documentation] });
-    } else if (key === 'minRequiredVendors') {
+    } else if (key === 'minRequiredVendors' || key === 'isPdfRequired' || key === 'isCsvRequired' || key === 'isImageRequired') {
       const moddle = this.bpmnInstance.get('moddle');
       let extensionElements = element.businessObject.extensionElements;
       if (!extensionElements) {
@@ -382,7 +400,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         extensionElements.values.push(rule);
       }
 
-      rule.minRequiredVendors = value;
+      rule[key] = value;
       modeling.updateProperties(element, { extensionElements });
     }
     this.currentRule[key] = value;

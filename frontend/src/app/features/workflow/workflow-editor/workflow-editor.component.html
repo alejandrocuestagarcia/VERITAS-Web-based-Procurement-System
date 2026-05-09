@@ -17,8 +17,6 @@
         </div>
 
         <div *ngIf="!isEditable">
-
-
           <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">
             {{ workflowForm.value.title || 'Untitled Workflow' }}
           </h1>
@@ -100,14 +98,31 @@
         </button>
       </div>
 
-      <div class="p-6 space-y-6 overflow-y-auto" [ngClass]="{'pointer-events-none opacity-80': !isEditable}">
+      <div class="p-6 space-y-6 overflow-y-auto" [ngClass]="{'opacity-80': !isEditable}">
         <div class="space-y-4">
           <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
-            <div class="flex items-center gap-3 p-4 mt-2 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-              <input type="checkbox" [checked]="currentRule.isPdfRequired" disabled
-                class="w-4 h-4 rounded text-blue-600 border-slate-300">
-              <span class="text-sm font-semibold text-slate-700">PDF Document Required</span>
+            <div class="mt-2 space-y-2">
+              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+                <input type="checkbox" [checked]="currentRule.isPdfRequired" [disabled]="!isEditable"
+                  (change)="updateRuleProperty('isPdfRequired', !currentRule.isPdfRequired)"
+                  class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+                <span class="text-sm font-semibold text-slate-700">PDF Document Required</span>
+              </div>
+
+              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+                <input type="checkbox" [checked]="currentRule.isCsvRequired" [disabled]="!isEditable"
+                  (change)="updateRuleProperty('isCsvRequired', !currentRule.isCsvRequired)"
+                  class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+                <span class="text-sm font-semibold text-slate-700">CSV Document Required</span>
+              </div>
+
+              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+                <input type="checkbox" [checked]="currentRule.isImageRequired" [disabled]="!isEditable"
+                  (change)="updateRuleProperty('isImageRequired', !currentRule.isImageRequired)"
+                  class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+                <span class="text-sm font-semibold text-slate-700">Image Required</span>
+              </div>
             </div>
           </div>
 

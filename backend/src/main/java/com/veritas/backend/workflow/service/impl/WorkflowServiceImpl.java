@@ -170,6 +170,14 @@ public class WorkflowServiceImpl implements WorkflowService {
                         if (pdfRequired != null) {
                             rule.setIsPdfRequired(Boolean.parseBoolean(pdfRequired));
                         }
+                        String csvRequired = child.getAttribute("isCsvRequired");
+                        if (csvRequired != null) {
+                            rule.setIsCsvRequired(Boolean.parseBoolean(csvRequired));
+                        }
+                        String imageRequired = child.getAttribute("isImageRequired");
+                        if (imageRequired != null) {
+                            rule.setIsImageRequired(Boolean.parseBoolean(imageRequired));
+                        }
                         String failureMessage = child.getAttribute("failureMessage");
                         if (failureMessage != null && !failureMessage.isBlank()) {
                             rule.setOptionalFailureMessage(failureMessage);

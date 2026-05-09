@@ -1,6 +1,6 @@
 export const dummyBpmnXml = `
-<bpmn:definitions 
-  id="Definitions_1" 
+<bpmn:definitions
+  id="Definitions_1"
   targetNamespace="http://bpmn.io/schema/bpmn"
   xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:veritas="http://veritas">
@@ -38,7 +38,11 @@ export const dummyBpmnXml = `
     <veritas:transitionRule minRequiredVendors="3" />
   </bpmn:extensionElements>
 </bpmn:sequenceFlow>
-<bpmn:sequenceFlow id="Flow_0z8w32s" name="$500 > budget > $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i"/>
+<bpmn:sequenceFlow id="Flow_0z8w32s" name="$500 > budget > $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i">
+  <bpmn:extensionElements>
+    <veritas:transitionRule isPdfRequired="true" />
+  </bpmn:extensionElements>
+</bpmn:sequenceFlow>
 <bpmn:sequenceFlow id="Flow_04ni0t0" name="budget < $500" sourceRef="Gateway_0dumvhe" targetRef="Activity_0mib3l3"/>
 <bpmn:exclusiveGateway id="Gateway_0jludpd">
 <bpmn:incoming>Flow_1pumtq5</bpmn:incoming>

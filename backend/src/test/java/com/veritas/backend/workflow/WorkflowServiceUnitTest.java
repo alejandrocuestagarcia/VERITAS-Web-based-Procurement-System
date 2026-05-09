@@ -207,7 +207,7 @@ class WorkflowServiceUnitTest {
     }
 
     @Test
-    void CreateWorkflow_WithTransitionRule_PersistsMinRequiredVendors() {
+    void CreateWorkflow_WithMultipleTransitionRules_PersistsAllRules() {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
                 "xmlns:veritas=\"http://veritas\" " +
@@ -218,7 +218,7 @@ class WorkflowServiceUnitTest {
                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
                 "      <bpmn:extensionElements>\n" +
-                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"false\" failureMessage=\"Need at least 3 quotes\" />\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"true\" />\n" +
                 "      </bpmn:extensionElements>\n" +
                 "    </bpmn:sequenceFlow>\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
@@ -232,13 +232,14 @@ class WorkflowServiceUnitTest {
         verify(transitionRuleRepository).saveAll(transitionRulesCaptor.capture());
         Iterable<TransitionRule> savedRules = transitionRulesCaptor.getValue();
 
-        List<TransitionRule> rulesList = new ArrayList<>();
+        java.util.List<TransitionRule> rulesList = new java.util.ArrayList<>();
         savedRules.forEach(rulesList::add);
 
         assertThat(rulesList).hasSize(1);
         assertThat(rulesList.getFirst().getMinRequiredVendors()).isEqualTo(3);
-        assertThat(rulesList.getFirst().getIsPdfRequired()).isFalse();
-        assertThat(rulesList.getFirst().getOptionalFailureMessage()).isEqualTo("Need at least 3 quotes");
+        assertThat(rulesList.getFirst().getIsPdfRequired()).isTrue();
+        assertThat(rulesList.getFirst().getIsCsvRequired()).isTrue();
+        assertThat(rulesList.getFirst().getIsImageRequired()).isTrue();
     }
 
     @Test
