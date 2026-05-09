@@ -58,6 +58,7 @@ class AuthControllerIntegrationTest extends BaseDBIntegrationTest {
         User user = new User();
         user.setEmail(CORRECT_EMAIL);
         user.setName("Test User");
+        user.setIsActive(true);
         user.setPasswordHash(encoder.encode(CORRECT_PASSWORD));
         user.setRole(UserRole.REQUESTER);
         userRepository.save(user);

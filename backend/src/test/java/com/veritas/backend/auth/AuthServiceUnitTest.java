@@ -67,6 +67,7 @@ class AuthServiceUnitTest {
     testUser = new User();
     testUser.setId(1L);
     testUser.setEmail(CORRECT_EMAIL);
+    testUser.setIsActive(true);
     testUser.setPasswordHash(HASHED_PASSWORD);
     testUser.setRole(UserRole.REQUESTER);
   }
@@ -217,6 +218,7 @@ class AuthServiceUnitTest {
   private static User createTestUser(String email, UserRole role) {
     User user = new User();
     user.setEmail(email);
+    user.setIsActive(true);
     user.setPasswordHash("hashed_password");
     user.setRole(role);
     return user;
