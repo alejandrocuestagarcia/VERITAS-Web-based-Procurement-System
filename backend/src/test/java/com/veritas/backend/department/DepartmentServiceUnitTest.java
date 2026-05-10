@@ -8,6 +8,8 @@ import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.department.service.impl.DepartmentServiceImpl;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import com.veritas.backend.team.repository.TeamRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +31,9 @@ class DepartmentServiceUnitTest {
 
     @Mock
     private DepartmentMapper departmentMapper;
+    
+    @Mock
+    private TeamRepository teamRepository;
 
     @InjectMocks
     private DepartmentServiceImpl departmentService;
@@ -176,11 +181,23 @@ class DepartmentServiceUnitTest {
     @Test
     void DeleteDepartment_ValidId_Deletes() {
         when(departmentRepository.existsById(1L)).thenReturn(true);
+        when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(false);
 
         departmentService.deleteDepartment(1L);
 
         verify(departmentRepository).existsById(1L);
+        verify(teamRepository).existsByDepartmentDepartmentId(1L);
         verify(departmentRepository).deleteById(1L);
+    }
+
+    @Test
+    void DeleteDepartment_ReferencedByTeams_ThrowsDataIntegrityViolationException() {
+        when(departmentRepository.existsById(1L)).thenReturn(true);
+        when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(true);
+
+        assertThrows(DataIntegrityViolationException.class, () -> departmentService.deleteDepartment(1L));
+
+        verify(departmentRepository, never()).deleteById(any());
     }
 
     @Test
