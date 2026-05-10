@@ -78,6 +78,8 @@ spec:
               value: "user"
             - name: SPRING_DATASOURCE_PASSWORD
               value: "password"
+            - name: PASSWORD_RESET_LINK_BASE
+              value: "https://veritas.apps.student.inso-w.at/reset-password"
           ports:
             - containerPort: 8080
           resources:
