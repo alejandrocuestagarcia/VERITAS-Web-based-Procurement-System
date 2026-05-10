@@ -38,6 +38,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public roles = Object.values(UserDtoRoleEnum);
   public currentRule: any = {
     isPdfRequired: false,
+    isCsvRequired: false,
+    isImageRequired: false,
     minRequiredVendors: 0,
     optionalFailureMessage: '',
     description: ''
@@ -267,18 +269,34 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       if (rule) {
         this.currentRule = {
           isPdfRequired: String(rule.isPdfRequired) === 'true',
+          isCsvRequired: String(rule.isCsvRequired) === 'true',
+          isImageRequired: String(rule.isImageRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
-          optionalFailureMessage: rule.failureMessage || '',
+          optionalFailureMessage: rule.optionalFailureMessage || '',
           description: doc
         };
         return;
       }
     }
-    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '', description: doc };
+    this.currentRule = { 
+      isPdfRequired: false, 
+      isCsvRequired: false, 
+      isImageRequired: false, 
+      minRequiredVendors: 0, 
+      optionalFailureMessage: '', 
+      description: doc 
+    };
   }
 
   private resetRule() {
-    this.currentRule = { isPdfRequired: false, minRequiredVendors: 0, optionalFailureMessage: '', description: '' };
+    this.currentRule = { 
+      isPdfRequired: false, 
+      isCsvRequired: false, 
+      isImageRequired: false, 
+      minRequiredVendors: 0, 
+      optionalFailureMessage: '', 
+      description: '' 
+    };
   }
 
   loadTaskDetails(selection: any) {
@@ -291,7 +309,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
     const bo = element.businessObject;
     const docs = bo.get('documentation') || [];
-    
+
     const assigneeDoc = docs.find((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
     const assignee = assigneeDoc ? assigneeDoc.text.substring(10) : '';
 
@@ -322,7 +340,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const bo = element.businessObject;
     const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
     let docs = bo.get('documentation') || [];
-    
+
     if (key === 'role') {
       docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[ASSIGNEE]'));
       if (value) {
@@ -336,12 +354,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         docs.push(doc);
       }
     }
-    
+
     modeling.updateProperties(element, { documentation: docs });
     this.currentTask[key] = value;
   }
 
-  updateRuleProperty(key: 'description', value: string) {
+  updateRuleProperty(key: 'description' | 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'optionalFailureMessage', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -351,11 +369,39 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const elementRegistry = this.bpmnInstance.get('elementRegistry');
     const element = elementRegistry.get(this.selectedElementId);
     if (!element) return;
-    
+
     if (key === 'description') {
       const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
       const documentation = bpmnFactory.create('bpmn:Documentation', { text: value });
       modeling.updateProperties(element, { documentation: [documentation] });
+    } else if (key === 'minRequiredVendors' || key === 'isPdfRequired' || key === 'isCsvRequired' || key === 'isImageRequired' || key === 'optionalFailureMessage') {
+      const moddle = this.bpmnInstance.get('moddle');
+      let extensionElements = element.businessObject.extensionElements;
+      if (!extensionElements) {
+        extensionElements = moddle.create('bpmn:ExtensionElements', { values: [] });
+      }
+
+      let rule = extensionElements.values?.find((e: any) =>
+        e.$type === 'veritas:transitionRule' || e.type === 'veritas:transitionRule'
+      );
+
+      if (!rule) {
+        try {
+          rule = moddle.create('veritas:transitionRule');
+        } catch (e) {
+          rule = moddle.createAny('veritas:transitionRule', 'http://veritas', {
+            $type: 'veritas:transitionRule',
+            type: 'veritas:transitionRule'
+          });
+        }
+        if (!extensionElements.values) {
+          extensionElements.values = [];
+        }
+        extensionElements.values.push(rule);
+      }
+
+      rule[key] = value;
+      modeling.updateProperties(element, { extensionElements });
     }
     this.currentRule[key] = value;
   }
