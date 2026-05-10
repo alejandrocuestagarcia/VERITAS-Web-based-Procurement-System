@@ -172,7 +172,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
         statusLabel: isActive ? 'ACTIVE' : 'ON HOLD',
         isActive,
         membersCount: team.members?.length ?? 0,
-        icon: this.resolveIcon(department.filter)
+        icon: "groups"
       };
     });
   }
@@ -232,27 +232,6 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     }
 
     return `${projectNames[0]}, ...`;
-  }
-
-  private resolveIcon(filter: string): string {
-    switch (filter) {
-      case 'it':
-      case 'technology':
-        return 'dns';
-      case 'rd':
-      case 'research and development':
-      case 'r&d':
-        return 'science';
-      case 'hr':
-      case 'human resources':
-        return 'badge';
-      case 'sales':
-        return 'trending_up';
-      case 'legal':
-        return 'gavel';
-      default:
-        return 'groups';
-    }
   }
 
   private toArray<T>(value: unknown): T[] {
