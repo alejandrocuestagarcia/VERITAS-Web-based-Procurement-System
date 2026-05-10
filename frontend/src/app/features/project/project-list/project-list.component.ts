@@ -2,6 +2,8 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ProjectModuleService, ProjectDto } from '../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
 import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-project-list',
@@ -16,7 +18,10 @@ export class ProjectListComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  constructor(private projectService: ProjectModuleService) { }
+  constructor(
+    private projectService: ProjectModuleService,
+    private dialog: MatDialog
+  ) { }
 
   ngOnInit(): void {
     this.loading = true;
@@ -42,6 +47,13 @@ export class ProjectListComponent implements OnInit {
   }
 
   deleteProject(project: ProjectDto) {
-    return ""
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: { title: 'Delete Project', message: `Are you sure you want to delete "${project.name}"?` }
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        // TODO: call deleteProject
+      }
+    });
   }
 }

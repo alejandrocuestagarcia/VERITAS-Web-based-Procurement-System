@@ -9,6 +9,8 @@ import {
   TeamDto,
   TeamsModuleService
 } from '../../../core/api';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 type DepartmentFilter = 'all' | 'it' | 'rd' | 'hr' | 'sales' | 'legal';
 
@@ -56,7 +58,8 @@ export class TeamListComponent implements OnInit, AfterViewInit {
   constructor(
     private teamsService: TeamsModuleService,
     private projectService: ProjectModuleService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -72,8 +75,8 @@ export class TeamListComponent implements OnInit, AfterViewInit {
 
       const matchesDepartment = searchTerms.department === 'all' || data.departmentFilter === searchTerms.department;
       const matchesSearch = !searchTerms.search
-                            || data.name.toLowerCase().includes(searchTerms.search)
-                            || data.projectsText.toLowerCase().includes(searchTerms.search);
+        || data.name.toLowerCase().includes(searchTerms.search)
+        || data.projectsText.toLowerCase().includes(searchTerms.search);
 
       return matchesDepartment && matchesSearch;
     };
@@ -103,6 +106,17 @@ export class TeamListComponent implements OnInit, AfterViewInit {
 
   navigateToAddTeam(): void {
     this.router.navigate(['/teams/create']);
+  }
+
+  deleteTeam(row: TeamRow): void {
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: { title: 'Delete Team', message: `Are you sure you want to delete "${row.name}"?` }
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        // TODO: call deleteTeam
+      }
+    });
   }
 
   private loadData(): void {

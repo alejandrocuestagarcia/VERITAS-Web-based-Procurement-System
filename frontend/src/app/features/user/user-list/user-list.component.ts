@@ -4,7 +4,9 @@ import { Pageable, UserDto, UserDtoRoleEnum, UserModuleService } from "../../../
 import { PageEvent } from "@angular/material/paginator";
 import { SharedTableComponent } from "../../../shared/components/table/shared-table.component";
 import { AuthService } from "../../../core/services/auth.service";
-import {Router} from "@angular/router";
+import { Router } from "@angular/router";
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-user-list',
@@ -31,8 +33,9 @@ export class UserListComponent implements OnInit {
   constructor(
     private readonly userService: UserModuleService,
     private router: Router,
-    protected authService: AuthService
-  ) {}
+    protected authService: AuthService,
+    private dialog: MatDialog
+  ) { }
 
   ngOnInit(): void {
     this.loadUsers(0, 10);
@@ -92,7 +95,17 @@ export class UserListComponent implements OnInit {
   }
 
   deleteUser(user: UserDto) {
-    return ""
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Delete User',
+        message: `Are you sure you want to delete "${user.name}"?`
+      }
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        // TODO: call deleteUser
+      }
+    });
   }
 
   protected readonly UserDtoRoleEnum = UserDtoRoleEnum;

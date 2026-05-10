@@ -4,6 +4,8 @@ import { ToastService } from '../../../../../core/services/toast.service';
 import { JiraConfigControllerService } from '../../../../../core/api';
 import { JiraConfigResponseDto } from '../../../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-jira-settings-list',
@@ -22,8 +24,9 @@ export class JiraSettingsListComponent implements OnInit {
   constructor(
     private jiraConfigService: JiraConfigControllerService,
     private toastService: ToastService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private dialog: MatDialog
+  ) { }
 
   ngOnInit(): void {
     this.loadSettings();
@@ -65,9 +68,22 @@ export class JiraSettingsListComponent implements OnInit {
   }
 
   deleteConfig(config: JiraConfigResponseDto): void {
-    return;
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: { title: 'Delete Integration', message: `Are you sure you want to delete "${config.name}"?` }
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.jiraConfigService.deleteConfig(config.id).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Integration deleted successfully.');
+            this.loadSettings();
+          },
+          error: () => this.toastService.showError('Failed to delete integration.')
+        });
+      }
+    });
   }
 
-  onPageChange(event: any): void {}
-  onSearchChanged(event: any): void {}
+  onPageChange(event: any): void { }
+  onSearchChanged(event: any): void { }
 }

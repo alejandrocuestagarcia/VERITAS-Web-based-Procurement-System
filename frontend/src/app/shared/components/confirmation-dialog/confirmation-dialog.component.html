@@ -1,0 +1,12 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content>
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <div class="flex justify-end w-full gap-2 pb-3 px-3">
+    <button mat-flat-button (click)="onCancel()">Cancel</button>
+    <button mat-flat-button color="warn" (click)="onConfirm()">Delete</button>
+  </div>
+</mat-dialog-actions>
