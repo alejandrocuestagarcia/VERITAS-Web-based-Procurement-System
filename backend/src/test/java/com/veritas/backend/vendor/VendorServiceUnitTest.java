@@ -1,10 +1,13 @@
 package com.veritas.backend.vendor;
 
 import com.veritas.backend.vendor.dto.VendorDto;
+import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.mapper.VendorMapper;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.impl.VendorServiceImpl;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -116,5 +120,167 @@ public class VendorServiceUnitTest {
         assertThatThrownBy(() -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", -1.0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Rating must be between 0.0 and 10.0");
+    }
+
+    // AI-GENERATED
+    @Test
+    void EditVendor_VendorNotFound_ThrowsEntityNotFoundException() {
+        when(vendorRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> vendorService.editVendor(99L, new VendorEditDto(
+            "Vendor", "TAX-001", "Description", null, null)))
+            .isInstanceOf(EntityNotFoundException.class)
+            .hasMessage("Vendor not found with id: 99");
+
+        verify(vendorRepository, never()).save(any(Vendor.class));
+    }
+
+    // AI-GENERATED
+    @Test
+    void EditVendor_TaxIdConflict_ThrowsEntityExistsException() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setVendorName("Current");
+        vendor.setTaxId("TAX-001");
+        vendor.setDescription("Old desc");
+
+        Vendor existing = new Vendor();
+        existing.setId(2L);
+        existing.setTaxId("TAX-NEW");
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(java.util.Optional.of(existing));
+
+        assertThatThrownBy(() -> vendorService.editVendor(1L, new VendorEditDto(
+            "Updated", "TAX-NEW", "Updated desc", null, null)))
+            .isInstanceOf(EntityExistsException.class)
+            .hasMessage("Vendor with tax ID 'TAX-NEW' already exists");
+
+        verify(vendorRepository, never()).save(any(Vendor.class));
+    }
+
+    // AI-GENERATED
+    @Test
+    void EditVendor_TaxIdUnchanged_DoesNotCheckForConflicts() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setVendorName("Current");
+        vendor.setTaxId("TAX-001");
+        vendor.setDescription("Old desc");
+
+        VendorEditDto edits = new VendorEditDto(
+            "Updated", "TAX-001", "Updated desc", null, null);
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        VendorDto dto = new VendorDto(
+            1L,
+            "Updated",
+            "TAX-001",
+            null, null, null, null,
+            "Updated desc",
+            null,
+            null,
+            null, null, null
+        );
+        when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(dto);
+
+        vendorService.editVendor(1L, edits);
+
+        verify(vendorRepository, never()).findByTaxId(any());
+    }
+
+    // AI-GENERATED
+    @Test
+    void EditVendor_ValidUpdates_UpdatesFieldsAndSaves() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setVendorName("Old Vendor");
+        vendor.setTaxId("TAX-OLD");
+        vendor.setDescription("Old description");
+        vendor.setPrimaryContactName("Old Contact");
+        vendor.setPrimaryContactEmail("old@vendor.com");
+
+        VendorEditDto edits = new VendorEditDto(
+            "New Vendor",
+            "TAX-NEW",
+            "New description",
+            "New Contact",
+            "new@vendor.com"
+        );
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(java.util.Optional.empty());
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        VendorDto dto = new VendorDto(
+            1L,
+            "New Vendor",
+            "TAX-NEW",
+            null, null, null, null,
+            "New description",
+            "New Contact",
+            "new@vendor.com",
+            null, null, null
+        );
+        when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(dto);
+
+        VendorDto result = vendorService.editVendor(1L, edits);
+
+        assertThat(result.vendorName()).isEqualTo("New Vendor");
+        assertThat(result.taxId()).isEqualTo("TAX-NEW");
+        assertThat(result.description()).isEqualTo("New description");
+        assertThat(result.primaryContactName()).isEqualTo("New Contact");
+        assertThat(result.primaryContactEmail()).isEqualTo("new@vendor.com");
+
+        ArgumentCaptor<Vendor> vendorCaptor = ArgumentCaptor.forClass(Vendor.class);
+        verify(vendorRepository).save(vendorCaptor.capture());
+        Vendor savedVendor = vendorCaptor.getValue();
+        assertThat(savedVendor.getVendorName()).isEqualTo("New Vendor");
+        assertThat(savedVendor.getTaxId()).isEqualTo("TAX-NEW");
+        assertThat(savedVendor.getDescription()).isEqualTo("New description");
+        assertThat(savedVendor.getPrimaryContactName()).isEqualTo("New Contact");
+        assertThat(savedVendor.getPrimaryContactEmail()).isEqualTo("new@vendor.com");
+    }
+
+    // AI-GENERATED
+    @Test
+    void EditVendor_BlankContactFields_DoNotOverwriteExisting() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setVendorName("Vendor");
+        vendor.setTaxId("TAX-001");
+        vendor.setDescription("Description");
+        vendor.setPrimaryContactName("Existing Contact");
+        vendor.setPrimaryContactEmail("existing@vendor.com");
+
+        VendorEditDto edits = new VendorEditDto(
+            null,
+            null,
+            null,
+            "  ",
+            ""
+        );
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        VendorDto dto = new VendorDto(
+            1L,
+            vendor.getVendorName(),
+            vendor.getTaxId(),
+            null, null, null, null,
+            vendor.getDescription(),
+            vendor.getPrimaryContactName(),
+            vendor.getPrimaryContactEmail(),
+            null, null, null
+        );
+        when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(dto);
+
+        vendorService.editVendor(1L, edits);
+
+        assertThat(vendor.getPrimaryContactName()).isEqualTo("Existing Contact");
+        assertThat(vendor.getPrimaryContactEmail()).isEqualTo("existing@vendor.com");
     }
 }
