@@ -4,6 +4,8 @@ import { forkJoin } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
 import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 import {
+  DepartmentDto,
+  DepartmentsModuleService,
   ProjectDto,
   ProjectModuleService,
   TeamDto,
@@ -12,7 +14,7 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
-type DepartmentFilter = 'all' | 'it' | 'rd' | 'hr' | 'sales' | 'legal';
+type DepartmentFilter = string;
 
 interface TeamRow {
   id: number;
@@ -34,13 +36,7 @@ interface TeamRow {
 export class TeamListComponent implements OnInit, AfterViewInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  readonly departmentFilters: Array<{ key: DepartmentFilter; label: string }> = [
-    { key: 'it', label: 'Technology' },
-    { key: 'rd', label: 'Research and Development' },
-    { key: 'hr', label: 'Human Resources' },
-    { key: 'sales', label: 'Sales' },
-    { key: 'legal', label: 'Legal' }
-  ];
+  departmentFilters: Array<{ key: string; label: string }> = [];
 
   displayedColumns: string[] = ['identity', 'department', 'projects', 'status', 'actions'];
   dataSource = new MatTableDataSource<TeamRow>([]);
@@ -58,6 +54,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
   constructor(
     private teamsService: TeamsModuleService,
     private projectService: ProjectModuleService,
+    private departmentsService: DepartmentsModuleService,
     private router: Router,
     private dialog: MatDialog
   ) { }
@@ -125,17 +122,26 @@ export class TeamListComponent implements OnInit, AfterViewInit {
 
     forkJoin({
       teams: this.teamsService.getAllTeams(),
-      projects: this.projectService.getAllProjects()
+      projects: this.projectService.getAllProjects(),
+      departments: this.departmentsService.getAllDepartments()
     }).subscribe({
-      next: ({ teams, projects }) => {
+      next: ({ teams, projects, departments }) => {
         const normalizedTeams = this.toArray<TeamDto>(teams);
         const normalizedProjects = this.toArray<ProjectDto>(projects);
+        const normalizedDepts = this.toArray<DepartmentDto>(departments);
+
+        this.departmentFilters = normalizedDepts
+          .filter(d => !!d.name)
+          .map(d => ({
+            key: d.name.toLowerCase(),
+            label: d.name
+          }));
 
         const rows = this.buildTeamRows(normalizedTeams, normalizedProjects);
         this.dataSource.data = rows;
         this.totalTeams = rows.length;
         this.totalProjects = normalizedProjects.length;
-        this.totalDepartments = this.countUniqueDepartments(rows);
+        this.totalDepartments = normalizedDepts.length;
 
         this.applyFilters();
         this.loading = false;
@@ -171,9 +177,6 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private countUniqueDepartments(rows: TeamRow[]): number {
-    return new Set(rows.map((row) => row.departmentLabel)).size;
-  }
 
   private getSafeTeamName(rawName: string | undefined, index: number): string {
     const trimmed = rawName?.trim();
@@ -201,37 +204,19 @@ export class TeamListComponent implements OnInit, AfterViewInit {
 
   private mapDepartment(rawDepartment: string | undefined): {
     label: string;
-    filter: DepartmentFilter;
+    filter: string;
   } {
-    const normalized = (rawDepartment ?? '').toUpperCase();
-
-    switch (normalized) {
-      case 'IT':
-        return { label: 'IT', filter: 'it' };
-      case 'RD':
-        return { label: 'R&D', filter: 'rd' };
-      case 'HR':
-        return { label: 'HR', filter: 'hr' };
-      case 'SALES':
-        return { label: 'Sales', filter: 'sales' };
-      case 'LEGAL':
-        return { label: 'Legal', filter: 'legal' };
-      default:
-        return { label: this.humanizeDepartment(normalized), filter: 'all' };
-    }
-  }
-
-  private humanizeDepartment(department: string): string {
-    if (!department) {
-      return 'Unassigned';
+    const normalized = (rawDepartment ?? '').trim();
+    if (!normalized) {
+      return { label: 'Unassigned', filter: 'unassigned' };
     }
 
-    return department
-      .toLowerCase()
-      .split('_')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
+    return {
+      label: normalized,
+      filter: normalized.toLowerCase()
+    };
   }
+
 
   private formatProjects(projectNames: string[]): string {
     if (projectNames.length === 0) {
@@ -249,13 +234,17 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     return `${projectNames[0]}, ...`;
   }
 
-  private resolveIcon(filter: DepartmentFilter): string {
+  private resolveIcon(filter: string): string {
     switch (filter) {
       case 'it':
+      case 'technology':
         return 'dns';
       case 'rd':
+      case 'research and development':
+      case 'r&d':
         return 'science';
       case 'hr':
+      case 'human resources':
         return 'badge';
       case 'sales':
         return 'trending_up';

@@ -6,6 +6,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
 
 import {
+  DepartmentsModuleService,
   ProjectModuleService,
   TeamsModuleService
 } from '../../../core/api';
@@ -44,13 +45,22 @@ describe('TeamListComponent', () => {
       ])
   };
 
+  const departmentsModuleServiceStub = {
+    getAllDepartments: () =>
+      of([
+        { id: 1, name: 'IT' },
+        { id: 2, name: 'Legal' }
+      ])
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [TeamListComponent],
       imports: [RouterTestingModule],
       providers: [
         { provide: TeamsModuleService, useValue: teamsModuleServiceStub },
-        { provide: ProjectModuleService, useValue: projectModuleServiceStub }
+        { provide: ProjectModuleService, useValue: projectModuleServiceStub },
+        { provide: DepartmentsModuleService, useValue: departmentsModuleServiceStub }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
