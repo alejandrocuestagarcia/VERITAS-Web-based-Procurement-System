@@ -11,4 +11,5 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 	boolean existsByNameIgnoreCase(String name);
     boolean existsByLeaderId(Long leaderId);
     boolean existsByLeaderIdAndTeamIdNot(Long leaderId, Long teamId);
+    boolean existsByDepartmentDepartmentId(Long departmentId);
 }

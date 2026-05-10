@@ -6,6 +6,8 @@ import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.mapper.DepartmentMapper;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.department.service.DepartmentService;
+import org.springframework.dao.DataIntegrityViolationException;
+import com.veritas.backend.team.repository.TeamRepository;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
+    private final TeamRepository teamRepository;
 
     public DepartmentDto createDepartment(DepartmentCreateDto request) {
         if (departmentRepository.existsByName(request.name())) {
@@ -56,6 +59,11 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (!departmentRepository.existsById(id)) {
             throw new jakarta.persistence.EntityNotFoundException("Department not found with id " + id);
         }
+        
+        if (teamRepository.existsByDepartmentDepartmentId(id)) {
+            throw new DataIntegrityViolationException("Cannot delete department because there are teams pointing to it");
+        }
+
         departmentRepository.deleteById(id);
     }
 }

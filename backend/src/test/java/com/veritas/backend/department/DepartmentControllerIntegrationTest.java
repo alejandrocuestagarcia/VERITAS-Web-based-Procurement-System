@@ -28,214 +28,233 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
-    @Autowired
-    private TeamRepository teamRepository;
+        @Autowired
+        private TeamRepository teamRepository;
 
-    @Autowired
-    private DepartmentRepository departmentRepository;
+        @Autowired
+        private DepartmentRepository departmentRepository;
 
-    @Autowired
-    private ProjectRepository projectRepository;
+        @Autowired
+        private ProjectRepository projectRepository;
 
-    @Autowired
-    private JwtService jwtService;
+        @Autowired
+        private JwtService jwtService;
 
-    @Autowired
-    private PasswordEncoder encoder;
+        @Autowired
+        private PasswordEncoder encoder;
 
-    private Team testingTeam;
-    private Department existingDept;
+        private Team testingTeam;
+        private Department existingDept;
 
-    @BeforeEach
-    void setup() {
-        projectRepository.deleteAll();
-        userRepository.deleteAll();
-        teamRepository.deleteAll();
-        departmentRepository.deleteAll();
+        @BeforeEach
+        void setup() {
+                projectRepository.deleteAll();
+                userRepository.deleteAll();
+                teamRepository.deleteAll();
+                departmentRepository.deleteAll();
 
-        existingDept = departmentRepository.save(Department.builder()
-                .name("Existing Department")
-                .build());
+                existingDept = departmentRepository.save(Department.builder()
+                                .name("Existing Department")
+                                .build());
 
-        testingTeam = teamRepository.save(Team.builder()
-                .name("Testing Team")
-                .description("Handles QA and testing work")
-                .isActive(true)
-                .department(existingDept)
-                .build());
-    }
+                testingTeam = teamRepository.save(Team.builder()
+                                .name("Testing Team")
+                                .description("Handles QA and testing work")
+                                .isActive(true)
+                                .department(existingDept)
+                                .build());
+        }
 
-    @Test
-    void GetAllDepartments_Requester_ReturnsAllDepartments() throws Exception {
-        User requester = userRepository.save(User.builder()
-                .name("Test Requester")
-                .email("requester@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.REQUESTER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void GetAllDepartments_Requester_ReturnsAllDepartments() throws Exception {
+                User requester = userRepository.save(User.builder()
+                                .name("Test Requester")
+                                .email("requester@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.REQUESTER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(requester);
+                String token = jwtService.generateAccessToken(requester);
 
-        mockMvc.perform(get("/api/v1/departments")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Existing Department"));
-    }
+                mockMvc.perform(get("/api/v1/departments")
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].name").value("Existing Department"));
+        }
 
-    @Test
-    void GetDepartmentById_FinanceOfficer_ReturnsDepartment() throws Exception {
-        User financeOfficer = userRepository.save(User.builder()
-                .name("Test Finance")
-                .email("finance@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.FINANCE_OFFICER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void GetDepartmentById_FinanceOfficer_ReturnsDepartment() throws Exception {
+                User financeOfficer = userRepository.save(User.builder()
+                                .name("Test Finance")
+                                .email("finance@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.FINANCE_OFFICER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(financeOfficer);
+                String token = jwtService.generateAccessToken(financeOfficer);
 
-        mockMvc.perform(get("/api/v1/departments/" + existingDept.getDepartmentId())
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Existing Department"));
-    }
+                mockMvc.perform(get("/api/v1/departments/" + existingDept.getDepartmentId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Existing Department"));
+        }
 
-    @Test
-    void GetDepartmentById_Requester_IsForbidden() throws Exception {
-        User requester = userRepository.save(User.builder()
-                .name("Test Requester")
-                .email("requester@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.REQUESTER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void GetDepartmentById_Requester_IsForbidden() throws Exception {
+                User requester = userRepository.save(User.builder()
+                                .name("Test Requester")
+                                .email("requester@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.REQUESTER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(requester);
+                String token = jwtService.generateAccessToken(requester);
 
-        mockMvc.perform(get("/api/v1/departments/" + existingDept.getDepartmentId())
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isForbidden());
-    }
+                mockMvc.perform(get("/api/v1/departments/" + existingDept.getDepartmentId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void CreateDepartment_FinanceOfficer_ValidRequest_ReturnsCreatedDepartment() throws Exception {
-        User financeOfficer = userRepository.save(User.builder()
-                .name("Test Finance")
-                .email("finance@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.FINANCE_OFFICER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void CreateDepartment_FinanceOfficer_ValidRequest_ReturnsCreatedDepartment() throws Exception {
+                User financeOfficer = userRepository.save(User.builder()
+                                .name("Test Finance")
+                                .email("finance@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.FINANCE_OFFICER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(financeOfficer);
-        DepartmentCreateDto dto = new DepartmentCreateDto("New Department");
+                String token = jwtService.generateAccessToken(financeOfficer);
+                DepartmentCreateDto dto = new DepartmentCreateDto("New Department");
 
-        mockMvc.perform(post("/api/v1/departments")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("New Department"));
-    }
+                mockMvc.perform(post("/api/v1/departments")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.name").value("New Department"));
+        }
 
-    @Test
-    void CreateDepartment_Requester_IsForbidden() throws Exception {
-        User requester = userRepository.save(User.builder()
-                .name("Test Requester")
-                .email("requester@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.REQUESTER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void CreateDepartment_Requester_IsForbidden() throws Exception {
+                User requester = userRepository.save(User.builder()
+                                .name("Test Requester")
+                                .email("requester@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.REQUESTER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(requester);
-        DepartmentCreateDto dto = new DepartmentCreateDto("Forbidden Department");
+                String token = jwtService.generateAccessToken(requester);
+                DepartmentCreateDto dto = new DepartmentCreateDto("Forbidden Department");
 
-        mockMvc.perform(post("/api/v1/departments")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
-    }
+                mockMvc.perform(post("/api/v1/departments")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void CreateDepartment_InvalidName_ReturnsBadRequest() throws Exception {
-        User financeOfficer = userRepository.save(User.builder()
-                .name("Test Finance")
-                .email("finance@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.FINANCE_OFFICER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void CreateDepartment_InvalidName_ReturnsBadRequest() throws Exception {
+                User financeOfficer = userRepository.save(User.builder()
+                                .name("Test Finance")
+                                .email("finance@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.FINANCE_OFFICER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(financeOfficer);
-        DepartmentCreateDto dto = new DepartmentCreateDto(""); // Blank name should trigger validation constraint
+                String token = jwtService.generateAccessToken(financeOfficer);
+                DepartmentCreateDto dto = new DepartmentCreateDto(""); // Blank name should trigger validation
+                                                                       // constraint
 
-        mockMvc.perform(post("/api/v1/departments")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(post("/api/v1/departments")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    void UpdateDepartment_FinanceOfficer_ReturnsOk() throws Exception {
-        User financeOfficer = userRepository.save(User.builder()
-                .name("Test Finance")
-                .email("finance@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.FINANCE_OFFICER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void UpdateDepartment_FinanceOfficer_ReturnsOk() throws Exception {
+                User financeOfficer = userRepository.save(User.builder()
+                                .name("Test Finance")
+                                .email("finance@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.FINANCE_OFFICER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(financeOfficer);
-        DepartmentCreateDto dto = new DepartmentCreateDto("Updated Department");
+                String token = jwtService.generateAccessToken(financeOfficer);
+                DepartmentCreateDto dto = new DepartmentCreateDto("Updated Department");
 
-        mockMvc.perform(put("/api/v1/departments/" + existingDept.getDepartmentId())
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Department"));
-    }
+                mockMvc.perform(put("/api/v1/departments/" + existingDept.getDepartmentId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Updated Department"));
+        }
 
-    @Test
-    void DeleteDepartment_FinanceOfficer_ReturnsNoContent() throws Exception {
-        User financeOfficer = userRepository.save(User.builder()
-                .name("Test Finance")
-                .email("finance@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.FINANCE_OFFICER)
-                .team(testingTeam)
-                .isActive(true)
-                .build());
+        @Test
+        void DeleteDepartment_FinanceOfficer_ReturnsNoContent() throws Exception {
+                User financeOfficer = userRepository.save(User.builder()
+                                .name("Test Finance")
+                                .email("finance@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.FINANCE_OFFICER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
 
-        String token = jwtService.generateAccessToken(financeOfficer);
+                String token = jwtService.generateAccessToken(financeOfficer);
 
-        Department tempDept = departmentRepository.save(Department.builder()
-                .name("Temporary Department")
-                .build());
+                Department tempDept = departmentRepository.save(Department.builder()
+                                .name("Temporary Department")
+                                .build());
 
-        mockMvc.perform(delete("/api/v1/departments/" + tempDept.getDepartmentId())
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isNoContent());
-    }
+                mockMvc.perform(delete("/api/v1/departments/" + tempDept.getDepartmentId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void DeleteDepartment_FinanceOfficer_HasReferencingTeams_ReturnsConflict() throws Exception {
+                User financeOfficer = userRepository.save(User.builder()
+                                .name("Test Finance")
+                                .email("finance@yahoo.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.FINANCE_OFFICER)
+                                .team(testingTeam)
+                                .isActive(true)
+                                .build());
+
+                String token = jwtService.generateAccessToken(financeOfficer);
+
+                mockMvc.perform(delete("/api/v1/departments/" + existingDept.getDepartmentId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isConflict());
+        }
 }

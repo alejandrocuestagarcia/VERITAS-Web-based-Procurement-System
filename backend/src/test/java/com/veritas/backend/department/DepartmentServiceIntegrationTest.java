@@ -1,12 +1,14 @@
 package com.veritas.backend.department;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.dto.DepartmentDto;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.department.service.DepartmentService;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
@@ -113,7 +115,8 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
         DepartmentCreateDto request = new DepartmentCreateDto("R&D");
 
-        assertThrows(EntityExistsException.class, () -> departmentService.updateDepartment(dept1.getDepartmentId(), request));
+        assertThrows(EntityExistsException.class,
+                () -> departmentService.updateDepartment(dept1.getDepartmentId(), request));
     }
 
     @Test
@@ -128,5 +131,20 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void DeleteDepartment_NotFound_ThrowsEntityNotFoundException() {
         assertThrows(EntityNotFoundException.class, () -> departmentService.deleteDepartment(999L));
+    }
+
+    @Test
+    void DeleteDepartment_WhenReferencedByTeam_ThrowsDataIntegrityViolationException() {
+        Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
+
+        teamRepository.save(Team.builder()
+                .name("Team Alpha")
+                .description("Main team")
+                .department(saved)
+                .isActive(true)
+                .build());
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> departmentService.deleteDepartment(saved.getDepartmentId()));
     }
 }

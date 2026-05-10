@@ -67,6 +67,12 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
+  @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+  public ResponseEntity<String> handleDataIntegrityViolation(Exception ex) {
+    log.warn("Data integrity violation: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+  }
+
   @ExceptionHandler(MailException.class)
   public ResponseEntity<String> handleMailException(MailException ex) {
     log.error("Mail delivery failed: {}", ex.getMessage(), ex);
