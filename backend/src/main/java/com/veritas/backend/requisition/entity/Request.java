@@ -88,9 +88,6 @@ public class Request {
     @Enumerated(EnumType.STRING)
     private Priority priority;
 
-    @Column(name = "cost_center")
-    private String costCenter;
-
     @Column(name = "jira_issue_key", unique = true)
     private String jiraIssueKey;
 
