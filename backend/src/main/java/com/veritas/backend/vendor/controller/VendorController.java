@@ -3,6 +3,7 @@ package com.veritas.backend.vendor.controller;
 import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.vendor.dto.VendorDto;
+import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.dto.VendorRatingDto;
 import com.veritas.backend.vendor.dto.VendorStatsDto;
 import com.veritas.backend.vendor.service.VendorService;
@@ -55,8 +56,8 @@ public class VendorController {
     @Operation(summary = "Edit vendor", description = "Edits a vendors basic info.")
     @IsProcurementOfficer
     @PatchMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<VendorDto> editVendor(@PathVariable Long id, @RequestBody VendorDto edits) {
-        return null;
+    public ResponseEntity<VendorDto> editVendor(@PathVariable Long id, @Valid @RequestBody VendorEditDto edits) {
+        return ResponseEntity.ok(vendorService.editVendor(id, edits));
     }
 
     @Operation(summary = "Rate a vendor", description = "Saves communication, delivery, and quality scores for a specific vendor.")

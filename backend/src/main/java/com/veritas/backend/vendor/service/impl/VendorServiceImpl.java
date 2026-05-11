@@ -1,15 +1,20 @@
 package com.veritas.backend.vendor.service.impl;
 
 import com.veritas.backend.vendor.dto.VendorDto;
+import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.dto.VendorStatsDto;
+import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.mapper.VendorMapper;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.VendorService;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @Transactional
@@ -21,6 +26,44 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorDto createVendor(VendorDto vendorDto) {
         return vendorMapper.toVendorDto(vendorRepository.save(vendorMapper.toVendor(vendorDto)));
+    }
+
+    @Override
+    public VendorDto editVendor(Long id, VendorEditDto edits) {
+        Vendor vendor = vendorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + id));
+
+        if (StringUtils.hasText(edits.vendorName())) {
+            vendor.setVendorName(edits.vendorName().trim());
+        }
+
+        if (StringUtils.hasText(edits.taxId())) {
+            String updatedTaxId = edits.taxId().trim();
+            if (!updatedTaxId.equals(vendor.getTaxId())) {
+                vendorRepository.findByTaxId(updatedTaxId)
+                        .filter(existing -> !existing.getId().equals(vendor.getId()))
+                        .ifPresent(existing -> {
+                            throw new EntityExistsException(
+                                    "Vendor with tax ID '" + updatedTaxId + "' already exists");
+                        });
+            }
+            vendor.setTaxId(updatedTaxId);
+        }
+
+        if (StringUtils.hasText(edits.description())) {
+            vendor.setDescription(edits.description().trim());
+        }
+
+        if (StringUtils.hasText(edits.primaryContactName())) {
+            vendor.setPrimaryContactName(edits.primaryContactName().trim());
+        }
+
+        if (StringUtils.hasText(edits.primaryContactEmail())) {
+            vendor.setPrimaryContactEmail(edits.primaryContactEmail().trim());
+        }
+
+        Vendor saved = vendorRepository.save(vendor);
+        return vendorMapper.toVendorDto(saved);
     }
 
     @Override

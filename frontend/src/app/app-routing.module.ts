@@ -14,6 +14,7 @@ import {VendorCreateComponent} from "./features/vendor/vendor-create/vendor-crea
 import {ProjectCreateComponent} from "./features/project/project-create/project-create.component";
 import {VendorListComponent} from "./features/vendor/vendor-list/vendor-list.component";
 import {UserEditComponent} from "./features/user/user-edit/user-edit.component";
+import { VendorEditComponent } from "./features/vendor/vendor-edit/vendor-edit.component";
 import {roleGuard} from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
@@ -96,6 +97,12 @@ const routes: Routes = [
   {
     path: 'vendors/create',
     component: VendorCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
+  },
+  {
+    path: 'vendors/edit/:id',
+    component: VendorEditComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['PROCUREMENT_OFFICER'] }
   },

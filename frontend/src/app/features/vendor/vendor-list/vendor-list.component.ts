@@ -5,6 +5,7 @@ import { PageEvent } from "@angular/material/paginator";
 import { SharedTableComponent } from "../../../shared/components/table/shared-table.component";
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-vendor-list',
@@ -28,7 +29,8 @@ export class VendorListComponent implements OnInit {
 
   constructor(
     private readonly vendorService: VendorModuleService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private readonly router: Router
   ) { }
 
   ngOnInit(): void {
@@ -81,7 +83,11 @@ export class VendorListComponent implements OnInit {
   }
 
   editVendor(vendor: VendorDto) {
-    return ""
+    if (!vendor.id) {
+      return;
+    }
+
+    this.router.navigate(['/vendors/edit', vendor.id]);
   }
 
   deleteVendor(vendor: VendorDto) {

@@ -3,6 +3,7 @@ package com.veritas.backend.vendor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.vendor.dto.VendorDto;
+import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.service.VendorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -183,5 +185,77 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
 
         verify(vendorService).findVendorsByStringAndRating(any(Pageable.class), org.mockito.ArgumentMatchers.eq("test"),
                 org.mockito.ArgumentMatchers.eq(4.5));
+    }
+
+    // AI-GENERATED
+    @Test
+    @WithMockUser(roles = "PROCUREMENT_OFFICER")
+    void VendorEdit_AsProcurementOfficer_ReturnsUpdated() throws Exception {
+        VendorEditDto editDto = new VendorEditDto(
+                "Updated Vendor",
+                "TAX-UPDATED-001",
+                "Updated description",
+                "Alice",
+                "alice@vendor.com"
+        );
+
+        VendorDto updatedDto = new VendorDto(
+                1L,
+                editDto.vendorName(),
+                editDto.taxId(),
+                null, null, null, null,
+                editDto.description(),
+                editDto.primaryContactName(),
+                editDto.primaryContactEmail(),
+                null, null, null
+        );
+
+        when(vendorService.editVendor(any(Long.class), any(VendorEditDto.class))).thenReturn(updatedDto);
+
+        mockMvc.perform(patch("/api/v1/vendors/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(editDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.vendorName").value(editDto.vendorName()))
+                .andExpect(jsonPath("$.taxId").value(editDto.taxId()));
+    }
+
+    // AI-GENERATED
+    @Test
+    @WithMockUser(roles = "REQUESTER")
+    void VendorEdit_AsRequester_ReturnsForbidden() throws Exception {
+        VendorEditDto editDto = new VendorEditDto(
+                "Updated Vendor",
+                "TAX-UPDATED-001",
+                "Updated description",
+                "Alice",
+                "alice@vendor.com"
+        );
+
+        mockMvc.perform(patch("/api/v1/vendors/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(editDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    // AI-GENERATED
+    @Test
+    @WithMockUser(roles = "PROCUREMENT_OFFICER")
+    void VendorEdit_InvalidPayload_ReturnsBadRequest() throws Exception {
+        VendorEditDto invalidDto = new VendorEditDto(
+                "",
+                "",
+                "",
+                "Contact",
+                "invalid-email"
+        );
+
+        mockMvc.perform(patch("/api/v1/vendors/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest());
     }
 }
