@@ -10,6 +10,8 @@ import {
   TeamDto,
   TeamsModuleService
 } from '../../../core/api';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 interface DepartmentRow {
   id: number;
@@ -39,7 +41,8 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
     private departmentsService: DepartmentsModuleService,
     private teamsService: TeamsModuleService,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -71,18 +74,27 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
     this.router.navigate([`/departments/edit/${id}`]);
   }
 
-  deleteDepartment(id: number): void {
-    if (confirm('Are you sure you want to delete this department?')) {
-      this.departmentsService.deleteDepartment(id).subscribe({
-        next: () => {
-          this.toastService.showSuccess('Department deleted successfully.');
-          this.loadData();
-        },
-        error: () => {
-          this.toastService.showError('Failed to delete department. Ensure it is not assigned to any team.');
-        }
-      });
-    }
+  deleteDepartment(row: DepartmentRow): void {
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Delete Department',
+        message: `Are you sure you want to delete "${row.name}"?`
+      }
+    });
+
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.departmentsService.deleteDepartment(row.id).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Department deleted successfully.');
+            this.loadData();
+          },
+          error: () => {
+            this.toastService.showError('Failed to delete department. Ensure it is not assigned to any team.');
+          }
+        });
+      }
+    });
   }
 
   private loadData(): void {
