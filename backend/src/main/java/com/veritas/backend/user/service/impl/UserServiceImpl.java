@@ -1,5 +1,6 @@
 package com.veritas.backend.user.service.impl;
 
+import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -13,6 +14,8 @@ import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.user.service.UserService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,6 +23,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.requisition.mapper.RequisitionMapper;
+import com.veritas.backend.requisition.dto.RequisitionDto;
+import com.veritas.backend.requisition.entity.Request;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -30,7 +39,10 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final TeamRepository teamRepository;
+  private final RefreshTokenRepository refreshTokenRepository;
   private final UserMapper userMapper;
+  private final RequestRepository requestRepository;
+  private final RequisitionMapper requisitionMapper;
 
   @Override
   @Transactional
@@ -149,12 +161,11 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserStatsDto getUserStats() {
-    long total = userRepository.count();
-
+    long active = userRepository.countByIsActiveTrue();
     long inactive = userRepository.countByIsActiveFalse();
 
-    log.debug("User stats – total: {}, inactive: {}", total, inactive);
-    return new UserStatsDto(total, inactive, 0);
+    log.debug("User stats – active: {}, inactive: {}", active, inactive);
+    return new UserStatsDto(active, inactive, 0);
   }
 
   @Override
@@ -165,5 +176,52 @@ public class UserServiceImpl implements UserService {
 
     return userRepository.findAllFiltered(query, userRole, pageable).map(userMapper::toUserDto);
   }
-}
 
+  @Override
+  @Transactional(readOnly = true)
+  public List<RequisitionDto> getPendingRequisitionsForUser(Long userId) {
+      return requestRepository.findActiveRequestsByUserId(userId).stream()
+              .map(requisitionMapper::toDto)
+              .toList();
+  }
+
+  @Override
+  @Transactional
+  public void deleteUser(Long id, Long fallbackUserId) {
+
+    Optional<User> user = userRepository.findById(id);
+
+    if (user.isPresent()) {
+      User actualUser = user.get();
+      actualUser.setIsActive(false);
+      actualUser.setDeletedAt(LocalDateTime.now());
+
+      if (fallbackUserId != null) {
+          User fallbackUser = userRepository.findById(fallbackUserId)
+                  .orElseThrow(() -> new EntityNotFoundException("Fallback user not found"));
+          List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
+          for (Request req : activeRequests) {
+              req.setUserID(fallbackUser);
+          }
+          requestRepository.saveAll(activeRequests);
+      }
+
+      if (actualUser.getTeam() != null) {
+
+        Team team = actualUser.getTeam();
+
+        if (actualUser.equals(team.getLeader())) {
+          team.setLeader(null);
+          teamRepository.save(team);
+        }
+        actualUser.setTeam(null);
+
+      }
+
+      refreshTokenRepository.deleteByUserId(actualUser.getId());
+
+      userRepository.save(actualUser);
+    }
+
+  }
+}

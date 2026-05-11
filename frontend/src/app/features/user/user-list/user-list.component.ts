@@ -6,7 +6,9 @@ import { SharedTableComponent } from "../../../shared/components/table/shared-ta
 import { AuthService } from "../../../core/services/auth.service";
 import { Router } from "@angular/router";
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ToastService } from "../../../core/services/toast.service";
+import { UserDeletionDialogComponent } from '../user-deletion-dialog/user-deletion-dialog.component';
+import { RequisitionDto } from '../../../core/api';
 
 @Component({
   selector: 'app-user-list',
@@ -34,7 +36,8 @@ export class UserListComponent implements OnInit {
     private readonly userService: UserModuleService,
     private router: Router,
     protected authService: AuthService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private toastService: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -95,15 +98,43 @@ export class UserListComponent implements OnInit {
   }
 
   deleteUser(user: UserDto) {
-    const ref = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: 'Delete User',
-        message: `Are you sure you want to delete "${user.name}"?`
-      }
-    });
-    ref.afterClosed().subscribe((confirmed) => {
-      if (confirmed) {
-        // TODO: call deleteUser
+    this.userService.getPendingRequisitions(user.id!).subscribe({
+      next: (pendingRequests: RequisitionDto[]) => {
+        this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
+          next: (response) => {
+            const fallbackUsers = response.content!.filter(u => u.id !== user.id && u.active !== false);
+
+            const dialogReturnValue = this.dialog.open(UserDeletionDialogComponent, {
+              width: '500px',
+              data: {
+                user: user,
+                pendingRequests: pendingRequests,
+                fallbackUsers: fallbackUsers
+              }
+            });
+
+            dialogReturnValue.afterClosed().subscribe(fallbackUserId => {
+              if (fallbackUserId !== undefined) {
+                this.userService.deleteByUserId(user.id!, fallbackUserId).subscribe({
+                  next: () => {
+                    this.toastService.showSuccess('User deactivated successfully');
+                    this.loadUsers(0, 10);
+                    this.loadUserStats();
+                  },
+                  error: (err) => {
+                    this.toastService.showError("User Deactivation failed: " + err.message);
+                  }
+                });
+              }
+            });
+          },
+          error: (err) => {
+            this.toastService.showError("Could not fetch users for fallback selection: " + err.message);
+          }
+        });
+      },
+      error: (err) => {
+        this.toastService.showError("Could not fetch pending requests: " + err.message);
       }
     });
   }

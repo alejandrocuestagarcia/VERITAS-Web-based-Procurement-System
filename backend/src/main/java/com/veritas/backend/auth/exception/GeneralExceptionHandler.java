@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +25,12 @@ public class GeneralExceptionHandler {
   public ResponseEntity<String> handleBadCredentialsException(final BadCredentialsException exception) {
     log.warn("Bad credentials: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+  }
+
+  @ExceptionHandler(DisabledException.class)
+  public ResponseEntity<String> handleDisabledException(final DisabledException exception) {
+    log.warn("Account disabled: {}", exception.getMessage());
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is disabled");
   }
 
   @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})

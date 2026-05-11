@@ -13,6 +13,7 @@ import com.veritas.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,11 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             log.warn("Login failed – invalid password for email: {}", request.email());
             throw new BadCredentialsException("Invalid credentials");
+        }
+
+        if (!user.isEnabled()) {
+            log.warn("Login failed – account disabled for email: {}", request.email());
+            throw new DisabledException("User account is disabled");
         }
 
         String accessToken = jwtService.generateAccessToken(user);
