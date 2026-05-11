@@ -36,7 +36,6 @@ public class WorkflowController {
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
 
     @IsRequester
-    @IsFinanceOfficer
     @Operation(summary = "List workflows", description = "Retrieves a list of workflows with optional filtering.")
     @GetMapping
     public ResponseEntity<Page<WorkflowDto>> getAllWorkflows(
@@ -51,7 +50,6 @@ public class WorkflowController {
     }
 
     @IsRequester
-    @IsFinanceOfficer
     @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id) {
