@@ -17,7 +17,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.veritas.backend.auth.repository.RefreshTokenRepository;
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
@@ -301,10 +300,9 @@ class UserServiceUnitTest {
     void CreateUser_ValidUser_SavesAndReturnsUser() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "test@veritas.corp", "Test User", "password123",
-                UserRole.REQUESTER, 1L, Department.IT, false);
+                UserRole.REQUESTER, 1L, false);
 
         Team mockTeam = new Team();
-        mockTeam.setDepartment(Department.IT);
 
         User mappedUser = new User();
         User savedUser = new User();
@@ -329,7 +327,7 @@ class UserServiceUnitTest {
     void CreateUser_DuplicateEmail_ThrowsEntityExistsException() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "duplicate@veritas.com", "Test User", "password123",
-                UserRole.FINANCE_OFFICER, 1L, Department.IT, false);
+                UserRole.FINANCE_OFFICER, 1L, false);
 
         when(userRepository.existsByEmail(request.email())).thenReturn(true);
 
@@ -341,7 +339,7 @@ class UserServiceUnitTest {
     void CreateUser_TeamNotFound_ThrowsEntityNotFoundException() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "test@veritas.com", "Test User", "password123",
-                UserRole.PROCUREMENT_OFFICER, 1L, Department.IT, false);
+                UserRole.PROCUREMENT_OFFICER, 1L, false);
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(java.util.Optional.empty());
@@ -377,7 +375,7 @@ class UserServiceUnitTest {
     void EditUser_UserNotFound_ThrowsEntityNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null, null, null)));
+        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null, null)));
         verify(userRepository, never()).save(any());
     }
 
@@ -398,7 +396,7 @@ class UserServiceUnitTest {
         when(teamRepository.findById(2L)).thenReturn(Optional.of(newTeam));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, 2L, null, null));
+        userService.editUser(1L, new UserEditDto(null, null, null, 2L, null));
 
         assertEquals(newTeam, user.getTeam());
     }
@@ -415,7 +413,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, true));
+        userService.editUser(1L, new UserEditDto(null, null, null, 1L, true));
 
         assertEquals(user, team.getLeader());
         verify(teamRepository).save(team);
@@ -434,7 +432,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null,false));
+        userService.editUser(1L, new UserEditDto(null, null, null, 1L, false));
 
         assertNull(team.getLeader());
         verify(teamRepository).save(team);
@@ -456,7 +454,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, null, null,false));
+        userService.editUser(1L, new UserEditDto(null, null, null, null, false));
 
         assertEquals(leader, team.getLeader());
         verify(teamRepository, never()).save(any());
@@ -514,9 +512,9 @@ class UserServiceUnitTest {
 
     @Test
     void CreateUser_NewAccount_SetsRequiresPasswordChangeToTrue() {
-        UserCreationRequestDto request = new UserCreationRequestDto("newuser@veritas.com", "New User", "tempPass123", UserRole.REQUESTER, 1L, Department.IT, false);
+        UserCreationRequestDto request = new UserCreationRequestDto("newuser@veritas.com", "New User", "tempPass123", UserRole.REQUESTER, 1L, false);
 
-        Team team = Team.builder().teamId(1L).department(Department.IT).build();
+        Team team = Team.builder().teamId(1L).build();
 
         User user = new User();
 

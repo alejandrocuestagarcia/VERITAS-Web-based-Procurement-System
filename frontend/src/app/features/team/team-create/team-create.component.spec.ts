@@ -12,7 +12,8 @@ import { of } from 'rxjs';
 
 import {
   TeamsModuleService,
-  UserModuleService
+  UserModuleService,
+  DepartmentsModuleService
 } from '../../../core/api';
 import { TeamCreateComponent } from './team-create.component';
 import { ToastService } from '../../../core/services/toast.service';
@@ -36,6 +37,13 @@ describe('TeamCreateComponent', () => {
     createTeam: () => of({ id: 1 })
   };
 
+  const departmentsModuleServiceStub = {
+    getAllDepartments: () => of([
+      { id: 1, name: 'IT' },
+      { id: 2, name: 'HR' }
+    ])
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [TeamCreateComponent],
@@ -50,6 +58,7 @@ describe('TeamCreateComponent', () => {
       providers: [
         { provide: UserModuleService, useValue: userModuleServiceStub },
         { provide: TeamsModuleService, useValue: teamsModuleServiceStub },
+        { provide: DepartmentsModuleService, useValue: departmentsModuleServiceStub },
         { provide: ToastService, useValue: { showSuccess: jasmine.createSpy(), showError: jasmine.createSpy(), showInfo: jasmine.createSpy() } }
       ],
       schemas: [NO_ERRORS_SCHEMA]

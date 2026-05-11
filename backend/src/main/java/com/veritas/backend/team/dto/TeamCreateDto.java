@@ -1,6 +1,5 @@
 package com.veritas.backend.team.dto;
 
-import com.veritas.backend.common.model.Department;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,7 +21,7 @@ public class TeamCreateDto {
     private String description;
 
     @NotNull(message = "Department is required")
-    private Department department;
+    private Long departmentId;
 
     @Positive(message = "Leader id must be positive")
     private Long leaderId;

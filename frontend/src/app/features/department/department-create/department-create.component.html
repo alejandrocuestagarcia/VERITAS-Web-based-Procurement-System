@@ -1,0 +1,24 @@
+<div [formGroup]="departmentForm">
+  <app-shared-form
+    [title]="isEditMode ? 'Edit Department' : 'Add New Department'"
+    subtitle="Configure organizational divisions, manage administrative boundaries, and structure governance entities."
+    routingSubtitle="ADMINISTRATION > DEPARTMENTS"
+    [submitButtonLabel]="submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Department' : 'Create Department')"
+    [submitButtonIcon]="isEditMode ? 'save' : 'add_business'"
+    [loading]="submitting"
+    (submitted)="submit()"
+    (cancelled)="cancel()">
+
+    <app-shared-form-card icon="badge" title="Core Department Details">
+      <app-shared-form-field label="DEPARTMENT NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>business</mat-icon>
+          <input matInput type="text" formControlName="name" placeholder="e.g. Finance Operations">
+          <mat-error *ngIf="departmentForm.get('name')?.hasError('required') && departmentForm.get('name')?.touched">Department name is required.</mat-error>
+          <mat-error *ngIf="departmentForm.get('name')?.hasError('minlength') && departmentForm.get('name')?.touched">Department name must be at least 2 characters.</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
+  </app-shared-form>
+</div>

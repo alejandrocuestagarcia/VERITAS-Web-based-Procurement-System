@@ -1,13 +1,8 @@
-<div [formGroup]="userForm" >
-  <app-shared-form
-    title="Create New User"
+<div [formGroup]="userForm">
+  <app-shared-form title="Create New User"
     subtitle="Configure account access, departmental associations, and procurement authority levels for a new team member."
-    routingSubtitle="USERS > ADD NEW USER"
-    submitButtonLabel="Create User"
-    submitButtonIcon="person_add"
-    [loading]="loading"
-    (submitted)="onSubmit()"
-    (cancelled)="onCancel()">
+    routingSubtitle="USERS > ADD NEW USER" submitButtonLabel="Create User" submitButtonIcon="person_add"
+    [loading]="loading" (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="manage_accounts" title="Account Details">
       <app-shared-form-field label="FULL NAME">
@@ -66,19 +61,7 @@
         </mat-form-field>
       </app-shared-form-field>
 
-      <app-shared-form-field label="DEPARTMENT">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>meeting_room</mat-icon>
-          <mat-select formControlName="department" placeholder="Select department">
-            <mat-option *ngFor="let dept of departments" [value]="dept">{{ dept }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="userForm.get('department')?.hasError('required') && userForm.get('department')?.touched">
-            Department is required
-          </mat-error>
-        </mat-form-field>
-      </app-shared-form-field>
-
-      <div class="flex items-center gap-4 col-span-2">
+      <div class="flex items-center gap-4 self-center">
         <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"></mat-slide-toggle>
         <div class="flex flex-col">
           <span class="text-sm font-semibold">Assign as Team Leader</span>
@@ -93,9 +76,9 @@
         <div class="flex flex-col">
           <span class="font-bold text-sm">Onboarding Invitation</span>
           <span class="text-xs text-slate-600">
-          Once created, an automated invitation will be sent to the email address provided.
-          The user will have 48 hours to activate their account.
-        </span>
+            Once created, an automated invitation will be sent to the email address provided.
+            The user will have 48 hours to activate their account.
+          </span>
         </div>
       </div>
     </ng-container>

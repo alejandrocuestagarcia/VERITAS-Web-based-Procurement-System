@@ -1,6 +1,5 @@
 package com.veritas.backend.requisition.entity;
 
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.project.entity.Project;
@@ -61,9 +60,6 @@ public class Request {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
     private Project projectID;
-
-    @Enumerated(EnumType.STRING)
-    private Department department;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

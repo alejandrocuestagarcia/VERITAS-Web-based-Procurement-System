@@ -1,13 +1,7 @@
 <div [formGroup]="userForm">
-  <app-shared-form
-    title="Edit User"
-    subtitle="Update account details, team assignment and team leadership status."
-    routingSubtitle="USERS > EDIT USER"
-    submitButtonLabel="Save Changes"
-    submitButtonIcon="save"
-    [loading]="loading"
-    (submitted)="onSubmit()"
-    (cancelled)="onCancel()">
+  <app-shared-form title="Edit User" subtitle="Update account details, team assignment and team leadership status."
+    routingSubtitle="USERS > EDIT USER" submitButtonLabel="Save Changes" submitButtonIcon="save" [loading]="loading"
+    (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="manage_accounts" title="Account Details">
       <app-shared-form-field label="FULL NAME">
@@ -60,20 +54,9 @@
         </mat-form-field>
       </app-shared-form-field>
 
-      <app-shared-form-field label="DEPARTMENT">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>corporate_fare</mat-icon>
-          <mat-select formControlName="department" placeholder="Select department">
-            <mat-option *ngFor="let dept of departments" [value]="dept">{{ dept }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="userForm.get('department')?.hasError('required') && userForm.get('department')?.touched">
-            Department is required
-          </mat-error>
-        </mat-form-field>
-      </app-shared-form-field>
-
-      <div class="flex items-center gap-4 col-span-2">
-        <mat-slide-toggle formControlName="isTeamLeader" color="primary" [disabled]="!userForm.get('teamId')?.value"></mat-slide-toggle>
+      <div class="flex items-center gap-4 self-center">
+        <mat-slide-toggle formControlName="isTeamLeader" color="primary"
+          [disabled]="!userForm.get('teamId')?.value"></mat-slide-toggle>
         <div class="flex flex-col">
           <span class="text-sm font-semibold">Team Leader</span>
           <span class="text-xs text-slate-500">Toggle off to demote and allow team reassignment.</span>

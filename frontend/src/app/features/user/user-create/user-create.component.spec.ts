@@ -3,6 +3,8 @@ import { UserCreateComponent } from './user-create.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -13,7 +15,7 @@ describe('UserCreateComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [UserCreateComponent],
-      imports: [HttpClientTestingModule, ReactiveFormsModule, MatSnackBarModule],
+      imports: [HttpClientTestingModule, ReactiveFormsModule, MatSnackBarModule, MatSelectModule, NoopAnimationsModule],
       providers: [
         { provide: ToastService, useValue: { showSuccess: jasmine.createSpy(), showError: jasmine.createSpy() } }
       ],

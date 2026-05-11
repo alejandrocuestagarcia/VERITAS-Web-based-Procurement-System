@@ -5,7 +5,6 @@ import { ToastService } from '../../../core/services/toast.service';
 import {
   TeamsModuleService,
   UserCreationRequestDto,
-  UserCreationRequestDtoDepartmentEnum,
   UserDtoRoleEnum,
   UserModuleService,
   TeamDto
@@ -21,14 +20,13 @@ export class UserCreateComponent implements OnInit {
   loading = false;
 
   roles = Object.values(UserDtoRoleEnum);
-  departments = Object.values(UserCreationRequestDtoDepartmentEnum);
   teams: TeamDto[] = [];
 
   constructor(private fb: FormBuilder,
-              private router: Router,
-              private userService: UserModuleService,
-              private teamService: TeamsModuleService,
-              private toastService: ToastService) {
+    private router: Router,
+    private userService: UserModuleService,
+    private teamService: TeamsModuleService,
+    private toastService: ToastService) {
   }
 
   ngOnInit(): void {
@@ -54,7 +52,6 @@ export class UserCreateComponent implements OnInit {
       password: ['', Validators.required],
       role: [null, Validators.required],
       teamId: [null],
-      department: [null, Validators.required],
       promoteToTeamLeader: [false],
     });
   }
@@ -69,7 +66,6 @@ export class UserCreateComponent implements OnInit {
         password: this.userForm.value.password,
         role: this.userForm.value.role,
         teamId: this.userForm.value.teamId,
-        department: this.userForm.value.department,
         promoteToTeamLeader: this.userForm.value.promoteToTeamLeader
 
       };

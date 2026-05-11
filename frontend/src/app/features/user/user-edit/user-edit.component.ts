@@ -1,15 +1,15 @@
-import {Component, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from "@angular/forms";
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import {
   TeamDto,
-  TeamsModuleService, UserCreationRequestDtoDepartmentEnum, UserDtoRoleEnum,
+  TeamsModuleService, UserDtoRoleEnum,
   UserModuleService
 } from "../../../core/api";
-import {ActivatedRoute, Router} from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
-import {ResetPasswordDialogComponent} from "../../login/reset-password-dialog/reset-password-dialog.component";
-import {MatDialog} from "@angular/material/dialog";
+import { ResetPasswordDialogComponent } from "../../login/reset-password-dialog/reset-password-dialog.component";
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
   selector: 'app-user-edit',
@@ -22,7 +22,6 @@ export class UserEditComponent implements OnInit {
   userId!: number;
 
   roles = Object.values(UserDtoRoleEnum);
-  departments = Object.values(UserCreationRequestDtoDepartmentEnum);
   teams: TeamDto[] = [];
 
   constructor(
@@ -34,7 +33,7 @@ export class UserEditComponent implements OnInit {
     private authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.userId = Number(this.route.snapshot.paramMap.get('id'));
@@ -49,25 +48,24 @@ export class UserEditComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       role: [null, Validators.required],
       teamId: [null],
-      department: [null, Validators.required],
       isTeamLeader: [false],
     });
 
     this.userForm.get('isTeamLeader')?.valueChanges.subscribe(isLeader => {
       const teamControl = this.userForm.get('teamId');
       if (isLeader) {
-        teamControl?.disable();
+        teamControl?.disable({ emitEvent: false });
       } else {
-        teamControl?.enable();
+        teamControl?.enable({ emitEvent: false });
       }
     });
 
     this.userForm.get('teamId')?.valueChanges.subscribe(teamId => {
       const leaderControl = this.userForm.get('isTeamLeader');
       if (!teamId) {
-        leaderControl?.disable();
+        leaderControl?.disable({ emitEvent: false });
       } else {
-        leaderControl?.enable();
+        leaderControl?.enable({ emitEvent: false });
       }
     });
   }
@@ -87,7 +85,6 @@ export class UserEditComponent implements OnInit {
           email: user.email,
           role: user.role,
           teamId: user.teamId,
-          department: user.department,
           isTeamLeader: user.isTeamLeader ?? false,
         });
 
@@ -118,7 +115,6 @@ export class UserEditComponent implements OnInit {
         email: formValue.email,
         role: formValue.role,
         teamId: formValue.teamId,
-        department: formValue.department,
         isTeamLeader: formValue.isTeamLeader,
       };
 

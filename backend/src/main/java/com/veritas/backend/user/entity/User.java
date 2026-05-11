@@ -1,6 +1,5 @@
 package com.veritas.backend.user.entity;
 
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.team.entity.Team;
 import jakarta.persistence.*;
 
@@ -42,9 +41,6 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role", nullable = false)
     private UserRole role;
-
-    @Enumerated(EnumType.STRING)
-    private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")

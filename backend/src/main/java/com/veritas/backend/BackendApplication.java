@@ -1,6 +1,7 @@
 package com.veritas.backend;
 
-import com.veritas.backend.common.model.Department;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
@@ -29,16 +30,28 @@ public class BackendApplication {
 	}
 
 	@Bean
-	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder, TeamRepository teamRepo,
-			ProjectRepository projectRepo, WorkflowService workflowService,
-			WorkflowDefinitionRepository workflowDefinitionRepository) {
+	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder,
+							   DepartmentRepository departmentRepository, TeamRepository teamRepo,
+							   ProjectRepository projectRepo, WorkflowService workflowService,
+							   WorkflowDefinitionRepository workflowDefinitionRepository) {
 		return args -> {
 			log.info("Starting seed data initialization...");
+
+			Department department = departmentRepository.findById(1L).orElseGet(() -> {
+				Department it = new Department();
+				it.setName("IT");
+				return departmentRepository.save(it);
+			});
+			Department department2 = departmentRepository.findById(2L).orElseGet(() -> {
+				Department hr = new Department();
+				hr.setName("HR");
+				return departmentRepository.save(hr);
+			});
 
 			Team teamOne = teamRepo.findById(1L).orElseGet(() -> {
 				Team team = new Team();
 				team.setName("Procurement Alpha");
-				team.setDepartment(Department.IT);
+				team.setDepartment(department);
 				team.setDescription("Handles procurement for the alpha team");
 				log.info("Seeded team: {}", team.getName());
 				return teamRepo.save(team);
@@ -50,7 +63,6 @@ public class BackendApplication {
 						.email("admin@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.ADMINISTRATOR)
-						.department(Department.IT)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
@@ -63,7 +75,6 @@ public class BackendApplication {
 						.email("finance@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.FINANCE_OFFICER)
-						.department(Department.IT)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
@@ -76,7 +87,6 @@ public class BackendApplication {
 						.email("procurement@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.PROCUREMENT_OFFICER)
-						.department(Department.IT)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
@@ -89,7 +99,6 @@ public class BackendApplication {
 						.email("requester@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.REQUESTER)
-						.department(Department.IT)
 						.isActive(true)
 						.team(teamOne)
 						.requiresPasswordChange(false)

@@ -1,6 +1,5 @@
 package com.veritas.backend.budget.entity;
 
-import com.veritas.backend.common.model.Department;
 import com.veritas.backend.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -16,9 +15,6 @@ public class InternalBudget {
     @Column(name = "budget_id")
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    private Department department;
-
     @Column(name = "fiscal_year")
     private Integer fiscalYear;
 
@@ -33,8 +29,4 @@ public class InternalBudget {
 
     @Column(name = "safety_buffer")
     private BigDecimal safetyBuffer = BigDecimal.ZERO;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
-    private Project project;
 }
