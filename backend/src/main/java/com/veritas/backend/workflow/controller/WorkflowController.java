@@ -35,6 +35,8 @@ public class WorkflowController {
     private final WorkflowMapper workflowMapper;
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
 
+    @IsRequester
+    @IsFinanceOfficer
     @Operation(summary = "List workflows", description = "Retrieves a list of workflows with optional filtering.")
     @GetMapping
     public ResponseEntity<Page<WorkflowDto>> getAllWorkflows(
@@ -48,10 +50,10 @@ public class WorkflowController {
         return ResponseEntity.ok(workflows);
     }
 
-    @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
-    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @IsRequester
     @IsFinanceOfficer
+    @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
+    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id) {
         log.info("GET /workflows/{}", id);
         return ResponseEntity.ok(workflowService.getWorkflow(id));
@@ -59,7 +61,6 @@ public class WorkflowController {
 
     @IsFinanceOfficer
     @Operation(summary = "Save workflow", description = "Saves a new workflow configuration (BPMN/XML) created in the editor.")
-    @IsFinanceOfficer
     @PostMapping(consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> saveWorkflow(@Valid @RequestBody WorkflowSaveDto workflowData) {
         log.info("POST /workflows");
@@ -70,7 +71,6 @@ public class WorkflowController {
 
     @IsFinanceOfficer
     @Operation(summary = "Edit Workflow", description = "Edits an existing workflow.")
-    @IsFinanceOfficer
     @PatchMapping(path = "/{id}", consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> editWorkflow(@PathVariable Long id, @Valid @RequestBody WorkflowEditDto workflowEditDto) {
         log.info("PATCH /workflows/{}", id);

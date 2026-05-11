@@ -1,8 +1,18 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import {Component, OnInit, ViewChild, ElementRef, OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { forkJoin, Observable, of } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  forkJoin,
+  Observable,
+  of,
+  startWith,
+  Subject,
+  Subscription,
+  switchMap
+} from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   ProjectModuleService,
@@ -19,7 +29,7 @@ import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow
   selector: 'app-requisition-create',
   templateUrl: './requisition-create.component.html'
 })
-export class RequisitionCreateComponent implements OnInit {
+export class RequisitionCreateComponent implements OnInit,OnDestroy {
   basicInfoForm!: FormGroup;
   lineItemsForm!: FormGroup;
   loading = false;
@@ -46,9 +56,29 @@ export class RequisitionCreateComponent implements OnInit {
     private dialog: MatDialog
   ) { }
 
+  private workflowSearch$ = new Subject<string>();
+  private searchSubscription?: Subscription;
+
   ngOnInit(): void {
     this.initForms();
     this.loadData();
+
+    this.searchSubscription = this.workflowSearch$.pipe(
+      startWith(''),
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap(search => {
+        const pageable = { page: 0, size: 10, sort: ['name,asc'] };
+        return this.workflowService.getAllWorkflows(pageable, search, true);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.workflows = response.content || [];
+      },
+      error: () => {
+        this.snackBar.open('Error searching workflows', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   getFilteredProjects(): ProjectDto[] {
@@ -57,10 +87,9 @@ export class RequisitionCreateComponent implements OnInit {
     return this.projects.filter(p => p.name?.toLowerCase().includes(search));
   }
 
-  getFilteredWorkflows(): WorkflowDto[] {
-    if (!this.workflowSearch) return this.workflows;
-    const search = this.workflowSearch.toLowerCase();
-    return this.workflows.filter(w => w.name?.toLowerCase().includes(search));
+  onWorkflowSearchChange(value: string): void{
+    this.workflowSearch = value;
+    this.workflowSearch$.next(value);
   }
 
   getSelectedProjectName(): string {
@@ -183,12 +212,6 @@ export class RequisitionCreateComponent implements OnInit {
       next: (projects) => this.projects = projects,
       error: () => this.snackBar.open('Failed to load projects', 'Close', { duration: 3000 })
     });
-
-    // TODO: Implement pagination and server-side search for workflows.
-    this.workflowService.getAllWorkflows().subscribe({
-      next: (workflows) => this.workflows = workflows,
-      error: () => this.snackBar.open('Failed to load workflows', 'Close', { duration: 3000 })
-    });
   }
 
   onSubmit(): void {
@@ -249,5 +272,9 @@ export class RequisitionCreateComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubscription?.unsubscribe()
   }
 }
