@@ -33,7 +33,6 @@ public interface JiraIssueMapper {
     @Mapping(target = "department", ignore = true)
     @Mapping(target = "requestKey", ignore = true)
     @Mapping(target = "totalQuantity", ignore = true)
-    @Mapping(target = "costCenter", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     Request toRequest(JiraIssueRecord issueRecord);
 

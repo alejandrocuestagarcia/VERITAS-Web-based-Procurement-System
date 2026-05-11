@@ -12,7 +12,8 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { HTTP_INTERCEPTORS, HttpClientModule } from "@angular/common/http";
 import { MatCardModule } from "@angular/material/card";
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatFormFieldModule, MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,6 +56,9 @@ import { MatDialogModule } from "@angular/material/dialog";
 import { WorkflowEditorComponent } from './features/workflow/workflow-editor/workflow-editor.component';
 import { JiraIssuesSyncHistoryComponent } from './features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component';
 import { ConfirmationDialogComponent } from './shared/components/confirmation-dialog/confirmation-dialog.component';
+import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
+import { MatStepperModule } from "@angular/material/stepper";
+import { PriorityBadgeComponent } from './shared/components/priority-badge/priority-badge.component';
 
 @NgModule({
   declarations: [
@@ -88,7 +92,9 @@ import { ConfirmationDialogComponent } from './shared/components/confirmation-di
     JiraSettingsListComponent,
     JiraSettingsCreateComponent,
     WorkflowEditorComponent,
-    JiraIssuesSyncHistoryComponent
+    JiraIssuesSyncHistoryComponent,
+    RequisitionCreateComponent,
+    PriorityBadgeComponent
   ],
   imports: [
     BrowserModule,
@@ -116,7 +122,9 @@ import { ConfirmationDialogComponent } from './shared/components/confirmation-di
     MatDatepickerModule,
     MatNativeDateModule,
     MatSliderModule,
-    MatDialogModule
+    MatDialogModule,
+    MatStepperModule,
+    MatProgressSpinnerModule
   ],
   providers: [
     {
@@ -127,6 +135,10 @@ import { ConfirmationDialogComponent } from './shared/components/confirmation-di
     {
       provide: BASE_PATH,
       useValue: environment.apiUrl
+    },
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: { subscriptSizing: 'dynamic', appearance: 'outline' }
     }
   ],
   bootstrap: [AppComponent]

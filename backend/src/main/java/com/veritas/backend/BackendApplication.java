@@ -91,6 +91,7 @@ public class BackendApplication {
 						.role(UserRole.REQUESTER)
 						.department(Department.IT)
 						.isActive(true)
+						.team(teamOne)
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(requester);

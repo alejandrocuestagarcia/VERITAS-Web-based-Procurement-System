@@ -1,0 +1,4 @@
+<div class="inline-flex items-center gap-2" [ngClass]="getPriorityColor()">
+  <mat-icon class="text-base h-5 w-5 leading-5">{{ getIcon() }}</mat-icon>
+  <span class="text-sm font-medium">{{ priority | titlecase }}</span>
+</div>

@@ -130,6 +130,13 @@ body {
   border-radius: 0.75rem !important;
 }
 
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: #e2e8f0;
+  --mdc-outlined-text-field-hover-outline-color: #cbd5e1;
+  --mdc-outlined-text-field-focus-outline-color: #3b82f6;
+  --mdc-outlined-text-field-container-shape: 0.5rem;
+}
+
 .v-btn-brand {
   @include mat.typography-level($v-typography, button);
   background: var(--v-brand-gradient) !important;

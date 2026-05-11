@@ -1,9 +1,16 @@
 package com.veritas.backend.requisition.dto;
 
-import lombok.Data;
+import com.veritas.backend.requisition.entity.Priority;
+import java.time.LocalDateTime;
 
-@Data
-public class RequisitionDto {
-    private Long id;
-    private String status;
-}
+public record RequisitionDto(
+    Long id,
+    String requestName,
+    String requestKey,
+    String status,
+    Priority priority,
+    String projectName,
+    String teamName,
+    String requesterName,
+    LocalDateTime createdAt
+) {}

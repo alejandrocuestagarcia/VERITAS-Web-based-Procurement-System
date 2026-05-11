@@ -1,0 +1,362 @@
+<!--AI-REFACTORED-->
+<div class="p-6 max-w-7xl mx-auto">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900">Create Procurement Request</h1>
+    <p class="text-slate-500 mt-1">Fill in the details below to submit a new internal procurement request.</p>
+  </div>
+
+  <mat-stepper linear #stepper class="bg-white rounded-xl shadow-sm border border-slate-200">
+    <!-- Step 1: Basic Information -->
+    <mat-step [stepControl]="basicInfoForm">
+      <ng-template matStepLabel>Basic Info</ng-template>
+
+      <div [formGroup]="basicInfoForm" class="py-9 space-y-8">
+        <app-shared-form-card icon="assignment" title="General Details">
+          <app-shared-form-field label="REQUEST NAME" [fullWidth]="true" [required]="true">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-icon matPrefix>description</mat-icon>
+              <input matInput formControlName="requestName" placeholder="e.g. New Laptops for Marketing Team">
+              <mat-error *ngIf="basicInfoForm.get('requestName')?.hasError('required')">Request name is
+                required</mat-error>
+            </mat-form-field>
+          </app-shared-form-field>
+
+          <app-shared-form-field label="PROJECT" [required]="true">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-icon matPrefix>business</mat-icon>
+              <mat-select formControlName="projectId" placeholder="Select project"
+                (openedChange)="onOpenedChange($event)">
+                <!-- Search Filter -->
+                <div class="px-3 py-2 sticky top-0 bg-white z-10 border-b border-slate-100 mb-1">
+                  <div class="relative flex items-center">
+                    <mat-icon class="absolute left-2 text-slate-400 text-sm h-4 w-4">search</mat-icon>
+                    <input #projectSearchInput
+                      class="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
+                      placeholder="Search projects..." (input)="projectSearch = projectSearchInput.value"
+                      (keydown)="$event.stopPropagation()">
+                  </div>
+                </div>
+
+                <mat-option *ngFor="let project of getFilteredProjects()" [value]="project.id">
+                  {{ project.name }}
+                </mat-option>
+
+                <div *ngIf="getFilteredProjects().length === 0" class="p-4 text-center text-sm text-slate-500">
+                  No projects found matching "{{ projectSearch }}"
+                </div>
+              </mat-select>
+              <mat-error *ngIf="basicInfoForm.get('projectId')?.hasError('required')">Project is required</mat-error>
+            </mat-form-field>
+          </app-shared-form-field>
+
+          <app-shared-form-field label="PRIORITY">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-icon matPrefix>priority_high</mat-icon>
+              <mat-select formControlName="priority">
+                <mat-select-trigger>
+                  <app-priority-badge [priority]="basicInfoForm.get('priority')?.value"></app-priority-badge>
+                </mat-select-trigger>
+                <mat-option *ngFor="let p of priorities" [value]="p">
+                  <app-priority-badge [priority]="p"></app-priority-badge>
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </app-shared-form-field>
+
+          <app-shared-form-field label="DESCRIPTION" [fullWidth]="true">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-icon matPrefix>notes</mat-icon>
+              <textarea matInput formControlName="description"
+                placeholder="Provide additional details about this request..." rows="3" class="resize-y"></textarea>
+            </mat-form-field>
+          </app-shared-form-field>
+        </app-shared-form-card>
+
+        <app-shared-form-card icon="account_tree" title="Workflow Selection">
+          <app-shared-form-field label="SELECT WORKFLOW" [fullWidth]="true">
+            <!-- Search bar -->
+            <div class="relative flex items-center mb-4 mt-2 pr-2">
+              <mat-icon class="absolute left-3 text-slate-400">search</mat-icon>
+              <input type="text"
+                class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm shadow-sm"
+                placeholder="Search workflows by name..." [(ngModel)]="workflowSearch"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+
+            <!-- Scrollable list -->
+            <div class="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar rounded-xl transition-all"
+                 [class.border-2]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched"
+                 [class.border-red-400]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched"
+                 [class.bg-red-50]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched">
+              <div *ngFor="let workflow of getFilteredWorkflows()"
+                (click)="basicInfoForm.get('workflowDefinitionId')?.setValue(workflow.id)"
+                [class.border-blue-500]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
+                [class.bg-blue-50]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
+                [class.border-slate-200]="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id"
+                [class.hover:border-blue-300]="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id"
+                [class.hover:bg-slate-50]="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id"
+                class="flex items-center justify-between w-full p-4 cursor-pointer border-2 rounded-xl transition-all group shadow-sm">
+
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0"
+                    [class.bg-blue-100]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
+                    [class.text-blue-600]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
+                    [class.bg-slate-100]="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id"
+                    [class.text-slate-500]="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id">
+                    <mat-icon>
+                      {{ workflow.name?.toLowerCase()?.includes('standard') ? 'account_tree' :
+                      workflow.name?.toLowerCase()?.includes('executive') ? 'security' : 'bolt' }}
+                    </mat-icon>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="font-bold text-slate-800 text-base">{{ workflow.name }}</span>
+                    <span class="text-xs text-slate-500 mt-0.5">{{ workflow.description || 'Standard procurement process' }}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <button mat-icon-button (click)="$event.stopPropagation(); viewWorkflow(workflow.id)"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500"
+                    matTooltip="View Workflow Logic">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <mat-icon *ngIf="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
+                    class="text-blue-600">check_circle</mat-icon>
+                  <mat-icon *ngIf="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id"
+                    class="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">radio_button_unchecked</mat-icon>
+                </div>
+              </div>
+
+              <div *ngIf="getFilteredWorkflows().length === 0"
+                class="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <mat-icon class="text-4xl mb-2 text-slate-300">search_off</mat-icon>
+                <p>No workflows found matching "{{ workflowSearch }}"</p>
+              </div>
+            </div>
+
+            <input type="hidden" formControlName="workflowDefinitionId">
+            <div class="mt-3 flex items-center gap-1 text-sm font-semibold text-red-500"
+              *ngIf="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched">
+              <mat-icon class="text-base h-5 w-5 leading-5">error_outline</mat-icon>
+              Please select a workflow to proceed.
+            </div>
+          </app-shared-form-field>
+        </app-shared-form-card>
+
+        <div class="flex justify-end pt-4">
+          <button mat-button (click)="onCancel()" class="mr-4">Cancel</button>
+          <button mat-raised-button color="primary" matStepperNext (click)="basicInfoForm.markAllAsTouched()">Next: Vendor Quotes</button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- Step 2: Vendor Quotes -->
+    <mat-step>
+      <ng-template matStepLabel>Vendor Quotes (optional)</ng-template>
+      <div class="py-10">
+        <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" multiple>
+
+        <div (click)="triggerFileInput()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)" [class.bg-blue-50]="isDragging" [class.border-blue-500]="isDragging"
+          [class.bg-slate-50]="!isDragging"
+          class="max-w-2xl mx-auto border-2 border-dashed border-slate-300 rounded-2xl p-12 hover:bg-slate-100 hover:border-blue-400 transition-all cursor-pointer text-center group">
+          <mat-icon class="text-6xl text-slate-400 mb-4 h-16 w-16 group-hover:text-blue-500 transition-colors"
+            [class.text-blue-500]="isDragging" style="font-size: 64px;">cloud_upload</mat-icon>
+          <p class="text-xl text-slate-700 font-bold">Click to upload or drag and drop</p>
+          <p class="text-slate-500 mt-2">Support for PDF, JPG, PNG or CSV (max. 10MB per file)</p>
+        </div>
+
+        <!-- Uploaded Files List -->
+        <div *ngIf="uploadedFiles.length > 0" class="max-w-2xl mx-auto mt-8 space-y-3">
+          <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Uploaded Documents ({{
+            uploadedFiles.length }})</h3>
+          <div *ngFor="let file of uploadedFiles; let i = index"
+            class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-200 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <mat-icon>{{ file.type.includes('pdf') ? 'picture_as_pdf' : file.type.includes('image') ? 'image' :
+                  'insert_drive_file' }}</mat-icon>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-slate-800 truncate max-w-[300px]">{{ file.name }}</span>
+                <span class="text-xs text-slate-500">{{ (file.size / 1024).toFixed(1) }} KB</span>
+              </div>
+            </div>
+            <button mat-icon-button color="warn" (click)="$event.stopPropagation(); removeFile(i)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="max-w-2xl mx-auto flex justify-between mt-12">
+          <button mat-button matStepperPrevious>Back</button>
+          <button mat-raised-button color="primary" matStepperNext>Next: Line Items</button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- Step 3: Line Items -->
+    <mat-step [stepControl]="lineItemsForm">
+      <ng-template matStepLabel>Line Items</ng-template>
+      <div [formGroup]="lineItemsForm" class="py-6 space-y-4">
+        <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
+          <p class="text-sm text-blue-800 m-0 flex items-center gap-2">
+            <mat-icon class="text-blue-500 h-5 w-5 leading-5 text-[20px]">info</mat-icon>
+            List your required items below. Use the quotes you attached in Step 2 for reference.
+            Procurement will handle the technical specifications and pricing later.
+          </p>
+        </div>
+
+        <div formArrayName="items" class="space-y-6">
+          <div *ngFor="let item of items.controls; let i=index" [formGroupName]="i" class="relative">
+            <app-shared-form-card [title]="'Item #' + (i + 1)" icon="inventory_2">
+              <div header-actions>
+                <button mat-icon-button color="warn" (click)="removeItem(i)" [disabled]="items.length === 1"
+                  class="scale-125 hover:bg-red-50 transition-colors" matTooltip="Remove this item">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+
+
+              <app-shared-form-field label="Item Name" [fullWidth]="true" [required]="true">
+                <mat-form-field appearance="outline" class="w-full">
+                  <input matInput formControlName="name" placeholder="e.g. Dell XPS 15">
+                </mat-form-field>
+              </app-shared-form-field>
+
+              <div class="flex gap-4 items-start">
+                <div class="w-32">
+                  <app-shared-form-field label="Quantity" [required]="true">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <input matInput type="number" formControlName="quantity">
+                    </mat-form-field>
+                  </app-shared-form-field>
+                </div>
+
+                <div class="w-48">
+                  <app-shared-form-field label="Unit" [required]="true">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <input matInput formControlName="unit" placeholder="e.g. pcs, kg, box">
+                      <mat-error *ngIf="item.get('unit')?.hasError('required')">Unit is required</mat-error>
+                    </mat-form-field>
+                  </app-shared-form-field>
+                </div>
+              </div>
+
+
+
+              <app-shared-form-field label="Item Specifications / Description (Optional)" [fullWidth]="true">
+                <mat-form-field appearance="outline" class="w-full">
+                  <textarea matInput formControlName="description" rows="2"
+                    placeholder="e.g. 32GB RAM, i7 Processor, 1TB SSD"></textarea>
+                </mat-form-field>
+              </app-shared-form-field>
+            </app-shared-form-card>
+          </div>
+        </div>
+
+        <button mat-stroked-button color="primary" class="w-full py-2 border-dashed rounded-xl" (click)="addItem()">
+          <mat-icon>add</mat-icon> Add Another Item
+        </button>
+
+        <div class="flex justify-between mt-10">
+          <button mat-button matStepperPrevious>Back</button>
+          <button mat-raised-button color="primary" matStepperNext>Next: Review</button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- Step 4: Review -->
+    <mat-step>
+      <ng-template matStepLabel>Review</ng-template>
+      <div class="py-6 space-y-6">
+
+        <!-- Summary Header -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <h3 class="text-lg font-bold text-blue-900 mb-6 flex items-center gap-2">
+            <mat-icon>fact_check</mat-icon> Final Review
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: Basic Details -->
+            <div class="space-y-4">
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Project</div>
+                <div class="text-slate-800 font-semibold">{{ getSelectedProjectName() }}</div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Request Name</div>
+                <div class="text-slate-800 font-semibold">{{ basicInfoForm.value.requestName }}</div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Priority</div>
+                <div>
+                  <app-priority-badge [priority]="basicInfoForm.get('priority')?.value"></app-priority-badge>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Workflow & Files -->
+            <div class="space-y-4">
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Selected Workflow</div>
+                <div class="flex items-center gap-2 text-blue-700 font-bold">
+                  <mat-icon class="text-base h-4 w-4 leading-4">account_tree</mat-icon>
+                  {{ getSelectedWorkflowName() }}
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Uploaded Quotes ({{ uploadedFiles.length }})</div>
+                <div class="space-y-1 mt-1">
+                  <div *ngFor="let file of uploadedFiles" class="text-xs text-slate-600 flex items-center gap-1">
+                    <mat-icon class="text-sm h-3.5 w-3.5 leading-3.5">attachment</mat-icon>
+                    {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
+                  </div>
+                  <div *ngIf="uploadedFiles.length === 0" class="text-xs text-slate-400 italic">No files uploaded</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-blue-100">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</div>
+            <div class="text-slate-700 text-sm whitespace-pre-wrap">{{ basicInfoForm.value.description || 'No description provided.' }}</div>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div class="bg-slate-50 px-6 py-3 border-b border-slate-200">
+            <h4 class="text-sm font-bold text-slate-700 m-0 flex items-center gap-2">
+              <mat-icon class="text-base h-4 w-4 leading-4">list</mat-icon> Line Items
+            </h4>
+          </div>
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50/50 text-slate-500 uppercase text-[10px] font-bold tracking-widest border-b border-slate-100">
+              <tr>
+                <th class="px-6 py-3">Description</th>
+                <th class="px-6 py-3 text-center w-32">Qty / Unit</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr *ngFor="let item of items.value">
+                <td class="px-6 py-4 text-slate-800 font-medium">{{ item.name }}</td>
+                <td class="px-6 py-4 text-center text-slate-600">{{ item.quantity }} {{ item.unit }}</td>
+              </tr>
+            </tbody>
+
+          </table>
+        </div>
+
+        <div class="flex justify-between mt-10">
+          <button mat-button matStepperPrevious>Back</button>
+          <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="loading" class="px-8 h-11">
+            <mat-icon *ngIf="loading" class="mr-2 animate-spin">sync</mat-icon>
+            <mat-icon *ngIf="!loading" class="mr-2">send</mat-icon>
+            Submit Procurement Request
+          </button>
+        </div>
+      </div>
+    </mat-step>
+  </mat-stepper>
+</div>
