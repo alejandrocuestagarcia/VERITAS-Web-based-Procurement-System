@@ -32,6 +32,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatListModule } from "@angular/material/list";
 import { HasRoleDirective } from './core/directives/has-role.directive';
 import { VendorCreateComponent } from './features/vendor/vendor-create/vendor-create.component';
+import { VendorEditComponent } from './features/vendor/vendor-edit/vendor-edit.component';
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatNativeDateModule, MatOptionModule } from "@angular/material/core";
@@ -82,6 +83,7 @@ import { ConfirmationDialogComponent } from './shared/components/confirmation-di
     TeamListComponent,
     TeamCreateComponent,
     VendorCreateComponent,
+    VendorEditComponent,
     UserEditComponent,
     ResetPasswordDialogComponent,
     ConfirmationDialogComponent,

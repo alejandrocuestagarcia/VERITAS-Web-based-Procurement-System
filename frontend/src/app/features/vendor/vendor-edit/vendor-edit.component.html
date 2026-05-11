@@ -1,0 +1,66 @@
+<!-- AI-GENERATED -->
+
+<div [formGroup]="vendorForm">
+  <app-shared-form
+    title="Edit Vendor"
+    subtitle="Update vendor identity, tax details, and primary contact information."
+    routingSubtitle="VENDORS > EDIT VENDOR"
+    submitButtonLabel="Save Changes"
+    submitButtonIcon="save"
+    [loading]="loading"
+    (submitted)="onSubmit()"
+    (cancelled)="onCancel()">
+
+    <app-shared-form-card icon="business" title="General Identity">
+      <app-shared-form-field label="VENDOR NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>business_center</mat-icon>
+          <input matInput formControlName="vendorName" placeholder="ABC Global Logistics">
+          <mat-error *ngIf="vendorForm.get('vendorName')?.hasError('required') && vendorForm.get('vendorName')?.touched">
+            Vendor name is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="TAX ID / VAT NUMBER">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>qr_code</mat-icon>
+          <input matInput formControlName="taxId" placeholder="XXXXXXXXXXX">
+          <mat-error *ngIf="vendorForm.get('taxId')?.hasError('required') && vendorForm.get('taxId')?.touched">
+            Tax ID is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="DESCRIPTION" [fullWidth]="true">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>article</mat-icon>
+          <textarea matInput formControlName="description" placeholder="Enter notes" rows="1"></textarea>
+          <mat-error *ngIf="vendorForm.get('description')?.hasError('required') && vendorForm.get('description')?.touched">
+            Description is required
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
+    <app-shared-form-card icon="contact_mail" title="Primary Contact">
+      <app-shared-form-field label="CONTACT NAME">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="primaryContactName" placeholder="Full legal name">
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="CONTACT EMAIL">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>email</mat-icon>
+          <input matInput formControlName="primaryContactEmail" type="email" placeholder="email@vendor.com">
+          <mat-error *ngIf="vendorForm.get('primaryContactEmail')?.hasError('email') && vendorForm.get('primaryContactEmail')?.touched">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
+  </app-shared-form>
+</div>
