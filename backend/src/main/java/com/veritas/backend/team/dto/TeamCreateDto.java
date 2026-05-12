@@ -29,5 +29,5 @@ public class TeamCreateDto {
     @Future(message = "Expiration date must be in the future")
     private LocalDateTime expiresAt;
 
-    private List<Long> memberIds;
+    private List<@Positive(message = "Member id must be positive") Long> memberIds;
 }
