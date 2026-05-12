@@ -18,6 +18,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.net.URI;
 import java.util.List;
@@ -33,26 +35,30 @@ public class WorkflowController {
     private final WorkflowMapper workflowMapper;
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
 
-    @Operation(summary = "List workflows", description = "Retrieves a list of all available procurement workflow templates.")
-    @GetMapping
     @IsRequester
-    public List<WorkflowDto> getAllWorkflows() {
-        // TODO: Implement pagination and server-side search.
-        return workflowDefinitionRepository.findAllByIsActiveTrue().stream()
-            .map(workflowMapper::toWorkflowDto)
-            .collect(Collectors.toList());
+    @Operation(summary = "List workflows", description = "Retrieves a list of workflows with optional filtering.")
+    @GetMapping
+    public ResponseEntity<Page<WorkflowDto>> getAllWorkflows(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive
+    ) {
+        log.info("GET /workflows – page: {}, size: {}, search: '{}', isActive", pageable.getPageNumber(), pageable.getPageSize(), search, isActive);
+        Page<WorkflowDto> workflows = workflowService.getAllWorkflows(pageable, search,isActive);
+
+        return ResponseEntity.ok(workflows);
     }
 
+    @IsRequester
     @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @IsRequester
     public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id) {
         log.info("GET /workflows/{}", id);
         return ResponseEntity.ok(workflowService.getWorkflow(id));
     }
 
-    @Operation(summary = "Save workflow", description = "Saves a new workflow configuration (BPMN/XML) created in the editor.")
     @IsFinanceOfficer
+    @Operation(summary = "Save workflow", description = "Saves a new workflow configuration (BPMN/XML) created in the editor.")
     @PostMapping(consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> saveWorkflow(@Valid @RequestBody WorkflowSaveDto workflowData) {
         log.info("POST /workflows");
@@ -61,8 +67,8 @@ public class WorkflowController {
         return ResponseEntity.created(workflowURI).body(workflowDto);
     }
 
-    @Operation(summary = "Edit Workflow", description = "Edits an existing workflow.")
     @IsFinanceOfficer
+    @Operation(summary = "Edit Workflow", description = "Edits an existing workflow.")
     @PatchMapping(path = "/{id}", consumes = "application/json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkflowDto> editWorkflow(@PathVariable Long id, @Valid @RequestBody WorkflowEditDto workflowEditDto) {
         log.info("PATCH /workflows/{}", id);

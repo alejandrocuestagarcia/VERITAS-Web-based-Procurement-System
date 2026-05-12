@@ -80,7 +80,7 @@
               <input type="text"
                 class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm shadow-sm"
                 placeholder="Search workflows by name..." [(ngModel)]="workflowSearch"
-                [ngModelOptions]="{standalone: true}">
+                [ngModelOptions]="{standalone: true}" (ngModelChange)="onWorkflowSearchChange($event)">
             </div>
 
             <!-- Scrollable list -->
@@ -88,7 +88,7 @@
                  [class.border-2]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched"
                  [class.border-red-400]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched"
                  [class.bg-red-50]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched">
-              <div *ngFor="let workflow of getFilteredWorkflows()"
+              <div *ngFor="let workflow of workflows"
                 (click)="basicInfoForm.get('workflowDefinitionId')?.setValue(workflow.id)"
                 [class.border-blue-500]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
                 [class.bg-blue-50]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
@@ -127,7 +127,7 @@
                 </div>
               </div>
 
-              <div *ngIf="getFilteredWorkflows().length === 0"
+              <div *ngIf="workflows.length === 0"
                 class="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 <mat-icon class="text-4xl mb-2 text-slate-300">search_off</mat-icon>
                 <p>No workflows found matching "{{ workflowSearch }}"</p>

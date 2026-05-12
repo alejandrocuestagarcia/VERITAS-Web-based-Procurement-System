@@ -64,6 +64,7 @@ import { MatStepperModule } from "@angular/material/stepper";
 import { PriorityBadgeComponent } from './shared/components/priority-badge/priority-badge.component';
 import { UserDeletionDialogComponent } from './features/user/user-deletion-dialog/user-deletion-dialog.component';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { WorkflowListComponent } from './features/workflow/workflow-list/workflow-list.component';
 
 @NgModule({
   declarations: [
@@ -103,7 +104,8 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
     PriorityBadgeComponent,
     UserDeletionDialogComponent,
     DepartmentListComponent,
-    DepartmentCreateComponent
+    DepartmentCreateComponent,
+    WorkflowListComponent,
   ],
   imports: [
     BrowserModule,

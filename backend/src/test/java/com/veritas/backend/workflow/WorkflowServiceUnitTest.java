@@ -31,6 +31,11 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
+
 @ExtendWith(MockitoExtension.class)
 class WorkflowServiceUnitTest {
 
@@ -257,5 +262,47 @@ class WorkflowServiceUnitTest {
         savedRules.forEach(rulesList::add);
 
         assertThat(rulesList).isEmpty();
+    }
+
+    //AI GENERATED
+
+    @Test
+    void GetAllWorkflows_WithParams_ReturnsMappedPage() {
+        // 1. Setup
+        Pageable pageable = PageRequest.of(0, 10);
+        String search = "test";
+        Boolean isActive = true;
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setName("Test Workflow");
+
+        Page<WorkflowDefinition> page = new PageImpl<>(List.of(wd));
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true);
+
+        // 2. Mocking
+        // We assume your service calls a custom repository method or a filtered findAll
+        when(workflowDefinitionRepository.findAllFiltered(anyString(), any(), eq(pageable)))
+                .thenReturn(page);
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        // 3. Execution
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, search, isActive);
+
+        // 4. Verification
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Test Workflow");
+        verify(workflowDefinitionRepository).findAllFiltered(anyString(), any(), eq(pageable));
+    }
+
+    @Test
+    void GetAllWorkflows_EmptyResults_ReturnsEmptyPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), any()))
+                .thenReturn(Page.empty());
+
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null);
+
+        assertThat(result).isEmpty();
+        verify(workflowMapper, never()).toWorkflowDto(any());
     }
 }

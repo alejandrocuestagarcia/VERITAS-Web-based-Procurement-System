@@ -23,6 +23,7 @@ import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workf
 import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
 import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
 import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
+import {WorkflowListComponent} from "./features/workflow/workflow-list/workflow-list.component";
 import { DepartmentListComponent } from './features/department/department-list/department-list.component';
 import { DepartmentCreateComponent } from './features/department/department-create/department-create.component';
 
@@ -127,16 +128,22 @@ const routes: Routes = [
     data: { roles: ['PROCUREMENT_OFFICER'] }
   },
   {
+    path: 'workflows',
+    component: WorkflowListComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']}
+  },
+  {
     path: 'workflows/view/:id',
     component: WorkflowEditorComponent,
     canActivate: [authGuard, roleGuard],
-    data: { mode: 'view', roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER'] }
+    data: { mode: 'view', roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'REQUESTER', 'ADMINISTRATOR'] }
   },
   {
     path: 'workflows/create',
     component: WorkflowEditorComponent,
     canActivate: [authGuard, roleGuard],
-    data: { mode: 'create', roles: ['FINANCE_OFFICER'] }
+    data: { mode: 'create', roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] }
   },
   {
     path: 'workflows/edit/:id',

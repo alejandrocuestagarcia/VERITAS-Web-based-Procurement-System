@@ -26,6 +26,16 @@ module.exports = {
         'chip': '20px',
         'search': '10px',
       },
+      keyframes: {
+        delayedFadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        }
+      },
+      animation: {
+        //This waits 200ms then fades in over 100ms
+        'delayed-fade': 'delayedFadeIn 0.1s ease-in 0.2s forwards',
+      },
     },
   },
   plugins: [],
