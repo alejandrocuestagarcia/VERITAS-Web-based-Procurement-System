@@ -7,6 +7,8 @@ import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.dto.TeamCreateDto;
+import com.veritas.backend.team.dto.TeamEditDto;
+import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
@@ -25,9 +27,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,221 +41,324 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
-    @Autowired
-    MockMvc mockMvc;
+        @Autowired
+        MockMvc mockMvc;
 
-    @Autowired
-    ObjectMapper objectMapper;
+        @Autowired
+        ObjectMapper objectMapper;
 
-    @Autowired
-    TeamRepository teamRepository;
+        @Autowired
+        TeamRepository teamRepository;
 
-    @Autowired
-    ProjectRepository projectRepository;
+        @Autowired
+        ProjectRepository projectRepository;
 
-    @Autowired
-    UserRepository userRepository;
+        @Autowired
+        UserRepository userRepository;
 
-    @Autowired
-    DepartmentRepository departmentRepository;
+        @Autowired
+        JwtService jwtService;
 
-    @Autowired
-    JwtService jwtService;
+        @Autowired
+        PasswordEncoder encoder;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+        @Autowired
+        JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private PasswordEncoder encoder;
+        @BeforeEach
+        void setup() {
+                projectRepository.deleteAll();
 
-    private Long departmentId;
+                // Break circular references between users.team_id and teams.leader_id before
+                // deletes.
+                jdbcTemplate.update("UPDATE users SET team_id = NULL");
+                jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
 
-    @BeforeEach
-    void setup() {
-        projectRepository.deleteAll();
+                userRepository.deleteAll();
+                teamRepository.deleteAll();
+        }
 
-        // Break circular references between users.team_id and teams.leader_id before deletes.
-        jdbcTemplate.update("UPDATE users SET team_id = NULL");
-        jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
+        @Test
+        void TeamCreation_AsFinanceOfficer_ReturnsCreated() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                TeamCreateDto request = createTeamRequest("Platform Team");
 
-        userRepository.deleteAll();
-        teamRepository.deleteAll();
-        departmentRepository.deleteAll();
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").isNumber())
+                                .andExpect(jsonPath("$.name").value("Platform Team"))
+                                .andExpect(jsonPath("$.description").value("Owns internal developer platform"))
+                                .andExpect(jsonPath("$.department").value("IT"));
+        }
 
-        Department department = Department.builder().name("IT").build();
-        department = departmentRepository.save(department);
-        departmentId = department.getDepartmentId();
-    }
+        @Test
+        void TeamCreation_AsAdministrator_ReturnsCreated() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                TeamCreateDto request = createTeamRequest("Operations Team");
 
-    @Test
-    void TeamCreation_AsFinanceOfficer_ReturnsCreated() throws Exception {
-        String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-        TeamCreateDto request = createTeamRequest("Platform Team");
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.name").value("Operations Team"));
+        }
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.name").value("Platform Team"))
-                .andExpect(jsonPath("$.description").value("Owns internal developer platform"))
-                .andExpect(jsonPath("$.department").value("IT"));
-    }
+        @Test
+        void TeamCreation_AsRequester_ReturnsForbidden() throws Exception {
+                String token = createTokenForRole(UserRole.REQUESTER);
+                TeamCreateDto request = createTeamRequest("Restricted Team");
 
-    @Test
-    void TeamCreation_AsAdministrator_ReturnsCreated() throws Exception {
-        String token = createTokenForRole(UserRole.ADMINISTRATOR);
-        TeamCreateDto request = createTeamRequest("Operations Team");
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isForbidden());
+        }
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Operations Team"));
-    }
+        @Test
+        void TeamCreation_MissingDescription_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                TeamCreateDto request = new TeamCreateDto();
+                request.setName("Incomplete Team");
+                request.setDepartment(Department.IT);
 
-    @Test
-    void TeamCreation_AsRequester_ReturnsForbidden() throws Exception {
-        String token = createTokenForRole(UserRole.REQUESTER);
-        TeamCreateDto request = createTeamRequest("Restricted Team");
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.description").value("Team description is required"));
+        }
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
-    }
+        @Test
+        void TeamCreation_DuplicateName_ReturnsConflict() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                TeamCreateDto first = createTeamRequest("Core Team");
+                TeamCreateDto duplicate = createTeamRequest("core team");
 
-    @Test
-    void TeamCreation_MissingDescription_ReturnsBadRequest() throws Exception {
-        String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-        TeamCreateDto request = new TeamCreateDto();
-        request.setName("Incomplete Team");
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(first)))
+                                .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.description").value("Team description is required"));
-    }
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(duplicate)))
+                                .andExpect(status().isConflict())
+                                .andExpect(content().string(containsString("already exists")));
+        }
 
-    @Test
-    void TeamCreation_DuplicateName_ReturnsConflict() throws Exception {
-        String token = createTokenForRole(UserRole.ADMINISTRATOR);
-        TeamCreateDto first = createTeamRequest("Core Team");
-        TeamCreateDto duplicate = createTeamRequest("core team");
+        @Test
+        void TeamCreation_LeaderNotFound_ReturnsNotFound() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                TeamCreateDto request = createTeamRequest("Team With Missing Leader");
+                request.setLeaderId(999999L);
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(first)))
-                .andExpect(status().isCreated());
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Leader not found with id 999999"));
+        }
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(duplicate)))
-                .andExpect(status().isConflict())
-                .andExpect(content().string(containsString("already exists")));
-    }
+        @Test
+        void TeamCreation_WithLeader_ReturnsCreatedAndSetsLeader() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                User leader = userRepository.save(User.builder()
+                                .name("Leader User")
+                                .email("leader-" + UUID.randomUUID() + "@veritas.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.PROCUREMENT_OFFICER)
+                                .department(Department.IT)
+                                .isActive(true)
+                                .build());
 
-    @Test
-    void TeamCreation_LeaderNotFound_ReturnsNotFound() throws Exception {
-        String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-        TeamCreateDto request = createTeamRequest("Team With Missing Leader");
-        request.setLeaderId(999999L);
+                TeamCreateDto request = createTeamRequest("Leadership Team");
+                request.setLeaderId(leader.getId());
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Leader not found with id 999999"));
-    }
+                MvcResult result = mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.leaderId").value(leader.getId()))
+                                .andReturn();
 
-    @Test
-    void TeamCreation_WithLeader_ReturnsCreatedAndSetsLeader() throws Exception {
-        String token = createTokenForRole(UserRole.ADMINISTRATOR);
-        User leader = userRepository.save(User.builder()
-                .name("Leader User")
-                .email("leader-" + UUID.randomUUID() + "@veritas.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.PROCUREMENT_OFFICER)
-                .isActive(true)
-                .build());
+                Long createdTeamId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id")
+                                .asLong();
 
-        TeamCreateDto request = createTeamRequest("Leadership Team");
-        request.setLeaderId(leader.getId());
+                User persistedLeader = userRepository.findById(leader.getId()).orElseThrow();
+                assertNotNull(persistedLeader.getTeam());
+                assertEquals(createdTeamId, persistedLeader.getTeam().getTeamId());
+        }
 
-        MvcResult result = mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.leaderId").value(leader.getId()))
-                .andReturn();
+        @Test
+        void GetAllTeams_AsAdministrator_ReturnsListOfTeams() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
 
-        Long createdTeamId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(createTeamRequest("Alpha Team"))))
+                                .andExpect(status().isCreated());
 
-        User persistedLeader = userRepository.findById(leader.getId()).orElseThrow();
-        assertNotNull(persistedLeader.getTeam());
-        assertEquals(createdTeamId, persistedLeader.getTeam().getTeamId());
-    }
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(createTeamRequest("Beta Team"))))
+                                .andExpect(status().isCreated());
 
-    @Test
-    void GetAllTeams_AsAdministrator_ReturnsListOfTeams() throws Exception {
-        String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                mockMvc.perform(get("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(2))
+                                .andExpect(jsonPath("$[0].name").value("Alpha Team"))
+                                .andExpect(jsonPath("$[1].name").value("Beta Team"));
+        }
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createTeamRequest("Alpha Team"))))
-                .andExpect(status().isCreated());
+        @Test
+        void GetAllTeams_AsRequester_ReturnsForbidden() throws Exception {
+                String token = createTokenForRole(UserRole.REQUESTER);
 
-        mockMvc.perform(post("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createTeamRequest("Beta Team"))))
-                .andExpect(status().isCreated());
+                mockMvc.perform(get("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isForbidden());
+        }
 
-        mockMvc.perform(get("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Alpha Team"))
-                .andExpect(jsonPath("$[1].name").value("Beta Team"));
-    }
+        @Test
+        void TeamEdit_UpdatesFieldsAndMembers_ReplacesAssignments() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-    @Test
-    void GetAllTeams_AsRequester_ReturnsForbidden() throws Exception {
-        String token = createTokenForRole(UserRole.REQUESTER);
+                Team team = createTeam("Legacy Team", Department.IT);
+                User leader = createUser("Team Leader", Department.IT, team);
+                team.setLeader(leader);
+                teamRepository.save(team);
 
-        mockMvc.perform(get("/api/v1/teams")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isForbidden());
-    }
+                User memberToRemove = createUser("Member One", Department.IT, team);
+                User memberToKeep = createUser("Member Two", Department.IT, team);
 
-    private String createTokenForRole(UserRole role) {
-        User user = userRepository.save(User.builder()
-                .name("Test " + role.name())
-                .email(role.name().toLowerCase() + "-" + UUID.randomUUID() + "@veritas.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(role)
-                .isActive(true)
-                .build());
+                TeamEditDto edits = new TeamEditDto();
+                edits.setName("Modernized Team");
+                edits.setDescription("Updated mission brief");
+                edits.setDepartment(Department.HR);
+                edits.setMemberIds(java.util.List.of(memberToKeep.getId()));
 
-        return jwtService.generateAccessToken(user);
-    }
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Modernized Team"))
+                                .andExpect(jsonPath("$.description").value("Updated mission brief"))
+                                .andExpect(jsonPath("$.department").value("HR"))
+                                .andExpect(jsonPath("$.leaderId").value(leader.getId()));
 
-    private TeamCreateDto createTeamRequest(String name) {
-        TeamCreateDto request = new TeamCreateDto();
-        request.setName(name);
-        request.setDescription("Owns internal developer platform");
-        request.setDepartmentId(departmentId);
-        request.setExpiresAt(LocalDateTime.now().plusDays(30));
-        return request;
-    }
+                User refreshedLeader = userRepository.findById(leader.getId()).orElseThrow();
+                User refreshedMemberToRemove = userRepository.findById(memberToRemove.getId()).orElseThrow();
+                User refreshedMemberToKeep = userRepository.findById(memberToKeep.getId()).orElseThrow();
+
+                assertNotNull(refreshedLeader.getTeam());
+                assertEquals(team.getTeamId(), refreshedLeader.getTeam().getTeamId());
+                assertNull(refreshedMemberToRemove.getTeam());
+                assertNotNull(refreshedMemberToKeep.getTeam());
+                assertEquals(team.getTeamId(), refreshedMemberToKeep.getTeam().getTeamId());
+        }
+
+        @Test
+        void TeamEdit_LeaderSwapWithoutRemoval_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                Team team = createTeam("Leadership Team", Department.IT);
+                User leader = createUser("Existing Leader", Department.IT, team);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                User newLeader = createUser("Incoming Leader", Department.IT, null);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setLeaderId(newLeader.getId());
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("Team already has a leader")));
+        }
+
+        @Test
+        void TeamEdit_ClearLeader_AllowsRemoval() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                Team team = createTeam("Ops Team", Department.IT);
+                User leader = createUser("Leader", Department.IT, team);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setClearLeader(true);
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.leaderId").value(nullValue()));
+
+                Team refreshedTeam = teamRepository.findById(team.getTeamId()).orElseThrow();
+                assertNull(refreshedTeam.getLeader());
+
+                User refreshedLeader = userRepository.findById(leader.getId()).orElseThrow();
+                assertNotNull(refreshedLeader.getTeam());
+                assertEquals(team.getTeamId(), refreshedLeader.getTeam().getTeamId());
+        }
+
+        @Test
+        void TeamEdit_AddingMemberFromAnotherTeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                Team teamA = createTeam("Primary Team", Department.IT);
+                Team teamB = createTeam("Secondary Team", Department.IT);
+
+                User assignedUser = createUser("Assigned User", Department.IT, teamB);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setMemberIds(java.util.List.of(assignedUser.getId()));
+
+                mockMvc.perform(patch("/api/v1/teams/" + teamA.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already assigned to team")));
+        }
+
+        private String createTokenForRole(UserRole role) {
+                User user = userRepository.save(User.builder()
+                                .name("Test " + role.name())
+                                .email(role.name().toLowerCase() + "-" + UUID.randomUUID() + "@veritas.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(role)
+                                .department(Department.IT)
+                                .isActive(true)
+                                .build());
+
+                return jwtService.generateAccessToken(user);
+        }
+
+        private TeamCreateDto createTeamRequest(String name) {
+                TeamCreateDto request = new TeamCreateDto();
+                request.setName(name);
+                request.setDescription("Owns internal developer platform");
+                request.setDepartment(Department.IT);
+                request.setExpiresAt(LocalDateTime.now().plusDays(30));
+                return request;
+        }
 }
