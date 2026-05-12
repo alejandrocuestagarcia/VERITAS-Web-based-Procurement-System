@@ -37,12 +37,12 @@ public class BackendApplication {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
-			Department department = departmentRepository.findById(1L).orElseGet(() -> {
+			Department department = departmentRepository.findByName("IT").orElseGet(() -> {
 				Department it = new Department();
 				it.setName("IT");
 				return departmentRepository.save(it);
 			});
-			Department department2 = departmentRepository.findById(2L).orElseGet(() -> {
+			Department department2 = departmentRepository.findByName("HR").orElseGet(() -> {
 				Department hr = new Department();
 				hr.setName("HR");
 				return departmentRepository.save(hr);

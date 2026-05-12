@@ -131,19 +131,19 @@ const routes: Routes = [
     path: 'workflows',
     component: WorkflowListComponent,
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER']}
+    data: { roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']}
   },
   {
     path: 'workflows/view/:id',
     component: WorkflowEditorComponent,
     canActivate: [authGuard, roleGuard],
-    data: { mode: 'view', roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'REQUESTER'] }
+    data: { mode: 'view', roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'REQUESTER', 'ADMINISTRATOR'] }
   },
   {
     path: 'workflows/create',
     component: WorkflowEditorComponent,
     canActivate: [authGuard, roleGuard],
-    data: { mode: 'create', roles: ['FINANCE_OFFICER'] }
+    data: { mode: 'create', roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] }
   },
   {
     path: 'workflows/edit/:id',

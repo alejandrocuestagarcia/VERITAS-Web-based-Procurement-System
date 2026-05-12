@@ -1,9 +1,9 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                import {Component, OnInit, ViewChild} from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
-import { PageEvent } from '@angular/material/paginator';
-import { AuthService } from "../../../core/services/auth.service";
+import {Component, OnInit, ViewChild} from '@angular/core';
+import {MatTableDataSource} from '@angular/material/table';
+import {PageEvent} from '@angular/material/paginator';
+import {AuthService} from "../../../core/services/auth.service";
 import {Pageable, WorkflowModuleService} from "../../../core/api";
-import { WorkflowDto } from "../../../core/api";
+import {WorkflowDto} from "../../../core/api";
 import {SharedTableComponent} from "../../../shared/components/table/shared-table.component";
 
 @Component({
@@ -18,7 +18,7 @@ export class WorkflowListComponent implements OnInit {
   pageSize = 10;
   currentPage = 0;
   currentSearch = '';
-  currentIsActive : boolean | undefined = undefined;
+  currentIsActive: boolean | undefined = undefined;
   loading = false;
 
   readonly statusOptions = ['ALL', 'ACTIVE', 'INACTIVE'];
@@ -29,7 +29,8 @@ export class WorkflowListComponent implements OnInit {
   constructor(
     private workflowService: WorkflowModuleService,
     public authService: AuthService
-  ) {}
+  ) {
+  }
 
   ngOnInit(): void {
     this.loadWorkflows();
@@ -48,7 +49,7 @@ export class WorkflowListComponent implements OnInit {
       sort: ['name,asc']
     };
 
-    this.workflowService.getAllWorkflows(pageable, this.currentSearch,this.currentIsActive).subscribe({
+    this.workflowService.getAllWorkflows(pageable, this.currentSearch, this.currentIsActive).subscribe({
       next: (response) => {
         this.dataSource.data = response.content || [];
         this.totalElements = response.totalElements || 0;

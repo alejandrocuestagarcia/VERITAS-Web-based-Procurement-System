@@ -29,7 +29,7 @@ import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow
   selector: 'app-requisition-create',
   templateUrl: './requisition-create.component.html'
 })
-export class RequisitionCreateComponent implements OnInit,OnDestroy {
+export class RequisitionCreateComponent implements OnInit, OnDestroy {
   basicInfoForm!: FormGroup;
   lineItemsForm!: FormGroup;
   loading = false;
@@ -68,7 +68,7 @@ export class RequisitionCreateComponent implements OnInit,OnDestroy {
       debounceTime(400),
       distinctUntilChanged(),
       switchMap(search => {
-        const pageable = { page: 0, size: 10, sort: ['name,asc'] };
+        const pageable = {page: 0, size: 100, sort: ['name,asc'] };
         return this.workflowService.getAllWorkflows(pageable, search, true);
       })
     ).subscribe({
