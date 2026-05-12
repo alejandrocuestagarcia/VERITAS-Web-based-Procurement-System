@@ -72,7 +72,7 @@
       <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
       <td mat-cell *matCellDef="let row">
         <div class="flex items-center gap-1">
-          <button mat-icon-button matTooltip="Edit Team">
+          <button mat-icon-button matTooltip="Edit Team" (click)="navigateToEditTeam(row)">
             <mat-icon>edit</mat-icon>
           </button>
           <button mat-icon-button matTooltip="Delete Team" color="warn" (click)="deleteTeam(row)">

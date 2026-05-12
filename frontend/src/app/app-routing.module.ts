@@ -1,29 +1,30 @@
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-import {LoginComponent} from "./features/login/login/login.component";
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { LoginComponent } from "./features/login/login/login.component";
 import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
 import { ForgotPasswordComponent } from './features/login/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './features/login/reset-password/reset-password.component';
-import {authGuard} from "./core/guards/auth.guard";
-import {DashboardComponent} from "./features/dashboard/dashboard.component";
-import {ProjectListComponent} from "./features/project/project-list/project-list.component";
-import {UserCreateComponent} from "./features/user/user-create/user-create.component";
-import {UserListComponent} from "./features/user/user-list/user-list.component";
-import {guestGuard} from "./core/guards/guest.guard";
-import {VendorCreateComponent} from "./features/vendor/vendor-create/vendor-create.component";
-import {ProjectCreateComponent} from "./features/project/project-create/project-create.component";
-import {VendorListComponent} from "./features/vendor/vendor-list/vendor-list.component";
-import {UserEditComponent} from "./features/user/user-edit/user-edit.component";
+import { authGuard } from "./core/guards/auth.guard";
+import { DashboardComponent } from "./features/dashboard/dashboard.component";
+import { ProjectListComponent } from "./features/project/project-list/project-list.component";
+import { UserCreateComponent } from "./features/user/user-create/user-create.component";
+import { UserListComponent } from "./features/user/user-list/user-list.component";
+import { guestGuard } from "./core/guards/guest.guard";
+import { VendorCreateComponent } from "./features/vendor/vendor-create/vendor-create.component";
+import { ProjectCreateComponent } from "./features/project/project-create/project-create.component";
+import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
+import { UserEditComponent } from "./features/user/user-edit/user-edit.component";
 import { VendorEditComponent } from "./features/vendor/vendor-edit/vendor-edit.component";
-import {roleGuard} from "./core/guards/role.guard";
+import { roleGuard } from "./core/guards/role.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
+import { TeamEditComponent } from "./features/team/team-edit/team-edit.component";
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
-import {WorkflowEditorComponent} from "./features/workflow/workflow-editor/workflow-editor.component";
+import { WorkflowEditorComponent } from "./features/workflow/workflow-editor/workflow-editor.component";
 import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
 import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
-import {JiraIssuesSyncHistoryComponent} from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
-import {WorkflowListComponent} from "./features/workflow/workflow-list/workflow-list.component";
+import { JiraIssuesSyncHistoryComponent } from "./features/integrations/jira/jira-issues-sync-history/jira-issues-sync-history.component";
+import { WorkflowListComponent } from "./features/workflow/workflow-list/workflow-list.component";
 import { DepartmentListComponent } from './features/department/department-list/department-list.component';
 import { DepartmentCreateComponent } from './features/department/department-create/department-create.component';
 
@@ -38,13 +39,16 @@ const routes: Routes = [
     component: ForcePasswordResetComponent,
     canActivate: [authGuard]
   },
-  { path: 'forgot-password',
+  {
+    path: 'forgot-password',
     component: ForgotPasswordComponent,
     canActivate: [guestGuard]
   },
-  { path: 'reset-password',
+  {
+    path: 'reset-password',
     component: ResetPasswordComponent,
-    canActivate: [guestGuard] },
+    canActivate: [guestGuard]
+  },
   {
     path: 'users',
     component: UserListComponent,
@@ -83,6 +87,12 @@ const routes: Routes = [
   {
     path: 'teams/create',
     component: TeamCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'teams/edit/:id',
+    component: TeamEditComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },
@@ -131,7 +141,7 @@ const routes: Routes = [
     path: 'workflows',
     component: WorkflowListComponent,
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']}
+    data: { roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR'] }
   },
   {
     path: 'workflows/view/:id',
@@ -151,7 +161,8 @@ const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { mode: 'edit', roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] }
   },
-  { path: 'requisition/create',
+  {
+    path: 'requisition/create',
     component: RequisitionCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['REQUESTER', 'ADMINISTRATOR'] }

@@ -28,16 +28,19 @@
       <app-shared-form-field label="TEAM LEAD">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="leaderId" placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}">
+          <mat-select formControlName="leaderId" placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}" (selectionChange)="onLeadChanged()">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
             </mat-select-trigger>
             <mat-option [value]="null">None</mat-option>
-            <mat-option *ngFor="let option of leadOptions" [value]="option.id">
+            <mat-option *ngFor="let option of leadOptions" [value]="option.id" [disabled]="option.currentTeam">
               <div class="flex flex-col leading-tight py-1">
                 <span>{{ option.displayName }}</span>
                 <span class="text-xs text-amber-600 font-semibold" *ngIf="option.currentTeam">
-                  Currently in {{ option.currentTeam }}
+                  Assigned to {{ option.currentTeam }}
+                </span>
+                <span class="text-xs text-slate-500 font-semibold" *ngIf="!option.currentTeam">
+                  {{ option.subtitle }}
                 </span>
               </div>
             </mat-option>
@@ -89,7 +92,7 @@
                       <div class="flex flex-col leading-tight py-1">
                         <span>{{ candidate.displayName }}</span>
                         <span class="text-xs text-amber-600 font-semibold" *ngIf="candidate.currentTeam">
-                          Currently in {{ candidate.currentTeam }}
+                          Assigned to {{ candidate.currentTeam }}
                         </span>
                       </div>
                     </mat-option>
@@ -112,7 +115,7 @@
                 <div class="flex flex-col">
                   <span class="text-sm font-bold text-gray-900">{{ owner.displayName }}</span>
                   <span class="text-xs font-semibold text-amber-600" *ngIf="owner.currentTeam">
-                    Will be moved from {{ owner.currentTeam }}
+                    Assigned to {{ owner.currentTeam }}
                   </span>
                   <span class="text-xs font-semibold text-gray-500" *ngIf="!owner.currentTeam">
                     {{ owner.subtitle }}
@@ -131,7 +134,7 @@
                   <div class="flex flex-col">
                     <span class="text-sm font-bold text-gray-900">{{ member.displayName }}</span>
                     <span class="text-xs font-semibold text-amber-600" *ngIf="member.currentTeam">
-                      Will be moved from {{ member.currentTeam }}
+                      Assigned to {{ member.currentTeam }}
                     </span>
                     <span class="text-xs font-semibold text-gray-500" *ngIf="!member.currentTeam">
                       {{ member.subtitle }}

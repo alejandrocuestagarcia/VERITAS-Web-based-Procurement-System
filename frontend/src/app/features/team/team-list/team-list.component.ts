@@ -105,6 +105,10 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/teams/create']);
   }
 
+  navigateToEditTeam(row: TeamRow): void {
+    this.router.navigate(['/teams/edit', row.id]);
+  }
+
   deleteTeam(row: TeamRow): void {
     const ref = this.dialog.open(ConfirmationDialogComponent, {
       data: { title: 'Delete Team', message: `Are you sure you want to delete "${row.name}"?` }
