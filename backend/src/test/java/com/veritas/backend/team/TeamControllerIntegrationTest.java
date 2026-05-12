@@ -65,6 +65,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Autowired
         JdbcTemplate jdbcTemplate;
 
+        @Autowired
+        DepartmentRepository departmentRepository;
+
+        private Department departmentIT;
+        private Department departmentHR;
+
         @BeforeEach
         void setup() {
                 projectRepository.deleteAll();
@@ -76,6 +82,10 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 userRepository.deleteAll();
                 teamRepository.deleteAll();
+                departmentRepository.deleteAll();
+
+                departmentIT = departmentRepository.save(Department.builder().name("IT").build());
+                departmentHR = departmentRepository.save(Department.builder().name("HR").build());
         }
 
         @Test
@@ -124,7 +134,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
                 TeamCreateDto request = new TeamCreateDto();
                 request.setName("Incomplete Team");
-                request.setDepartment(Department.IT);
+                request.setDepartmentId(departmentIT.getDepartmentId());
 
                 mockMvc.perform(post("/api/v1/teams")
                                 .header("Authorization", "Bearer " + token)
@@ -176,7 +186,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .email("leader-" + UUID.randomUUID() + "@veritas.com")
                                 .passwordHash(encoder.encode("password123"))
                                 .role(UserRole.PROCUREMENT_OFFICER)
-                                .department(Department.IT)
+                                
                                 .isActive(true)
                                 .build());
 
@@ -236,18 +246,18 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_UpdatesFieldsAndMembers_ReplacesAssignments() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team team = createTeam("Legacy Team", Department.IT);
-                User leader = createUser("Team Leader", Department.IT, team);
+                Team team = createTeam("Legacy Team", departmentIT);
+                User leader = createUser("Team Leader", team);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
-                User memberToRemove = createUser("Member One", Department.IT, team);
-                User memberToKeep = createUser("Member Two", Department.IT, team);
+                User memberToRemove = createUser("Member One", team);
+                User memberToKeep = createUser("Member Two", team);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setName("Modernized Team");
                 edits.setDescription("Updated mission brief");
-                edits.setDepartment(Department.HR);
+                edits.setDepartmentId(departmentHR.getDepartmentId());
                 edits.setMemberIds(java.util.List.of(memberToKeep.getId()));
 
                 mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
@@ -275,12 +285,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_LeaderSwapWithoutRemoval_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team team = createTeam("Leadership Team", Department.IT);
-                User leader = createUser("Existing Leader", Department.IT, team);
+                Team team = createTeam("Leadership Team", departmentIT);
+                User leader = createUser("Existing Leader", team);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
-                User newLeader = createUser("Incoming Leader", Department.IT, null);
+                User newLeader = createUser("Incoming Leader", null);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setLeaderId(newLeader.getId());
@@ -297,8 +307,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_ClearLeader_AllowsRemoval() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team team = createTeam("Ops Team", Department.IT);
-                User leader = createUser("Leader", Department.IT, team);
+                Team team = createTeam("Ops Team", departmentIT);
+                User leader = createUser("Leader", team);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
@@ -324,10 +334,10 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_AddingMemberFromAnotherTeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team teamA = createTeam("Primary Team", Department.IT);
-                Team teamB = createTeam("Secondary Team", Department.IT);
+                Team teamA = createTeam("Primary Team", departmentIT);
+                Team teamB = createTeam("Secondary Team", departmentIT);
 
-                User assignedUser = createUser("Assigned User", Department.IT, teamB);
+                User assignedUser = createUser("Assigned User", teamB);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setMemberIds(java.util.List.of(assignedUser.getId()));
@@ -343,7 +353,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_BlankName_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Stable Team", Department.IT);
+                Team team = createTeam("Stable Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setName("   ");
@@ -359,7 +369,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_SameNameCaseInsensitive_DoesNotConflict() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Alpha Team", Department.IT);
+                Team team = createTeam("Alpha Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setName("ALPHA TEAM"); // same name, different case
@@ -375,8 +385,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_DuplicateName_ReturnsConflict() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                createTeam("Existing Team", Department.IT);
-                Team team = createTeam("Other Team", Department.IT);
+                createTeam("Existing Team", departmentIT);
+                Team team = createTeam("Other Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setName("Existing Team");
@@ -392,7 +402,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_BlankDescription_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Desc Team", Department.IT);
+                Team team = createTeam("Desc Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setDescription("   ");
@@ -408,7 +418,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_NullFieldsAreSkipped_ReturnsOkWithOriginalValues() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Untouched Team", Department.HR);
+                Team team = createTeam("Untouched Team", departmentHR);
 
                 TeamEditDto edits = new TeamEditDto(); // all null
 
@@ -424,12 +434,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_ClearLeaderAndSetLeader_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Conflict Team", Department.IT);
-                User leader = createUser("Old Leader", Department.IT, team);
+                Team team = createTeam("Conflict Team", departmentIT);
+                User leader = createUser("Old Leader", team);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
-                User newLeader = createUser("New Leader", Department.IT, null);
+                User newLeader = createUser("New Leader", null);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setClearLeader(true);
@@ -446,7 +456,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_LeaderNotFound_ReturnsNotFound() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Leaderless Team", Department.IT);
+                Team team = createTeam("Leaderless Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setLeaderId(999999L);
@@ -463,12 +473,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_LeaderAlreadyLeadsAnotherTeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team teamA = createTeam("Team A", Department.IT);
-                User leaderA = createUser("Leader A", Department.IT, teamA);
+                Team teamA = createTeam("Team A", departmentIT);
+                User leaderA = createUser("Leader A", teamA);
                 teamA.setLeader(leaderA);
                 teamRepository.save(teamA);
 
-                Team teamB = createTeam("Team B", Department.IT);
+                Team teamB = createTeam("Team B", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setLeaderId(leaderA.getId());
@@ -485,10 +495,10 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_LeaderAssignedToAnotherTeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team teamA = createTeam("Team A", Department.IT);
-                User member = createUser("Busy Member", Department.IT, teamA);
+                Team teamA = createTeam("Team A", departmentIT);
+                User member = createUser("Busy Member", teamA);
 
-                Team teamB = createTeam("Team B", Department.IT);
+                Team teamB = createTeam("Team B", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setLeaderId(member.getId());
@@ -504,8 +514,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_AssignLeaderToTeamWithoutExistingLeader_ReturnsOk() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Empty Leader Team", Department.IT);
-                User leader = createUser("Fresh Leader", Department.IT, null);
+                Team team = createTeam("Empty Leader Team", departmentIT);
+                User leader = createUser("Fresh Leader", null);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setLeaderId(leader.getId());
@@ -526,8 +536,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_ReassignSameLeader_ReturnsOk() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Stable Leader Team", Department.IT);
-                User leader = createUser("Same Leader", Department.IT, team);
+                Team team = createTeam("Stable Leader Team", departmentIT);
+                User leader = createUser("Same Leader", team);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
@@ -560,8 +570,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_NoMemberIdsWithLeader_EnsuresLeaderAssignment() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Leader Only Team", Department.IT);
-                User leader = createUser("Unlinked Leader", Department.IT, null);
+                Team team = createTeam("Leader Only Team", departmentIT);
+                User leader = createUser("Unlinked Leader", null);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
@@ -583,7 +593,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_NoMemberIdsNoLeader_SkipsEnsureLeaderAssignment() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("No Leader No Members", Department.IT);
+                Team team = createTeam("No Leader No Members", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setDescription("Just a desc change");
@@ -599,8 +609,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamCreation_LeaderAlreadyLeadsAnotherTeam_ReturnsConflict() throws Exception {
                 String token = createTokenForRole(UserRole.ADMINISTRATOR);
-                Team existingTeam = createTeam("First Team", Department.IT);
-                User leader = createUser("Veteran Leader", Department.IT, null);
+                Team existingTeam = createTeam("First Team", departmentIT);
+                User leader = createUser("Veteran Leader", null);
                 existingTeam.setLeader(leader);
                 teamRepository.save(existingTeam);
 
@@ -618,8 +628,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamCreation_LeaderAlreadyAssignedToATeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.ADMINISTRATOR);
-                Team existingTeam = createTeam("Existing Team", Department.IT);
-                User leader = createUser("Assigned Leader", Department.IT, existingTeam);
+                Team existingTeam = createTeam("Existing Team", departmentIT);
+                User leader = createUser("Assigned Leader", existingTeam);
 
                 TeamCreateDto request = createTeamRequest("New Team");
                 request.setLeaderId(leader.getId());
@@ -635,8 +645,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamCreation_WithMembersButNoLeader_ReturnsCreated() throws Exception {
                 String token = createTokenForRole(UserRole.ADMINISTRATOR);
-                User member1 = createUser("Member Alpha", Department.IT, null);
-                User member2 = createUser("Member Beta", Department.IT, null);
+                User member1 = createUser("Member Alpha", null);
+                User member2 = createUser("Member Beta", null);
 
                 TeamCreateDto request = createTeamRequest("Members Only Team");
                 request.setMemberIds(java.util.List.of(member1.getId(), member2.getId()));
@@ -661,8 +671,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamCreation_MemberAlreadyAssignedToTeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.ADMINISTRATOR);
-                Team existingTeam = createTeam("Home Team", Department.IT);
-                User assignedMember = createUser("Busy Member", Department.IT, existingTeam);
+                Team existingTeam = createTeam("Home Team", departmentIT);
+                User assignedMember = createUser("Busy Member", existingTeam);
 
                 TeamCreateDto request = createTeamRequest("New Team With Busy Member");
                 request.setMemberIds(java.util.List.of(assignedMember.getId()));
@@ -678,8 +688,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamCreation_MemberIsLeaderOfAnotherTeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.ADMINISTRATOR);
-                Team existingTeam = createTeam("Led Team", Department.IT);
-                User otherLeader = createUser("Other Leader", Department.IT, null);
+                Team existingTeam = createTeam("Led Team", departmentIT);
+                User otherLeader = createUser("Other Leader", null);
                 existingTeam.setLeader(otherLeader);
                 teamRepository.save(existingTeam);
 
@@ -711,7 +721,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_SyncMembersWithNonExistentUser_ReturnsNotFound() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Sync Team", Department.IT);
+                Team team = createTeam("Sync Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setMemberIds(java.util.List.of(999999L));
@@ -728,12 +738,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         void TeamEdit_SyncMembersWithLeaderOfAnotherTeam_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                Team teamA = createTeam("Team A Sync", Department.IT);
-                User leaderA = createUser("Leader A Sync", Department.IT, teamA);
+                Team teamA = createTeam("Team A Sync", departmentIT);
+                User leaderA = createUser("Leader A Sync", teamA);
                 teamA.setLeader(leaderA);
                 teamRepository.save(teamA);
 
-                Team teamB = createTeam("Team B Sync", Department.IT);
+                Team teamB = createTeam("Team B Sync", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setMemberIds(java.util.List.of(leaderA.getId()));
@@ -749,8 +759,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_SyncMembersWithEmptyList_RemovesAllMembers() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Full Team", Department.IT);
-                User member = createUser("Removable Member", Department.IT, team);
+                Team team = createTeam("Full Team", departmentIT);
+                User member = createUser("Removable Member", team);
 
                 TeamEditDto edits = new TeamEditDto();
                 edits.setMemberIds(java.util.List.of()); // empty list
@@ -768,12 +778,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @Test
         void TeamEdit_SyncMembersKeepsLeaderEvenIfNotInMemberIds() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
-                Team team = createTeam("Sync Leader Team", Department.IT);
-                User leader = createUser("Leader Kept", Department.IT, team);
+                Team team = createTeam("Sync Leader Team", departmentIT);
+                User leader = createUser("Leader Kept", team);
                 team.setLeader(leader);
                 teamRepository.save(team);
 
-                User newMember = createUser("New Sync Member", Department.IT, null);
+                User newMember = createUser("New Sync Member", null);
 
                 TeamEditDto edits = new TeamEditDto();
                 // Only include new member, but leader should still be assigned
@@ -802,7 +812,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 TeamCreateDto request = new TeamCreateDto();
                 request.setName("No Dept Team");
                 request.setDescription("Has no department");
-                request.setDepartment(null);
+                request.setDepartmentId(null);
 
                 // Department is @NotNull, so this should fail validation
                 mockMvc.perform(post("/api/v1/teams")
@@ -848,7 +858,6 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .email(role.name().toLowerCase() + "-" + UUID.randomUUID() + "@veritas.com")
                                 .passwordHash(encoder.encode("password123"))
                                 .role(role)
-                                .department(Department.IT)
                                 .isActive(true)
                                 .build());
 
@@ -859,7 +868,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 TeamCreateDto request = new TeamCreateDto();
                 request.setName(name);
                 request.setDescription("Owns internal developer platform");
-                request.setDepartment(Department.IT);
+                request.setDepartmentId(departmentIT.getDepartmentId());
                 request.setExpiresAt(LocalDateTime.now().plusDays(30));
                 return request;
         }
@@ -872,13 +881,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 return teamRepository.save(team);
         }
 
-        private User createUser(String name, Department department, Team team) {
+        private User createUser(String name, Team team) {
                 User user = User.builder()
                                 .name(name)
                                 .email(name.toLowerCase().replace(" ", ".") + "-" + UUID.randomUUID() + "@veritas.com")
                                 .passwordHash(encoder.encode("password123"))
                                 .role(UserRole.REQUESTER)
-                                .department(department)
                                 .isActive(true)
                                 .team(team)
                                 .build();

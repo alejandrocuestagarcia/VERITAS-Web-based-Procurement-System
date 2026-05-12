@@ -48,7 +48,7 @@ public class BackendApplication {
 				return departmentRepository.save(hr);
 			});
 
-			Team teamOne = teamRepo.findById(1L).orElseGet(() -> {
+			Team teamOne = teamRepo.findByName("Procurement Alpha").orElseGet(() -> {
 				Team team = new Team();
 				team.setName("Procurement Alpha");
 				team.setDepartment(department);

@@ -1,6 +1,5 @@
 package com.veritas.backend.team.dto;
 
-import com.veritas.backend.common.model.Department;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.util.List;
@@ -14,7 +13,8 @@ public class TeamEditDto {
     @Size(max = 500, message = "Team description must be at most 500 characters")
     private String description;
 
-    private Department department;
+    @Positive(message = "Department id must be positive")
+    private Long departmentId;
 
     @Positive(message = "Leader id must be positive")
     private Long leaderId;

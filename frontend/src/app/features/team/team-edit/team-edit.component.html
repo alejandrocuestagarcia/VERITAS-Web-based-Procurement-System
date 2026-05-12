@@ -60,13 +60,13 @@
       <app-shared-form-field label="DEPARTMENT">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>business</mat-icon>
-          <mat-select formControlName="department" placeholder="Select Department">
-            <mat-option *ngFor="let option of departmentOptions" [value]="option.value">
-              {{ option.label }}
+          <mat-select formControlName="departmentId" placeholder="Select Department">
+            <mat-option *ngFor="let dept of departments" [value]="dept.id">
+              {{ dept.name }}
             </mat-option>
           </mat-select>
           <mat-error
-            *ngIf="teamForm.get('department')?.hasError('required') && teamForm.get('department')?.touched">Department
+            *ngIf="teamForm.get('departmentId')?.hasError('required') && teamForm.get('departmentId')?.touched">Department
             is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>

@@ -136,8 +136,10 @@ public class TeamServiceImpl implements TeamService {
             team.setDescription(updatedDescription);
         }
 
-        if (edits.getDepartment() != null) {
-            team.setDepartment(edits.getDepartment());
+        if (edits.getDepartmentId() != null) {
+            Department department = departmentRepository.findById(edits.getDepartmentId())
+                    .orElseThrow(() -> new EntityNotFoundException("Department with id '" + edits.getDepartmentId() + "' not found"));
+            team.setDepartment(department);
         }
 
         if (Boolean.TRUE.equals(edits.getClearLeader()) && edits.getLeaderId() != null) {

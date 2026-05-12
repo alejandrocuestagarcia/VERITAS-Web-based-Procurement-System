@@ -3,12 +3,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import {
-  TeamCreateDtoDepartmentEnum,
   TeamDto,
   TeamEditDto,
   TeamsModuleService,
   UserDto,
-  UserModuleService
+  UserModuleService,
+  DepartmentsModuleService,
+  DepartmentDto
 } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -35,13 +36,7 @@ export class TeamEditComponent implements OnInit {
   previousLeaderId: number | null = null;
   currentMemberIds = new Set<number>();
 
-  readonly departmentOptions: Array<{ value: TeamCreateDtoDepartmentEnum; label: string }> = [
-    { value: TeamCreateDtoDepartmentEnum.It, label: 'Technology' },
-    { value: TeamCreateDtoDepartmentEnum.Rd, label: 'Research and Development' },
-    { value: TeamCreateDtoDepartmentEnum.Hr, label: 'Human Resources' },
-    { value: TeamCreateDtoDepartmentEnum.Sales, label: 'Sales' },
-    { value: TeamCreateDtoDepartmentEnum.Legal, label: 'Legal' }
-  ];
+  departments: DepartmentDto[] = [];
 
   leadOptions: TeamMemberOption[] = [];
   loading = false;
@@ -55,6 +50,7 @@ export class TeamEditComponent implements OnInit {
   constructor(
     private userService: UserModuleService,
     private teamsService: TeamsModuleService,
+    private departmentsService: DepartmentsModuleService,
     private router: Router,
     private route: ActivatedRoute,
     private toastService: ToastService,
@@ -77,7 +73,7 @@ export class TeamEditComponent implements OnInit {
     this.teamForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       leaderId: [null],
-      department: [null, Validators.required],
+      departmentId: [null, Validators.required],
       description: ['', [Validators.required, Validators.maxLength(500)]]
     });
 
@@ -92,9 +88,11 @@ export class TeamEditComponent implements OnInit {
 
     forkJoin({
       team: this.teamsService.getTeam(this.teamId),
-      users: this.userService.getAllUsers({ page: 0, size: 100 })
+      users: this.userService.getAllUsers({ page: 0, size: 100 }),
+      departments: this.departmentsService.getAllDepartments()
     }).subscribe({
-      next: ({ team, users }) => {
+      next: ({ team, users, departments }) => {
+        this.departments = this.toArray<DepartmentDto>(departments);
         const normalizedUsers = this.toArray<UserDto>(users);
         const seenIds = new Set<number>();
 
@@ -131,10 +129,12 @@ export class TeamEditComponent implements OnInit {
 
     const leaderId = this.currentLeaderId;
 
+    const dept = this.departments.find(d => d.name === team.department);
+
     this.teamForm.patchValue({
       name: team.name ?? '',
       leaderId: leaderId,
-      department: team.department ?? null,
+      departmentId: dept?.id ?? null,
       description: team.description ?? ''
     });
 
@@ -179,7 +179,7 @@ export class TeamEditComponent implements OnInit {
     const payload: TeamEditDto = {
       name: formValues.name.trim(),
       description: formValues.description.trim(),
-      department: formValues.department,
+      departmentId: formValues.departmentId,
       memberIds: this.additionalMembers.map((member) => member.id)
     };
 
