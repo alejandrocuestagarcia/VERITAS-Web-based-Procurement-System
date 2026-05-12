@@ -1,34 +1,27 @@
 <div [formGroup]="teamForm">
-  <app-shared-form
-    title="Add New Team"
+  <app-shared-form title="Add New Team"
     subtitle="Define a new operational unit, assign structural pillars, and establish foundational access protocols for collaborative governance."
-    routingSubtitle="ADMINISTRATION > TEAMS"
-    [submitButtonLabel]="submitting ? 'Creating...' : 'Create Team'"
-    submitButtonIcon="group_add"
-    [loading]="submitting || loadingLeads"
-    (submitted)="submit()"
-    (cancelled)="cancel()">
-
-    <!-- Error -->
-    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm flex items-center gap-2 mb-6">
-      <mat-icon>error_outline</mat-icon>
-      <span>{{ error }}</span>
-    </div>
+    routingSubtitle="ADMINISTRATION > TEAMS" [submitButtonLabel]="submitting ? 'Creating...' : 'Create Team'"
+    submitButtonIcon="group_add" [loading]="submitting || loadingLeads" (submitted)="submit()" (cancelled)="cancel()">
 
     <app-shared-form-card icon="badge" title="Core Identification">
       <app-shared-form-field label="TEAM NAME">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>groups</mat-icon>
           <input matInput type="text" formControlName="name" placeholder="e.g. Infrastructure Strategy Group">
-          <mat-error *ngIf="teamForm.get('name')?.hasError('required') && teamForm.get('name')?.touched">Team name is required.</mat-error>
-          <mat-error *ngIf="teamForm.get('name')?.hasError('minlength') && teamForm.get('name')?.touched">Team name must be at least 2 characters.</mat-error>
+          <mat-error *ngIf="teamForm.get('name')?.hasError('required') && teamForm.get('name')?.touched">Team name is
+            required.</mat-error>
+          <mat-error *ngIf="teamForm.get('name')?.hasError('minlength') && teamForm.get('name')?.touched">Team name must
+            be at least 2 characters.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
       <app-shared-form-field label="TEAM LEAD">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="leaderId" placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}" (selectionChange)="onLeadChanged()">
+          <mat-select formControlName="leaderId"
+            placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}"
+            (selectionChange)="onLeadChanged()">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
             </mat-select-trigger>
@@ -52,8 +45,11 @@
       <app-shared-form-field label="DESCRIPTION">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>article</mat-icon>
-          <textarea matInput formControlName="description" rows="1" placeholder="Briefly describe the team's objectives and scope..."></textarea>
-          <mat-error *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description is required.</mat-error>
+          <textarea matInput formControlName="description" rows="1"
+            placeholder="Briefly describe the team's objectives and scope..."></textarea>
+          <mat-error
+            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
+            is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -65,7 +61,9 @@
               {{ dept.name }}
             </mat-option>
           </mat-select>
-          <mat-error *ngIf="teamForm.get('departmentId')?.hasError('required') && teamForm.get('departmentId')?.touched">Department is required.</mat-error>
+          <mat-error
+            *ngIf="teamForm.get('departmentId')?.hasError('required') && teamForm.get('departmentId')?.touched">Department
+            is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
     </app-shared-form-card>
@@ -74,17 +72,20 @@
       <div class="col-span-2 flex flex-col gap-4">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-semibold text-gray-800">MEMBERS</h3>
-          <button type="button" mat-button color="primary" class="font-semibold" (click)="toggleMembersPanel()" [disabled]="submitting || leadOptions.length === 0">
+          <button type="button" mat-button color="primary" class="font-semibold" (click)="toggleMembersPanel()"
+            [disabled]="submitting || leadOptions.length === 0">
             <mat-icon>person_add</mat-icon> Add Member
           </button>
         </div>
 
         <div class="grid grid-cols-2 gap-6 items-start">
           <div>
-            <div class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50" *ngIf="membersPanelOpen; else emptyLeft">
+            <div class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50"
+              *ngIf="membersPanelOpen; else emptyLeft">
               <div class="flex flex-col gap-2">
-                <mat-form-field appearance="outline" class="w-full" style="margin-bottom: -1.25em;">
-                  <mat-select [(ngModel)]="selectedMemberCandidateId" [ngModelOptions]="{standalone: true}" [disabled]="submitting" placeholder="Select member">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-select [(ngModel)]="selectedMemberCandidateId" [ngModelOptions]="{standalone: true}"
+                    [disabled]="submitting" placeholder="Select member">
                     <mat-select-trigger>
                       {{ selectedMemberCandidateOption?.displayName ?? 'Select member' }}
                     </mat-select-trigger>
@@ -98,7 +99,8 @@
                     </mat-option>
                   </mat-select>
                 </mat-form-field>
-                <button type="button" mat-flat-button class="v-btn-brand" (click)="addMember()" [disabled]="submitting || selectedMemberCandidateId === null">
+                <button type="button" mat-flat-button class="v-btn-brand" (click)="addMember()"
+                  [disabled]="submitting || selectedMemberCandidateId === null">
                   Add
                 </button>
               </div>
@@ -107,9 +109,11 @@
           </div>
 
           <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white" *ngIf="leadMember as owner">
+            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white"
+              *ngIf="leadMember as owner">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
+                <div
+                  class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
                   {{ owner.initials }}
                 </div>
                 <div class="flex flex-col">
@@ -126,9 +130,11 @@
             </div>
 
             <div class="flex flex-col gap-2" *ngIf="additionalMembers.length > 0">
-              <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white" *ngFor="let member of additionalMembers; trackBy: trackByMemberId">
+              <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white"
+                *ngFor="let member of additionalMembers; trackBy: trackByMemberId">
                 <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
+                  <div
+                    class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm">
                     {{ member.initials }}
                   </div>
                   <div class="flex flex-col">
@@ -141,13 +147,15 @@
                     </span>
                   </div>
                 </div>
-                <button type="button" mat-button color="warn" class="font-bold" (click)="removeMember(member.id)" [disabled]="submitting">
+                <button type="button" mat-button color="warn" class="font-bold" (click)="removeMember(member.id)"
+                  [disabled]="submitting">
                   Remove
                 </button>
               </div>
             </div>
 
-            <div class="border border-dashed border-gray-300 rounded-lg p-6 text-center text-gray-500 bg-gray-50" *ngIf="additionalMembers.length === 0">
+            <div class="border border-dashed border-gray-300 rounded-lg p-6 text-center text-gray-500 bg-gray-50"
+              *ngIf="additionalMembers.length === 0">
               <mat-icon class="text-gray-400">groups_2</mat-icon>
               <p class="text-lg font-bold text-gray-600 mt-2 mb-1">No additional members added</p>
               <p class="text-sm m-0">Teams perform best with specialized roles assigned early.</p>
