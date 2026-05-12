@@ -340,6 +340,508 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .andExpect(content().string(containsString("already assigned to team")));
         }
 
+        @Test
+        void TeamEdit_BlankName_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Stable Team", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setName("   ");
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("Team name must not be blank")));
+        }
+
+        @Test
+        void TeamEdit_SameNameCaseInsensitive_DoesNotConflict() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Alpha Team", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setName("ALPHA TEAM"); // same name, different case
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("ALPHA TEAM"));
+        }
+
+        @Test
+        void TeamEdit_DuplicateName_ReturnsConflict() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                createTeam("Existing Team", Department.IT);
+                Team team = createTeam("Other Team", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setName("Existing Team");
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isConflict())
+                                .andExpect(content().string(containsString("already exists")));
+        }
+
+        @Test
+        void TeamEdit_BlankDescription_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Desc Team", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setDescription("   ");
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("Team description must not be blank")));
+        }
+
+        @Test
+        void TeamEdit_NullFieldsAreSkipped_ReturnsOkWithOriginalValues() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Untouched Team", Department.HR);
+
+                TeamEditDto edits = new TeamEditDto(); // all null
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Untouched Team"))
+                                .andExpect(jsonPath("$.department").value("HR"));
+        }
+
+        @Test
+        void TeamEdit_ClearLeaderAndSetLeader_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Conflict Team", Department.IT);
+                User leader = createUser("Old Leader", Department.IT, team);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                User newLeader = createUser("New Leader", Department.IT, null);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setClearLeader(true);
+                edits.setLeaderId(newLeader.getId());
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("not both")));
+        }
+
+        @Test
+        void TeamEdit_LeaderNotFound_ReturnsNotFound() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Leaderless Team", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setLeaderId(999999L);
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string(containsString("Leader not found")));
+        }
+
+        @Test
+        void TeamEdit_LeaderAlreadyLeadsAnotherTeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                Team teamA = createTeam("Team A", Department.IT);
+                User leaderA = createUser("Leader A", Department.IT, teamA);
+                teamA.setLeader(leaderA);
+                teamRepository.save(teamA);
+
+                Team teamB = createTeam("Team B", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setLeaderId(leaderA.getId());
+
+                mockMvc.perform(patch("/api/v1/teams/" + teamB.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already a leader of another team")));
+        }
+
+        @Test
+        void TeamEdit_LeaderAssignedToAnotherTeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                Team teamA = createTeam("Team A", Department.IT);
+                User member = createUser("Busy Member", Department.IT, teamA);
+
+                Team teamB = createTeam("Team B", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setLeaderId(member.getId());
+
+                mockMvc.perform(patch("/api/v1/teams/" + teamB.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already assigned to team")));
+        }
+
+        @Test
+        void TeamEdit_AssignLeaderToTeamWithoutExistingLeader_ReturnsOk() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Empty Leader Team", Department.IT);
+                User leader = createUser("Fresh Leader", Department.IT, null);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setLeaderId(leader.getId());
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.leaderId").value(leader.getId()));
+
+                // ensureLeaderAssignment should have assigned the leader to the team
+                User refreshed = userRepository.findById(leader.getId()).orElseThrow();
+                assertNotNull(refreshed.getTeam());
+                assertEquals(team.getTeamId(), refreshed.getTeam().getTeamId());
+        }
+
+        @Test
+        void TeamEdit_ReassignSameLeader_ReturnsOk() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Stable Leader Team", Department.IT);
+                User leader = createUser("Same Leader", Department.IT, team);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setLeaderId(leader.getId()); // same leader again
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.leaderId").value(leader.getId()));
+        }
+
+        @Test
+        void TeamEdit_TeamNotFound_ReturnsNotFound() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setName("Ghost Team");
+
+                mockMvc.perform(patch("/api/v1/teams/999999")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string(containsString("Team not found")));
+        }
+
+        @Test
+        void TeamEdit_NoMemberIdsWithLeader_EnsuresLeaderAssignment() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Leader Only Team", Department.IT);
+                User leader = createUser("Unlinked Leader", Department.IT, null);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setDescription("Updated desc");
+                // memberIds is null → triggers ensureLeaderAssignment branch
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk());
+
+                User refreshed = userRepository.findById(leader.getId()).orElseThrow();
+                assertNotNull(refreshed.getTeam());
+                assertEquals(team.getTeamId(), refreshed.getTeam().getTeamId());
+        }
+
+        @Test
+        void TeamEdit_NoMemberIdsNoLeader_SkipsEnsureLeaderAssignment() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("No Leader No Members", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setDescription("Just a desc change");
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.leaderId").value(nullValue()));
+        }
+
+        @Test
+        void TeamCreation_LeaderAlreadyLeadsAnotherTeam_ReturnsConflict() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                Team existingTeam = createTeam("First Team", Department.IT);
+                User leader = createUser("Veteran Leader", Department.IT, null);
+                existingTeam.setLeader(leader);
+                teamRepository.save(existingTeam);
+
+                TeamCreateDto request = createTeamRequest("Second Team");
+                request.setLeaderId(leader.getId());
+
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isConflict())
+                                .andExpect(content().string(containsString("already a leader of another team")));
+        }
+
+        @Test
+        void TeamCreation_LeaderAlreadyAssignedToATeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                Team existingTeam = createTeam("Existing Team", Department.IT);
+                User leader = createUser("Assigned Leader", Department.IT, existingTeam);
+
+                TeamCreateDto request = createTeamRequest("New Team");
+                request.setLeaderId(leader.getId());
+
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already assigned to team")));
+        }
+
+        @Test
+        void TeamCreation_WithMembersButNoLeader_ReturnsCreated() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                User member1 = createUser("Member Alpha", Department.IT, null);
+                User member2 = createUser("Member Beta", Department.IT, null);
+
+                TeamCreateDto request = createTeamRequest("Members Only Team");
+                request.setMemberIds(java.util.List.of(member1.getId(), member2.getId()));
+
+                MvcResult result = mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.leaderId").value(nullValue()))
+                                .andReturn();
+
+                Long teamId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+                User refreshed1 = userRepository.findById(member1.getId()).orElseThrow();
+                User refreshed2 = userRepository.findById(member2.getId()).orElseThrow();
+                assertNotNull(refreshed1.getTeam());
+                assertEquals(teamId, refreshed1.getTeam().getTeamId());
+                assertNotNull(refreshed2.getTeam());
+                assertEquals(teamId, refreshed2.getTeam().getTeamId());
+        }
+
+        @Test
+        void TeamCreation_MemberAlreadyAssignedToTeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                Team existingTeam = createTeam("Home Team", Department.IT);
+                User assignedMember = createUser("Busy Member", Department.IT, existingTeam);
+
+                TeamCreateDto request = createTeamRequest("New Team With Busy Member");
+                request.setMemberIds(java.util.List.of(assignedMember.getId()));
+
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already assigned to team")));
+        }
+
+        @Test
+        void TeamCreation_MemberIsLeaderOfAnotherTeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                Team existingTeam = createTeam("Led Team", Department.IT);
+                User otherLeader = createUser("Other Leader", Department.IT, null);
+                existingTeam.setLeader(otherLeader);
+                teamRepository.save(existingTeam);
+
+                TeamCreateDto request = createTeamRequest("New Team Needing Members");
+                request.setMemberIds(java.util.List.of(otherLeader.getId()));
+
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already a leader of another team")));
+        }
+
+        @Test
+        void TeamCreation_WithoutLeaderOrMembers_ReturnsCreated() throws Exception {
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                TeamCreateDto request = createTeamRequest("Bare Team");
+
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.leaderId").value(nullValue()))
+                                .andExpect(jsonPath("$.members").isArray());
+        }
+
+        @Test
+        void TeamEdit_SyncMembersWithNonExistentUser_ReturnsNotFound() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Sync Team", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setMemberIds(java.util.List.of(999999L));
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string(containsString("Users not found")));
+        }
+
+        @Test
+        void TeamEdit_SyncMembersWithLeaderOfAnotherTeam_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                Team teamA = createTeam("Team A Sync", Department.IT);
+                User leaderA = createUser("Leader A Sync", Department.IT, teamA);
+                teamA.setLeader(leaderA);
+                teamRepository.save(teamA);
+
+                Team teamB = createTeam("Team B Sync", Department.IT);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setMemberIds(java.util.List.of(leaderA.getId()));
+
+                mockMvc.perform(patch("/api/v1/teams/" + teamB.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("already a leader of another team")));
+        }
+
+        @Test
+        void TeamEdit_SyncMembersWithEmptyList_RemovesAllMembers() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Full Team", Department.IT);
+                User member = createUser("Removable Member", Department.IT, team);
+
+                TeamEditDto edits = new TeamEditDto();
+                edits.setMemberIds(java.util.List.of()); // empty list
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk());
+
+                User refreshed = userRepository.findById(member.getId()).orElseThrow();
+                assertNull(refreshed.getTeam());
+        }
+
+        @Test
+        void TeamEdit_SyncMembersKeepsLeaderEvenIfNotInMemberIds() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Sync Leader Team", Department.IT);
+                User leader = createUser("Leader Kept", Department.IT, team);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                User newMember = createUser("New Sync Member", Department.IT, null);
+
+                TeamEditDto edits = new TeamEditDto();
+                // Only include new member, but leader should still be assigned
+                edits.setMemberIds(java.util.List.of(newMember.getId()));
+
+                mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(edits)))
+                                .andExpect(status().isOk());
+
+                User refreshedLeader = userRepository.findById(leader.getId()).orElseThrow();
+                assertNotNull(refreshedLeader.getTeam());
+                assertEquals(team.getTeamId(), refreshedLeader.getTeam().getTeamId());
+
+                User refreshedMember = userRepository.findById(newMember.getId()).orElseThrow();
+                assertNotNull(refreshedMember.getTeam());
+                assertEquals(team.getTeamId(), refreshedMember.getTeam().getTeamId());
+        }
+
+        @Test
+        void TeamCreation_WithNoDepartment_SetsNull() throws Exception {
+                // This test covers department==null and leader==null branches in
+                // convertTeamToTeamDto
+                String token = createTokenForRole(UserRole.ADMINISTRATOR);
+                TeamCreateDto request = new TeamCreateDto();
+                request.setName("No Dept Team");
+                request.setDescription("Has no department");
+                request.setDepartment(null);
+
+                // Department is @NotNull, so this should fail validation
+                mockMvc.perform(post("/api/v1/teams")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void GetTeam_ReturnsTeamWithNullDepartmentAndNullLeader() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                // Create team directly in the repository with null department
+                Team team = new Team();
+                team.setName("No Dept Team");
+                team.setDescription("A team without a department");
+                team.setDepartment(null);
+                team.setIsActive(true);
+                team = teamRepository.save(team);
+
+                mockMvc.perform(get("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("No Dept Team"))
+                                .andExpect(jsonPath("$.department").value(nullValue()))
+                                .andExpect(jsonPath("$.leaderId").value(nullValue()));
+        }
+
+        @Test
+        void GetTeam_TeamNotFound_ReturnsNotFound() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                mockMvc.perform(get("/api/v1/teams/999999")
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string(containsString("Team not found")));
+        }
+
         private String createTokenForRole(UserRole role) {
                 User user = userRepository.save(User.builder()
                                 .name("Test " + role.name())
@@ -360,5 +862,26 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 request.setDepartment(Department.IT);
                 request.setExpiresAt(LocalDateTime.now().plusDays(30));
                 return request;
+        }
+
+        private Team createTeam(String name, Department department) {
+                Team team = new Team();
+                team.setName(name);
+                team.setDescription("Initial description");
+                team.setDepartment(department);
+                return teamRepository.save(team);
+        }
+
+        private User createUser(String name, Department department, Team team) {
+                User user = User.builder()
+                                .name(name)
+                                .email(name.toLowerCase().replace(" ", ".") + "-" + UUID.randomUUID() + "@veritas.com")
+                                .passwordHash(encoder.encode("password123"))
+                                .role(UserRole.REQUESTER)
+                                .department(department)
+                                .isActive(true)
+                                .team(team)
+                                .build();
+                return userRepository.save(user);
         }
 }
