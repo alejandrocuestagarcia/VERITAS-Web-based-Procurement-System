@@ -6,6 +6,7 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -95,4 +96,8 @@ public class Request {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RequestStatus status = RequestStatus.DRAFT;
 }

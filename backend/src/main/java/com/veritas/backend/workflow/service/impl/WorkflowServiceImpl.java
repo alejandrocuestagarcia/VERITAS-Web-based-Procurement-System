@@ -156,6 +156,18 @@ public class WorkflowServiceImpl implements WorkflowService {
             transition.setFromStep(stepsMap.get(sequenceFlow.getSource().getId()));
             transition.setToStep(stepsMap.get(sequenceFlow.getTarget().getId()));
 
+            ConditionExpression conditionExpression = sequenceFlow.getConditionExpression();
+            if (conditionExpression != null) {
+                String textContent = conditionExpression.getTextContent();
+                if (textContent != null && !textContent.isBlank()) {
+                    log.info("Found condition for flow {}: {}", sequenceFlow.getId(), textContent);
+
+                    String cleanCondition = textContent.replace("${", "").replace("}", "").trim();
+                    transition.setConditionExpression(cleanCondition);
+                }
+            } else {
+                log.debug("No condition found for flow {}", sequenceFlow.getId());
+            }
             sequenceFlow.getDocumentations().stream()
                     .findFirst()
                     .ifPresent(doc -> transition.setDescription(doc.getTextContent()));

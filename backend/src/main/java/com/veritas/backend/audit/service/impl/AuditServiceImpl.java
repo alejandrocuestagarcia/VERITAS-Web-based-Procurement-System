@@ -13,6 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.veritas.backend.workflow.entity.WorkflowTransition;
+import com.veritas.backend.workflow.entity.WorkflowStep;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -62,5 +65,28 @@ public class AuditServiceImpl implements AuditService {
     public Page<AuditLogDto> getJiraIssueLogsByAction(String action, Pageable pageable, String search) {
         return auditLogRepository.findAllByAction(action, pageable, search)
                 .map(auditLogMapper::jiraSyncLogtoDto);
+    }
+
+    @Override
+    @Transactional
+    public void createWorkflowTransitionLog(User actor, Request request, WorkflowTransition transition, String action, String description) {
+        String mockHash = UUID.randomUUID().toString();
+
+        WorkflowStep fromStep = (transition != null) ? transition.getFromStep() : null;
+        WorkflowStep toStep = (transition != null) ? transition.getToStep() : request.getCurrentStepID();
+
+        AuditLog log = AuditLog.builder()
+                .request(request)
+                .actor(actor)
+                .action(action)
+                .description(description)
+                .previousStep(fromStep)
+                .newStep(toStep)
+                .transition(transition)
+                .entryHash(mockHash)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        auditLogRepository.save(log);
     }
 }

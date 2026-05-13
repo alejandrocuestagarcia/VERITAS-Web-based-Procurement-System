@@ -16,6 +16,7 @@ public interface RequisitionMapper {
     @Mapping(target = "workflowName", expression = "java(request.getWorkflowDefinitionID() != null ? request.getWorkflowDefinitionID().getName() : \"N/A\")")
     @Mapping(target = "teamName", source = "teamID.name")
     @Mapping(target = "requesterName", source = "userID.name")
+    @Mapping(target = "state", source = "state")
     @Mapping(target = "status", expression = "java(request.getCurrentStepID() != null ? request.getCurrentStepID().getName() : (request.getJiraIssueKey() != null ? \"Jira Synced\" : \"DRAFT\"))")
     @Mapping(target = "isClosed", expression = "java(request.getCurrentStepID() != null && com.veritas.backend.workflow.entity.WorkflowComponent.END_EVENT.equals(request.getCurrentStepID().getWorkflowComponent()))")
     @Mapping(target = "responsibleRole", expression = "java(request.getCurrentStepID() != null && request.getCurrentStepID().getRole() != null ? request.getCurrentStepID().getRole().name() : (request.getJiraIssueKey() != null && request.getCurrentStepID() == null ? \"REQUESTER\" : null))")

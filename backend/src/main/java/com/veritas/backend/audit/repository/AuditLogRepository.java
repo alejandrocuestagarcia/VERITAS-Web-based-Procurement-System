@@ -8,6 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.workflow.entity.WorkflowStep;
+
+import java.util.Optional;
+import java.util.List;
+
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     @Query("""
@@ -24,4 +30,10 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
         (a.actor IS NULL AND LOWER('system') LIKE LOWER(CONCAT('%', :search, '%'))))
     """)
     Page<AuditLog> findAllByAction(@Param("action") String action, Pageable pageable, @Param("search") String search);
+
+    Optional<AuditLog> findFirstByRequestAndNewStepAndActionOrderByTimestampDesc(
+            Request request,
+            WorkflowStep newStep,
+            String action
+    );
 }

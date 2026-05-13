@@ -16,6 +16,7 @@ public record RequisitionDto(
     String workflowName,
     String teamName,
     String requesterName,
+    String currentStep,
     String responsibleRole,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
