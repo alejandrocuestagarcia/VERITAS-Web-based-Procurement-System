@@ -149,7 +149,7 @@ const routes: Routes = [
     path: 'workflows/edit/:id',
     component: WorkflowEditorComponent,
     canActivate: [authGuard, roleGuard],
-    data: { mode: 'edit', roles: ['FINANCE_OFFICER'] }
+    data: { mode: 'edit', roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] }
   },
   { path: 'requisition/create',
     component: RequisitionCreateComponent,

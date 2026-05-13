@@ -26,7 +26,7 @@
   </div>
 
   <!-- Actions -->
-  <button actions mat-flat-button class="v-btn-brand" *ngIf="isFinanceOfficer" [routerLink]="['/workflows/create']">
+  <button actions mat-flat-button class="v-btn-brand" *ngIf="isFinanceOfficer || isAdministrator" [routerLink]="['/workflows/create']">
     <mat-icon>add</mat-icon>
     <span>Create Workflow</span>
   </button>
@@ -70,10 +70,10 @@
           <button mat-icon-button matTooltip="View Workflow" [routerLink]="['/workflows/view', workflow.id]">
             <mat-icon>visibility</mat-icon>
           </button>
-          <button mat-icon-button matTooltip="Edit Workflow" [routerLink]="['/workflows/edit', workflow.id]" [disabled]="!isFinanceOfficer">
+          <button mat-icon-button matTooltip="Edit Workflow" [routerLink]="['/workflows/edit', workflow.id]" [disabled]="!isFinanceOfficer && !isAdministrator">
             <mat-icon>edit</mat-icon>
           </button>
-          <button mat-icon-button matTooltip="Delete Workflow" color="warn" [routerLink]="['/workflows/delete', workflow.id]" [disabled]="!isFinanceOfficer">
+          <button mat-icon-button matTooltip="Delete Workflow" color="warn" [routerLink]="['/workflows/delete', workflow.id]" [disabled]="!isFinanceOfficer && !isAdministrator">
             <mat-icon>delete</mat-icon>
           </button>
         </div>

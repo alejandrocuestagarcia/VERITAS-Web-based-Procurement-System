@@ -7,6 +7,7 @@ import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
+import {AuthService} from "../../../core/services/auth.service";
 
 export type WorkflowMode = 'create' | 'edit' | 'view';
 
@@ -49,9 +50,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     return this.mode !== 'view';
   }
 
+  get isFinanceOfficer(): boolean {
+    return this.authService.hasRole('FINANCE_OFFICER');
+  }
+
+  get isAdministrator(): boolean {
+    return this.authService.hasRole('ADMINISTRATOR');
+  }
+
   constructor(
     private workflowService: WorkflowModuleService,
     public router: Router,
+    public authService: AuthService,
     private route: ActivatedRoute,
     private toastService: ToastService,
     private fb: FormBuilder
@@ -278,24 +288,24 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    this.currentRule = { 
-      isPdfRequired: false, 
-      isCsvRequired: false, 
-      isImageRequired: false, 
-      minRequiredVendors: 0, 
-      optionalFailureMessage: '', 
-      description: doc 
+    this.currentRule = {
+      isPdfRequired: false,
+      isCsvRequired: false,
+      isImageRequired: false,
+      minRequiredVendors: 0,
+      optionalFailureMessage: '',
+      description: doc
     };
   }
 
   private resetRule() {
-    this.currentRule = { 
-      isPdfRequired: false, 
-      isCsvRequired: false, 
-      isImageRequired: false, 
-      minRequiredVendors: 0, 
-      optionalFailureMessage: '', 
-      description: '' 
+    this.currentRule = {
+      isPdfRequired: false,
+      isCsvRequired: false,
+      isImageRequired: false,
+      minRequiredVendors: 0,
+      optionalFailureMessage: '',
+      description: ''
     };
   }
 

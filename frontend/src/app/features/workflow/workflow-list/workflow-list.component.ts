@@ -40,6 +40,10 @@ export class WorkflowListComponent implements OnInit {
     return this.authService.hasRole('FINANCE_OFFICER');
   }
 
+  get isAdministrator(): boolean {
+    return this.authService.hasRole('ADMINISTRATOR');
+  }
+
   loadWorkflows(): void {
     this.loading = true;
 
