@@ -110,10 +110,10 @@ export class JiraSettingsListComponent implements OnInit {
     this.loadSettings();
   }
   syncAll():void {
-    this.snackBar.open('Triggering all sync...', '', { duration: 2000 });
+    this.toastService.showSuccess('Triggering all sync...');
     this.jiraConfigService.triggerAllSyncs().subscribe({
-      next: () => this.snackBar.open('Syncs completed successfully', 'Close', { duration: 3000 }),
-      error: () => this.snackBar.open('Syncs failed. Please check logs.', 'Close', { duration: 3000 })
+      next: () => this.toastService.showSuccess('Syncs completed successfully'),
+      error: () => this.toastService.showError('Syncs failed. Please check logs.')
     });
   }
 }
