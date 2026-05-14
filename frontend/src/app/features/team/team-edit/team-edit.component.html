@@ -1,10 +1,12 @@
-<div [formGroup]="teamForm">
-  <app-shared-form title="Add New Team"
-    subtitle="Define a new operational unit, assign structural pillars, and establish foundational access protocols for collaborative governance."
-    routingSubtitle="ADMINISTRATION > TEAMS" [submitButtonLabel]="submitting ? 'Creating...' : 'Create Team'"
-    submitButtonIcon="group_add" [loading]="submitting || loadingLeads" (submitted)="submit()" (cancelled)="cancel()">
+<!-- AI-GENERATED -->
 
-    <app-shared-form-card icon="badge" title="Core Identification">
+<div [formGroup]="teamForm">
+  <app-shared-form title="Edit Team"
+    subtitle="Modify core team settings, update membership, and manage leadership assignments."
+    routingSubtitle="TEAM MANAGEMENT > EDIT TEAM" [submitButtonLabel]="submitting ? 'Saving...' : 'Save Changes'"
+    submitButtonIcon="save" [loading]="loading || submitting" (submitted)="submit()" (cancelled)="cancel()">
+
+    <app-shared-form-card icon="badge" title="Team Information">
       <app-shared-form-field label="TEAM NAME">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>groups</mat-icon>
@@ -19,37 +21,26 @@
       <app-shared-form-field label="TEAM LEAD">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="leaderId"
-            placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}"
+          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="loading"
             (selectionChange)="onLeadChanged()">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
             </mat-select-trigger>
             <mat-option [value]="null">None</mat-option>
-            <mat-option *ngFor="let option of leadOptions" [value]="option.id" [disabled]="option.currentTeam">
+            <mat-option *ngFor="let option of restrictedLeadOptions" [value]="option.id">
               <div class="flex flex-col leading-tight py-1">
                 <span>{{ option.displayName }}</span>
-                <span class="text-xs text-amber-600 font-semibold" *ngIf="option.currentTeam">
-                  Assigned to {{ option.currentTeam }}
-                </span>
-                <span class="text-xs text-slate-500 font-semibold" *ngIf="!option.currentTeam">
+                <span class="text-xs text-slate-500 font-semibold"
+                  *ngIf="!option.currentTeam || option.currentTeam === teamName">
                   {{ option.subtitle }}
+                </span>
+                <span class="text-xs text-amber-600 font-semibold"
+                  *ngIf="option.currentTeam && option.currentTeam !== teamName">
+                  Assigned to {{ option.currentTeam }}
                 </span>
               </div>
             </mat-option>
           </mat-select>
-          <mat-hint *ngIf="!loadingLeads && leadOptions.length === 0">No leads available to select.</mat-hint>
-        </mat-form-field>
-      </app-shared-form-field>
-
-      <app-shared-form-field label="DESCRIPTION">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>article</mat-icon>
-          <textarea matInput formControlName="description" rows="1"
-            placeholder="Briefly describe the team's objectives and scope..."></textarea>
-          <mat-error
-            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
-            is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -66,6 +57,17 @@
             is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
+
+      <app-shared-form-field label="DESCRIPTION" [fullWidth]="true">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>article</mat-icon>
+          <textarea matInput formControlName="description" rows="2"
+            placeholder="Briefly describe the team's objectives and scope..."></textarea>
+          <mat-error
+            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
+            is required.</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
     </app-shared-form-card>
 
     <app-shared-form-card icon="group" title="Team Composition">
@@ -73,7 +75,7 @@
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-semibold text-gray-800">MEMBERS</h3>
           <button type="button" mat-button color="primary" class="font-semibold" (click)="toggleMembersPanel()"
-            [disabled]="submitting || leadOptions.length === 0">
+            [disabled]="submitting || loading">
             <mat-icon>person_add</mat-icon> Add Member
           </button>
         </div>
@@ -92,7 +94,12 @@
                     <mat-option *ngFor="let candidate of availableMemberCandidates" [value]="candidate.id">
                       <div class="flex flex-col leading-tight py-1">
                         <span>{{ candidate.displayName }}</span>
-                        <span class="text-xs text-amber-600 font-semibold" *ngIf="candidate.currentTeam">
+                        <span class="text-xs text-slate-500 font-semibold"
+                          *ngIf="!candidate.currentTeam || candidate.currentTeam === teamName">
+                          {{ candidate.subtitle }}
+                        </span>
+                        <span class="text-xs text-amber-600 font-semibold"
+                          *ngIf="candidate.currentTeam && candidate.currentTeam !== teamName">
                           Assigned to {{ candidate.currentTeam }}
                         </span>
                       </div>
@@ -118,15 +125,17 @@
                 </div>
                 <div class="flex flex-col">
                   <span class="text-sm font-bold text-gray-900">{{ owner.displayName }}</span>
-                  <span class="text-xs font-semibold text-amber-600" *ngIf="owner.currentTeam">
-                    Assigned to {{ owner.currentTeam }}
-                  </span>
-                  <span class="text-xs font-semibold text-gray-500" *ngIf="!owner.currentTeam">
+                  <span class="text-xs font-semibold text-slate-500"
+                    *ngIf="!owner.currentTeam || owner.currentTeam === teamName">
                     {{ owner.subtitle }}
+                  </span>
+                  <span class="text-xs font-semibold text-amber-600"
+                    *ngIf="owner.currentTeam && owner.currentTeam !== teamName">
+                    Assigned to {{ owner.currentTeam }}
                   </span>
                 </div>
               </div>
-              <span class="text-xs font-bold text-gray-600 bg-gray-100 rounded-md px-2 py-1">OWNER</span>
+              <span class="text-xs font-bold text-gray-600 bg-gray-100 rounded-md px-2 py-1">LEADER</span>
             </div>
 
             <div class="flex flex-col gap-2" *ngIf="additionalMembers.length > 0">
@@ -139,11 +148,13 @@
                   </div>
                   <div class="flex flex-col">
                     <span class="text-sm font-bold text-gray-900">{{ member.displayName }}</span>
-                    <span class="text-xs font-semibold text-amber-600" *ngIf="member.currentTeam">
-                      Assigned to {{ member.currentTeam }}
-                    </span>
-                    <span class="text-xs font-semibold text-gray-500" *ngIf="!member.currentTeam">
+                    <span class="text-xs font-semibold text-slate-500"
+                      *ngIf="!member.currentTeam || member.currentTeam === teamName">
                       {{ member.subtitle }}
+                    </span>
+                    <span class="text-xs font-semibold text-amber-600"
+                      *ngIf="member.currentTeam && member.currentTeam !== teamName">
+                      Assigned to {{ member.currentTeam }}
                     </span>
                   </div>
                 </div>
@@ -157,15 +168,13 @@
             <div class="border border-dashed border-gray-300 rounded-lg p-6 text-center text-gray-500 bg-gray-50"
               *ngIf="additionalMembers.length === 0">
               <mat-icon class="text-gray-400">groups_2</mat-icon>
-              <p class="text-lg font-bold text-gray-600 mt-2 mb-1">No additional members added</p>
-              <p class="text-sm m-0">Teams perform best with specialized roles assigned early.</p>
+              <p class="text-lg font-bold text-gray-600 mt-2 mb-1">No additional members assigned</p>
+              <p class="text-sm m-0">Invite collaborators to distribute operational responsibilities.</p>
             </div>
           </div>
 
         </div>
       </div>
     </app-shared-form-card>
-
   </app-shared-form>
-
 </div>

@@ -58,6 +58,14 @@ public class UserServiceImpl implements UserService {
         .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
     log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
 
+
+
+
+    if (userDto.promoteToTeamLeader() && team.getLeader() != null) {
+      throw new IllegalArgumentException(
+          "Team already has a leader. Remove the current leader before assigning a new one.");
+    }
+
     User user = userMapper.toUser(userDto);
     user.setPasswordHash(passwordEncoder.encode(userDto.password()));
     user.setTeam(team);
@@ -75,7 +83,6 @@ public class UserServiceImpl implements UserService {
 
     return userMapper.toUserDto(savedUser);
 
-
   }
 
   @Override
@@ -83,9 +90,11 @@ public class UserServiceImpl implements UserService {
   public UserDto editUser(Long id, UserEditDto edits) {
     User user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-    boolean changingTeam = edits.teamId() != null && (user.getTeam() == null || !edits.teamId().equals(user.getTeam().getTeamId()));
+    boolean changingTeam = edits.teamId() != null
+        && (user.getTeam() == null || !edits.teamId().equals(user.getTeam().getTeamId()));
     if (changingTeam && Boolean.TRUE.equals(edits.isTeamLeader())) {
-      throw new IllegalArgumentException("Cannot change team and promote to leader in the same request. Change team first, then promote.");
+      throw new IllegalArgumentException(
+          "Cannot change team and promote to leader in the same request. Change team first, then promote.");
     }
 
     if (edits.email() != null && !edits.email().equals(user.getEmail())) {
@@ -103,7 +112,8 @@ public class UserServiceImpl implements UserService {
 
     if (edits.teamId() != null) {
       if (changingTeam) {
-        Team newTeam = teamRepository.findById(edits.teamId()).orElseThrow(() -> new EntityNotFoundException("Team not found"));
+        Team newTeam = teamRepository.findById(edits.teamId())
+            .orElseThrow(() -> new EntityNotFoundException("Team not found"));
         user.setTeam(newTeam);
       }
     } else {
@@ -113,13 +123,18 @@ public class UserServiceImpl implements UserService {
     User saved = userRepository.save(user);
 
     boolean isCurrentlyLeader = saved.getTeam() != null && saved.getTeam().getLeader() != null
-            && saved.getTeam().getLeader().getId().equals(saved.getId());
+        && saved.getTeam().getLeader().getId().equals(saved.getId());
     if (isCurrentlyLeader && (edits.isTeamLeader() == null || !edits.isTeamLeader())) {
       saved.getTeam().setLeader(null);
       teamRepository.save(saved.getTeam());
     } else if (Boolean.TRUE.equals(edits.isTeamLeader())) {
       if (saved.getTeam() == null) {
-        throw new IllegalStateException("Cannot set team leader: user has no team assigned.");
+        throw new IllegalArgumentException("Cannot set team leader: user has no team assigned.");
+      }
+
+      if (saved.getTeam().getLeader() != null && !saved.getTeam().getLeader().getId().equals(saved.getId())) {
+        throw new IllegalArgumentException(
+            "Team already has a leader. Remove the current leader before assigning a new one.");
       }
 
       saved.getTeam().setLeader(saved);
@@ -133,11 +148,11 @@ public class UserServiceImpl implements UserService {
   @Transactional(readOnly = true)
   public UserEditDto getUserByIdForEdit(Long id) {
     User user = userRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
     boolean isTeamLeader = user.getTeam() != null
-            && user.getTeam().getLeader() != null
-            && user.getTeam().getLeader().getId().equals(user.getId());
+        && user.getTeam().getLeader() != null
+        && user.getTeam().getLeader().getId().equals(user.getId());
 
     return userMapper.toUserEditDto(user, isTeamLeader);
   }
@@ -171,9 +186,9 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(readOnly = true)
   public List<RequisitionDto> getPendingRequisitionsForUser(Long userId) {
-      return requestRepository.findActiveRequestsByUserId(userId).stream()
-              .map(requisitionMapper::toDto)
-              .toList();
+    return requestRepository.findActiveRequestsByUserId(userId).stream()
+        .map(requisitionMapper::toDto)
+        .toList();
   }
 
   @Override
@@ -188,13 +203,13 @@ public class UserServiceImpl implements UserService {
       actualUser.setDeletedAt(LocalDateTime.now());
 
       if (fallbackUserId != null) {
-          User fallbackUser = userRepository.findById(fallbackUserId)
-                  .orElseThrow(() -> new EntityNotFoundException("Fallback user not found"));
-          List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
-          for (Request req : activeRequests) {
-              req.setUserID(fallbackUser);
-          }
-          requestRepository.saveAll(activeRequests);
+        User fallbackUser = userRepository.findById(fallbackUserId)
+            .orElseThrow(() -> new EntityNotFoundException("Fallback user not found"));
+        List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
+        for (Request req : activeRequests) {
+          req.setUserID(fallbackUser);
+        }
+        requestRepository.saveAll(activeRequests);
       }
 
       if (actualUser.getTeam() != null) {

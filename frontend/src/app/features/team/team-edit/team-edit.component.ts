@@ -1,15 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ToastService } from '../../../core/services/toast.service';
+import { forkJoin } from 'rxjs';
 import {
-  TeamCreateDto,
+  TeamDto,
+  TeamEditDto,
   TeamsModuleService,
   UserDto,
   UserModuleService,
   DepartmentsModuleService,
   DepartmentDto
 } from '../../../core/api';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface TeamMemberOption {
   id: number;
@@ -20,35 +22,54 @@ interface TeamMemberOption {
 }
 
 @Component({
-  selector: 'app-team-create',
-  templateUrl: './team-create.component.html',
-  styleUrls: ['./team-create.component.scss']
+  selector: 'app-team-edit',
+  templateUrl: './team-edit.component.html',
+  styleUrls: ['./team-edit.component.scss']
 })
-export class TeamCreateComponent implements OnInit {
+export class TeamEditComponent implements OnInit {
   teamForm!: FormGroup;
+  teamId!: number;
+  teamName = '';
+  team: TeamDto | null = null;
+
+  currentLeaderId: number | null = null;
+  previousLeaderId: number | null = null;
+  currentMemberIds = new Set<number>();
 
   departments: DepartmentDto[] = [];
 
   leadOptions: TeamMemberOption[] = [];
-  loadingLeads = false;
+  loading = false;
   submitting = false;
   error: string | null = null;
 
   membersPanelOpen = false;
   selectedMemberCandidateId: number | null = null;
   additionalMembers: TeamMemberOption[] = [];
-  private previousLeaderId: number | null = null;
 
   constructor(
     private userService: UserModuleService,
     private teamsService: TeamsModuleService,
     private departmentsService: DepartmentsModuleService,
     private router: Router,
+    private route: ActivatedRoute,
     private toastService: ToastService,
     private fb: FormBuilder
   ) { }
 
   ngOnInit(): void {
+    this.teamId = Number(this.route.snapshot.paramMap.get('id'));
+    if (!this.teamId) {
+      this.toastService.showError('Invalid team identifier.');
+      this.router.navigate(['/teams']);
+      return;
+    }
+
+    this.initForm();
+    this.loadTeamData();
+  }
+
+  private initForm(): void {
     this.teamForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       leaderId: [null],
@@ -59,20 +80,78 @@ export class TeamCreateComponent implements OnInit {
     this.teamForm.get('leaderId')?.valueChanges.subscribe(() => {
       this.onLeadChanged();
     });
-
-    this.loadLeadOptions();
-    this.loadDepartments();
   }
 
-  private loadDepartments(): void {
-    this.departmentsService.getAllDepartments().subscribe({
-      next: (depts) => {
-        this.departments = this.toArray<DepartmentDto>(depts);
+  private loadTeamData(): void {
+    this.loading = true;
+    this.error = null;
+
+    forkJoin({
+      team: this.teamsService.getTeam(this.teamId),
+      users: this.userService.getAllUsers({ page: 0, size: 100 }),
+      departments: this.departmentsService.getAllDepartments()
+    }).subscribe({
+      next: ({ team, users, departments }) => {
+        this.departments = this.toArray<DepartmentDto>(departments);
+        const normalizedUsers = this.toArray<UserDto>(users);
+        const seenIds = new Set<number>();
+
+        this.leadOptions = normalizedUsers
+          .map((user) => {
+            const coercedId = this.normalizeLeaderId(user.id);
+            if (coercedId === null) return null;
+            return this.mapUserToOption({ ...user, id: coercedId });
+          })
+          .filter((option): option is TeamMemberOption => option !== null)
+          .filter((option) => {
+            if (seenIds.has(option.id)) {
+              return false;
+            }
+            seenIds.add(option.id);
+            return true;
+          });
+
+        this.applyTeamData(team);
+        this.loading = false;
       },
       error: () => {
-        this.toastService.showError('Failed to load departments.');
+        this.loading = false;
+        this.error = 'Failed to load team data. Please try again.';
       }
     });
+  }
+
+  private applyTeamData(team: TeamDto): void {
+    this.team = team;
+    this.teamName = team.name?.trim() || 'Team';
+    this.currentLeaderId = this.normalizeLeaderId(team.leaderId);
+    this.previousLeaderId = this.currentLeaderId;
+
+    const leaderId = this.currentLeaderId;
+
+    const dept = this.departments.find(d => d.name === team.department);
+
+    this.teamForm.patchValue({
+      name: team.name ?? '',
+      leaderId: leaderId,
+      departmentId: dept?.id ?? null,
+      description: team.description ?? ''
+    });
+
+    const members = Array.isArray(team.members) ? team.members : [];
+    const uniqueMembers = new Map<number, UserDto & { id: number }>();
+
+    members.forEach((member) => {
+      const memberId = this.normalizeLeaderId(member.id);
+      if (memberId === null) return;
+      uniqueMembers.set(memberId, { ...member, id: memberId });
+    });
+
+    this.currentMemberIds = new Set(uniqueMembers.keys());
+
+    this.additionalMembers = Array.from(uniqueMembers.values())
+      .filter((member) => leaderId === null || member.id !== leaderId)
+      .map((member) => this.mapUserToOption(member));
   }
 
   cancel(): void {
@@ -82,8 +161,12 @@ export class TeamCreateComponent implements OnInit {
   submit(): void {
     this.error = null;
 
+    if (this.loading) {
+      return;
+    }
+
     if (this.teamForm.invalid) {
-      this.error = 'Please complete all required fields before creating the team.';
+      this.error = 'Please complete all required fields before saving changes.';
       this.teamForm.markAllAsTouched();
       return;
     }
@@ -91,40 +174,37 @@ export class TeamCreateComponent implements OnInit {
     this.submitting = true;
 
     const formValues = this.teamForm.value;
+    const leaderId = this.normalizeLeaderId(formValues.leaderId);
 
-    const payload: TeamCreateDto = {
+    const payload: TeamEditDto = {
       name: formValues.name.trim(),
       description: formValues.description.trim(),
       departmentId: formValues.departmentId,
-      memberIds: this.additionalMembers.map(member => member.id)
+      memberIds: this.additionalMembers.map((member) => member.id)
     };
 
-    const leaderId = this.normalizeLeaderId(formValues.leaderId);
     if (leaderId !== null) {
-      const selectedLeader = this.leadOptions.find((option) => option.id === leaderId);
-      if (selectedLeader?.currentTeam) {
-        this.submitting = false;
-        this.error = `"${selectedLeader.displayName}" is already assigned to ${selectedLeader.currentTeam}. Remove them first.`;
-        return;
-      }
       payload.leaderId = leaderId;
     }
 
-    const invalidMembers = this.additionalMembers.filter((member) => member.currentTeam);
-    if (invalidMembers.length > 0) {
-      this.submitting = false;
-      this.error = 'One or more members are already assigned to another team. Remove them before assigning.';
-      return;
+    if (leaderId === null && this.currentLeaderId !== null) {
+      payload.clearLeader = true;
     }
 
-    this.teamsService.createTeam(payload).subscribe({
+    this.teamsService.editTeam(this.teamId, payload as TeamEditDto).subscribe({
       next: () => {
         this.submitting = false;
-        this.toastService.showSuccess('Team created successfully.');
+        this.toastService.showSuccess('Team updated successfully.');
         this.router.navigate(['/teams']);
       },
       error: (err) => {
         this.submitting = false;
+
+        const message = err?.error && typeof err.error === 'object'
+          ? Object.values(err.error).join(', ')
+          : err?.error || 'Unknown error';
+
+        this.toastService.showError('Failed: ' + message);
         this.error = this.extractErrorMessage(err);
       }
     });
@@ -146,18 +226,18 @@ export class TeamCreateComponent implements OnInit {
       return;
     }
 
-    if (candidate.currentTeam) {
-      this.error = `"${candidate.displayName}" is already assigned to ${candidate.currentTeam}. Remove them first.`;
+    if (this.isAssignedElsewhere(candidate)) {
+      this.error = `"${candidate.displayName}" is already assigned to another team. Remove them first.`;
       return;
     }
 
     if (this.normalizeLeaderId(this.teamForm.value.leaderId) === candidate.id) {
-      this.error = 'The selected team lead is already assigned as owner.';
+      this.error = 'The selected team lead is already assigned as leader.';
       return;
     }
 
     if (this.additionalMembers.some((member) => member.id === candidate.id)) {
-      this.error = 'This member has already been added to the local composition list.';
+      this.error = 'This member has already been added to the team composition.';
       return;
     }
 
@@ -172,15 +252,6 @@ export class TeamCreateComponent implements OnInit {
 
   onLeadChanged(): void {
     const currentLeadId = this.normalizeLeaderId(this.teamForm.value.leaderId);
-
-    if (currentLeadId !== null) {
-      const selectedLead = this.leadOptions.find((option) => option.id === currentLeadId);
-      if (selectedLead?.currentTeam) {
-        this.error = `"${selectedLead.displayName}" is already assigned to ${selectedLead.currentTeam}. Remove them first.`;
-        this.teamForm.patchValue({ leaderId: this.previousLeaderId }, { emitEvent: false });
-        return;
-      }
-    }
 
     if (this.previousLeaderId !== null && this.previousLeaderId !== currentLeadId) {
       const oldLeaderOption = this.leadOptions.find(o => o.id === this.previousLeaderId);
@@ -209,19 +280,41 @@ export class TeamCreateComponent implements OnInit {
   get availableMemberCandidates(): TeamMemberOption[] {
     if (!this.teamForm) return [];
     const currentLeadId = this.normalizeLeaderId(this.teamForm.value.leaderId);
+
     return this.leadOptions.filter((option) => {
       if (currentLeadId === option.id) {
         return false;
       }
-      if (option.currentTeam) {
+
+      if (this.additionalMembers.some((member) => member.id === option.id)) {
         return false;
       }
-      return !this.additionalMembers.some((member) => member.id === option.id);
+
+      return !this.isAssignedElsewhere(option);
     });
+  }
+
+  get restrictedLeadOptions(): TeamMemberOption[] {
+    return this.leadOptions.filter((option) => !this.isAssignedElsewhere(option));
+  }
+
+  get hasExistingLeader(): boolean {
+    return this.currentLeaderId !== null;
   }
 
   trackByMemberId(_index: number, member: TeamMemberOption): number {
     return member.id;
+  }
+
+  get selectedLeadOption(): TeamMemberOption | null {
+    const leaderId = this.normalizeLeaderId(this.teamForm?.value?.leaderId);
+    if (leaderId === null) return null;
+    return this.leadOptions.find(o => o.id === leaderId) ?? null;
+  }
+
+  get selectedMemberCandidateOption(): TeamMemberOption | null {
+    if (this.selectedMemberCandidateId === null) return null;
+    return this.availableMemberCandidates.find(c => c.id === this.selectedMemberCandidateId) ?? null;
   }
 
   private normalizeLeaderId(raw: any): number | null {
@@ -232,39 +325,20 @@ export class TeamCreateComponent implements OnInit {
     return isNaN(parsed) ? null : parsed;
   }
 
-  private loadLeadOptions(): void {
-    this.loadingLeads = true;
-    this.error = null;
+  private isAssignedElsewhere(option: TeamMemberOption): boolean {
+    if (!option.currentTeam) {
+      return false;
+    }
 
-    this.userService.getAllUsers({ page: 0, size: 100 }).subscribe({
-      next: (users) => {
-        const normalizedUsers = this.toArray<UserDto>(users);
-        const seenIds = new Set<number>();
+    if (this.currentMemberIds.has(option.id)) {
+      return false;
+    }
 
-        this.leadOptions = normalizedUsers
-          .map((user) => {
-            const coercedId = this.normalizeLeaderId(user.id);
-            if (coercedId === null) return null;
+    if (this.currentLeaderId === option.id) {
+      return false;
+    }
 
-            const userWithId = { ...user, id: coercedId };
-            return this.mapUserToOption(userWithId);
-          })
-          .filter((option): option is TeamMemberOption => option !== null)
-          .filter((option) => {
-            if (seenIds.has(option.id)) {
-              return false;
-            }
-            seenIds.add(option.id);
-            return true;
-          });
-
-        this.loadingLeads = false;
-      },
-      error: () => {
-        this.loadingLeads = false;
-        this.error = 'Failed to load team lead options. Ensure you are logged in as finance or administrator.';
-      }
-    });
+    return true;
   }
 
   private mapUserToOption(user: UserDto & { id: number }): TeamMemberOption {
@@ -320,7 +394,7 @@ export class TeamCreateComponent implements OnInit {
       return backendMessage;
     }
 
-    return 'Failed to create team. Please review the form and try again.';
+    return 'Failed to update the team. Please review the form and try again.';
   }
 
   private toArray<T>(value: unknown): T[] {
@@ -341,16 +415,5 @@ export class TeamCreateComponent implements OnInit {
     }
 
     return [];
-  }
-
-  get selectedLeadOption(): TeamMemberOption | null {
-    const leaderId = this.normalizeLeaderId(this.teamForm?.value?.leaderId);
-    if (leaderId === null) return null;
-    return this.leadOptions.find(o => o.id === leaderId) ?? null;
-  }
-
-  get selectedMemberCandidateOption(): TeamMemberOption | null {
-    if (this.selectedMemberCandidateId === null) return null;
-    return this.availableMemberCandidates.find(c => c.id === this.selectedMemberCandidateId) ?? null;
   }
 }

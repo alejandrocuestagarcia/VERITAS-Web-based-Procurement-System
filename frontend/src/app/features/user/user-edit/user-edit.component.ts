@@ -60,19 +60,17 @@ export class UserEditComponent implements OnInit {
       }
     });
 
-    this.userForm.get('teamId')?.valueChanges.subscribe(teamId => {
-      const leaderControl = this.userForm.get('isTeamLeader');
-      if (!teamId) {
-        leaderControl?.disable({ emitEvent: false });
-      } else {
-        leaderControl?.enable({ emitEvent: false });
-      }
+    this.userForm.get('teamId')?.valueChanges.subscribe(() => {
+      this.updateLeaderToggleState();
     });
   }
 
   private loadTeams(): void {
     this.teamService.getAllTeams().subscribe({
-      next: (teams) => this.teams = teams,
+      next: (teams) => {
+        this.teams = teams;
+        this.updateLeaderToggleState();
+      },
       error: () => this.toastService.showError('Failed to load teams.')
     });
   }
@@ -95,6 +93,8 @@ export class UserEditComponent implements OnInit {
         if (user.role === 'ADMINISTRATOR') {
           this.userForm.get('role')?.disable();
         }
+
+        this.updateLeaderToggleState();
 
       },
       error: () => {
@@ -161,5 +161,46 @@ export class UserEditComponent implements OnInit {
         }
       });
     });
+  }
+
+  get leaderConflictMessage(): string | null {
+    const teamId = this.userForm?.get('teamId')?.value;
+    if (!teamId) {
+      return null;
+    }
+
+    const team = this.teams.find((candidate) => candidate.id === teamId);
+    if (team?.leaderId && team.leaderId !== this.userId) {
+      return 'This team already has a leader. Remove the current leader before assigning a new one.';
+    }
+
+    return null;
+  }
+
+  private updateLeaderToggleState(): void {
+    const leaderControl = this.userForm.get('isTeamLeader');
+    const teamControl = this.userForm.get('teamId');
+
+    if (!leaderControl || !teamControl) {
+      return;
+    }
+
+    const teamId = teamControl.value;
+    if (!teamId) {
+      leaderControl.disable({ emitEvent: false });
+      leaderControl.setValue(false, { emitEvent: false });
+      return;
+    }
+
+    const team = this.teams.find((candidate) => candidate.id === teamId);
+    const hasDifferentLeader = team?.leaderId && team.leaderId !== this.userId;
+
+    if (hasDifferentLeader) {
+      leaderControl.disable({ emitEvent: false });
+      leaderControl.setValue(false, { emitEvent: false });
+      return;
+    }
+
+    leaderControl.enable({ emitEvent: false });
   }
 }

@@ -47,6 +47,7 @@ import { SharedFormFieldComponent } from './shared/components/creation/shared-fo
 import { ProjectCreateComponent } from './features/project/project-create/project-create.component';
 import { TeamListComponent } from './features/team/team-list/team-list.component';
 import { TeamCreateComponent } from './features/team/team-create/team-create.component';
+import { TeamEditComponent } from './features/team/team-edit/team-edit.component';
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
 import { UserEditComponent } from './features/user/user-edit/user-edit.component';
@@ -91,6 +92,7 @@ import { WorkflowListComponent } from './features/workflow/workflow-list/workflo
     VendorListComponent,
     TeamListComponent,
     TeamCreateComponent,
+    TeamEditComponent,
     VendorCreateComponent,
     VendorEditComponent,
     UserEditComponent,
