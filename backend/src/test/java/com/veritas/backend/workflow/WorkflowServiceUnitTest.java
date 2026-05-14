@@ -237,7 +237,7 @@ class WorkflowServiceUnitTest {
         verify(transitionRuleRepository).saveAll(transitionRulesCaptor.capture());
         Iterable<TransitionRule> savedRules = transitionRulesCaptor.getValue();
 
-        java.util.List<TransitionRule> rulesList = new java.util.ArrayList<>();
+        List<TransitionRule> rulesList = new ArrayList<>();
         savedRules.forEach(rulesList::add);
 
         assertThat(rulesList).hasSize(1);

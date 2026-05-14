@@ -1,7 +1,7 @@
 import {Component, OnInit, ViewChild, ElementRef, OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { ToastService } from '../../../core/services/toast.service';
 import {
   debounceTime,
   distinctUntilChanged,
@@ -52,7 +52,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
     private projectService: ProjectModuleService,
     private workflowService: WorkflowModuleService,
     private requisitionService: RequisitionModuleService,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private dialog: MatDialog
   ) { }
 
@@ -76,7 +76,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
         this.workflows = response.content || [];
       },
       error: () => {
-        this.snackBar.open('Error searching workflows', 'Close', { duration: 3000 });
+        this.toastService.showError('Error searching workflows');
       }
     });
   }
@@ -118,13 +118,12 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   }
   viewWorkflow(id: number | undefined): void {
     if (id) {
-      // TODO: Change this to a read-only component, once viewing workflows by ID is implemented.
-      // Currently using WorkflowEditorComponent as a placeholder.
       this.dialog.open(WorkflowEditorComponent, {
         width: '90vw',
         height: '90vh',
         maxWidth: '1200px',
-        panelClass: 'overflow-hidden'
+        panelClass: 'overflow-hidden',
+        data: { mode: 'view', id: id }
       });
     }
   }
@@ -210,7 +209,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   private loadData(): void {
     this.projectService.getAllProjects().subscribe({
       next: (projects) => this.projects = projects,
-      error: () => this.snackBar.open('Failed to load projects', 'Close', { duration: 3000 })
+      error: () => this.toastService.showError('Failed to load projects')
     });
   }
 
@@ -245,7 +244,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
             forkJoin(uploadTasks).subscribe({
               next: (results) => {
                 this.loading = false;
-                this.snackBar.open('Procurement request & attachments saved successfully', 'Close', { duration: 3000 });
+                this.toastService.showSuccess('Procurement request & attachments saved successfully');
                 this.router.navigate(['/dashboard']);
               },
               error: (err) => {
@@ -254,17 +253,17 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
             });
           } else {
             this.loading = false;
-            this.snackBar.open('Procurement request created successfully', 'Close', { duration: 3000 });
+            this.toastService.showSuccess('Procurement request created successfully');
             this.router.navigate(['/dashboard']);
           }
         },
         error: (err) => {
           this.loading = false;
-          this.snackBar.open('Failed to create request: ' + (err.error?.message || 'Unknown error'), 'Close', { duration: 5000 });
+          this.toastService.showError('Failed to create request: ' + (err.error?.message || 'Unknown error'));
         }
       });
     } else {
-      this.snackBar.open('Please fill out all required fields properly.', 'Close', { duration: 3000 });
+      this.toastService.showError('Please fill out all required fields properly.');
       this.basicInfoForm.markAllAsTouched();
       this.lineItemsForm.markAllAsTouched();
     }
