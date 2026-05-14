@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, OnDestroy, Optional, Inject } from '@angular/core';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { editorModules, viewerModules } from '../custom-renderer';
@@ -8,6 +8,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
 import {AuthService} from "../../../core/services/auth.service";
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 export type WorkflowMode = 'create' | 'edit' | 'view';
 
@@ -64,7 +65,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private route: ActivatedRoute,
     private toastService: ToastService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: any,
+    @Optional() public dialogRef: MatDialogRef<WorkflowEditorComponent>
   ) {
     this.workflowForm = this.fb.group({
       title: ['', Validators.required],
@@ -73,7 +76,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    this.mode = (this.route.snapshot.data['mode'] as WorkflowMode) ?? 'create';
+    this.mode = this.data?.mode ?? (this.route.snapshot.data['mode'] as WorkflowMode) ?? 'create';
 
     const BpmnClass = this.mode === 'view' ? BpmnViewer : BpmnModeler;
     const modules = this.mode === 'view' ? viewerModules : editorModules;
@@ -122,7 +125,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (this.mode === 'create') {
       await this.loadXml(dummyBpmnXml);
     } else {
-      const id = Number(this.route.snapshot.paramMap.get('id'));
+      const id = this.data?.id ?? Number(this.route.snapshot.paramMap.get('id'));
       this.workflowId = id;
       this.workflowService.getWorkflow(id).subscribe({
         next: async (workflow) => {
@@ -252,7 +255,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   navigateToEdit() {
     if (this.workflowId) {
+      if (this.dialogRef) {
+        this.dialogRef.close();
+      }
       this.router.navigate(['/workflows/edit', this.workflowId]);
+    }
+  }
+
+  goBack() {
+    if (this.dialogRef) {
+      this.dialogRef.close();
+    } else {
+      this.router.navigate(['/workflows']);
     }
   }
 

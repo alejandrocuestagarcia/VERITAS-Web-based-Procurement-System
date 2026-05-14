@@ -7,7 +7,7 @@
   </span>
 
   <!-- New Requisition button -->
-  <div class="flex pb-6">
+  <div class="flex pb-6" *ngIf="authService.hasRole('REQUESTER') || authService.hasRole('ADMINISTRATOR')">
     <button routerLink="/requisition/create" mat-flat-button class="v-btn-brand w-full">
       <mat-icon>add</mat-icon>
       <span>New Requisition</span>
