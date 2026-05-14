@@ -199,6 +199,12 @@ export class TeamEditComponent implements OnInit {
       },
       error: (err) => {
         this.submitting = false;
+
+        const message = err?.error && typeof err.error === 'object'
+          ? Object.values(err.error).join(', ')
+          : err?.error || 'Unknown error';
+
+        this.toastService.showError('Failed: ' + message);
         this.error = this.extractErrorMessage(err);
       }
     });
