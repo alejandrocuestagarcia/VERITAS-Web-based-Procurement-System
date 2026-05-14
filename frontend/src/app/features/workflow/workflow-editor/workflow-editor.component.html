@@ -35,6 +35,7 @@
 
     <div class="flex gap-4 self-start">
       <button *ngIf="mode === 'view'" mat-flat-button class="v-btn-secondary" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
         <span>Back</span>
       </button>
       <button *ngIf="mode === 'view' && workflowIsActive && (isFinanceOfficer || isAdministrator)" mat-flat-button class="v-btn-brand" (click)="navigateToEdit()">
