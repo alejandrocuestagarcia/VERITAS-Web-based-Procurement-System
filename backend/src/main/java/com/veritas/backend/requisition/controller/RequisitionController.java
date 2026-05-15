@@ -1,4 +1,7 @@
 package com.veritas.backend.requisition.controller;
+ 
+import org.springframework.core.io.Resource;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.config.annotations.IsProcurementOfficer;
@@ -10,6 +13,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +33,7 @@ public class RequisitionController {
     private final RequisitionService requisitionService;
 
     @Operation(summary = "Create a request", description = "Creates a new procurement request.")
-    @IsRequester
+    @PreAuthorize("hasAnyRole('REQUESTER', 'ADMINISTRATOR')")
     @PostMapping
     public ResponseEntity<RequisitionDto> createRequest(@Valid @RequestBody RequisitionCreateDto requestBody,
             @AuthenticationPrincipal User user) {
@@ -35,14 +41,16 @@ public class RequisitionController {
     }
 
     @Operation(summary = "Get all requests (Search/Filter)", description = "List requests with filters for status and search terms.")
-    @IsFinanceOfficer
+    @IsRequester
     @GetMapping
-    public ResponseEntity<List<RequisitionDto>> getRequests(
+    public Page<RequisitionDto> getRequests(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long projectId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(List.of());
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal User user) {
+        return requisitionService.getRequests(status, search, projectId, user, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt").nullsLast())));
     }
 
     @Operation(summary = "Get pending actions", description = "Returns requests specifically awaiting action from the logged-in user.")
@@ -55,8 +63,8 @@ public class RequisitionController {
     @Operation(summary = "Get request details", description = "Returns all details for a single requisition.")
     @IsRequester
     @GetMapping("/{id}")
-    public ResponseEntity<RequisitionDto> getRequestById(@PathVariable Long id) {
-        return ResponseEntity.ok(null);
+    public RequisitionDto getRequestById(@PathVariable Long id) {
+        return requisitionService.getRequestById(id);
     }
 
     @Operation(summary = "Update/Edit request", description = "Edit draft details or change the assigned requester.")
@@ -93,6 +101,13 @@ public class RequisitionController {
     public ResponseEntity<String> uploadQuotes(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         requisitionService.saveAttachment(id, file);
         return ResponseEntity.ok("File " + file.getOriginalFilename() + " uploaded for request " + id);
+    }
+
+    @Operation(summary = "Download attachment", description = "Downloads a specific attachment by its ID.")
+    @IsRequester
+    @GetMapping("/attachments/{attachmentId}")
+    public ResponseEntity<Resource> downloadAttachment(@PathVariable Long attachmentId) {
+        return requisitionService.downloadAttachment(attachmentId);
     }
 
     @Operation(summary = "Get quote comparison", description = "Returns a side-by-side comparison of quotes, including external market price data.")

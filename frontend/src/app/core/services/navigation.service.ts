@@ -20,16 +20,18 @@ export class NavigationService {
       roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER']
     },
 
-    {
-      label: 'My Teams Requests', icon: 'description', route: '/requests/team',
-      roles: ['REQUESTER', 'PROCUREMENT_OFFICER']
+    { 
+      label: 'My Requisitions', icon: 'description', route: '/requisitions',
+      roles: ['REQUESTER'] 
     },
-
-    {
-      label: 'All Requests', icon: 'list_alt', route: '/requests/all',
-      roles: ['FINANCE_OFFICER']
+    { 
+      label: 'Dep. Requisitions', icon: 'description', route: '/requisitions',
+      roles: ['PROCUREMENT_OFFICER'] 
     },
-
+    { 
+      label: 'All Requisitions', icon: 'description', route: '/requisitions',
+      roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] 
+    },
     {
       label: 'Workflows', icon: 'account_tree', route: '/workflows',
       roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']

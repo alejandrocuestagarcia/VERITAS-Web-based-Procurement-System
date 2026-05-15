@@ -20,7 +20,8 @@ import {
   WorkflowModuleService,
   ProjectDto,
   WorkflowDto,
-  RequisitionCreateDto, RequisitionCreateDtoPriorityEnum
+  RequisitionCreateDto,
+  RequisitionCreateDtoPriorityEnum
 } from '../../../core/api';
 import { MatDialog } from '@angular/material/dialog';
 import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
@@ -245,7 +246,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
               next: (results) => {
                 this.loading = false;
                 this.toastService.showSuccess('Procurement request & attachments saved successfully');
-                this.router.navigate(['/dashboard']);
+                this.router.navigate(['/requisitions']);
               },
               error: (err) => {
                 this.loading = false;
@@ -254,7 +255,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
           } else {
             this.loading = false;
             this.toastService.showSuccess('Procurement request created successfully');
-            this.router.navigate(['/dashboard']);
+            this.router.navigate(['/requisitions']);
           }
         },
         error: (err) => {
@@ -270,7 +271,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/requisitions']);
   }
 
   ngOnDestroy(): void {

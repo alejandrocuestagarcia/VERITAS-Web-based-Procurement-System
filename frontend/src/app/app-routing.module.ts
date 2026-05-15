@@ -27,6 +27,8 @@ import { JiraIssuesSyncHistoryComponent } from "./features/integrations/jira/jir
 import { WorkflowListComponent } from "./features/workflow/workflow-list/workflow-list.component";
 import { DepartmentListComponent } from './features/department/department-list/department-list.component';
 import { DepartmentCreateComponent } from './features/department/department-create/department-create.component';
+import { RequisitionListComponent } from "./features/requisition/requisition-list/requisition-list.component";
+import { RequisitionDetailComponent } from "./features/requisition/requisition-detail/requisition-detail.component";
 
 const routes: Routes = [
   {
@@ -162,10 +164,20 @@ const routes: Routes = [
     data: { mode: 'edit', roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] }
   },
   {
-    path: 'requisition/create',
+    path: 'requisitions/create',
     component: RequisitionCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['REQUESTER', 'ADMINISTRATOR'] }
+  },
+  {
+    path: 'requisitions',
+    component: RequisitionListComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'requisitions/:id',
+    component: RequisitionDetailComponent,
+    canActivate: [authGuard]
   },
   {
     path: 'integrations',
