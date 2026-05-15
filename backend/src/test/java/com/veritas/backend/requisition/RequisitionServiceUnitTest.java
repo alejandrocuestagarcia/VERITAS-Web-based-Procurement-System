@@ -28,6 +28,7 @@ import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
@@ -47,6 +48,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import java.nio.file.Path;
+import java.nio.file.Files;
 
 @ExtendWith(MockitoExtension.class)
 class RequisitionServiceUnitTest {
@@ -128,8 +139,8 @@ class RequisitionServiceUnitTest {
     void CreateRequest_ValidInput_SavesAndReturnsDto() {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
-                1L, "New Laptop", "PRJ-11", "Start",
-                Priority.MEDIUM, "Test Project", "Engineering", "Test User", null);
+                1L, "New Laptop", "PRJ-11", "Start", false,
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -320,5 +331,88 @@ class RequisitionServiceUnitTest {
                 () -> requisitionService.saveAttachment(1L, file));
         assertTrue(ex.getMessage().contains("Could not store file"));
         verify(attachmentRepository, never()).save(any());
+    }
+
+    @Test
+    void GetRequests_WithStatus_FormatsStatusToUpperCaseAndCallsRepository() {
+        testUser.setRole(UserRole.ADMINISTRATOR);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests("OPEN", "search", 1L, null, null, null, WorkflowComponent.END_EVENT, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests("open", "search", 1L, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests("OPEN", "search", 1L, null, null, null, WorkflowComponent.END_EVENT, pageable);
+    }
+
+    @Test
+    void GetRequests_WithNullStatus_CallsRepositoryWithNull() {
+        testUser.setRole(UserRole.ADMINISTRATOR);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, WorkflowComponent.END_EVENT, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests("", "", null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, WorkflowComponent.END_EVENT, pageable);
+    }
+
+    @Test
+    void GetRequestById_ValidId_ReturnsMappedDto() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(request)).thenReturn(expectedDto);
+
+        RequisitionDto result = requisitionService.getRequestById(1L);
+
+        assertNotNull(result);
+        assertEquals(expectedDto, result);
+    }
+
+    @Test
+    void GetRequestById_InvalidId_ThrowsEntityNotFoundException() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, 
+                () -> requisitionService.getRequestById(999L));
+        assertTrue(ex.getMessage().contains("not found"));
+    }
+
+    @Test
+    void DownloadAttachment_ValidId_ReturnsResponseEntityWithResource() throws IOException {
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setFileName("test.pdf");
+        attachment.setFileType("application/pdf");
+        
+        Path tempFile = Files.createTempFile("test", ".pdf");
+        attachment.setStoragePath(tempFile.toString());
+        
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+
+        ResponseEntity<Resource> response = requisitionService.downloadAttachment(1L);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("application/pdf", response.getHeaders().getContentType().toString());
+        assertTrue(response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION).get(0).contains("filename=\"test.pdf\""));
+        
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    void DownloadAttachment_InvalidId_ThrowsEntityNotFoundException() {
+        when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, 
+                () -> requisitionService.downloadAttachment(999L));
+        assertTrue(ex.getMessage().contains("Attachment not found"));
     }
 }

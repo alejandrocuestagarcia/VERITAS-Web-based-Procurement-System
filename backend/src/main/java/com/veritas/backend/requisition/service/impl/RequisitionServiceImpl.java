@@ -19,17 +19,27 @@ import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -99,6 +109,52 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<RequisitionDto> getRequests(String status, String search, Long projectId, User authUser, Pageable pageable) {
+        User user = userRepository.findById(authUser.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
+
+        Long userIdFilter = null;
+        Long teamIdFilter = null;
+        Long departmentIdFilter = null;
+
+        String statusFilter = (status != null && !status.isBlank()) ? status.toUpperCase() : null;
+        String searchFilter = (search != null && !search.isBlank()) ? search : null;
+        Long projectIdFilter = projectId;
+
+        String userRole = user.getRole().name();
+        
+        if (userRole.equals("REQUESTER")) {
+            if (user.getTeam() != null) {
+                teamIdFilter = user.getTeam().getTeamId();
+            } else {
+                userIdFilter = user.getId();
+            }
+        } else if (userRole.equals("PROCUREMENT_OFFICER")) {
+            if (user.getTeam() != null && user.getTeam().getDepartment() != null) {
+                departmentIdFilter = user.getTeam().getDepartment().getDepartmentId();
+            } else if (user.getTeam() != null) {
+                teamIdFilter = user.getTeam().getTeamId();
+            } else {
+                teamIdFilter = -1L;
+            }
+        }
+
+        Page<Request> requests = requestRepository.findFilteredRequests(
+                statusFilter, searchFilter, projectIdFilter, userIdFilter, teamIdFilter, departmentIdFilter, WorkflowComponent.END_EVENT, pageable);
+
+        return requests.map(requisitionMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RequisitionDto getRequestById(Long id) {
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Procurement Request with id '" + id + "' not found"));
+        return requisitionMapper.toDto(request);
+    }
+
+    @Override
     @Transactional
     public void saveAttachment(Long requestId, MultipartFile file) {
         Request request = requestRepository.findById(requestId)
@@ -131,6 +187,36 @@ public class RequisitionServiceImpl implements RequisitionService {
             attachmentRepository.save(attachment);
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file " + file.getOriginalFilename() + ". Please try again!", ex);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> downloadAttachment(Long attachmentId) {
+        Attachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Attachment not found with id " + attachmentId));
+
+        try {
+            Path file = Paths.get(attachment.getStoragePath());
+            Resource resource = new UrlResource(file.toUri());
+
+            if (resource.exists() || resource.isReadable()) {
+                MediaType mediaType;
+                try {
+                    mediaType = MediaType.parseMediaType(attachment.getFileType());
+                } catch (Exception e) {
+                    mediaType = MediaType.APPLICATION_OCTET_STREAM;
+                }
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getFileName() + "\"")
+                        .contentType(mediaType)
+                        .body(resource);
+            } else {
+                throw new RuntimeException("Could not read file: " + attachment.getFileName());
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Could not read file: " + attachment.getFileName(), e);
         }
     }
 }
