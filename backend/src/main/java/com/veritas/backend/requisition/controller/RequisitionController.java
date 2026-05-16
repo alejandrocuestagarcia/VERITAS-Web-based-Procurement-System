@@ -23,8 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
 @RestController
 @RequestMapping(path = "/requisitions", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
@@ -33,7 +31,7 @@ public class RequisitionController {
     private final RequisitionService requisitionService;
 
     @Operation(summary = "Create a request", description = "Creates a new procurement request.")
-    @PreAuthorize("hasAnyRole('REQUESTER', 'ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('REQUESTER')")
     @PostMapping
     public ResponseEntity<RequisitionDto> createRequest(@Valid @RequestBody RequisitionCreateDto requestBody,
             @AuthenticationPrincipal User user) {
@@ -51,13 +49,6 @@ public class RequisitionController {
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal User user) {
         return requisitionService.getRequests(status, search, projectId, user, PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt").nullsLast())));
-    }
-
-    @Operation(summary = "Get pending actions", description = "Returns requests specifically awaiting action from the logged-in user.")
-    @IsRequester
-    @GetMapping("/pending")
-    public ResponseEntity<List<RequisitionDto>> getPendingRequests() {
-        return ResponseEntity.ok(List.of());
     }
 
     @Operation(summary = "Get request details", description = "Returns all details for a single requisition.")

@@ -167,7 +167,7 @@ const routes: Routes = [
     path: 'requisitions/create',
     component: RequisitionCreateComponent,
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['REQUESTER', 'ADMINISTRATOR'] }
+    data: { roles: ['REQUESTER'] }
   },
   {
     path: 'requisitions',
