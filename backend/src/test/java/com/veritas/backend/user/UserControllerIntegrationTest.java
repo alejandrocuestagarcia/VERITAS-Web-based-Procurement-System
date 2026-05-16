@@ -28,6 +28,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
+import jakarta.persistence.EntityManager;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,10 +68,22 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   @Autowired
   private WorkflowStepRepository workflowStepRepository;
 
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  private EntityManager entityManager;
+
   @BeforeEach
   void setUp() {
-    projectRepository.deleteAll();
     requestRepository.deleteAll();
+    projectRepository.deleteAll();
+
+    jdbcTemplate.update("UPDATE users SET team_id = NULL");
+    jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
+
+    entityManager.clear();
+
     userRepository.deleteAll();
     teamRepository.deleteAll();
 
@@ -82,11 +96,14 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @AfterEach
   void tearDown() {
-    teamRepository.findAll().forEach(team -> {
-      team.setLeader(null);
-      teamRepository.save(team);
-    });
     requestRepository.deleteAll();
+    projectRepository.deleteAll();
+
+    jdbcTemplate.update("UPDATE users SET team_id = NULL");
+    jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
+
+    entityManager.clear();
+
     userRepository.deleteAll();
     teamRepository.deleteAll();
   }

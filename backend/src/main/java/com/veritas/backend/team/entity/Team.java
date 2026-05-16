@@ -10,6 +10,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 
@@ -34,6 +36,7 @@ public class Team {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User leader;
 
     @Builder.Default
