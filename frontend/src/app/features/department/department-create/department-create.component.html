@@ -1,12 +1,9 @@
 <div [formGroup]="departmentForm">
-  <app-shared-form
-    [title]="isEditMode ? 'Edit Department' : 'Add New Department'"
+  <app-shared-form [title]="isEditMode ? 'Edit Department' : 'Add New Department'"
     subtitle="Configure organizational divisions, manage administrative boundaries, and structure governance entities."
     routingSubtitle="ADMINISTRATION > DEPARTMENTS"
-    [submitButtonLabel]="submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Department' : 'Create Department')"
-    [submitButtonIcon]="isEditMode ? 'save' : 'add_business'"
-    [loading]="submitting"
-    (submitted)="submit()"
+    [submitButtonLabel]="submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Save Department')"
+    [submitButtonIcon]="isEditMode ? 'save' : 'save'" [loading]="submitting" (submitted)="submit()"
     (cancelled)="cancel()">
 
     <app-shared-form-card icon="badge" title="Core Department Details">

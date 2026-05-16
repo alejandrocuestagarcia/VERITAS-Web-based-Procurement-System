@@ -1,8 +1,8 @@
 <div [formGroup]="teamForm">
   <app-shared-form title="Add New Team"
     subtitle="Define a new operational unit, assign structural pillars, and establish foundational access protocols for collaborative governance."
-    routingSubtitle="ADMINISTRATION > TEAMS" [submitButtonLabel]="submitting ? 'Creating...' : 'Create Team'"
-    submitButtonIcon="group_add" [loading]="submitting || loadingLeads" (submitted)="submit()" (cancelled)="cancel()">
+    routingSubtitle="ADMINISTRATION > TEAMS" [submitButtonLabel]="submitting ? 'Creating...' : 'Save Team'"
+    submitButtonIcon="save" [loading]="submitting || loadingLeads" (submitted)="submit()" (cancelled)="cancel()">
 
     <app-shared-form-card icon="badge" title="Core Identification">
       <app-shared-form-field label="TEAM NAME">
@@ -74,7 +74,7 @@
           <h3 class="text-sm font-semibold text-gray-800">MEMBERS</h3>
           <button type="button" mat-button color="primary" class="font-semibold" (click)="toggleMembersPanel()"
             [disabled]="submitting || leadOptions.length === 0">
-            <mat-icon>person_add</mat-icon> Add Member
+            <mat-icon>save</mat-icon> Add Member
           </button>
         </div>
 

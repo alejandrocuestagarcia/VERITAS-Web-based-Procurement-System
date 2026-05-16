@@ -2,8 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import {
   TeamDto,
-  TeamsModuleService, UserDtoRoleEnum,
-  UserModuleService
+  TeamsModuleService,
+  UserDtoRoleEnum,
+  UserModuleService,
+  DepartmentsModuleService,
+  DepartmentDto
 } from "../../../core/api";
 import { ActivatedRoute, Router } from "@angular/router";
 import { AuthService } from '../../../core/services/auth.service';
@@ -23,6 +26,7 @@ export class UserEditComponent implements OnInit {
 
   roles = Object.values(UserDtoRoleEnum);
   teams: TeamDto[] = [];
+  departments: DepartmentDto[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -30,6 +34,7 @@ export class UserEditComponent implements OnInit {
     private route: ActivatedRoute,
     private userService: UserModuleService,
     private teamService: TeamsModuleService,
+    private departmentService: DepartmentsModuleService,
     private authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService
@@ -39,6 +44,7 @@ export class UserEditComponent implements OnInit {
     this.userId = Number(this.route.snapshot.paramMap.get('id'));
     this.initForm();
     this.loadTeams();
+    this.loadDepartments();
     this.loadUser();
   }
 
@@ -48,7 +54,12 @@ export class UserEditComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       role: [null, Validators.required],
       teamId: [null],
+      departmentId: [null],
       isTeamLeader: [false],
+    });
+
+    this.userForm.get('role')?.valueChanges.subscribe(role => {
+      this.handleRoleChange(role);
     });
 
     this.userForm.get('isTeamLeader')?.valueChanges.subscribe(isLeader => {
@@ -65,6 +76,31 @@ export class UserEditComponent implements OnInit {
     });
   }
 
+  private handleRoleChange(role: UserDtoRoleEnum): void {
+    const teamId = this.userForm.get('teamId');
+    const deptId = this.userForm.get('departmentId');
+    const leader = this.userForm.get('isTeamLeader');
+
+    if (role === UserDtoRoleEnum.Requester) {
+      teamId?.setValidators(Validators.required);
+      deptId?.clearValidators();
+      deptId?.setValue(null);
+    } else if (role === UserDtoRoleEnum.ProcurementOfficer) {
+      deptId?.setValidators(Validators.required);
+      teamId?.clearValidators();
+      teamId?.setValue(null);
+      leader?.setValue(false);
+    } else {
+      teamId?.clearValidators();
+      deptId?.clearValidators();
+      teamId?.setValue(null);
+      deptId?.setValue(null);
+      leader?.setValue(false);
+    }
+    teamId?.updateValueAndValidity();
+    deptId?.updateValueAndValidity();
+  }
+
   private loadTeams(): void {
     this.teamService.getAllTeams().subscribe({
       next: (teams) => {
@@ -72,6 +108,15 @@ export class UserEditComponent implements OnInit {
         this.updateLeaderToggleState();
       },
       error: () => this.toastService.showError('Failed to load teams.')
+    });
+  }
+
+  private loadDepartments(): void {
+    this.departmentService.getAllDepartments().subscribe({
+      next: (departments) => {
+        this.departments = departments;
+      },
+      error: () => this.toastService.showError('Failed to load departments.')
     });
   }
 
@@ -83,6 +128,7 @@ export class UserEditComponent implements OnInit {
           email: user.email,
           role: user.role,
           teamId: user.teamId,
+          departmentId: user.departmentId,
           isTeamLeader: user.isTeamLeader ?? false,
         });
 
@@ -94,8 +140,8 @@ export class UserEditComponent implements OnInit {
           this.userForm.get('role')?.disable();
         }
 
+        this.handleRoleChange(user.role as unknown as UserDtoRoleEnum);
         this.updateLeaderToggleState();
-
       },
       error: () => {
         this.toastService.showError('Failed to load user.');
@@ -115,6 +161,7 @@ export class UserEditComponent implements OnInit {
         email: formValue.email,
         role: formValue.role,
         teamId: formValue.teamId,
+        departmentId: formValue.departmentId,
         isTeamLeader: formValue.isTeamLeader,
       };
 
