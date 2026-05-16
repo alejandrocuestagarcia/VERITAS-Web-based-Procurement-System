@@ -27,4 +27,6 @@ public interface UserService {
   List<RequisitionDto> getPendingRequisitionsForUser(Long userId);
 
   void deleteUser(Long id, Long fallbackUserId);
+
+  Page<UserDto> getAllRequesters(Pageable pageable);
 }

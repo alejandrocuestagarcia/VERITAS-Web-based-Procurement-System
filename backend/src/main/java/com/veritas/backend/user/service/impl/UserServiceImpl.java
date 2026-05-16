@@ -1,6 +1,8 @@
 package com.veritas.backend.user.service.impl;
 
 import com.veritas.backend.auth.repository.RefreshTokenRepository;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -39,6 +41,7 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final TeamRepository teamRepository;
+  private final DepartmentRepository departmentRepository;
   private final RefreshTokenRepository refreshTokenRepository;
   private final UserMapper userMapper;
   private final RequestRepository requestRepository;
@@ -54,35 +57,44 @@ public class UserServiceImpl implements UserService {
       throw new EntityExistsException("Email already registered");
     }
 
-    Team team = teamRepository.findById(userDto.teamId())
-        .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
-    log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
+    UserRole role = userDto.role();
+    Team team = null;
+    Department department = null;
 
-
-
-
-    if (userDto.promoteToTeamLeader() && team.getLeader() != null) {
-      throw new IllegalArgumentException(
-          "Team already has a leader. Remove the current leader before assigning a new one.");
+    if (role == UserRole.REQUESTER) {
+      if (userDto.teamId() == null) {
+        throw new IllegalArgumentException("Team assignment is required for role: " + role);
+      }
+      team = teamRepository.findById(userDto.teamId())
+          .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
+      log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
+    } else if (role == UserRole.PROCUREMENT_OFFICER) {
+      if (userDto.departmentId() == null) {
+        throw new IllegalArgumentException("Department assignment is required for role: " + role);
+      }
+      department = departmentRepository.findById(userDto.departmentId())
+          .orElseThrow(
+              () -> new EntityNotFoundException("Department with id " + userDto.departmentId() + " not found"));
+      log.debug("Assigned user to department: {} (id={})", department.getName(), department.getDepartmentId());
     }
 
     User user = userMapper.toUser(userDto);
     user.setPasswordHash(passwordEncoder.encode(userDto.password()));
     user.setTeam(team);
+    user.setDepartment(department);
     user.setIsActive(true);
     user.setRequiresPasswordChange(true);
 
     User savedUser = userRepository.save(user);
     log.info("User persisted – id: {}, email: {}", savedUser.getId(), savedUser.getEmail());
 
-    if (userDto.promoteToTeamLeader()) {
+    if (savedUser.getRole() == UserRole.REQUESTER && userDto.promoteToTeamLeader() && team != null) {
       team.setLeader(savedUser);
       teamRepository.save(team);
       log.info("User promoted to team leader for team: {} (id={})", team.getName(), team.getTeamId());
     }
 
     return userMapper.toUserDto(savedUser);
-
   }
 
   @Override
@@ -110,14 +122,33 @@ public class UserServiceImpl implements UserService {
     if (edits.role() != null)
       user.setRole(edits.role());
 
-    if (edits.teamId() != null) {
-      if (changingTeam) {
-        Team newTeam = teamRepository.findById(edits.teamId())
-            .orElseThrow(() -> new EntityNotFoundException("Team not found"));
-        user.setTeam(newTeam);
+    UserRole currentRole = user.getRole();
+    boolean isGlobal = currentRole == UserRole.FINANCE_OFFICER || currentRole == UserRole.ADMINISTRATOR;
+
+    if (isGlobal) {
+      user.setTeam(null);
+      user.setDepartment(null);
+    } else if (currentRole == UserRole.PROCUREMENT_OFFICER) {
+      user.setTeam(null);
+      if (edits.departmentId() != null) {
+        Department newDept = departmentRepository.findById(edits.departmentId())
+            .orElseThrow(() -> new EntityNotFoundException("Department not found"));
+        user.setDepartment(newDept);
+      } else if (user.getDepartment() == null) {
+        throw new IllegalArgumentException("Department assignment is required for role: " + currentRole);
       }
     } else {
-      user.setTeam(null);
+      // Team logic for Requester
+      user.setDepartment(null);
+      if (edits.teamId() != null) {
+        if (changingTeam) {
+          Team newTeam = teamRepository.findById(edits.teamId())
+              .orElseThrow(() -> new EntityNotFoundException("Team not found"));
+          user.setTeam(newTeam);
+        }
+      } else if (user.getTeam() == null) {
+        throw new IllegalArgumentException("Team assignment is required for role: " + currentRole);
+      }
     }
 
     User saved = userRepository.save(user);
@@ -229,5 +260,13 @@ public class UserServiceImpl implements UserService {
       userRepository.save(actualUser);
     }
 
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<UserDto> getAllRequesters(Pageable pageable) {
+    log.debug("Fetching all active requesters - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+    return userRepository.findAllByRoleAndIsActiveTrue(UserRole.REQUESTER, pageable)
+        .map(userMapper::toUserDto);
   }
 }
