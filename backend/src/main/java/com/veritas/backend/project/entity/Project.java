@@ -1,10 +1,10 @@
 package com.veritas.backend.project.entity;
 
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.team.entity.Team;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -36,8 +36,9 @@ public class Project {
     @Column(nullable = false)
     private LocalDate endDate;
 
-    @Column(nullable = false)
-    private BigDecimal budget;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "budget_id")
+    private InternalBudget internalBudget;
 
     @Column(name = "request_counter", nullable = false, columnDefinition = "int default 0")
     @Builder.Default

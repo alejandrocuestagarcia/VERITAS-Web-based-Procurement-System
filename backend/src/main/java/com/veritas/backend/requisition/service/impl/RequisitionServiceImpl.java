@@ -23,6 +23,9 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import java.math.BigDecimal;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
@@ -57,6 +60,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final AttachmentRepository attachmentRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final RequisitionMapper requisitionMapper;
+    private final InternalBudgetRepository internalBudgetRepository;
 
     private final WorkflowEngineService workflowEngineService;
 
@@ -90,6 +94,15 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setUserID(user);
         request.setTeamID(user.getTeam());
+
+        // Initialize Request Budget
+        InternalBudget budget = new InternalBudget();
+        budget.setBudgetName("Request: " + createDto.requestName());
+        budget.setTotalAmount(BigDecimal.ZERO);
+        budget.setParentBudget(project.getInternalBudget());
+        internalBudgetRepository.save(budget);
+        
+        request.setBudgetID(budget);
 
         project.setRequestCounter(project.getRequestCounter() + 1);
         projectRepository.save(project);

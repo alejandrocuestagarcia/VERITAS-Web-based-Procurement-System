@@ -10,5 +10,8 @@ public record ProjectDto (
         LocalDate startDate,
         LocalDate endDate,
         BigDecimal budget,
+        BigDecimal committedSpend,
+        BigDecimal actualSpend,
+        BigDecimal safetyBuffer,
         String teamName
 ) {}

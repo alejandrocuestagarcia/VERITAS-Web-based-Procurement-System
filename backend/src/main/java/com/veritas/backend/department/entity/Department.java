@@ -1,5 +1,6 @@
 package com.veritas.backend.department.entity;
 
+import com.veritas.backend.budget.entity.InternalBudget;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,10 @@ public class Department {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "budget_id")
+    private InternalBudget internalBudget;
 
     private LocalDateTime createdAt;
 

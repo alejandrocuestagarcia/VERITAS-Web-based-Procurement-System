@@ -12,7 +12,7 @@ import { ConfirmationDialogComponent } from '../../../shared/components/confirma
 export class ProjectListComponent implements OnInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  displayedColumns = ['name', 'team', 'budget', 'startDate', 'endDate', 'actions'];
+  displayedColumns = ['name', 'team', 'budget', 'committed', 'actual', 'startDate', 'endDate', 'actions'];
   dataSource = new MatTableDataSource<ProjectDto>([]);
 
   loading = false;

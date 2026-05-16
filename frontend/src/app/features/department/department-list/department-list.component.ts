@@ -17,6 +17,9 @@ interface DepartmentRow {
   id: number;
   name: string;
   teamsCount: number;
+  budget: number;
+  committedSpend: number;
+  actualSpend: number;
 }
 
 @Component({
@@ -27,7 +30,7 @@ interface DepartmentRow {
 export class DepartmentListComponent implements OnInit, AfterViewInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  displayedColumns: string[] = ['name', 'teams', 'actions'];
+  displayedColumns: string[] = ['name', 'teams', 'budget', 'committed', 'actual', 'actions'];
   dataSource = new MatTableDataSource<DepartmentRow>([]);
 
   loading = false;
@@ -120,7 +123,10 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
           return {
             id: deptId,
             name: deptName,
-            teamsCount: teamsInDept
+            teamsCount: teamsInDept,
+            budget: dept.budget || 0,
+            committedSpend: dept.committedSpend || 0,
+            actualSpend: dept.actualSpend || 0
           };
         });
 

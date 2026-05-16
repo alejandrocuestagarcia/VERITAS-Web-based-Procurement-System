@@ -2,31 +2,44 @@ package com.veritas.backend.budget.entity;
 
 import com.veritas.backend.project.entity.Project;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "internal_budgets")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class InternalBudget {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "budget_id")
     private Long id;
 
-    @Column(name = "fiscal_year")
-    private Integer fiscalYear;
+    @Column(name = "budget_name")
+    private String budgetName;
 
-    @Column(name = "fiscal_year_total")
-    private BigDecimal fiscalYearTotal;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_budget_id")
+    private InternalBudget parentBudget;
 
+    @Column(name = "total_amount")
+    private BigDecimal totalAmount;
+
+    @Builder.Default
     @Column(name = "committed_spend")
     private BigDecimal committedSpend = BigDecimal.ZERO;
 
+    @Builder.Default
     @Column(name = "actual_spend")
     private BigDecimal actualSpend = BigDecimal.ZERO;
 
+    @Builder.Default
     @Column(name = "safety_buffer")
     private BigDecimal safetyBuffer = BigDecimal.ZERO;
 }

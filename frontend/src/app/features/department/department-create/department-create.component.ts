@@ -30,7 +30,8 @@ export class DepartmentCreateComponent implements OnInit {
 
   ngOnInit(): void {
     this.departmentForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]]
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+      budget: [null, [Validators.min(0)]]
     });
 
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -57,7 +58,8 @@ export class DepartmentCreateComponent implements OnInit {
     this.submitting = true;
 
     const payload: DepartmentCreateDto = {
-      name: this.departmentForm.value.name.trim()
+      name: this.departmentForm.value.name.trim(),
+      budget: this.departmentForm.value.budget
     };
 
     if (this.isEditMode) {
@@ -91,7 +93,8 @@ export class DepartmentCreateComponent implements OnInit {
     this.departmentsService.getDepartment(this.departmentId).subscribe({
       next: (dept) => {
         this.departmentForm.patchValue({
-          name: dept.name
+          name: dept.name,
+          budget: dept.budget
         });
       },
       error: () => {
