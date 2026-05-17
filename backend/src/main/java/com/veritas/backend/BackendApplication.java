@@ -9,6 +9,8 @@ import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
@@ -33,7 +35,8 @@ public class BackendApplication {
 	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder,
 							   DepartmentRepository departmentRepository, TeamRepository teamRepo,
 							   ProjectRepository projectRepo, WorkflowService workflowService,
-							   WorkflowDefinitionRepository workflowDefinitionRepository) {
+							   WorkflowDefinitionRepository workflowDefinitionRepository,
+							   VendorRepository vendorRepository) {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
@@ -303,6 +306,28 @@ public class BackendApplication {
 						""";
 				workflowService.createWorkflow(new WorkflowSaveDto(xml));
 				log.info("Seeded 1 workflow");
+			}
+
+			if (vendorRepository.findByTaxId("US-123456789").isEmpty()) {
+				Vendor vendor1 = new Vendor();
+				vendor1.setVendorName("Global Tech Solutions");
+				vendor1.setTaxId("US-123456789");
+				vendor1.setDescription("Leading provider of enterprise hardware and software licenses.");
+				vendor1.setPrimaryContactName("John Smith");
+				vendor1.setPrimaryContactEmail("jsmith@globaltech.com");
+				vendorRepository.save(vendor1);
+				log.info("Seeded vendor: {}", vendor1.getVendorName());
+			}
+
+			if (vendorRepository.findByTaxId("EU-987654321").isEmpty()) {
+				Vendor vendor2 = new Vendor();
+				vendor2.setVendorName("Prime Logistics & Services");
+				vendor2.setTaxId("EU-987654321");
+				vendor2.setDescription("Global shipping, handling, and logistics partner.");
+				vendor2.setPrimaryContactName("Elena Vance");
+				vendor2.setPrimaryContactEmail("evance@primelogistics.com");
+				vendorRepository.save(vendor2);
+				log.info("Seeded vendor: {}", vendor2.getVendorName());
 			}
 
 			log.info("Seed data initialization complete.");
