@@ -54,8 +54,32 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "REQUESTER")
+    void GetQuotesForRequest_AsRequester_ReturnsQuotesList() throws Exception {
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+
+        when(requisitionQuoteService.getQuotesForRequest(1L)).thenReturn(List.of(quoteDto));
+
+        mockMvc.perform(get("/api/v1/requisitions/1/quotes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].quoteId").value(10L));
+    }
+
+    @Test
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
     void GetQuote_AsProcurementOfficer_ReturnsQuote() throws Exception {
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+
+        when(requisitionQuoteService.getQuoteById(1L, 10L)).thenReturn(quoteDto);
+
+        mockMvc.perform(get("/api/v1/requisitions/1/quotes/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quoteId").value(10L));
+    }
+
+    @Test
+    @WithMockUser(roles = "REQUESTER")
+    void GetQuote_AsRequester_ReturnsQuote() throws Exception {
         QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
 
         when(requisitionQuoteService.getQuoteById(1L, 10L)).thenReturn(quoteDto);

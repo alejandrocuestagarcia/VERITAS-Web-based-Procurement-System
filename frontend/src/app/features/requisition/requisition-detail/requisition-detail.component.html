@@ -33,7 +33,7 @@
         <mat-icon class="scale-90">arrow_back</mat-icon>
         Back
       </button>
-      <button *ngIf="request?.responsibleRole === 'PROCUREMENT_OFFICER'" (click)="viewVendorQuotes()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+      <button *ngIf="request?.responsibleRole === 'PROCUREMENT_OFFICER' && authService.hasRole('PROCUREMENT_OFFICER')"  (click)="viewVendorQuotes()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
         <mat-icon class="scale-90">request_quote</mat-icon>
         Vendor Quotes
       </button>
@@ -86,6 +86,27 @@
             <a [href]="request.jiraIssueUrl" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[12px] font-bold hover:bg-blue-100 transition-colors">
               <mat-icon class="scale-75">link</mat-icon> {{ request.jiraIssueKey }}
             </a>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedQuote" class="bg-white rounded-[20px] border border-green-200 shadow-sm p-7 flex-1 border-t-[6px] border-t-green-500">
+        <div class="flex items-center gap-2 mb-6">
+          <mat-icon class="text-green-500">check_circle</mat-icon>
+          <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Selected Vendor Quote</h3>
+        </div>
+        <div class="space-y-6">
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] text-slate-500 font-medium">Vendor</span>
+            <span class="text-[14px] text-slate-900 font-extrabold text-right">{{ selectedQuote.vendor?.vendorName || 'Unknown Vendor' }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] text-slate-500 font-medium">Currency</span>
+            <span class="text-[14px] text-slate-600 font-bold uppercase">{{ selectedQuote.currency }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] text-slate-500 font-medium">Total Amount</span>
+            <span class="text-[16px] text-green-700 font-extrabold">{{ selectedQuote.totalAmount | currency:selectedQuote.currency }}</span>
           </div>
         </div>
       </div>
