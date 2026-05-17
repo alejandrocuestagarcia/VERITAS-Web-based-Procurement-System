@@ -21,6 +21,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -143,7 +145,7 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .build());
 
                 String token = jwtService.generateAccessToken(financeOfficer);
-                DepartmentCreateDto dto = new DepartmentCreateDto("New Department");
+                DepartmentCreateDto dto = new DepartmentCreateDto("New Department", BigDecimal.valueOf(10000.0));
 
                 mockMvc.perform(post("/api/v1/departments")
                                 .header("Authorization", "Bearer " + token)
@@ -165,7 +167,7 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .build());
 
                 String token = jwtService.generateAccessToken(requester);
-                DepartmentCreateDto dto = new DepartmentCreateDto("Forbidden Department");
+                DepartmentCreateDto dto = new DepartmentCreateDto("Forbidden Department", BigDecimal.valueOf(10000.0));
 
                 mockMvc.perform(post("/api/v1/departments")
                                 .header("Authorization", "Bearer " + token)
@@ -186,7 +188,7 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .build());
 
                 String token = jwtService.generateAccessToken(financeOfficer);
-                DepartmentCreateDto dto = new DepartmentCreateDto(""); // Blank name should trigger validation
+                DepartmentCreateDto dto = new DepartmentCreateDto("", BigDecimal.valueOf(10000.0)); // Blank name should trigger validation
                                                                        // constraint
 
                 mockMvc.perform(post("/api/v1/departments")
@@ -208,7 +210,7 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .build());
 
                 String token = jwtService.generateAccessToken(financeOfficer);
-                DepartmentCreateDto dto = new DepartmentCreateDto("Updated Department");
+                DepartmentCreateDto dto = new DepartmentCreateDto("Updated Department", BigDecimal.valueOf(10000.0));
 
                 mockMvc.perform(put("/api/v1/departments/" + existingDept.getDepartmentId())
                                 .header("Authorization", "Bearer " + token)

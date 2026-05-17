@@ -14,6 +14,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
 
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
@@ -85,6 +87,8 @@ class RequisitionServiceUnitTest {
     private RequisitionMapper requisitionMapper;
     @Mock
     private WorkflowEngineService workflowEngineService;;
+    @Mock
+    private InternalBudgetRepository internalBudgetRepository;
 
     @InjectMocks
     private RequisitionServiceImpl requisitionService;
@@ -139,6 +143,8 @@ class RequisitionServiceUnitTest {
                 testWorkflow, WorkflowComponent.START_EVENT))
                 .thenReturn(Optional.of(testStartStep));
         when(requestRepository.save(any(Request.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(internalBudgetRepository.save(any(InternalBudget.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
