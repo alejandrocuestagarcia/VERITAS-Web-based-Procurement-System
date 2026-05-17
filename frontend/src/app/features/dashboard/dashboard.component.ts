@@ -25,6 +25,7 @@ interface DashboardStats {
 })
 export class DashboardComponent implements OnInit {
   public pendingRequisitions: RequisitionDto[] = [];
+  public inProgressRequisitions: RequisitionDto[] = [];
   public loading: boolean = false;
   public userName: string = 'User';
   public greeting: string = '';
@@ -87,9 +88,11 @@ export class DashboardComponent implements OnInit {
       this.stats.finishedRequisitions = closedRequisitions.length;
 
       if (isRequester) {
-        this.pendingRequisitions = openRequisitions;
+        this.pendingRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole === 'REQUESTER');
+        this.inProgressRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole !== 'REQUESTER');
       } else {
-        this.pendingRequisitions = recentRequisitions.filter((requisition: RequisitionDto) => requisition.responsibleRole === this.userRole);
+        this.pendingRequisitions = recentRequisitions.filter(requisition => requisition.responsibleRole === this.userRole);
+        this.inProgressRequisitions = [];
       }
 
       this.stats.pendingActions = this.pendingRequisitions.length;
@@ -132,22 +135,19 @@ export class DashboardComponent implements OnInit {
   }
 
   public get pendingSectionTitle(): string {
-    if (this.authService.hasRole('REQUESTER')) {
-      return 'My In-Progress Requisitions';
-    }
     return 'Awaiting Your Action';
   }
 
   public get pendingSectionDescription(): string {
     if (this.authService.hasRole('REQUESTER')) {
-      return 'Your requisitions are currently being processed in the workflow';
+      return 'Requisitions that have been sent back or require your update';
     }
     return 'Requisitions that need your review or approval';
   }
 
   public get emptyPendingMessage(): string {
     if (this.authService.hasRole('REQUESTER')) {
-      return 'You have no requisitions in progress right now. Create a new requisition to get started.';
+      return 'No requisitions require your attention right now. They will appear here if a step is rejected or needs your update.';
     }
     return 'No requisitions are waiting for your action right now. New items will appear here when they need your attention.';
   }
