@@ -89,6 +89,9 @@ public class UserServiceImpl implements UserService {
     log.info("User persisted – id: {}, email: {}", savedUser.getId(), savedUser.getEmail());
 
     if (savedUser.getRole() == UserRole.REQUESTER && userDto.promoteToTeamLeader() && team != null) {
+      if (team.getLeader() != null) {
+        throw new IllegalArgumentException("Team with id " + team.getTeamId() + " already has assigned leader");
+      }
       team.setLeader(savedUser);
       teamRepository.save(team);
       log.info("User promoted to team leader for team: {} (id={})", team.getName(), team.getTeamId());

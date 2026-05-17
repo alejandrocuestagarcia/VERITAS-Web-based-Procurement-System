@@ -43,6 +43,7 @@ export class UserCreateComponent implements OnInit {
     this.teamService.getAllTeams().subscribe({
       next: (teams) => {
         this.teams = teams;
+        this.updateLeaderToggleState();
       },
       error: () => {
         this.toastService.showError('Failed to load teams');
@@ -97,20 +98,69 @@ export class UserCreateComponent implements OnInit {
       teamId?.updateValueAndValidity();
       deptId?.updateValueAndValidity();
     });
+
+    this.userForm.get('teamId')?.valueChanges.subscribe(() => {
+      this.updateLeaderToggleState();
+    });
+
+    this.updateLeaderToggleState();
+  }
+
+  get leaderConflictMessage(): string | null {
+    const teamId = this.userForm?.get('teamId')?.value;
+    if (!teamId) {
+      return null;
+    }
+
+    const team = this.teams.find((candidate) => candidate.id === teamId);
+    if (team?.leaderId) {
+      return 'This team already has a leader. Remove the current leader before assigning a new one.';
+    }
+
+    return null;
+  }
+
+  private updateLeaderToggleState(): void {
+    const promoteControl = this.userForm.get('promoteToTeamLeader');
+    const teamControl = this.userForm.get('teamId');
+
+    if (!promoteControl || !teamControl) {
+      return;
+    }
+
+    const teamId = teamControl.value;
+    if (!teamId) {
+      promoteControl.disable({ emitEvent: false });
+      promoteControl.setValue(false, { emitEvent: false });
+      return;
+    }
+
+    const team = this.teams.find((candidate) => candidate.id === teamId);
+    const hasLeader = !!team?.leaderId;
+
+    if (hasLeader) {
+      promoteControl.disable({ emitEvent: false });
+      promoteControl.setValue(false, { emitEvent: false });
+      return;
+    }
+
+    promoteControl.enable({ emitEvent: false });
   }
 
   onSubmit(): void {
     if (this.userForm.valid) {
       this.loading = true;
 
+      const formValue = this.userForm.getRawValue();
+
       const request: UserCreationRequestDto = {
-        name: this.userForm.value.name,
-        email: this.userForm.value.email,
-        password: this.userForm.value.password,
-        role: this.userForm.value.role,
-        teamId: this.userForm.value.teamId,
-        departmentId: this.userForm.value.departmentId,
-        promoteToTeamLeader: this.userForm.value.promoteToTeamLeader
+        name: formValue.name,
+        email: formValue.email,
+        password: formValue.password,
+        role: formValue.role,
+        teamId: formValue.teamId,
+        departmentId: formValue.departmentId,
+        promoteToTeamLeader: formValue.promoteToTeamLeader || false
       };
 
       this.userService.createUser(request).subscribe({

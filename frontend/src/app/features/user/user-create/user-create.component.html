@@ -68,10 +68,15 @@
         </app-shared-form-field>
 
         <div class="flex items-center gap-4 self-center mt-2">
-          <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"></mat-slide-toggle>
+          <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"
+                            [disabled]="!userForm.get('teamId')?.value || !!leaderConflictMessage">
+          </mat-slide-toggle>
           <div class="flex flex-col">
-            <span class="text-sm font-semibold">Assign as Team Leader</span>
-            <span class="text-xs text-slate-500">This user will be set as the unique head of the selected team.</span>
+            <span class="text-sm font-semibold">Team Leader</span>
+            <span class="text-xs text-slate-500">Toggle off to demote and allow team reassignment.</span>
+            <span class="text-xs text-amber-600 font-semibold" *ngIf="leaderConflictMessage">
+              {{ leaderConflictMessage }}
+            </span>
           </div>
         </div>
       </ng-container>
