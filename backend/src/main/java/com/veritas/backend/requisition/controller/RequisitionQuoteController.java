@@ -1,7 +1,6 @@
 package com.veritas.backend.requisition.controller;
 
 import com.veritas.backend.config.annotations.IsProcurementOfficer;
-import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
 import com.veritas.backend.requisition.service.RequisitionQuoteService;
@@ -29,7 +28,7 @@ public class RequisitionQuoteController {
     private final RequisitionQuoteService requisitionQuoteService;
 
     @Operation(summary = "List quotes for request", description = "Retrieves all quotes associated with a request.")
-    @IsRequester
+    @IsProcurementOfficer
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<QuoteDto>> getQuotesForRequest(@PathVariable Long requestId) {
         log.info("GET /requisitions/{}/quotes", requestId);
@@ -37,7 +36,7 @@ public class RequisitionQuoteController {
     }
 
     @Operation(summary = "Get quote", description = "Retrieves a specific quote.")
-    @IsRequester
+    @IsProcurementOfficer
     @GetMapping(value = "/{quoteId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<QuoteDto> getQuote(@PathVariable Long requestId, @PathVariable Long quoteId) {
         log.info("GET /requisitions/{}/quotes/{}", requestId, quoteId);
