@@ -1,5 +1,6 @@
 package com.veritas.backend.project;
 
+import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
 import com.veritas.backend.project.entity.Project;
@@ -80,6 +81,28 @@ class ProjectServiceUnitTest {
 
         assertThat(result).hasSize(1);
         verify(projectRepository).findByTeam(team);
+    }
+
+    @Test
+    void GetProjectsForUser_ProcurementOfficer_ReturnsDepartmentProjects() {
+        Department department = Department.builder().departmentId(1L).name("QA Department").build();
+        Team team = Team.builder().name("Testing Team").department(department).build();
+
+        Project project1 = Project.builder().team(team).build();
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, "Testing Team");
+
+        User user = User.builder()
+                .role(UserRole.PROCUREMENT_OFFICER)
+                .department(department)
+                .build();
+
+        when(projectRepository.findByTeamDepartment(department)).thenReturn(List.of(project1));
+        when(projectMapper.toProjectDto(project1)).thenReturn(dto1);
+
+        var result = projectService.getProjectsForUser(user);
+
+        assertThat(result).hasSize(1);
+        verify(projectRepository).findByTeamDepartment(department);
     }
 
     @Test

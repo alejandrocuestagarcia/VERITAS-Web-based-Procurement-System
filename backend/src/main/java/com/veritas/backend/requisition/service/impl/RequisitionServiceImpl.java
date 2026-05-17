@@ -131,12 +131,10 @@ public class RequisitionServiceImpl implements RequisitionService {
                 userIdFilter = user.getId();
             }
         } else if (userRole.equals("PROCUREMENT_OFFICER")) {
-            if (user.getTeam() != null && user.getTeam().getDepartment() != null) {
-                departmentIdFilter = user.getTeam().getDepartment().getDepartmentId();
-            } else if (user.getTeam() != null) {
-                teamIdFilter = user.getTeam().getTeamId();
+            if (user.getDepartment() != null) {
+                departmentIdFilter = user.getDepartment().getDepartmentId();
             } else {
-                teamIdFilter = -1L;
+                departmentIdFilter = -1L;
             }
         }
 

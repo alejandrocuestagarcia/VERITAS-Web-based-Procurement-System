@@ -33,12 +33,20 @@ public class ProjectServiceImpl implements ProjectService {
     public List<ProjectDto> getProjectsForUser(User user) {
         log.debug("Fetching projects for user: {} (role={})", user.getEmail(), user.getRole());
 
-        if (user.getRole() == UserRole.PROCUREMENT_OFFICER || user.getRole() == UserRole.REQUESTER) {
+        if (user.getRole() == UserRole.REQUESTER) {
             List<ProjectDto> teamProjects = projectRepository.findByTeam(user.getTeam()).stream()
                     .map(projectMapper::toProjectDto)
                     .toList();
             log.debug("Returning {} team-scoped projects for user: {}", teamProjects.size(), user.getEmail());
             return teamProjects;
+        }
+
+        if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            List<ProjectDto> departmentProjects = projectRepository.findByTeamDepartment(user.getDepartment()).stream()
+                    .map(projectMapper::toProjectDto)
+                    .toList();
+            log.debug("Returning {} department-scoped projects for user: {}", departmentProjects.size(), user.getEmail());
+            return departmentProjects;
         }
 
         List<ProjectDto> allProjects = projectRepository.findAll().stream()

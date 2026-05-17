@@ -22,11 +22,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
       "(:role is null or u.role = :role) and " +
       "(:search IS NULL OR (LOWER(u.name) LIKE :search OR LOWER(u.email) LIKE :search))")
   Page<User> findAllFiltered(@Param("search") String search, @Param("role") UserRole role,
-                             Pageable pageable);
+      Pageable pageable);
 
   long countByIsActiveFalse();
 
   long countByIsActiveTrue();
 
   List<User> findAllByTeamTeamId(Long teamId);
+
+  Page<User> findAllByRoleAndIsActiveTrue(UserRole role, Pageable pageable);
 }

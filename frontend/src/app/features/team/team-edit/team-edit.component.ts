@@ -88,7 +88,7 @@ export class TeamEditComponent implements OnInit {
 
     forkJoin({
       team: this.teamsService.getTeam(this.teamId),
-      users: this.userService.getAllUsers({ page: 0, size: 100 }),
+      users: this.userService.getAllRequesters({ page: 0, size: 100 }),
       departments: this.departmentsService.getAllDepartments()
     }).subscribe({
       next: ({ team, users, departments }) => {

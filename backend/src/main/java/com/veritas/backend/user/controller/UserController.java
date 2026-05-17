@@ -41,13 +41,13 @@ public class UserController {
 
     private final UserService userService;
 
-
     @Operation(summary = "List users", description = "Retrieves all users.")
     @IsFinanceOfficer
     @GetMapping
-    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable, @RequestParam(required = false) String search, @RequestParam(required = false)
-                                                     UserRole userRole) {
-        log.info("GET /users – page: {}, size: {}, search: '{}', role: {}", pageable.getPageNumber(), pageable.getPageSize(), search, userRole);
+    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable, @RequestParam(required = false) String search,
+            @RequestParam(required = false) UserRole userRole) {
+        log.info("GET /users – page: {}, size: {}, search: '{}', role: {}", pageable.getPageNumber(),
+                pageable.getPageSize(), search, userRole);
         return ResponseEntity.ok(userService.getAllUsersFiltered(pageable, search, userRole));
     }
 
@@ -83,7 +83,8 @@ public class UserController {
         log.info("POST /users – creating user with email: {}", user.email());
         UserDto userDto = userService.createUser(user);
 
-        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id()).toUri();
+        URI userUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(userDto.id())
+                .toUri();
         log.info("User created successfully – id: {}, email: {}", userDto.id(), userDto.email());
         return ResponseEntity.created(userUri).body(userDto);
     }
@@ -99,11 +100,19 @@ public class UserController {
     @Operation(summary = "Delete user", description = "Deletes a user.")
     @IsAdministrator
     @DeleteMapping(path = "/{id}")
-    public ResponseEntity<Object> deleteByUserId(@PathVariable Long id, @RequestParam(required = false) Long fallbackUserId) {
+    public ResponseEntity<Object> deleteByUserId(@PathVariable Long id,
+            @RequestParam(required = false) Long fallbackUserId) {
         log.info("DELETE /users/{} with fallbackUserId: {}", id, fallbackUserId);
         userService.deleteUser(id, fallbackUserId);
         return ResponseEntity.noContent().build();
     }
 
-}
+    @Operation(summary = "List requesters", description = "Retrieves all users with the role REQUESTER.")
+    @IsFinanceOfficer
+    @GetMapping("/requesters")
+    public ResponseEntity<Page<UserDto>> getAllRequesters(Pageable pageable) {
+        log.info("GET /users/requesters - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return ResponseEntity.ok(userService.getAllRequesters(pageable));
+    }
 
+}

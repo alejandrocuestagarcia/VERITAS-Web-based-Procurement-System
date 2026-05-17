@@ -185,7 +185,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .name("Leader User")
                                 .email("leader-" + UUID.randomUUID() + "@veritas.com")
                                 .passwordHash(encoder.encode("password123"))
-                                .role(UserRole.PROCUREMENT_OFFICER)
+                                .role(UserRole.REQUESTER)
                                 
                                 .isActive(true)
                                 .build());

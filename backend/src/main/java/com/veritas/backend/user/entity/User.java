@@ -1,7 +1,10 @@
 package com.veritas.backend.user.entity;
 
+import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.team.entity.Team;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -44,7 +47,12 @@ public class User implements UserDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Team team;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

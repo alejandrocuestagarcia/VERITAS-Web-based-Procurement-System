@@ -236,7 +236,7 @@ export class TeamCreateComponent implements OnInit {
     this.loadingLeads = true;
     this.error = null;
 
-    this.userService.getAllUsers({ page: 0, size: 100 }).subscribe({
+    this.userService.getAllRequesters({ page: 0, size: 1000 }).subscribe({
       next: (users) => {
         const normalizedUsers = this.toArray<UserDto>(users);
         const seenIds = new Set<number>();

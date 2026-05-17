@@ -13,6 +13,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.team.service.TeamService;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 
 import java.util.ArrayList;
@@ -56,7 +57,8 @@ public class TeamServiceImpl implements TeamService {
         }
 
         Department department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(() -> new EntityNotFoundException("Department with id '" + request.getDepartmentId() + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Department with id '" + request.getDepartmentId() + "' not found"));
 
         Team team = new Team();
         team.setName(teamName);
@@ -66,14 +68,20 @@ public class TeamServiceImpl implements TeamService {
         team.setIsActive(true);
 
         if (request.getLeaderId() != null) {
-            User leader = userRepository.findById(Objects.requireNonNull(request.getLeaderId())).orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
+            User leader = userRepository.findById(Objects.requireNonNull(request.getLeaderId())).orElseThrow(
+                    () -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
+
+            if (leader.getRole() != UserRole.REQUESTER) {
+                throw new IllegalArgumentException("User '" + leader.getName() + "' must be a requester to be a team leader");
+            }
 
             if (teamRepository.existsByLeaderId(request.getLeaderId())) {
                 throw new EntityExistsException("User '" + leader.getName() + "' is already a leader of another team");
             }
 
             if (leader.getTeam() != null) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' is already assigned to team '" + leader.getTeam().getName() + "'. Remove them from that team before assigning them here.");
+                throw new IllegalArgumentException("User '" + leader.getName() + "' is already assigned to team '"
+                        + leader.getTeam().getName() + "'. Remove them from that team before assigning them here.");
             }
 
             team.setLeader(leader);
@@ -91,13 +99,20 @@ public class TeamServiceImpl implements TeamService {
             List<User> usersToAssign = userRepository.findAllById(allMemberIds);
 
             for (User user : usersToAssign) {
-                boolean isLeaderOfAnotherTeam = teamRepository.existsByLeaderIdAndTeamIdNot(user.getId(), savedTeam.getTeamId());
+                boolean isLeaderOfAnotherTeam = teamRepository.existsByLeaderIdAndTeamIdNot(user.getId(),
+                        savedTeam.getTeamId());
                 if (isLeaderOfAnotherTeam) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' is already a leader of another team. Remove the current leader first.");
+                    throw new IllegalArgumentException("User '" + user.getName()
+                            + "' is already a leader of another team. Remove the current leader first.");
                 }
 
                 if (user.getTeam() != null) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' is already assigned to team '" + user.getTeam().getName() + "'. Remove them from that team before assigning them here.");
+                    throw new IllegalArgumentException("User '" + user.getName() + "' is already assigned to team '"
+                            + user.getTeam().getName() + "'. Remove them from that team before assigning them here.");
+                }
+
+                if (user.getRole() != UserRole.REQUESTER) {
+                    throw new IllegalArgumentException("User '" + user.getName() + "' must be a requester to be added to a team");
                 }
             }
 
@@ -138,7 +153,8 @@ public class TeamServiceImpl implements TeamService {
 
         if (edits.getDepartmentId() != null) {
             Department department = departmentRepository.findById(edits.getDepartmentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Department with id '" + edits.getDepartmentId() + "' not found"));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Department with id '" + edits.getDepartmentId() + "' not found"));
             team.setDepartment(department);
         }
 
@@ -154,16 +170,23 @@ public class TeamServiceImpl implements TeamService {
             User leader = userRepository.findById(edits.getLeaderId())
                     .orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + edits.getLeaderId()));
 
+            if (leader.getRole() != UserRole.REQUESTER) {
+                throw new IllegalArgumentException("User '" + leader.getName() + "' must be a requester to be a team leader");
+            }
+
             if (team.getLeader() != null && !team.getLeader().getId().equals(leader.getId())) {
-                throw new IllegalArgumentException("Team already has a leader. Remove the current leader before assigning a new one.");
+                throw new IllegalArgumentException(
+                        "Team already has a leader. Remove the current leader before assigning a new one.");
             }
 
             if (teamRepository.existsByLeaderIdAndTeamIdNot(leader.getId(), team.getTeamId())) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' is already a leader of another team. Remove the current leader first.");
+                throw new IllegalArgumentException("User '" + leader.getName()
+                        + "' is already a leader of another team. Remove the current leader first.");
             }
 
             if (leader.getTeam() != null && !leader.getTeam().getTeamId().equals(team.getTeamId())) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' is already assigned to team '" + leader.getTeam().getName() + "'. Remove them from that team before assigning them here.");
+                throw new IllegalArgumentException("User '" + leader.getName() + "' is already assigned to team '"
+                        + leader.getTeam().getName() + "'. Remove them from that team before assigning them here.");
             }
 
             team.setLeader(leader);
@@ -190,10 +213,11 @@ public class TeamServiceImpl implements TeamService {
     private void syncTeamMembers(Team team, List<Long> memberIds) {
         List<User> currentMembers = userRepository.findAllByTeamTeamId(team.getTeamId());
 
-        List<Long> desiredMembers = memberIds == null ? List.of() : memberIds.stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
+        List<Long> desiredMembers = memberIds == null ? List.of()
+                : memberIds.stream()
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
 
         List<Long> desiredWithLeader = new ArrayList<>(desiredMembers);
         if (team.getLeader() != null && !desiredWithLeader.contains(team.getLeader().getId())) {
@@ -230,13 +254,20 @@ public class TeamServiceImpl implements TeamService {
             }
 
             for (User user : usersToAdd) {
-                boolean isLeaderOfAnotherTeam = teamRepository.existsByLeaderIdAndTeamIdNot(user.getId(), team.getTeamId());
+                boolean isLeaderOfAnotherTeam = teamRepository.existsByLeaderIdAndTeamIdNot(user.getId(),
+                        team.getTeamId());
                 if (isLeaderOfAnotherTeam) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' is already a leader of another team. Remove the current leader first.");
+                    throw new IllegalArgumentException("User '" + user.getName()
+                            + "' is already a leader of another team. Remove the current leader first.");
                 }
 
                 if (user.getTeam() != null && !user.getTeam().getTeamId().equals(team.getTeamId())) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' is already assigned to team '" + user.getTeam().getName() + "'. Remove them from that team before assigning them here.");
+                    throw new IllegalArgumentException("User '" + user.getName() + "' is already assigned to team '"
+                            + user.getTeam().getName() + "'. Remove them from that team before assigning them here.");
+                }
+
+                if (user.getRole() != UserRole.REQUESTER) {
+                    throw new IllegalArgumentException("User '" + user.getName() + "' must be a requester to be added to a team");
                 }
             }
 

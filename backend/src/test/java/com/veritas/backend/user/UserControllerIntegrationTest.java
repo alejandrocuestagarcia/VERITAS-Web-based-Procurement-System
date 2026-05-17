@@ -28,6 +28,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
+import jakarta.persistence.EntityManager;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,10 +68,22 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   @Autowired
   private WorkflowStepRepository workflowStepRepository;
 
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  private EntityManager entityManager;
+
   @BeforeEach
   void setUp() {
-    projectRepository.deleteAll();
     requestRepository.deleteAll();
+    projectRepository.deleteAll();
+
+    jdbcTemplate.update("UPDATE users SET team_id = NULL");
+    jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
+
+    entityManager.clear();
+
     userRepository.deleteAll();
     teamRepository.deleteAll();
 
@@ -82,11 +96,14 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @AfterEach
   void tearDown() {
-    teamRepository.findAll().forEach(team -> {
-      team.setLeader(null);
-      teamRepository.save(team);
-    });
     requestRepository.deleteAll();
+    projectRepository.deleteAll();
+
+    jdbcTemplate.update("UPDATE users SET team_id = NULL");
+    jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
+
+    entityManager.clear();
+
     userRepository.deleteAll();
     teamRepository.deleteAll();
   }
@@ -240,7 +257,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   void UserCreation_ValidInput_ReturnsCreated() throws Exception {
     UserCreationRequestDto request = new UserCreationRequestDto(
         "newuser@veritas.com", "New User", "securePassword123",
-        UserRole.ADMINISTRATOR, testTeam.getTeamId(), false);
+        UserRole.ADMINISTRATOR, null, null, false);
 
     mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -255,7 +272,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   void UserCreation_DuplicateEmail_ReturnsConflict() throws Exception {
     UserCreationRequestDto request1 = new UserCreationRequestDto(
         "duplicate@veritas.com", "First User", "securePassword123",
-        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), false);
+        UserRole.FINANCE_OFFICER, null, null, false);
 
     mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -264,7 +281,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     UserCreationRequestDto request2 = new UserCreationRequestDto(
         "duplicate@veritas.com", "Second User", "securePassword456",
-        UserRole.FINANCE_OFFICER, testTeam.getTeamId(), false);
+        UserRole.FINANCE_OFFICER, null, null, false);
 
     mockMvc.perform(post("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -355,7 +372,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .build();
     userRepository.save(finance);
 
-    UserEditDto edit = new UserEditDto("new@test.com", "New Name", null, null, null);
+    UserEditDto edit = new UserEditDto("new@test.com", "New Name", null, null, null, null);
     mockMvc.perform(patch("/api/v1/users/" + finance.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
@@ -388,7 +405,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.save(user1);
     userRepository.save(user2);
 
-    UserEditDto edit = new UserEditDto("finance2@test.com", "First Finance User", null, null, null);
+    UserEditDto edit = new UserEditDto("finance2@test.com", "First Finance User", null, null, null, null);
     mockMvc.perform(patch("/api/v1/users/" + user1.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
@@ -417,7 +434,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     newTeam.setDescription("IT Department Team");
     teamRepository.save(newTeam);
 
-    UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), true);
+    UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
     mockMvc.perform(patch("/api/v1/users/" + user.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))

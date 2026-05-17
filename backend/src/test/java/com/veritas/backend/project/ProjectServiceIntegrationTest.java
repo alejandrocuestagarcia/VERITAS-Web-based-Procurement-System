@@ -5,6 +5,8 @@ import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
 import com.veritas.backend.team.repository.TeamRepository;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
@@ -40,8 +42,13 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     PasswordEncoder encoder;
 
+    @Autowired
+    DepartmentRepository departmentRepository;
+
     Team testingTeam;
     Team developmentTeam;
+    Department qaDepartment;
+    Department devDepartment;
     Project project;
 
     @BeforeEach
@@ -49,17 +56,28 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
         projectRepository.deleteAll();
         userRepository.deleteAll();
         teamRepository.deleteAll();
+        departmentRepository.deleteAll();
+
+        qaDepartment = departmentRepository.save(Department.builder()
+                .name("QA Dept")
+                .build());
+
+        devDepartment = departmentRepository.save(Department.builder()
+                .name("Dev Dept")
+                .build());
 
         testingTeam = teamRepository.save(Team.builder()
                 .name("Testing Team")
                 .description("Handles QA and testing work")
                 .isActive(true)
+                .department(qaDepartment)
                 .build());
 
         developmentTeam = teamRepository.save(Team.builder()
                 .name("Development Team")
                 .description("Builds product features")
                 .isActive(true)
+                .department(devDepartment)
                 .build());
 
         project = projectRepository.save(Project.builder()
@@ -107,13 +125,30 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void ProjectRetrieval_ProcurementOfficer_ReturnsEmptyForOtherTeams() {
+    void ProjectRetrieval_ProcurementOfficer_ReturnsProjectsFromTheirDepartment() {
         User procurementOfficer = userRepository.save(User.builder()
                 .name("Test Procurement")
-                .email("test@yahoo.com")
+                .email("test-proc@yahoo.com")
                 .passwordHash(encoder.encode("password123"))
                 .role(UserRole.PROCUREMENT_OFFICER)
-                .team(developmentTeam)
+                .department(qaDepartment)
+                .isActive(true)
+                .build());
+
+        var result = projectService.getProjectsForUser(procurementOfficer);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().name()).isEqualTo(project.getName());
+    }
+
+    @Test
+    void ProjectRetrieval_ProcurementOfficer_DoesNotReturnProjectsFromOtherDepartments() {
+        User procurementOfficer = userRepository.save(User.builder()
+                .name("Test Procurement")
+                .email("test-proc@yahoo.com")
+                .passwordHash(encoder.encode("password123"))
+                .role(UserRole.PROCUREMENT_OFFICER)
+                .department(devDepartment)
                 .isActive(true)
                 .build());
 

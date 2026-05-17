@@ -48,11 +48,11 @@ public class BackendApplication {
 				return departmentRepository.save(hr);
 			});
 
-			Team teamOne = teamRepo.findByName("Procurement Alpha").orElseGet(() -> {
+			Team teamOne = teamRepo.findByName("Software Engineering").orElseGet(() -> {
 				Team team = new Team();
-				team.setName("Procurement Alpha");
+				team.setName("Software Engineering");
 				team.setDepartment(department);
-				team.setDescription("Handles procurement for the alpha team");
+				team.setDescription("Core software development and innovation team");
 				log.info("Seeded team: {}", team.getName());
 				return teamRepo.save(team);
 			});
@@ -87,11 +87,12 @@ public class BackendApplication {
 						.email("procurement@veritas.com")
 						.passwordHash(encoder.encode("password123"))
 						.role(UserRole.PROCUREMENT_OFFICER)
+						.department(department)
 						.isActive(true)
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(procurement);
-				log.info("Seeded user: {} (role={})", procurement.getEmail(), procurement.getRole());
+				log.info("Seeded user: {} (role={}, department={})", procurement.getEmail(), procurement.getRole(), department.getName());
 			}
 			if (userRepo.findByEmail("requester@veritas.com").isEmpty()) {
 				User requester = User.builder()
@@ -103,9 +104,13 @@ public class BackendApplication {
 						.team(teamOne)
 						.requiresPasswordChange(false)
 						.build();
-				userRepo.save(requester);
-				log.info("Seeded user: {} (role={})", requester.getEmail(), requester.getRole());
+				User savedRequester = userRepo.save(requester);
+				log.info("Seeded user: {} (role={}, team={})", requester.getEmail(), requester.getRole(), teamOne.getName());
 
+				// Set requester as team leader
+				teamOne.setLeader(savedRequester);
+				teamRepo.save(teamOne);
+				log.info("Set user {} as leader of team {}", savedRequester.getEmail(), teamOne.getName());
 			}
 
 			if (projectRepo.count() == 0) {

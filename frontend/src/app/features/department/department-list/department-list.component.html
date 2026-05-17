@@ -1,8 +1,7 @@
 <app-shared-table title="Department Governance"
   subtitle="Manage corporate organizational structure, organize functional divisions, and define administrative boundaries."
-  entity="departments" searchPlaceholder="Search departments..."
-  [dataSource]="dataSource" [displayedColumns]="displayedColumns"
-  [totalElements]="dataSource.data.length" [loading]="loading"
+  entity="departments" searchPlaceholder="Search departments..." [dataSource]="dataSource"
+  [displayedColumns]="displayedColumns" [totalElements]="dataSource.data.length" [loading]="loading"
   (searchChanged)="onSearchChanged($event)">
 
   <ng-container stats>
@@ -11,6 +10,7 @@
   </ng-container>
 
   <button actions mat-flat-button class="v-btn-brand" (click)="navigateToAddDepartment()">
+    <mat-icon>add</mat-icon>
     <span>Add Department</span>
   </button>
 
@@ -28,7 +28,8 @@
     <ng-container matColumnDef="teams">
       <th mat-header-cell *matHeaderCellDef>ASSOCIATED TEAMS</th>
       <td mat-cell *matCellDef="let row">
-        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+        <span
+          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
           {{ row.teamsCount }} {{ row.teamsCount === 1 ? 'Team' : 'Teams' }}
         </span>
       </td>

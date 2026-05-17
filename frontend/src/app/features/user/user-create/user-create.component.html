@@ -1,8 +1,8 @@
 <div [formGroup]="userForm">
   <app-shared-form title="Create New User"
     subtitle="Configure account access, departmental associations, and procurement authority levels for a new team member."
-    routingSubtitle="USERS > ADD NEW USER" submitButtonLabel="Create User" submitButtonIcon="person_add"
-    [loading]="loading" (submitted)="onSubmit()" (cancelled)="onCancel()">
+    routingSubtitle="USERS > ADD NEW USER" submitButtonLabel="Save User" submitButtonIcon="save" [loading]="loading"
+    (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="manage_accounts" title="Account Details">
       <app-shared-form-field label="FULL NAME">
@@ -42,7 +42,7 @@
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>shield_person</mat-icon>
           <mat-select formControlName="role" placeholder="Select an access level">
-            <mat-option *ngFor="let role of roles" [value]="role">{{ role | titlecase }}</mat-option>
+            <mat-option *ngFor="let role of roles" [value]="role">{{ role | formatEnum }}</mat-option>
           </mat-select>
           <mat-error *ngIf="userForm.get('role')?.hasError('required') && userForm.get('role')?.touched">
             User role is required
@@ -51,23 +51,49 @@
       </app-shared-form-field>
     </app-shared-form-card>
 
-    <app-shared-form-card icon="corporate_fare" title="Organisational Assignment">
-      <app-shared-form-field label="ASSIGNED TEAM">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>groups</mat-icon>
-          <mat-select formControlName="teamId" placeholder="Select assigned team">
-            <mat-option *ngFor="let team of teams" [value]="team.id">{{ team.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </app-shared-form-field>
+    <app-shared-form-card icon="corporate_fare" title="Organisational Assignment"
+      *ngIf="userForm.get('role')?.value === 'REQUESTER' || userForm.get('role')?.value === 'PROCUREMENT_OFFICER'">
 
-      <div class="flex items-center gap-4 self-center">
-        <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"></mat-slide-toggle>
-        <div class="flex flex-col">
-          <span class="text-sm font-semibold">Assign as Team Leader</span>
-          <span class="text-xs text-slate-500">This user will be set as the unique head of the selected team.</span>
+      <ng-container *ngIf="userForm.get('role')?.value === 'REQUESTER'">
+        <app-shared-form-field label="ASSIGNED TEAM">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-icon matPrefix>groups</mat-icon>
+            <mat-select formControlName="teamId" placeholder="Select assigned team">
+              <mat-option *ngFor="let team of teams" [value]="team.id">{{ team.name }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="userForm.get('teamId')?.hasError('required')">
+              Team assignment is required for Requesters
+            </mat-error>
+          </mat-form-field>
+        </app-shared-form-field>
+
+        <div class="flex items-center gap-4 self-center mt-2">
+          <mat-slide-toggle formControlName="promoteToTeamLeader" color="primary"
+                            [disabled]="!userForm.get('teamId')?.value || !!leaderConflictMessage">
+          </mat-slide-toggle>
+          <div class="flex flex-col">
+            <span class="text-sm font-semibold">Team Leader</span>
+            <span class="text-xs text-slate-500">Toggle off to demote and allow team reassignment.</span>
+            <span class="text-xs text-amber-600 font-semibold" *ngIf="leaderConflictMessage">
+              {{ leaderConflictMessage }}
+            </span>
+          </div>
         </div>
-      </div>
+      </ng-container>
+
+      <ng-container *ngIf="userForm.get('role')?.value === 'PROCUREMENT_OFFICER'">
+        <app-shared-form-field label="ASSIGNED DEPARTMENT">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-icon matPrefix>business</mat-icon>
+            <mat-select formControlName="departmentId" placeholder="Select assigned department">
+              <mat-option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="userForm.get('departmentId')?.hasError('required')">
+              Department assignment is required for Procurement Officers
+            </mat-error>
+          </mat-form-field>
+        </app-shared-form-field>
+      </ng-container>
     </app-shared-form-card>
 
     <ng-container infoPanel>

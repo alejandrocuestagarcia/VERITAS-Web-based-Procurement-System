@@ -18,7 +18,7 @@ export class UserListComponent implements OnInit {
   dataSource = new MatTableDataSource<UserDto>();
   totalUserCount = 0;
   totalPageElements = 0;
-  displayedColumns: string[] = ['name', 'email', 'team', 'role', 'actions'];
+  displayedColumns: string[] = ['name', 'email', 'team', 'department', 'role', 'actions'];
   loading = false;
   inactiveUserCount = 0;
   subtitle = "Configure access levels, audit identities, and manage enterprise-wide user\n" +

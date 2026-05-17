@@ -1,13 +1,7 @@
 <div [formGroup]="projectForm">
-  <app-shared-form
-    title="Create New Project"
-    subtitle="Define project details, timeline, and budget for team execution"
-    routingSubtitle="PROJECTS > ADD NEW PROJECT"
-    submitButtonLabel="Add Project"
-    submitButtonIcon="add"
-    [loading]="loading"
-    (submitted)="onSubmit()"
-    (cancelled)="onCancel()">
+  <app-shared-form title="Create New Project" subtitle="Define project details, timeline, and budget for team execution"
+    routingSubtitle="PROJECTS > ADD NEW PROJECT" submitButtonLabel="Save Project" submitButtonIcon="save"
+    [loading]="loading" (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="business" title="General Information">
       <app-shared-form-field label="PROJECT NAME">
