@@ -24,7 +24,7 @@ class RequisitionMapperUnitTest {
     }
 
     @Test
-    void ToDto_WithCurrentStep_MapsStepNameAsStatus() {
+    void ToDto_WithCurrentStep_MapsStepNameAsCurrentStep() {
         WorkflowStep step = new WorkflowStep();
         step.setName("Manager Approval");
 
@@ -32,7 +32,7 @@ class RequisitionMapperUnitTest {
         request.setCurrentStepID(step);
 
         RequisitionDto dto = mapper.toDto(request);
-        assertEquals("Manager Approval", dto.status());
+        assertEquals("Manager Approval", dto.currentStep());
     }
 
     @Test

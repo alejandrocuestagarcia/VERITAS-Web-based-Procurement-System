@@ -34,6 +34,7 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
+import com.veritas.backend.auth.exception.WorkflowStateException;
 
 import java.util.List;
 import java.util.Optional;
@@ -130,7 +131,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
 
         if (targetStep == null) {
-            throw new IllegalStateException("No valid step found in history to revert to from: " + stepToRevertFrom.getName());
+            throw new WorkflowStateException("No valid step found in history to revert to from: " + stepToRevertFrom.getName());
         }
 
         if (targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {

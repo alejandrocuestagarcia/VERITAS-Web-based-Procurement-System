@@ -86,6 +86,11 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
   }
 
+  @ExceptionHandler(WorkflowStateException.class)
+  public ResponseEntity<String> handleWorkflowState(final WorkflowStateException exception) {
+    log.warn("Workflow state violation: {}", exception.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+  }
 
 }
 

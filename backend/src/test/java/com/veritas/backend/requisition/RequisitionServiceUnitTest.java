@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
@@ -20,6 +22,7 @@ import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
@@ -35,6 +38,7 @@ import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
+import com.veritas.backend.workflow.service.WorkflowEngineService;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +62,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import java.nio.file.Path;
 import java.nio.file.Files;
+import com.veritas.backend.auth.exception.WorkflowStateException;
 
 @ExtendWith(MockitoExtension.class)
 class RequisitionServiceUnitTest {
@@ -78,6 +83,8 @@ class RequisitionServiceUnitTest {
     private WorkflowStepRepository workflowStepRepository;
     @Mock
     private RequisitionMapper requisitionMapper;
+    @Mock
+    private WorkflowEngineService workflowEngineService;;
 
     @InjectMocks
     private RequisitionServiceImpl requisitionService;
@@ -140,7 +147,7 @@ class RequisitionServiceUnitTest {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
                 1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null);
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, "");
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -337,7 +344,7 @@ class RequisitionServiceUnitTest {
     void GetRequests_WithStatus_FormatsStatusToUpperCaseAndCallsRepository() {
         testUser.setRole(UserRole.ADMINISTRATOR);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        
+
         Pageable pageable = PageRequest.of(0, 10);
         when(requestRepository.findFilteredRequests("OPEN", "search", 1L, null, null, null, WorkflowComponent.END_EVENT, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
@@ -366,7 +373,7 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(1L);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
-        
+
         RequisitionDto expectedDto = mock(RequisitionDto.class);
         when(requisitionMapper.toDto(request)).thenReturn(expectedDto);
 
@@ -380,7 +387,7 @@ class RequisitionServiceUnitTest {
     void GetRequestById_InvalidId_ThrowsEntityNotFoundException() {
         when(requestRepository.findById(999L)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, 
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
                 () -> requisitionService.getRequestById(999L));
         assertTrue(ex.getMessage().contains("not found"));
     }
@@ -391,10 +398,10 @@ class RequisitionServiceUnitTest {
         attachment.setAttachmentId(1L);
         attachment.setFileName("test.pdf");
         attachment.setFileType("application/pdf");
-        
+
         Path tempFile = Files.createTempFile("test", ".pdf");
         attachment.setStoragePath(tempFile.toString());
-        
+
         when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
 
         ResponseEntity<Resource> response = requisitionService.downloadAttachment(1L);
@@ -403,7 +410,7 @@ class RequisitionServiceUnitTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
         assertTrue(response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION).get(0).contains("filename=\"test.pdf\""));
-        
+
         Files.deleteIfExists(tempFile);
     }
 
@@ -411,8 +418,88 @@ class RequisitionServiceUnitTest {
     void DownloadAttachment_InvalidId_ThrowsEntityNotFoundException() {
         when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, 
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
                 () -> requisitionService.downloadAttachment(999L));
         assertTrue(ex.getMessage().contains("Attachment not found"));
     }
+
+    //AI-Generated
+    @Test
+    void SubmitRequest_ValidDraft_MovesToFirstStep() {
+        // 1. Arrange a mock Request currently in DRAFT status
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setStatus(RequestStatus.DRAFT);
+        request.setWorkflowDefinitionID(testWorkflow);
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+
+        // Mock finding the start event scoped specifically to this definition ID
+
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RequisitionDto expectedDto = new RequisitionDto(
+                100L,                            // 1. id
+                "Draft Test",                    // 2. requestName
+                "PRJ-12",                        // 3. requestKey
+                "Start",                         // 4. currentStep
+                false,                           // 5. isClosed
+                Priority.MEDIUM,                 // 6. priority
+                "Test Project",                  // 7. projectName
+                "PRJ",                           // 8. projectKey (Using project code)
+                "Standard Workflow",             // 9. workflowName
+                "Engineering",                   // 10. teamName
+                "Test User",                     // 11. requesterName
+                "ROLE_MANAGER",                  // 12. responsibleRole (or null)
+                java.time.LocalDateTime.now(),   // 13. createdAt
+                java.time.LocalDateTime.now(),   // 14. updatedAt
+                "Test Description",              // 15. description
+                "JIRA-123",                      // 16. jiraIssueKey (or null)
+                "https://jira.com/123",          // 17. jiraIssueUrl (or null)
+                null,// 18. items
+                null,// 19. attachments
+                "ACTIVE"                         // 20. status (Moved to the end!)
+        );
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        doAnswer(invocation -> {
+            Request req = invocation.getArgument(0);
+            req.setCurrentStepID(testStartStep); // Simulates what startWorkflow actually does
+            return null;
+        }).when(workflowEngineService).startWorkflow(any(Request.class), any(User.class));
+        // 2. Act
+        RequisitionDto result = requisitionService.submitRequest(100L, testUser);
+
+        // 3. Assert
+        assertNotNull(result);
+        verify(requestRepository).save(requestCaptor.capture());
+        Request savedRequest = requestCaptor.getValue();
+
+        assertAll("Workflow Initial Submission State Checks",
+                () -> assertEquals(RequestStatus.ACTIVE, savedRequest.getStatus(), "Request state should change to ACTIVE on submit"),
+                () -> assertEquals(testStartStep, savedRequest.getCurrentStepID(), "Request should advance cleanly to the workflow's START_EVENT node")
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void SubmitRequest_AlreadyActive_ThrowsWorkflowStateException() {
+        // 1. Arrange an already ACTIVE request
+        Request request = new Request();
+        request.setRequestID(101L);
+        request.setStatus(RequestStatus.ACTIVE);
+
+        when(requestRepository.findById(101L)).thenReturn(Optional.of(request));
+
+        // 2. Act & Assert
+        WorkflowStateException ex = assertThrows(
+                WorkflowStateException.class,
+                () -> requisitionService.submitRequest(101L, testUser)
+        );
+
+        assertTrue(ex.getMessage().contains("Only drafts can be submitted."));
+        verify(requestRepository, never()).save(any());
+    }
+
+
 }

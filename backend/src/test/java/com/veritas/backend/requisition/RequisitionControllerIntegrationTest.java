@@ -14,7 +14,10 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
+import com.veritas.backend.requisition.dto.RequisitionRejectDto;
 import com.veritas.backend.requisition.entity.Priority;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
@@ -29,12 +32,15 @@ import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
+import com.veritas.backend.audit.entity.AuditLog;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -71,6 +77,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private RequestItemRepository requestItemRepository;
     @Autowired
     private AttachmentRepository attachmentRepository;
+    @Autowired
+    private AuditLogRepository auditLogRepository;
 
     private String requesterToken;
     private Long projectId;
@@ -78,6 +86,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        auditLogRepository.deleteAllInBatch();
         attachmentRepository.deleteAllInBatch();
         requestItemRepository.deleteAllInBatch();
         requestRepository.deleteAllInBatch();
@@ -152,7 +161,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.requestName").value("Office Equipment"))
                 .andExpect(jsonPath("$.requestKey").value("INT-1"))
-                .andExpect(jsonPath("$.status").value("Start"))
+                .andExpect(jsonPath("$.currentStep").value("Start"))
                 .andExpect(jsonPath("$.priority").value("HIGH"))
                 .andExpect(jsonPath("$.projectName").value("Integration Project"))
                 .andExpect(jsonPath("$.teamName").value("Engineering"))
@@ -299,4 +308,123 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
         assertEquals(0, requestRepository.count());
     }
+
+    //AI-Generated
+    @Test
+    void ApproveRequest_AlreadyFinished_ReturnsConflictStatus() throws Exception {
+        // 1. Create a request and manually save it as FINISHED
+        Request request = new Request();
+        request.setRequestName("Finished Test");
+        request.setStatus(RequestStatus.FINISHED);
+        request = requestRepository.save(request);
+
+        // 2. Try to hit the approve endpoint
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/approve")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON))
+                // Asserts against WorkflowStateException mapping to HTTP 409 CONFLICT
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("is already finished and cannot be approved")));
+    }
+
+    //AI-Generated
+    @Test
+    void RejectRequest_AlreadyFinished_ReturnsConflictStatus() throws Exception {
+        // 1. Create a request and manually save it as FINISHED
+        Request request = new Request();
+        request.setRequestName("Finished Test Rejection");
+        request.setStatus(RequestStatus.FINISHED);
+        request = requestRepository.save(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Sending back to draft");
+
+        // 2. Try to hit the reject endpoint
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("is already finished and cannot be rejected")));
+    }
+
+    //AI-Generated
+    @Test
+    void RejectRequest_NoHistoryExists_ReturnsConflictStatus() throws Exception {
+        // 1. Create an active request but don't add any AuditLogs to the DB
+        Request request = new Request();
+        request.setRequestName("Orphan Step Test");
+        request.setStatus(RequestStatus.ACTIVE);
+
+        // Fetch the Start event we built in setUp() to simulate starting point
+        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
+        request.setWorkflowDefinitionID(workflow);
+        request.setCurrentStepID(startStep);
+        request = requestRepository.save(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Nowhere to go");
+
+        // 2. Trigger a reject (revert) which will fail targetStep generation
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("No valid step found in history to revert to")));
+    }
+
+    //AI-Generated
+    @Test
+    void RejectRequest_FromFirstStep_SetsStatusToDraft() throws Exception {
+        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
+
+        WorkflowStep stepOne = new WorkflowStep();
+        stepOne.setWorkflowDefinition(workflow);
+        stepOne.setWorkflowComponent(WorkflowComponent.STEP);
+        stepOne.setName("Manager Review");
+        stepOne = workflowStepRepository.save(stepOne);
+
+        Request request = new Request();
+        request.setRequestName("Draft Loopback Test");
+        request.setStatus(RequestStatus.ACTIVE);
+        request.setWorkflowDefinitionID(workflow);
+        request.setCurrentStepID(stepOne);
+        request = requestRepository.save(request);
+
+        // 2. Seed an execution history log mapping: startStep -> stepOne via an "APPROVE"
+        AuditLog log = new AuditLog().builder()
+                .request(request)
+                .previousStep(startStep)
+                .newStep(stepOne)
+                .action("APPROVE")
+                .entryHash("mock-hash-123")
+                .timestamp(java.time.LocalDateTime.now())
+                .build();
+        auditLogRepository.save(log);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Needs complete rewrite");
+
+        // 3. Reverting from Step 1 back to the START_EVENT
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isOk());
+
+        // 4. Validate state machine updated fields correctly
+        Request updatedRequest =
+                requestRepository.findById(request.getRequestID()).orElseThrow();
+
+        assertAll("Request state rollback verification",
+                () -> assertEquals(RequestStatus.DRAFT, updatedRequest.getStatus(),
+                        "The request status should have reverted to DRAFT"),
+                () -> assertEquals(startStep.getId(), updatedRequest.getCurrentStepID().getId(),
+                        "The current step ID should match the workflow's START_EVENT id")
+        );
+    }
+
 }

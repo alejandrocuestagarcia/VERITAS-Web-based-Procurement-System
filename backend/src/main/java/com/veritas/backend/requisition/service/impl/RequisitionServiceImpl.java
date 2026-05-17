@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.veritas.backend.workflow.service.WorkflowEngineService;
+import com.veritas.backend.auth.exception.WorkflowStateException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -226,14 +227,14 @@ public class RequisitionServiceImpl implements RequisitionService {
     public RequisitionDto approveRequest(Long id, User actor) {
 
         Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
         if (request.getStatus() == RequestStatus.FINISHED) {
-            throw new IllegalStateException("Finished requests cannot be approved.");
+            throw new WorkflowStateException("Request " + id + "is already finished and cannot be approved");
         }
 
         if (request.getStatus() == RequestStatus.DRAFT) {
-            throw new IllegalStateException("Requests in draft must be submitted.");
+            throw new WorkflowStateException("Request " + id + "is in draft and must be submitted");
         }
 
         workflowEngineService.moveToNextStep(request, actor);
@@ -248,14 +249,14 @@ public class RequisitionServiceImpl implements RequisitionService {
     public RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData) {
 
         Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
         if (request.getStatus() == RequestStatus.FINISHED) {
-            throw new IllegalStateException("Cannot revert a request that has already been finished.");
+            throw new WorkflowStateException("Request " + id + "is already finished and cannot be rejected");
         }
 
         if (request.getStatus() == RequestStatus.DRAFT) {
-            throw new IllegalStateException("Cannot revert a request that is in draft.");
+            throw new WorkflowStateException("Request " + id + "is in draft and cannot be rejected");
         }
 
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
@@ -272,10 +273,10 @@ public class RequisitionServiceImpl implements RequisitionService {
     public RequisitionDto submitRequest(Long id, User actor) {
 
         Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
         if (request.getStatus() != RequestStatus.DRAFT) {
-            throw new IllegalStateException("Only drafts can be submitted.");
+            throw new WorkflowStateException("Only drafts can be submitted.");
         }
 
         request.setStatus(RequestStatus.ACTIVE);
