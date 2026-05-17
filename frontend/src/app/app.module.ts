@@ -88,6 +88,9 @@ import { JiraIssuesSyncHistoryComponent } from './features/integrations/jira/jir
 import { RequisitionCreateComponent } from './features/requisition/requisition-create/requisition-create.component';
 import { RequisitionListComponent } from './features/requisition/requisition-list/requisition-list.component';
 import { RequisitionDetailComponent } from './features/requisition/requisition-detail/requisition-detail.component';
+import { RequisitionVendorQuotesComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quotes-list/requisition-vendor-quotes.component';
+import { RequisitionVendorQuoteCreateComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component';
+import { RequisitionVendorQuoteViewComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component';
 
 @NgModule({
   declarations: [
@@ -98,44 +101,47 @@ import { RequisitionDetailComponent } from './features/requisition/requisition-d
     ResetPasswordComponent,
     DashboardComponent,
     SidebarComponent,
-    
+
     // User
     UserCreateComponent,
     UserListComponent,
     UserEditComponent,
     UserDeletionDialogComponent,
     ResetPasswordDialogComponent,
-    
+
     // Project
     ProjectListComponent,
     ProjectCreateComponent,
-    
+
     // Vendor
     VendorListComponent,
     VendorCreateComponent,
     VendorEditComponent,
-    
+
     // Team
     TeamListComponent,
     TeamCreateComponent,
     TeamEditComponent,
-    
+
     // Department
     DepartmentListComponent,
     DepartmentCreateComponent,
-    
+
     // Workflow & Jira
     WorkflowEditorComponent,
     WorkflowListComponent,
     JiraSettingsListComponent,
     JiraSettingsCreateComponent,
     JiraIssuesSyncHistoryComponent,
-    
+
     // Requisition & Procurement
     RequisitionCreateComponent,
     RequisitionListComponent,
     RequisitionDetailComponent,
-    
+    RequisitionVendorQuotesComponent,
+    RequisitionVendorQuoteCreateComponent,
+    RequisitionVendorQuoteViewComponent,
+
     // Shared
     SharedTableComponent,
     StatCardComponent,
@@ -144,7 +150,7 @@ import { RequisitionDetailComponent } from './features/requisition/requisition-d
     SharedFormFieldComponent,
     ConfirmationDialogComponent,
     PriorityBadgeComponent,
-    
+
     // Directives & Pipes
     HasRoleDirective,
     FormatEnumPipe
@@ -158,7 +164,7 @@ import { RequisitionDetailComponent } from './features/requisition/requisition-d
     CommonModule,
     RouterModule,
     AppRoutingModule,
-    
+
     // Material
     MatCardModule,
     MatProgressSpinnerModule,

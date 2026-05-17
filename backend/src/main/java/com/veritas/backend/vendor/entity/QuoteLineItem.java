@@ -1,5 +1,6 @@
 package com.veritas.backend.vendor.entity;
 
+import com.veritas.backend.requisition.entity.RequestItem;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -21,4 +22,8 @@ public class QuoteLineItem {
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_item_id")
+    private RequestItem requestItem;
 }

@@ -33,6 +33,10 @@
         <mat-icon class="scale-90">arrow_back</mat-icon>
         Back
       </button>
+      <button *ngIf="request?.responsibleRole === 'PROCUREMENT_OFFICER'" (click)="viewVendorQuotes()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+        <mat-icon class="scale-90">request_quote</mat-icon>
+        Vendor Quotes
+      </button>
       <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
         <mat-icon class="scale-90">edit</mat-icon>
         Edit

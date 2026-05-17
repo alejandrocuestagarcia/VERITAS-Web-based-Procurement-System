@@ -56,6 +56,12 @@ export class RequisitionDetailComponent implements OnInit {
     );
   }
 
+  viewVendorQuotes(): void {
+    if (this.request) {
+      this.router.navigate([`/requisitions/${this.request.id}/vendor-quotes`]);
+    }
+  }
+
   downloadAttachment(attachment: any): void {
     if (!attachment || !attachment.attachmentId) return;
     const url = `http://localhost:8080/api/v1/requisitions/attachments/${attachment.attachmentId}`;

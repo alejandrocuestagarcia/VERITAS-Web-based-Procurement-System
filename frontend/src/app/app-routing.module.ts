@@ -29,6 +29,10 @@ import { DepartmentListComponent } from './features/department/department-list/d
 import { DepartmentCreateComponent } from './features/department/department-create/department-create.component';
 import { RequisitionListComponent } from "./features/requisition/requisition-list/requisition-list.component";
 import { RequisitionDetailComponent } from "./features/requisition/requisition-detail/requisition-detail.component";
+import { RequisitionVendorQuotesComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quotes-list/requisition-vendor-quotes.component";
+import { RequisitionVendorQuoteCreateComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component";
+import { RequisitionVendorQuoteViewComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component";
+
 
 const routes: Routes = [
   {
@@ -168,6 +172,30 @@ const routes: Routes = [
     component: RequisitionCreateComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['REQUESTER'] }
+  },
+  {
+    path: 'requisitions/:id/vendor-quotes',
+    component: RequisitionVendorQuotesComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
+  },
+  {
+    path: 'requisitions/:id/vendor-quotes/create',
+    component: RequisitionVendorQuoteCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
+  },
+  {
+    path: 'requisitions/:id/vendor-quotes/edit/:quoteId',
+    component: RequisitionVendorQuoteCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
+  },
+  {
+    path: 'requisitions/:id/vendor-quotes/view/:quoteId',
+    component: RequisitionVendorQuoteViewComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
   },
   {
     path: 'requisitions',
