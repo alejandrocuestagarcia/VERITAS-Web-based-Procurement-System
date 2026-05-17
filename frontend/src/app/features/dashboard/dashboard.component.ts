@@ -8,7 +8,7 @@ import {
   ProjectModuleService
 } from '../../core/api';
 import { AuthService } from '../../core/services/auth.service';
-import {ToastService} from "../../core/services/toast.service";
+import { ToastService } from "../../core/services/toast.service";
 
 interface DashboardStats {
   total: number;
@@ -45,7 +45,7 @@ export class DashboardComponent implements OnInit {
     private authService: AuthService,
     private toastService: ToastService,
     private router: Router
-  ) {}
+  ) { }
 
   public ngOnInit(): void {
     this.initializeDashboard();

@@ -9,15 +9,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
-import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
-import com.veritas.backend.integrations.jira.dto.JiraIssueRecord;
-import com.veritas.backend.integrations.jira.dto.JiraSearchResponseRecord;
+import com.veritas.backend.integrations.jira.dto.*;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import com.veritas.backend.integrations.jira.mapper.JiraIssueMapper;
 import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
 import com.veritas.backend.integrations.jira.service.impl.JiraSyncServiceImpl;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.repository.UserRepository;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +42,8 @@ public class JiraSyncServiceUnitTest {
     private JiraConfigRepository configRepository;
     @Mock
     private RequestRepository requestRepository;
+    @Mock
+    private UserRepository userRepository;
     @Mock
     private JiraIssueMapper issueMapper;
     @Mock
@@ -111,6 +113,39 @@ public class JiraSyncServiceUnitTest {
 
         service.runManualSync(1L);
 
+        verify(requestRepository, atLeastOnce()).saveAndFlush(any());
+        verify(configRepository).save(any());
+    }
+
+    @Test
+    void RunManualSync_WithReporterEmail_MatchesAndLinksUser() {
+        when(configRepository.findById(1L)).thenReturn(Optional.of(config));
+
+        JiraUserRecord reporter = new JiraUserRecord("reporter@veritas.com", "Reporter Name");
+
+        JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
+            new JiraIssueRecord("10001", "TEST-1", "https://api/1", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, null))));
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),
+            eq(JiraSearchResponseRecord.class))).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+
+        when(requestRepository.findByJiraIssueKey(anyString())).thenReturn(Optional.empty());
+        Request request = new Request();
+        request.setRequestID(101L);
+        when(issueMapper.toRequest(any())).thenReturn(request);
+        when(requestRepository.saveAndFlush(any())).thenReturn(request);
+
+        User mockUser = new User();
+        mockUser.setId(42L);
+        mockUser.setEmail("reporter@veritas.com");
+        when(userRepository.findByEmail("reporter@veritas.com")).thenReturn(Optional.of(mockUser));
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class),
+            eq(String.class))).thenReturn(new ResponseEntity<>(HttpStatus.NO_CONTENT));
+
+        service.runManualSync(1L);
+
+        verify(userRepository).findByEmail("reporter@veritas.com");
         verify(requestRepository, atLeastOnce()).saveAndFlush(any());
         verify(configRepository).save(any());
     }

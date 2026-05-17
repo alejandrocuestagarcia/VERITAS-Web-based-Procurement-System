@@ -20,6 +20,7 @@ import java.util.Base64;
 import java.util.Optional;
 
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -40,6 +41,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
     private final JiraConfigRepository configRepository;
     private final RequestRepository requestRepository;
+    private final UserRepository userRepository;
     private final AuditServiceImpl auditService;
     private final JiraIssueMapper issueMapper;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -147,6 +149,18 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         String browserUrl = config.getJiraUrl().replaceAll("/+$", "") + "/browse/" + key;
         request.setJiraIssueUrl(browserUrl);
+
+        if (request.getUserID() == null && issueRecord.fields() != null && issueRecord.fields().reporter() != null) {
+            String email = issueRecord.fields().reporter().emailAddress();
+            if (email != null && !email.isBlank()) {
+                Optional<User> matchedUser = userRepository.findByEmail(email);
+                if (matchedUser.isPresent()) {
+                    User user = matchedUser.get();
+                    request.setUserID(user);
+                    request.setTeamID(user.getTeam());
+                }
+            }
+        }
 
         request = requestRepository.saveAndFlush(request);
 

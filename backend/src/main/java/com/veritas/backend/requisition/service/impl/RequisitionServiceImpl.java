@@ -120,16 +120,14 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         String statusFilter = (status != null && !status.isBlank()) ? status.toUpperCase() : null;
         String searchFilter = (search != null && !search.isBlank()) ? search : null;
-        Long projectIdFilter = projectId;
 
         String userRole = user.getRole().name();
         
         if (userRole.equals("REQUESTER")) {
             if (user.getTeam() != null) {
                 teamIdFilter = user.getTeam().getTeamId();
-            } else {
-                userIdFilter = user.getId();
             }
+            userIdFilter = user.getId();
         } else if (userRole.equals("PROCUREMENT_OFFICER")) {
             if (user.getDepartment() != null) {
                 departmentIdFilter = user.getDepartment().getDepartmentId();
@@ -139,7 +137,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         Page<Request> requests = requestRepository.findFilteredRequests(
-                statusFilter, searchFilter, projectIdFilter, userIdFilter, teamIdFilter, departmentIdFilter, WorkflowComponent.END_EVENT, pageable);
+                statusFilter, searchFilter, projectId, userIdFilter, teamIdFilter, departmentIdFilter, WorkflowComponent.END_EVENT, pageable);
 
         return requests.map(requisitionMapper::toDto);
     }
