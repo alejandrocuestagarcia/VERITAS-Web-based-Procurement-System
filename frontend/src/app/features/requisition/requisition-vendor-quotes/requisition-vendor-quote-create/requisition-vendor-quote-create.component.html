@@ -46,14 +46,14 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <app-shared-form-field label="Base Amount" [required]="true">
           <mat-form-field appearance="outline" class="w-full">
-            <span matPrefix class="text-slate-400 font-semibold mr-2">{{ quoteForm.get('currency')?.value }}</span>
+            <span matPrefix class="text-slate-400 font-semibold ml-2 mr-2">{{ quoteForm.get('currency')?.value }}</span>
             <input matInput type="text" [value]="quoteForm.get('baseAmount')?.value | number:'1.2-2'" readonly class="font-bold text-slate-700 text-[16px]">
           </mat-form-field>
         </app-shared-form-field>
 
         <app-shared-form-field label="Shipping & Handling" [required]="true">
           <mat-form-field appearance="outline" class="w-full">
-            <span matPrefix class="text-slate-400 font-semibold mr-2">{{ quoteForm.get('currency')?.value }}</span>
+            <span matPrefix class="text-slate-400 font-semibold ml-2 mr-2">{{ quoteForm.get('currency')?.value }}</span>
             <input matInput type="number" step="0.01" formControlName="shippingCosts">
             <mat-error *ngIf="quoteForm.get('shippingCosts')?.hasError('required') && quoteForm.get('shippingCosts')?.touched">
               Shipping costs are required
@@ -63,7 +63,7 @@
 
         <app-shared-form-field label="Grand Total" [required]="true">
           <mat-form-field appearance="outline" class="w-full">
-            <span matPrefix class="text-slate-400 font-semibold mr-2">{{ quoteForm.get('currency')?.value }}</span>
+            <span matPrefix class="text-slate-400 font-semibold ml-2 mr-2">{{ quoteForm.get('currency')?.value }}</span>
             <input matInput type="text" [value]="quoteForm.get('totalAmount')?.value | number:'1.2-2'" readonly class="font-extrabold text-[#0042d1] text-[18px]">
           </mat-form-field>
         </app-shared-form-field>
@@ -90,7 +90,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
               <div class="md:col-span-6">
-                <app-shared-form-field label="Description">
+                <app-shared-form-field label="Product Name">
                   <mat-form-field appearance="outline" class="w-full">
                     <input matInput type="text" formControlName="productDescription" placeholder="Product name or description">
                   </mat-form-field>
@@ -108,7 +108,7 @@
               <div class="md:col-span-4">
                 <app-shared-form-field label="Unit Price">
                   <mat-form-field appearance="outline" class="w-full">
-                    <span matPrefix class="text-slate-400 font-semibold mr-2">{{ quoteForm.get('currency')?.value }}</span>
+                    <span matPrefix class="text-slate-400 font-semibold ml-2 mr-2">{{ quoteForm.get('currency')?.value }}</span>
                     <input matInput type="number" step="0.01" formControlName="unitPrice">
                   </mat-form-field>
                 </app-shared-form-field>
