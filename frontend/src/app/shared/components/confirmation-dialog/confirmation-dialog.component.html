@@ -1,7 +1,12 @@
 <h2 mat-dialog-title>{{ data.title }}</h2>
 
 <mat-dialog-content>
-  <p>{{ data.message }}</p>
+  <p>
+    {{ data.message }}<span *ngIf="data.highlightText"> <strong>{{ data.highlightText }}</strong></span>?
+  </p>
+  <p *ngIf="data.subMessage" class="mt-4 text-sm text-muted-grey">
+    {{ data.subMessage }}
+  </p>
 </mat-dialog-content>
 
 <mat-dialog-actions>
