@@ -208,6 +208,34 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
                         .param("isActive", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].isActive").value(true));
+     }
+
+    @Test
+    @WithMockUser(roles = "FINANCE_OFFICER")
+    void DeleteWorkflow_AsFinanceOfficer_DeactivatesAndReturnsNoContent() throws Exception {
+        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+
+        mockMvc.perform(delete("/api/v1/workflows/" + dto.id()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/workflows/" + dto.id()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isActive").value(false));
     }
 
+    @Test
+    @WithMockUser(roles = "REQUESTER")
+    void DeleteWorkflow_AsRequester_ReturnsForbidden() throws Exception {
+        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+
+        mockMvc.perform(delete("/api/v1/workflows/" + dto.id()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "FINANCE_OFFICER")
+    void DeleteWorkflow_NonExistingId_ReturnsNotFound() throws Exception {
+        mockMvc.perform(delete("/api/v1/workflows/99"))
+                .andExpect(status().isNotFound());
+    }
 }

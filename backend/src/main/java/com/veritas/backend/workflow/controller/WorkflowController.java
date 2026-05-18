@@ -32,8 +32,6 @@ import java.util.List;
 public class WorkflowController {
 
     private final WorkflowService workflowService;
-    private final WorkflowMapper workflowMapper;
-    private final WorkflowDefinitionRepository workflowDefinitionRepository;
 
     @IsRequester
     @Operation(summary = "List workflows", description = "Retrieves a list of workflows with optional filtering.")
@@ -74,5 +72,14 @@ public class WorkflowController {
         log.info("PATCH /workflows/{}", id);
         WorkflowDto workflowDto = workflowService.editWorkflow(id, workflowEditDto);
         return ResponseEntity.ok(workflowDto);
+    }
+
+    @IsFinanceOfficer
+    @Operation(summary = "Delete workflow", description = "Deactivates a workflow.")
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> deleteWorkflow(@PathVariable Long id) {
+        log.info("DELETE /workflows/{}", id);
+        workflowService.deleteWorkflow(id);
+        return ResponseEntity.noContent().build();
     }
 }

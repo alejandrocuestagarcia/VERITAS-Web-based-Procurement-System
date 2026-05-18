@@ -227,4 +227,14 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         return workflowDefinitionRepository.findAllFiltered(query,isActive, pageable).map(workflowMapper::toWorkflowDto);
     }
+
+    @Override
+    @Transactional
+    public void deleteWorkflow(Long id) {
+        WorkflowDefinition workflowDefinition = workflowDefinitionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
+        workflowDefinition.setIsActive(false);
+        workflowDefinition.setDeactivatedAt(LocalDateTime.now());
+        workflowDefinitionRepository.save(workflowDefinition);
+    }
 }

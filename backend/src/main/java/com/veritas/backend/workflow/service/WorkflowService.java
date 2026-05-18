@@ -15,4 +15,6 @@ public interface WorkflowService {
     public WorkflowDto editWorkflow(Long id, WorkflowEditDto workflowEditDto);
 
     public Page<WorkflowDto> getAllWorkflows(Pageable pageable, String filter, Boolean isActive);
+
+    void deleteWorkflow(Long id);
 }
