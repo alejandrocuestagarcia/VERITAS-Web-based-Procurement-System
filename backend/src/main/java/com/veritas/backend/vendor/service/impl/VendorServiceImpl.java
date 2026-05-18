@@ -1,10 +1,16 @@
 package com.veritas.backend.vendor.service.impl;
 
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
+import com.veritas.backend.vendor.dto.VendorRatingDto;
 import com.veritas.backend.vendor.dto.VendorStatsDto;
 import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.entity.VendorEvaluation;
 import com.veritas.backend.vendor.mapper.VendorMapper;
+import com.veritas.backend.vendor.repository.VendorEvaluationRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.VendorService;
 import jakarta.persistence.EntityExistsException;
@@ -22,6 +28,8 @@ import org.springframework.util.StringUtils;
 public class VendorServiceImpl implements VendorService {
     private final VendorRepository vendorRepository;
     private final VendorMapper vendorMapper;
+    private final VendorEvaluationRepository vendorEvaluationRepository;
+    private final RequestRepository requestRepository;
 
     @Override
     public VendorDto createVendor(VendorDto vendorDto) {
@@ -88,5 +96,31 @@ public class VendorServiceImpl implements VendorService {
         return vendorRepository.findById(id)
                 .map(vendorMapper::toVendorDto)
                 .orElseThrow(() -> new IllegalArgumentException("Vendor not found with id: " + id));
+    }
+
+    @Override
+    public VendorDto rateVendor(Long vendorId, Long requestId, VendorRatingDto ratingData, User evaluator) {
+        Vendor vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + vendorId));
+
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        if (vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(vendorId, requestId)) {
+            throw new EntityExistsException("Vendor has already been evaluated for this request");
+        }
+
+        VendorEvaluation evaluation = new VendorEvaluation();
+        evaluation.setVendor(vendor);
+        evaluation.setRequest(request);
+        evaluation.setEvaluator(evaluator);
+        evaluation.setCommunicationScore(ratingData.communicationScore());
+        evaluation.setDeliveryScore(ratingData.deliveryScore());
+        evaluation.setQualityScore(ratingData.qualityScore());
+        evaluation.setNotes(ratingData.notes());
+
+        vendorEvaluationRepository.save(evaluation);
+
+        return vendorMapper.toVendorDto(vendorRepository.findById(vendorId).orElseThrow());
     }
 }

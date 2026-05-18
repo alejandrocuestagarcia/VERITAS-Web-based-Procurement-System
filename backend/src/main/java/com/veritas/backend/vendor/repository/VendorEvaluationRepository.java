@@ -21,4 +21,6 @@ public interface VendorEvaluationRepository extends JpaRepository<VendorEvaluati
             "FROM VendorEvaluation e " +
             "GROUP BY e.vendor")
     List<VendorScoreDto> getAverageScores();
+
+    boolean existsByVendorIdAndRequestRequestID(Long vendorId, Long requestId);
 }

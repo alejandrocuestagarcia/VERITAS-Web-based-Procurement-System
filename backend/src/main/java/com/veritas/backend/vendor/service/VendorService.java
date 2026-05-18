@@ -1,7 +1,9 @@
 package com.veritas.backend.vendor.service;
 
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
+import com.veritas.backend.vendor.dto.VendorRatingDto;
 import com.veritas.backend.vendor.dto.VendorStatsDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,4 +19,6 @@ public interface VendorService {
     VendorStatsDto getVendorStats();
 
     VendorDto getVendorById(Long id);
+
+    VendorDto rateVendor(Long vendorId, Long requestId, VendorRatingDto ratingData, User evaluator);
 }

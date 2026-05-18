@@ -1,12 +1,14 @@
 package com.veritas.backend.vendor.entity;
 
+import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "vendor_evaluations")
+@Table(name = "vendor_evaluations",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"vendor_id", "request_id"}))
 @Data
 public class VendorEvaluation {
     @Id
@@ -20,6 +22,10 @@ public class VendorEvaluation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "evaluator_id")
     private User evaluator;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_id")
+    private Request request;
 
     private Integer deliveryScore;
     private Integer qualityScore;
