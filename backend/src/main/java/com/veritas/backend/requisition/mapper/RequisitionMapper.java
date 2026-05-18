@@ -4,8 +4,11 @@ import com.veritas.backend.requisition.dto.AttachmentDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemDto;
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestQuote;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
+import java.util.Objects;
 
 @Mapper(componentModel = "spring")
 public interface RequisitionMapper {
@@ -29,9 +32,31 @@ public interface RequisitionMapper {
     @Mapping(target = "updatedAt", source = "updatedAt")
     @Mapping(target = "items", source = "items")
     @Mapping(target = "attachments", source = "attachments")
+    @Mapping(target = "vendorId", expression = "java(resolveSelectedVendorId(request))")
+    @Mapping(target = "vendorName", expression = "java(resolveSelectedVendorName(request))")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);
     
     AttachmentDto toAttachmentDto(com.veritas.backend.requisition.entity.Attachment attachment);
+
+    default Long resolveSelectedVendorId(Request request) {
+        if (request.getQuotes() == null) return null;
+        return request.getQuotes().stream()
+                .filter(rq -> Boolean.TRUE.equals(rq.getIsSelected()))
+                .map(rq -> rq.getQuote().getVendorID() != null ? rq.getQuote().getVendorID().getId() : null)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    default String resolveSelectedVendorName(Request request) {
+        if (request.getQuotes() == null) return null;
+        return request.getQuotes().stream()
+                .filter(rq -> Boolean.TRUE.equals(rq.getIsSelected()))
+                .map(rq -> rq.getQuote().getVendorID() != null ? rq.getQuote().getVendorID().getVendorName() : null)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
 }

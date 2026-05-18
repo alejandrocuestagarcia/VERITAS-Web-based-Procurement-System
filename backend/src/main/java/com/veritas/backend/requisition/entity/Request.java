@@ -29,6 +29,9 @@ public class Request {
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Attachment> attachments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "request", fetch = FetchType.LAZY)
+    private List<RequestQuote> quotes = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User userID;

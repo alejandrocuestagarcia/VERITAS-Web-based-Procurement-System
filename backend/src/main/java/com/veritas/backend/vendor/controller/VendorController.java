@@ -2,6 +2,7 @@ package com.veritas.backend.vendor.controller;
 
 import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.dto.VendorRatingDto;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/vendors")
@@ -60,10 +62,14 @@ public class VendorController {
         return ResponseEntity.ok(vendorService.editVendor(id, edits));
     }
 
-    @Operation(summary = "Rate a vendor", description = "Saves communication, delivery, and quality scores for a specific vendor.")
+    @Operation(summary = "Rate a vendor", description = "Saves communication, delivery, and quality scores for a specific vendor, scoped to a specific request. One evaluation per request is allowed.")
     @IsProcurementOfficer
     @PostMapping(path = "/{id}/rate", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<VendorDto> rateVendor(@PathVariable Long id, @RequestBody VendorRatingDto ratingData) {
-        return  null;
+    public ResponseEntity<VendorDto> rateVendor(
+            @PathVariable Long id,
+            @RequestParam Long requestId,
+            @Valid @RequestBody VendorRatingDto ratingData,
+            @AuthenticationPrincipal User evaluator) {
+        return ResponseEntity.ok(vendorService.rateVendor(id, requestId, ratingData, evaluator));
     }
 }
