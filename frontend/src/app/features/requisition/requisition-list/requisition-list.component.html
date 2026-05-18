@@ -9,7 +9,7 @@
   (pageChanged)="onPageChange($event)"
   (searchChanged)="onSearchChange($any($event))">
 
-  <div actions *appHasRole="['REQUESTER', 'ADMINISTRATOR']">
+  <div actions *appHasRole="['REQUESTER']">
     <button mat-flat-button class="v-btn-brand" (click)="createNewRequest()">
       <mat-icon>add</mat-icon>
       <span>New Requisition</span>

@@ -17,20 +17,19 @@ export class NavigationService {
 
     {
       label: 'Dashboard', icon: 'dashboard', route: '/dashboard',
-      roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER']
+      roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']
     },
-
-    { 
+    {
       label: 'My Requisitions', icon: 'description', route: '/requisitions',
-      roles: ['REQUESTER'] 
+      roles: ['REQUESTER']
     },
-    { 
+    {
       label: 'Dep. Requisitions', icon: 'description', route: '/requisitions',
-      roles: ['PROCUREMENT_OFFICER'] 
+      roles: ['PROCUREMENT_OFFICER']
     },
-    { 
+    {
       label: 'All Requisitions', icon: 'description', route: '/requisitions',
-      roles: ['FINANCE_OFFICER', 'ADMINISTRATOR'] 
+      roles: ['FINANCE_OFFICER', 'ADMINISTRATOR']
     },
     {
       label: 'Workflows', icon: 'account_tree', route: '/workflows',
