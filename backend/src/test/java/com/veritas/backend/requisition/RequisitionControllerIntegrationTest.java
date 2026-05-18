@@ -161,7 +161,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.requestName").value("Office Equipment"))
                 .andExpect(jsonPath("$.requestKey").value("INT-1"))
-                .andExpect(jsonPath("$.currentStep").value("Start"))
+                .andExpect(jsonPath("$.status").value("Start"))
                 .andExpect(jsonPath("$.priority").value("HIGH"))
                 .andExpect(jsonPath("$.projectName").value("Integration Project"))
                 .andExpect(jsonPath("$.teamName").value("Engineering"))
@@ -315,7 +315,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         // 1. Create a request and manually save it as FINISHED
         Request request = new Request();
         request.setRequestName("Finished Test");
-        request.setStatus(RequestStatus.FINISHED);
+        request.setState(RequestStatus.FINISHED);
         request = requestRepository.save(request);
 
         // 2. Try to hit the approve endpoint
@@ -333,7 +333,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         // 1. Create a request and manually save it as FINISHED
         Request request = new Request();
         request.setRequestName("Finished Test Rejection");
-        request.setStatus(RequestStatus.FINISHED);
+        request.setState(RequestStatus.FINISHED);
         request = requestRepository.save(request);
 
         RequisitionRejectDto rejectDto = new RequisitionRejectDto();
@@ -354,7 +354,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         // 1. Create an active request but don't add any AuditLogs to the DB
         Request request = new Request();
         request.setRequestName("Orphan Step Test");
-        request.setStatus(RequestStatus.ACTIVE);
+        request.setState(RequestStatus.ACTIVE);
 
         // Fetch the Start event we built in setUp() to simulate starting point
         WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
@@ -389,7 +389,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
         Request request = new Request();
         request.setRequestName("Draft Loopback Test");
-        request.setStatus(RequestStatus.ACTIVE);
+        request.setState(RequestStatus.ACTIVE);
         request.setWorkflowDefinitionID(workflow);
         request.setCurrentStepID(stepOne);
         request = requestRepository.save(request);
@@ -420,7 +420,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 requestRepository.findById(request.getRequestID()).orElseThrow();
 
         assertAll("Request state rollback verification",
-                () -> assertEquals(RequestStatus.DRAFT, updatedRequest.getStatus(),
+                () -> assertEquals(RequestStatus.DRAFT, updatedRequest.getState(),
                         "The request status should have reverted to DRAFT"),
                 () -> assertEquals(startStep.getId(), updatedRequest.getCurrentStepID().getId(),
                         "The current step ID should match the workflow's START_EVENT id")

@@ -8,7 +8,7 @@ public record RequisitionDto(
     Long id,
     String requestName,
     String requestKey,
-    String currentStep,
+    String status,
     Boolean isClosed,
     Priority priority,
     String projectName,
@@ -24,5 +24,5 @@ public record RequisitionDto(
     String jiraIssueUrl,
     List<RequisitionItemDto> items,
     List<AttachmentDto> attachments,
-    String status
+    String state
 ) {}

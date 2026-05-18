@@ -429,7 +429,7 @@ class RequisitionServiceUnitTest {
         // 1. Arrange a mock Request currently in DRAFT status
         Request request = new Request();
         request.setRequestID(100L);
-        request.setStatus(RequestStatus.DRAFT);
+        request.setState(RequestStatus.DRAFT);
         request.setWorkflowDefinitionID(testWorkflow);
 
         when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
@@ -476,7 +476,7 @@ class RequisitionServiceUnitTest {
         Request savedRequest = requestCaptor.getValue();
 
         assertAll("Workflow Initial Submission State Checks",
-                () -> assertEquals(RequestStatus.ACTIVE, savedRequest.getStatus(), "Request state should change to ACTIVE on submit"),
+                () -> assertEquals(RequestStatus.ACTIVE, savedRequest.getState(), "Request state should change to ACTIVE on submit"),
                 () -> assertEquals(testStartStep, savedRequest.getCurrentStepID(), "Request should advance cleanly to the workflow's START_EVENT node")
         );
     }
@@ -487,7 +487,7 @@ class RequisitionServiceUnitTest {
         // 1. Arrange an already ACTIVE request
         Request request = new Request();
         request.setRequestID(101L);
-        request.setStatus(RequestStatus.ACTIVE);
+        request.setState(RequestStatus.ACTIVE);
 
         when(requestRepository.findById(101L)).thenReturn(Optional.of(request));
 

@@ -85,7 +85,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 }
 
                 if (componentType == WorkflowComponent.END_EVENT) {
-                    request.setStatus(RequestStatus.FINISHED);
+                    request.setState(RequestStatus.FINISHED);
                 }
 
                 break;
@@ -135,7 +135,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
 
         if (targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
-            request.setStatus(RequestStatus.DRAFT);
+            request.setState(RequestStatus.DRAFT);
         }
 
         request.setCurrentStepID(targetStep);

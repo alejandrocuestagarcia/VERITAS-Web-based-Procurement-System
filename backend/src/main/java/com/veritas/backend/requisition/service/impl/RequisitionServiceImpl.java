@@ -229,12 +229,12 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
-        if (request.getStatus() == RequestStatus.FINISHED) {
-            throw new WorkflowStateException("Request " + id + "is already finished and cannot be approved");
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Request " + id + " is already finished and cannot be approved");
         }
 
-        if (request.getStatus() == RequestStatus.DRAFT) {
-            throw new WorkflowStateException("Request " + id + "is in draft and must be submitted");
+        if (request.getState() == RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Request " + id + " is in draft and must be submitted");
         }
 
         workflowEngineService.moveToNextStep(request, actor);
@@ -251,12 +251,12 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
-        if (request.getStatus() == RequestStatus.FINISHED) {
-            throw new WorkflowStateException("Request " + id + "is already finished and cannot be rejected");
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Request " + id + " is already finished and cannot be rejected");
         }
 
-        if (request.getStatus() == RequestStatus.DRAFT) {
-            throw new WorkflowStateException("Request " + id + "is in draft and cannot be rejected");
+        if (request.getState() == RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Request " + id + " is in draft and cannot be rejected");
         }
 
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
@@ -275,11 +275,11 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
-        if (request.getStatus() != RequestStatus.DRAFT) {
+        if (request.getState() != RequestStatus.DRAFT) {
             throw new WorkflowStateException("Only drafts can be submitted.");
         }
 
-        request.setStatus(RequestStatus.ACTIVE);
+        request.setState(RequestStatus.ACTIVE);
 
         workflowEngineService.startWorkflow(request, actor);
 

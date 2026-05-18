@@ -98,6 +98,6 @@ public class Request {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private RequestStatus status = RequestStatus.DRAFT;
+    @Column(name = "state", nullable = false)
+    private RequestStatus state = RequestStatus.DRAFT;
 }

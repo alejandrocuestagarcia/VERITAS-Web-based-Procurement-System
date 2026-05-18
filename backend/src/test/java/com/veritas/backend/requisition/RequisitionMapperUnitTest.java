@@ -32,7 +32,7 @@ class RequisitionMapperUnitTest {
         request.setCurrentStepID(step);
 
         RequisitionDto dto = mapper.toDto(request);
-        assertEquals("Manager Approval", dto.currentStep());
+        assertEquals("Manager Approval", dto.status());
     }
 
     @Test
