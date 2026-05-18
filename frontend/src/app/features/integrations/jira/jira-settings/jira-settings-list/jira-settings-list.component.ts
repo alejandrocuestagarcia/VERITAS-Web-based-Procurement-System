@@ -76,7 +76,7 @@ export class JiraSettingsListComponent implements OnInit {
   triggerSync(config: JiraConfigResponseDto): void {
     this.toastService.showInfo('Triggering sync...');
     this.jiraConfigService.triggerSync(config.id).subscribe({
-      next: () => this.toastService.showSuccess('Sync completed successfully'),
+      next: () => this.toastService.showInfo('Sync completed successfully'),
       error: () => this.toastService.showError('Sync failed. Please check logs.')
     });
   }
@@ -112,7 +112,7 @@ export class JiraSettingsListComponent implements OnInit {
   syncAll():void {
     this.toastService.showSuccess('Triggering all sync...');
     this.jiraConfigService.triggerAllSyncs().subscribe({
-      next: () => this.toastService.showSuccess('Syncs completed successfully'),
+      next: () => this.toastService.showInfo('Syncs completed successfully'),
       error: () => this.toastService.showError('Syncs failed. Please check logs.')
     });
   }

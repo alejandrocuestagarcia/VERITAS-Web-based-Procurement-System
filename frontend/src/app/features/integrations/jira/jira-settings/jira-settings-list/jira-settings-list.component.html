@@ -13,7 +13,7 @@
     <mat-icon>history</mat-icon>
     <span>Sync History</span>
   </button>
-  <button filters mat-stroked-button color="accent" (click)="syncAll()" [disabled]="loading">
+  <button filters mat-stroked-button class = "ml-3" (click)="syncAll()" [disabled]="loading">
     <mat-icon [class.animate-spin]="loading">sync</mat-icon>
     <span>Sync All</span>
   </button>
