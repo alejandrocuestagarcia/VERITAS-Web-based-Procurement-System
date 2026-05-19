@@ -5,6 +5,9 @@ import {AuthService} from "../../../core/services/auth.service";
 import {Pageable, WorkflowModuleService} from "../../../core/api";
 import {WorkflowDto} from "../../../core/api";
 import {SharedTableComponent} from "../../../shared/components/table/shared-table.component";
+import { MatDialog } from "@angular/material/dialog";
+import { ToastService } from "../../../core/services/toast.service";
+import { ConfirmationDialogComponent } from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
 
 @Component({
   selector: 'app-workflow-list',
@@ -28,7 +31,9 @@ export class WorkflowListComponent implements OnInit {
 
   constructor(
     private workflowService: WorkflowModuleService,
-    public authService: AuthService
+    public authService: AuthService,
+    private dialog: MatDialog,
+    private toastService: ToastService
   ) {
   }
 
@@ -92,5 +97,33 @@ export class WorkflowListComponent implements OnInit {
     this.sharedTable.resetToFirstPage();
     this.loadWorkflows();
 
+  }
+
+  deleteWorkflow(workflow: WorkflowDto): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '450px',
+      data: {
+        title: 'Delete Workflow',
+        message: 'Are you sure you want to delete the workflow ',
+        highlightText: workflow.name,
+        subMessage: 'This will disable the workflow, preventing it from being selected for new procurement requests. Existing requests using this workflow will not be affected.'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loading = true;
+        this.workflowService.deleteWorkflow(workflow.id!).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Workflow deleted successfully');
+            this.loadWorkflows();
+          },
+          error: (err) => {
+            this.toastService.showError('Failed to delete workflow');
+            this.loading = false;
+          }
+        });
+      }
+    });
   }
 }

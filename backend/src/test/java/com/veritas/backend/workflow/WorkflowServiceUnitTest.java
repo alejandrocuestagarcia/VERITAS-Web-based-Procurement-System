@@ -106,6 +106,30 @@ class WorkflowServiceUnitTest {
     }
 
     @Test
+    void DeleteWorkflow_ExistingId_DeactivatesWorkflow() {
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(1L);
+        wd.setName("Test Workflow");
+        wd.setIsActive(true);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
+
+        workflowService.deleteWorkflow(1L);
+
+        assertFalse(wd.getIsActive());
+        assertNotNull(wd.getDeactivatedAt());
+        verify(workflowDefinitionRepository).save(wd);
+    }
+
+    @Test
+    void DeleteWorkflow_NonExistingId_ThrowsEntityNotFoundException() {
+        when(workflowDefinitionRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> workflowService.deleteWorkflow(99L));
+        verify(workflowDefinitionRepository, never()).save(any());
+    }
+
+    @Test
     void CreateWorkflow_ValidInput_SavesAndReturnsWorkflowDto() {
         WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
 
