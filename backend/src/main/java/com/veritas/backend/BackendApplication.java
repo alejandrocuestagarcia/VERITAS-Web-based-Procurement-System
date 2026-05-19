@@ -4,6 +4,12 @@ import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.entity.Priority;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestQuote;
+import com.veritas.backend.requisition.entity.RequestQuoteId;
+import com.veritas.backend.requisition.repository.RequestQuoteRepository;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -11,8 +17,15 @@ import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.VendorRepository;
+import com.veritas.backend.vendor.entity.Quote;
+import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.repository.QuoteRepository;
+import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
+import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
 import com.veritas.backend.budget.entity.InternalBudget;
 import java.math.BigDecimal;
@@ -37,7 +50,9 @@ public class BackendApplication {
 							   DepartmentRepository departmentRepository, TeamRepository teamRepo,
 							   ProjectRepository projectRepo, WorkflowService workflowService,
 							   WorkflowDefinitionRepository workflowDefinitionRepository,
-							   VendorRepository vendorRepository) {
+							   VendorRepository vendorRepository,
+							   RequestRepository requestRepository,
+							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository, RequestQuoteRepository requestQuoteRepository) {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
@@ -386,6 +401,58 @@ public class BackendApplication {
 			}
 
 			log.info("Seed data initialization complete.");
+
+
+			// AI-GENERATED
+
+			if (vendorRepository.findByTaxId("MOCK-1234").isPresent()) {
+				return;
+			}
+
+			log.info("Seeding mock vendor and completed request...");
+
+			Vendor vendor = new Vendor();
+			vendor.setVendorName("Mock Vendor Inc");
+			vendor.setTaxId("MOCK-1234");
+			vendor.setDescription("A vendor for testing evaluations.");
+			vendor.setPrimaryContactEmail("contact@mockvendor.com");
+			vendor.setPrimaryContactName("John Doe");
+			vendor = vendorRepository.save(vendor);
+
+			Quote quote = new Quote();
+			quote.setVendorID(vendor);
+			quote.setCurrency("USD");
+			quote.setTotalAmount(new BigDecimal("1000.00"));
+			quote = quoteRepository.save(quote);
+
+			Request request = new Request();
+			request.setRequestName("Mock Finished Requisition");
+			request.setDescription("This is a mock request created for testing vendor evaluations.");
+			request.setPriority(Priority.MEDIUM);
+			request.setUserID(userRepo.findByEmail("requester@veritas.com").orElse(null));
+			request.setProjectID(projectRepo.findAll().stream().findFirst().orElse(null));
+			request.setTeamID(request.getUserID() != null ? request.getUserID().getTeam() : null);
+
+			var workflowDef = workflowDefinitionRepository.findAll().stream().findFirst().orElse(null);
+			if (workflowDef != null) {
+				request.setWorkflowDefinitionID(workflowDef);
+				WorkflowStep endStep = workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT).orElse(null);
+				request.setCurrentStepID(endStep);
+			}
+
+			request = requestRepository.save(request);
+
+			RequestQuote requestQuote = new RequestQuote();
+			requestQuote.setId(new RequestQuoteId(request.getRequestID(), quote.getQuoteID()));
+			requestQuote.setRequest(request);
+			requestQuote.setQuote(quote);
+			requestQuote.setIsSelected(true);
+			requestQuoteRepository.save(requestQuote);
+
+			log.info("Successfully seeded mock request (ID: {}) with vendor {}", request.getRequestID(), vendor.getVendorName());
+
+
+
 		};
 	}
 
