@@ -23,6 +23,10 @@ import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 
 
+import com.veritas.backend.vendor.entity.Quote;
+import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.repository.QuoteRepository;
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
 
@@ -35,8 +39,12 @@ import org.springframework.security.access.AccessDeniedException;
 import com.veritas.backend.common.exception.WorkflowStateException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +54,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
     private final TransitionRuleRepository transitionRuleRepository;
+    private final QuoteRepository quoteRepository;
     private final WorkflowMapper workflowMapper;
     private final AuditServiceImpl auditService;
     private final AuditLogRepository auditLogRepository;
@@ -67,6 +76,60 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request,transition)) {
+                
+                InternalBudget budget = request.getBudgetID();
+                if (budget != null) {
+                    BigDecimal actual = budget.getActualSpend() != null ? budget.getActualSpend() : BigDecimal.ZERO;
+                    BigDecimal committed = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+                    BigDecimal total = budget.getTotalAmount() != null ? budget.getTotalAmount() : BigDecimal.ZERO;
+                    BigDecimal safetyBuffer = budget.getSafetyBuffer() != null ? budget.getSafetyBuffer() : BigDecimal.ZERO;
+                    
+                    BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+                    BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
+                    
+                    if (actual.add(committed).compareTo(totalWithBuffer) > 0) {
+                        throw new WorkflowStateException("Budget exhausted including safety buffer.");
+                    }
+                }
+
+                Optional<TransitionRule> optRule = transitionRuleRepository.findByTransition(transition);
+                if (optRule.isPresent()) {
+                    TransitionRule rule = optRule.get();
+                    
+                    if (rule.getMinRequiredVendors() != null && rule.getMinRequiredVendors() > 0) {
+                        Long requestId = request.getRequestID();
+                        List<Quote> quotes = requestId != null
+                            ? quoteRepository.findByRequestRequestID(requestId)
+                            : List.of();
+                        long distinctVendors = quotes.stream()
+                            .map(Quote::getVendorID)
+                            .filter(Objects::nonNull)
+                            .map(Vendor::getId)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .count();
+                        if (distinctVendors < rule.getMinRequiredVendors()) {
+                            throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "Not enough vendors");
+                        }
+                    }
+                    
+                    if (rule.getIsPdfRequired() != null && rule.getIsPdfRequired()) {
+                        boolean hasPdf = request.getAttachments().stream()
+                                .anyMatch(a -> "application/pdf".equalsIgnoreCase(a.getFileType()));
+                        if (!hasPdf) throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "PDF attachment required");
+                    }
+                    if (rule.getIsCsvRequired() != null && rule.getIsCsvRequired()) {
+                        boolean hasCsv = request.getAttachments().stream()
+                                .anyMatch(a -> "text/csv".equalsIgnoreCase(a.getFileType()));
+                        if (!hasCsv) throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "CSV attachment required");
+                    }
+                    if (rule.getIsImageRequired() != null && rule.getIsImageRequired()) {
+                        boolean hasImage = request.getAttachments().stream()
+                                .anyMatch(a -> a.getFileType() != null && a.getFileType().toLowerCase().startsWith("image/"));
+                        if (!hasImage) throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "Image attachment required");
+                    }
+                }
+
                 request.setCurrentStepID(transition.getToStep());
 
                 auditService.createWorkflowTransitionLog(
