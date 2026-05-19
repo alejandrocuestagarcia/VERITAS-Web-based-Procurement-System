@@ -1,0 +1,16 @@
+<app-shared-form-field [label]="label">
+  <div class="flex items-center gap-4 w-full" [formGroup]="form">
+    <mat-icon class="text-slate-400 shrink-0 mb-3">{{ icon }}</mat-icon>
+    <div class="flex-1 flex flex-col">
+      <mat-slider min="0" max="10" step="1" discrete showTickMarks class="w-full">
+        <input matSliderThumb [formControlName]="controlName">
+      </mat-slider>
+      <div class="flex justify-between text-[9px] text-slate-400 font-extrabold px-[10px] -mt-2 select-none">
+        <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+      </div>
+    </div>
+    <span class="font-extrabold text-blue-600 w-6 text-right text-[16px] shrink-0 mb-3">
+      {{ form.get(controlName)?.value }}
+    </span>
+  </div>
+</app-shared-form-field>

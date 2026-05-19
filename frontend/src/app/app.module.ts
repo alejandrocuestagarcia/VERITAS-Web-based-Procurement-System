@@ -57,6 +57,7 @@ import { SharedFormCardComponent } from './shared/components/creation/shared-for
 import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
 import { ConfirmationDialogComponent } from './shared/components/confirmation-dialog/confirmation-dialog.component';
 import { PriorityBadgeComponent } from './shared/components/priority-badge/priority-badge.component';
+import { SharedRatingSliderComponent } from './shared/components/rating-slider/shared-rating-slider.component';
 
 // Features
 import { UserCreateComponent } from './features/user/user-create/user-create.component';
@@ -152,6 +153,7 @@ import { RequisitionVendorQuoteViewComponent } from './features/requisition/requ
     SharedFormFieldComponent,
     ConfirmationDialogComponent,
     PriorityBadgeComponent,
+    SharedRatingSliderComponent,
 
     // Directives & Pipes
     HasRoleDirective,
