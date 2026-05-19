@@ -88,7 +88,13 @@ public class VendorServiceImpl implements VendorService {
         long total = vendorRepository.count();
         Double averageRating = vendorRepository.getAverageOverallScore();
 
-        return new VendorStatsDto(total, averageRating != null ? averageRating : 0.0);
+        if (averageRating != null) {
+            averageRating = Math.round(averageRating * 100.0) / 100.0;
+        } else {
+            averageRating = 0.0;
+        }
+
+        return new VendorStatsDto(total, averageRating);
     }
 
     @Override

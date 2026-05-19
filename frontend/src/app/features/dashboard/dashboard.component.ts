@@ -101,7 +101,7 @@ export class DashboardComponent implements OnInit {
       }
 
       if (this.authService.hasRole('PROCUREMENT_OFFICER')) {
-        this.closedRequisitions = closedRequisitions.filter(req => req.vendorId != null);
+        this.closedRequisitions = closedRequisitions.filter(req => req.vendorId != null && req.isEvaluated != true);
       }
 
       this.stats.pendingActions = this.pendingRequisitions.length;
