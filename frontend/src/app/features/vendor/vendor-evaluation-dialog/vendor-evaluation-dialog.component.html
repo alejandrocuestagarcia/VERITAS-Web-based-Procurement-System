@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>Evaluate Vendor: {{ data.vendorName }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="flex flex-col gap-4 mt-2 min-w-[300px] sm:min-w-[400px]">
+
+    <div>
+      <p class="text-sm text-gray-500 mb-2">Rate the vendor on a scale of 0 to 10.</p>
+    </div>
+
+    <app-shared-form-field label="Communication Score">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>forum</mat-icon>
+        <input matInput type="number" formControlName="communicationScore" placeholder="0-10">
+      </mat-form-field>
+    </app-shared-form-field>
+
+    <app-shared-form-field label="Delivery Score">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>local_shipping</mat-icon>
+        <input matInput type="number" formControlName="deliveryScore" placeholder="0-10">
+      </mat-form-field>
+    </app-shared-form-field>
+
+    <app-shared-form-field label="Quality Score">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>star_rate</mat-icon>
+        <input matInput type="number" formControlName="qualityScore" placeholder="0-10">
+      </mat-form-field>
+    </app-shared-form-field>
+
+    <app-shared-form-field label="Notes">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>notes</mat-icon>
+        <textarea matInput formControlName="notes" placeholder="Any additional feedback..." rows="3"></textarea>
+      </mat-form-field>
+    </app-shared-form-field>
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" [disabled]="loading">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="form.invalid || loading">
+    <mat-spinner *ngIf="loading" diameter="20" class="mr-2 inline-block"></mat-spinner>
+    Submit Evaluation
+  </button>
+</mat-dialog-actions>
