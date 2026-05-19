@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.List;
 
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.repository.UserRepository;
@@ -222,4 +223,24 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         headers.set("Accept", "application/json");
         return headers;
     }
+
+
+    @Override
+    @Transactional
+    public void runAllSyncs() {
+        log.info("Starting global sync for all Jira configurations");
+        List<JiraConfig> allConfigs = configRepository.findAll();
+
+        for (JiraConfig config : allConfigs) {
+            try {
+                syncConfig(config);
+                config.setLastSyncTime(LocalDateTime.now());
+                configRepository.save(config);
+            } catch (Exception e) {
+                log.error("Error during global sync for config ID {}", config.getId(), e);
+            }
+        }
+        log.info("Completed global sync for {} configurations", allConfigs.size());
+    }
+
 }

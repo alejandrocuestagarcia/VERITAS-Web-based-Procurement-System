@@ -12,14 +12,18 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
 
 import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
 
+@Slf4j
 @RestController
 @RequestMapping(value = "/jira-configs", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
@@ -30,9 +34,11 @@ public class JiraConfigController {
     private final JiraSyncService syncService;
     private final AuditServiceImpl auditService;
 
+    @Operation(summary = "List jira configs", description = "Retrieves all jira configs.")
     @GetMapping
-    public ResponseEntity<List<JiraConfigResponseDto>> getAllConfigs() {
-        return ResponseEntity.ok(service.getAllConfigs());
+    public ResponseEntity<Page<JiraConfigResponseDto>> getAllConfigs(Pageable pageable, @RequestParam(required = false)String search) {
+        log.info("GET /jira-congigs – page: {}, size: {}, search: '{}'", pageable.getPageNumber(), pageable.getPageSize(), search);
+        return ResponseEntity.ok(service.getAllConfigs(pageable, search));
     }
 
     @GetMapping("/{id}")
@@ -59,6 +65,13 @@ public class JiraConfigController {
     @PostMapping("/{id}/sync")
     public ResponseEntity<Void> triggerSync(@PathVariable Long id) {
         syncService.runManualSync(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/sync-all")
+    @Operation(summary = "Sync all Jira configs", description = "Triggers a sync for all stored Jira configurations.")
+    public ResponseEntity<Void> triggerAllSyncs() {
+        syncService.runAllSyncs();
         return ResponseEntity.ok().build();
     }
 

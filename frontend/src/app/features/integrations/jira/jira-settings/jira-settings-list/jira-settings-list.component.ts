@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../../../core/services/toast.service';
-import { JiraConfigControllerService } from '../../../../../core/api';
+import { JiraConfigControllerService, Pageable} from '../../../../../core/api';
 import { JiraConfigResponseDto } from '../../../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import {SharedTableComponent} from "../../../../../shared/components/table/shared-table.component";
+import {PageEvent} from "@angular/material/paginator";
 
 @Component({
   selector: 'app-jira-settings-list',
@@ -20,6 +22,11 @@ export class JiraSettingsListComponent implements OnInit {
 
   loading = false;
   totalPageElements = 0;
+  pageSize = 10;
+  currentPage = 0;
+  currentSearch = '';
+
+  @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
   constructor(
     private jiraConfigService: JiraConfigControllerService,
@@ -34,10 +41,17 @@ export class JiraSettingsListComponent implements OnInit {
 
   loadSettings(): void {
     this.loading = true;
-    this.jiraConfigService.getAllConfigs().subscribe({
-      next: (data) => {
-        this.dataSource.data = data;
-        this.totalPageElements = data.length;
+
+    const pageable: any = {
+      page: this.currentPage,
+      size: this.pageSize,
+      sort: ['name,asc']
+    };
+
+    this.jiraConfigService.getAllConfigs(pageable,this.currentSearch).subscribe({
+      next: (response) => {
+        this.dataSource.data = response.content || [];
+        this.totalPageElements = response.totalElements || 0;
         this.loading = false;
       },
       error: () => {
@@ -62,7 +76,7 @@ export class JiraSettingsListComponent implements OnInit {
   triggerSync(config: JiraConfigResponseDto): void {
     this.toastService.showInfo('Triggering sync...');
     this.jiraConfigService.triggerSync(config.id).subscribe({
-      next: () => this.toastService.showSuccess('Sync completed successfully'),
+      next: () => this.toastService.showInfo('Sync completed successfully'),
       error: () => this.toastService.showError('Sync failed. Please check logs.')
     });
   }
@@ -84,6 +98,22 @@ export class JiraSettingsListComponent implements OnInit {
     });
   }
 
-  onPageChange(event: any): void { }
-  onSearchChanged(event: any): void { }
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadSettings();
+  }
+  onSearchChanged(value: string): void {
+    this.currentSearch = value;
+    this.currentPage = 0;
+    this.sharedTable.resetToFirstPage();
+    this.loadSettings();
+  }
+  syncAll():void {
+    this.toastService.showSuccess('Triggering all sync...');
+    this.jiraConfigService.triggerAllSyncs().subscribe({
+      next: () => this.toastService.showInfo('Syncs completed successfully'),
+      error: () => this.toastService.showError('Syncs failed. Please check logs.')
+    });
+  }
 }
