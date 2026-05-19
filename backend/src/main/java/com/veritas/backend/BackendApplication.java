@@ -52,7 +52,8 @@ public class BackendApplication {
 							   WorkflowDefinitionRepository workflowDefinitionRepository,
 							   VendorRepository vendorRepository,
 							   RequestRepository requestRepository,
-							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository, RequestQuoteRepository requestQuoteRepository) {
+							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository, RequestQuoteRepository requestQuoteRepository,
+							   org.springframework.core.env.Environment env) {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
@@ -404,6 +405,10 @@ public class BackendApplication {
 
 
 			// AI-GENERATED
+			if (env.acceptsProfiles(org.springframework.core.env.Profiles.of("test"))) {
+				log.info("Skipping mock vendor and request seeding in test profile.");
+				return;
+			}
 
 			if (vendorRepository.findByTaxId("MOCK-1234").isPresent()) {
 				return;
