@@ -3,6 +3,7 @@ package com.veritas.backend.workflow.service;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
+import com.veritas.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,7 +15,7 @@ public interface WorkflowService {
 
     public WorkflowDto editWorkflow(Long id, WorkflowEditDto workflowEditDto);
 
-    public Page<WorkflowDto> getAllWorkflows(Pageable pageable, String filter, Boolean isActive);
+    public Page<WorkflowDto> getAllWorkflows(Pageable pageable, String filter, Boolean isActive, User authUser);
 
     void deleteWorkflow(Long id);
 }

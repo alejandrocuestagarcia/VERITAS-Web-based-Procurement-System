@@ -14,7 +14,15 @@ public interface WorkflowDefinitionRepository extends JpaRepository<WorkflowDefi
     @Query("SELECT w FROM WorkflowDefinition w WHERE " +
             "(:query IS NULL OR LOWER(w.name) LIKE :query OR LOWER(w.description) LIKE :query)" +
             " AND " +
-            "(:isActive IS NULL OR w.isActive = :isActive)")
-    Page<WorkflowDefinition> findAllFiltered(@Param("query") String query, @Param("isActive") Boolean isActive, Pageable pageable);
+            "(:isActive IS NULL OR w.isActive = :isActive)" +
+            " AND " +
+            "(:departmentId IS NULL OR w.department.departmentId = :departmentId OR " +
+            "  (:includeGlobal = true AND w.department IS NULL))")
+    Page<WorkflowDefinition> findAllFiltered(
+            @Param("query") String query,
+            @Param("isActive") Boolean isActive,
+            @Param("departmentId") Long departmentId,
+            @Param("includeGlobal") Boolean includeGlobal,
+            Pageable pageable);
 
 }

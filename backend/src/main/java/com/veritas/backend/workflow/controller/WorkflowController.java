@@ -24,6 +24,9 @@ import org.springframework.data.domain.Pageable;
 import java.net.URI;
 import java.util.List;
 
+import com.veritas.backend.user.entity.User;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -39,10 +42,11 @@ public class WorkflowController {
     public ResponseEntity<Page<WorkflowDto>> getAllWorkflows(
             Pageable pageable,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Boolean isActive
+            @RequestParam(required = false) Boolean isActive,
+            @AuthenticationPrincipal User user
     ) {
-        log.info("GET /workflows – page: {}, size: {}, search: '{}', isActive", pageable.getPageNumber(), pageable.getPageSize(), search, isActive);
-        Page<WorkflowDto> workflows = workflowService.getAllWorkflows(pageable, search,isActive);
+        log.info("GET /workflows – page: {}, size: {}, search: '{}', isActive, user: {}", pageable.getPageNumber(), pageable.getPageSize(), search, isActive, user != null ? user.getEmail() : "null");
+        Page<WorkflowDto> workflows = workflowService.getAllWorkflows(pageable, search, isActive, user);
 
         return ResponseEntity.ok(workflows);
     }

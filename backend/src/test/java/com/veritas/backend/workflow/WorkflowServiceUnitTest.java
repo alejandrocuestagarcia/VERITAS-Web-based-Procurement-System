@@ -1,5 +1,8 @@
 package com.veritas.backend.workflow;
 
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
@@ -54,6 +57,12 @@ class WorkflowServiceUnitTest {
     @Mock
     private WorkflowMapper workflowMapper;
 
+    @Mock
+    private com.veritas.backend.department.repository.DepartmentRepository departmentRepository;
+
+    @Mock
+    private com.veritas.backend.user.repository.UserRepository userRepository;
+
     @Captor
     private ArgumentCaptor<WorkflowDefinition> workflowCaptor;
 
@@ -87,7 +96,7 @@ class WorkflowServiceUnitTest {
         wd.setId(1L);
         wd.setName("Test Workflow");
 
-        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true);
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true, null);
 
         when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
         when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
@@ -131,13 +140,13 @@ class WorkflowServiceUnitTest {
 
     @Test
     void CreateWorkflow_ValidInput_SavesAndReturnsWorkflowDto() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
 
         WorkflowDefinition wd = new WorkflowDefinition();
         wd.setId(1L);
         wd.setName("Test Workflow");
 
-        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true);
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true, null);
 
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(dto);
 
@@ -155,8 +164,8 @@ class WorkflowServiceUnitTest {
         oldWd.setIsActive(true);
         oldWd.setVersion(1);
 
-        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML);
-        WorkflowDto dto = new WorkflowDto(2L, "Test Workflow", VALID_BPMN_XML, 2L, "desc", true);
+        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML, null);
+        WorkflowDto dto = new WorkflowDto(2L, "Test Workflow", VALID_BPMN_XML, 2L, "desc", true, null);
 
         when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(oldWd));
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(dto);
@@ -173,8 +182,8 @@ class WorkflowServiceUnitTest {
                 "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
                 "  <bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>\n" +
                 "</bpmn:task>");
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
         workflowService.createWorkflow(saveDto);
 
@@ -196,8 +205,8 @@ class WorkflowServiceUnitTest {
                 "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
                 "  <bpmn:documentation>Task Description Text</bpmn:documentation>\n" +
                 "</bpmn:task>");
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
         workflowService.createWorkflow(saveDto);
 
@@ -218,8 +227,8 @@ class WorkflowServiceUnitTest {
                 "<bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
                 "  <bpmn:documentation>Transition Description Text</bpmn:documentation>\n" +
                 "</bpmn:sequenceFlow>");
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
         workflowService.createWorkflow(saveDto);
 
@@ -253,8 +262,8 @@ class WorkflowServiceUnitTest {
                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
                 "  </bpmn:process>\n" +
                 "</bpmn:definitions>";
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
         workflowService.createWorkflow(saveDto);
 
@@ -274,8 +283,8 @@ class WorkflowServiceUnitTest {
 
     @Test
     void CreateWorkflow_WithoutTransitionRule_PersistsNoRules() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true));
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
         workflowService.createWorkflow(saveDto);
 
@@ -301,32 +310,64 @@ class WorkflowServiceUnitTest {
         wd.setName("Test Workflow");
 
         Page<WorkflowDefinition> page = new PageImpl<>(List.of(wd));
-        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true);
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 1L, "desc", true, null);
 
         // 2. Mocking
-        // We assume your service calls a custom repository method or a filtered findAll
-        when(workflowDefinitionRepository.findAllFiltered(anyString(), any(), eq(pageable)))
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), any(), any(), eq(pageable)))
                 .thenReturn(page);
         when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
 
         // 3. Execution
-        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, search, isActive);
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, search, isActive, null);
 
         // 4. Verification
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).name()).isEqualTo("Test Workflow");
-        verify(workflowDefinitionRepository).findAllFiltered(anyString(), any(), eq(pageable));
+        verify(workflowDefinitionRepository).findAllFiltered(any(), any(), any(), any(), eq(pageable));
     }
 
     @Test
     void GetAllWorkflows_EmptyResults_ReturnsEmptyPage() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(workflowDefinitionRepository.findAllFiltered(any(), any(), any()))
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), any(), any(), any()))
                 .thenReturn(Page.empty());
 
-        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null);
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null, null);
 
         assertThat(result).isEmpty();
         verify(workflowMapper, never()).toWorkflowDto(any());
+    }
+
+    @Test
+    void GetAllWorkflows_WithRequester_FiltersByDepartment() {
+        Pageable pageable = PageRequest.of(0, 10);
+        
+        User requester = new User();
+        requester.setId(99L);
+        requester.setRole(UserRole.REQUESTER);
+        
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        
+        Team team = new Team();
+        team.setDepartment(dept);
+        requester.setTeam(team);
+        
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setName("Department Workflow");
+        
+        Page<WorkflowDefinition> page = new PageImpl<>(List.of(wd));
+        WorkflowDto dto = new WorkflowDto(1L, "Department Workflow", VALID_BPMN_XML, 12L, "desc", true, null);
+        
+        when(userRepository.findById(99L)).thenReturn(Optional.of(requester));
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable)))
+                .thenReturn(page);
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+        
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null, requester);
+        
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Department Workflow");
+        verify(workflowDefinitionRepository).findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable));
     }
 }

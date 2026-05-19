@@ -1,6 +1,10 @@
 package com.veritas.backend.workflow.service.impl;
 
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -41,12 +45,14 @@ public class WorkflowServiceImpl implements WorkflowService {
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
     private final TransitionRuleRepository transitionRuleRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
     private final WorkflowMapper workflowMapper;
 
     @Override
     @Transactional
     public WorkflowDto createWorkflow(WorkflowSaveDto workflowSaveDto) {
-        return workflowMapper.toWorkflowDto(parseWorkflow(workflowSaveDto.bpmnXml()));
+        return workflowMapper.toWorkflowDto(parseWorkflow(workflowSaveDto.bpmnXml(), null, workflowSaveDto.departmentId()));
     }
 
     @Override
@@ -60,17 +66,18 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Override
     @Transactional
     public WorkflowDto editWorkflow(Long id, WorkflowEditDto workflowEditDto) {
-        return workflowMapper.toWorkflowDto(parseWorkflow(workflowEditDto.bpmnXml(), id));
+        return workflowMapper.toWorkflowDto(parseWorkflow(workflowEditDto.bpmnXml(), id, workflowEditDto.departmentId()));
     }
 
-    private WorkflowDefinition parseWorkflow(String xml) {
-        return parseWorkflow(xml, null);
-    }
-
-    private WorkflowDefinition parseWorkflow(String xml, Long id) {
+    private WorkflowDefinition parseWorkflow(String xml, Long id, Long departmentId) {
         WorkflowDefinition workflowDefinition = new WorkflowDefinition();
         if (id == null) {
             workflowDefinition.setVersion(1);
+            if (departmentId != null) {
+                Department department = departmentRepository.findById(departmentId)
+                        .orElseThrow(() -> new EntityNotFoundException("Department with id '" + departmentId + "' not found"));
+                workflowDefinition.setDepartment(department);
+            }
         } else {
             WorkflowDefinition oldWorkflowDefinition = workflowDefinitionRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
@@ -79,6 +86,14 @@ public class WorkflowServiceImpl implements WorkflowService {
             }
             workflowDefinition.setVersion(oldWorkflowDefinition.getVersion() + 1);
             workflowDefinition.setPreviousVersion(oldWorkflowDefinition);
+
+            if (departmentId != null) {
+                Department department = departmentRepository.findById(departmentId)
+                        .orElseThrow(() -> new EntityNotFoundException("Department with id '" + departmentId + "' not found"));
+                workflowDefinition.setDepartment(department);
+            } else {
+                workflowDefinition.setDepartment(oldWorkflowDefinition.getDepartment());
+            }
 
             oldWorkflowDefinition.setIsActive(false);
             oldWorkflowDefinition.setDeactivatedAt(LocalDateTime.now());
@@ -221,11 +236,23 @@ public class WorkflowServiceImpl implements WorkflowService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<WorkflowDto> getAllWorkflows(Pageable pageable, String filter, Boolean isActive) {
-        log.debug("Fetching filtered workflows – filter: '{}', page: {}, isActive: {}", filter, pageable.getPageNumber(),isActive);
+    public Page<WorkflowDto> getAllWorkflows(Pageable pageable, String filter, Boolean isActive, User authUser) {
+        log.debug("Fetching filtered workflows – filter: '{}', page: {}, isActive: {}, user: {}", filter, pageable.getPageNumber(), isActive, authUser != null ? authUser.getEmail() : "null");
         String query = (filter != null && !filter.isBlank()) ? "%" + filter.trim().toLowerCase() + "%" : null;
 
-        return workflowDefinitionRepository.findAllFiltered(query,isActive, pageable).map(workflowMapper::toWorkflowDto);
+        Long departmentId = null;
+        boolean includeGlobal = true;
+
+        if (authUser != null && (authUser.getRole() == UserRole.REQUESTER || authUser.getRole() == UserRole.PROCUREMENT_OFFICER)) {
+            User fullUser = userRepository.findById(authUser.getId()).orElse(authUser);
+            if (fullUser.getDepartment() != null) {
+                departmentId = fullUser.getDepartment().getDepartmentId();
+            } else if (fullUser.getTeam() != null && fullUser.getTeam().getDepartment() != null) {
+                departmentId = fullUser.getTeam().getDepartment().getDepartmentId();
+            }
+        }
+
+        return workflowDefinitionRepository.findAllFiltered(query, isActive, departmentId, includeGlobal, pageable).map(workflowMapper::toWorkflowDto);
     }
 
     @Override

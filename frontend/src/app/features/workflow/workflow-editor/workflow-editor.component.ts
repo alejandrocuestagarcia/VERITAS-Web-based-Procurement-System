@@ -2,7 +2,7 @@ import { Component, ElementRef, OnInit, ViewChild, OnDestroy, Optional, Inject }
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { editorModules, viewerModules } from '../custom-renderer';
-import { WorkflowModuleService, WorkflowSaveDto, UserDtoRoleEnum } from 'src/app/core/api';
+import { WorkflowModuleService, WorkflowSaveDto, UserDtoRoleEnum, DepartmentsModuleService, DepartmentDto } from 'src/app/core/api';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -29,6 +29,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   workflowName: string | null = null;
   workflowDescription: string | null = null;
   workflowIsActive: boolean | null = null;
+  workflowDepartmentName: string | null = null;
+
+  departments: DepartmentDto[] = [];
 
   public showPropertiesPanelTransition = false;
   public showPropertiesPanelTask = false;
@@ -61,6 +64,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   constructor(
     private workflowService: WorkflowModuleService,
+    private departmentsService: DepartmentsModuleService,
     public router: Router,
     public authService: AuthService,
     private route: ActivatedRoute,
@@ -71,7 +75,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   ) {
     this.workflowForm = this.fb.group({
       title: ['', Validators.required],
-      description: ['']
+      description: [''],
+      departmentId: [null]
     });
   }
 
@@ -122,6 +127,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       });
     }
 
+    this.departmentsService.getAllDepartments().subscribe({
+      next: (deps) => {
+        this.departments = deps || [];
+      },
+      error: (err) => {
+        console.error('Failed to load departments', err);
+      }
+    });
+
     if (this.mode === 'create') {
       await this.loadXml(dummyBpmnXml);
     } else {
@@ -133,7 +147,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           this.workflowName = workflow.name ?? '';
           this.workflowDescription = workflow.description ?? '';
           this.workflowIsActive = workflow.isActive ?? false;
-          this.workflowForm.patchValue({ title: this.workflowName, description: this.workflowDescription });
+          this.workflowDepartmentName = workflow.department?.name ?? null;
+          this.workflowForm.patchValue({
+            title: this.workflowName,
+            description: this.workflowDescription,
+            departmentId: workflow.department?.id ?? null
+          });
           await this.loadXml(workflow.bpmnXml ?? '');
         },
         error: (err) => {
@@ -192,7 +211,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     try {
       const xml = await this.getUpdatedBpmnXml();
-      const payload: WorkflowSaveDto = { bpmnXml: xml };
+      const payload: WorkflowSaveDto = {
+        bpmnXml: xml,
+        departmentId: this.workflowForm.value.departmentId ? Number(this.workflowForm.value.departmentId) : undefined
+      };
 
       if (this.mode === 'edit') {
         this.workflowService.editWorkflow(this.workflowId ?? 0, payload).subscribe({
