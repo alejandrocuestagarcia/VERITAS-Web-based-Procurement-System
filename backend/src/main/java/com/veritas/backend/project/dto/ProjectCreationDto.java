@@ -14,5 +14,5 @@ public record ProjectCreationDto(
         @NotNull Long teamId,
         @FutureOrPresent LocalDate startDate,
         @FutureOrPresent LocalDate endDate,
-        @Positive BigDecimal budget
+        @NotNull @Positive BigDecimal budget
 ) {}
