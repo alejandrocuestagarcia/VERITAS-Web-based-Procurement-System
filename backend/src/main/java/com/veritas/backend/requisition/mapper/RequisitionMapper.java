@@ -4,7 +4,7 @@ import com.veritas.backend.requisition.dto.AttachmentDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemDto;
 import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.entity.RequestQuote;
+import com.veritas.backend.vendor.entity.Quote;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -42,8 +42,8 @@ public interface RequisitionMapper {
     default Long resolveSelectedVendorId(Request request) {
         if (request.getQuotes() == null) return null;
         return request.getQuotes().stream()
-                .filter(rq -> Boolean.TRUE.equals(rq.getIsSelected()))
-                .map(rq -> rq.getQuote().getVendorID() != null ? rq.getQuote().getVendorID().getId() : null)
+                .filter(Quote::isSelected)
+                .map(q -> q.getVendorID() != null ? q.getVendorID().getId() : null)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
@@ -52,8 +52,8 @@ public interface RequisitionMapper {
     default String resolveSelectedVendorName(Request request) {
         if (request.getQuotes() == null) return null;
         return request.getQuotes().stream()
-                .filter(rq -> Boolean.TRUE.equals(rq.getIsSelected()))
-                .map(rq -> rq.getQuote().getVendorID() != null ? rq.getQuote().getVendorID().getVendorName() : null)
+                .filter(Quote::isSelected)
+                .map(q -> q.getVendorID() != null ? q.getVendorID().getVendorName() : null)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);

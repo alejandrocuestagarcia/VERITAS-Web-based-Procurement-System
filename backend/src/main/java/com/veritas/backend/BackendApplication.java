@@ -6,9 +6,6 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.entity.RequestQuote;
-import com.veritas.backend.requisition.entity.RequestQuoteId;
-import com.veritas.backend.requisition.repository.RequestQuoteRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -52,7 +49,7 @@ public class BackendApplication {
 							   WorkflowDefinitionRepository workflowDefinitionRepository,
 							   VendorRepository vendorRepository,
 							   RequestRepository requestRepository,
-							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository, RequestQuoteRepository requestQuoteRepository,
+							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository,
 							   org.springframework.core.env.Environment env) {
 		return args -> {
 			log.info("Starting seed data initialization...");
@@ -424,12 +421,6 @@ public class BackendApplication {
 			vendor.setPrimaryContactName("John Doe");
 			vendor = vendorRepository.save(vendor);
 
-			Quote quote = new Quote();
-			quote.setVendorID(vendor);
-			quote.setCurrency("USD");
-			quote.setTotalAmount(new BigDecimal("1000.00"));
-			quote = quoteRepository.save(quote);
-
 			Request request = new Request();
 			request.setRequestName("Mock Finished Requisition");
 			request.setDescription("This is a mock request created for testing vendor evaluations.");
@@ -447,12 +438,15 @@ public class BackendApplication {
 
 			request = requestRepository.save(request);
 
-			RequestQuote requestQuote = new RequestQuote();
-			requestQuote.setId(new RequestQuoteId(request.getRequestID(), quote.getQuoteID()));
-			requestQuote.setRequest(request);
-			requestQuote.setQuote(quote);
-			requestQuote.setIsSelected(true);
-			requestQuoteRepository.save(requestQuote);
+			Quote quote = new Quote();
+			quote.setVendorID(vendor);
+			quote.setCurrency(com.veritas.backend.vendor.entity.Currency.USD);
+			quote.setBaseAmount(new BigDecimal("1000.00"));
+			quote.setShippingCosts(new BigDecimal("0.00"));
+			quote.setTotalAmount(new BigDecimal("1000.00"));
+			quote.setRequest(request);
+			quote.setSelected(true);
+			quoteRepository.save(quote);
 
 			log.info("Successfully seeded mock request (ID: {}) with vendor {}", request.getRequestID(), vendor.getVendorName());
 

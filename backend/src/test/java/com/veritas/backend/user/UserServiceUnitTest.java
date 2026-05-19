@@ -131,7 +131,7 @@ class UserServiceUnitTest {
 
 
         RequisitionDto expectedDto =
-            new RequisitionDto(1L, "Test Request", "", "", false, Priority.MEDIUM, "", "", "", "", "", "", null, null, "", "", "", null, null, null, null, null);
+            new RequisitionDto(1L, "Test Request", "", "", false, Priority.MEDIUM, "", "", "", "", "", "", null, null, "", "", "", null, null, null, null, null, null);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
 

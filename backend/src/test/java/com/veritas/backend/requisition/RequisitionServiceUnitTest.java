@@ -153,7 +153,7 @@ class RequisitionServiceUnitTest {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
                 1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, null, null, null);
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, null, null, null, null);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -448,7 +448,7 @@ class RequisitionServiceUnitTest {
                 100L,                            // 1. id
                 "Draft Test",                    // 2. requestName
                 "PRJ-12",                        // 3. requestKey
-                "Start",                         // 4. currentStep
+                "Start",                         // 4. status
                 false,                           // 5. isClosed
                 Priority.MEDIUM,                 // 6. priority
                 "Test Project",                  // 7. projectName
@@ -462,9 +462,12 @@ class RequisitionServiceUnitTest {
                 "Test Description",              // 15. description
                 "JIRA-123",                      // 16. jiraIssueKey (or null)
                 "https://jira.com/123",          // 17. jiraIssueUrl (or null)
-                null,// 18. items
-                null,// 19. attachments
-                "ACTIVE"                         // 20. status (Moved to the end!)
+                null,                            // 18. vendorId
+                null,                            // 19. vendorName
+                null,                            // 20. isEvaluated
+                null,                            // 21. items
+                null,                            // 22. attachments
+                "ACTIVE"                         // 23. state
         );
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
