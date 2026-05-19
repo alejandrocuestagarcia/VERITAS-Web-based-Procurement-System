@@ -64,7 +64,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import com.veritas.backend.auth.exception.WorkflowStateException;
+import com.veritas.backend.common.exception.WorkflowStateException;
 
 @ExtendWith(MockitoExtension.class)
 class RequisitionServiceUnitTest {

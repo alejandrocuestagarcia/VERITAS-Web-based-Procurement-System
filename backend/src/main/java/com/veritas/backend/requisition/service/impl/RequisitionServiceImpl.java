@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.veritas.backend.workflow.service.WorkflowEngineService;
-import com.veritas.backend.auth.exception.WorkflowStateException;
+import com.veritas.backend.common.exception.WorkflowStateException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
