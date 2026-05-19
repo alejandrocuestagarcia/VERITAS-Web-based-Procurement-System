@@ -2,6 +2,7 @@ package com.veritas.backend.requisition.service;
 
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
+import com.veritas.backend.requisition.dto.RequisitionRejectDto;
 import com.veritas.backend.user.entity.User;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -15,4 +16,7 @@ public interface RequisitionService {
     Page<RequisitionDto> getRequests(String status, String search, Long projectId, User authUser, Pageable pageable);
     RequisitionDto getRequestById(Long id);
     ResponseEntity<Resource> downloadAttachment(Long attachmentId);
+    RequisitionDto approveRequest(Long id, User actor);
+    RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData);
+    RequisitionDto submitRequest(Long id, User actor);
 }

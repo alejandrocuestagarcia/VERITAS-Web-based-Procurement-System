@@ -23,5 +23,6 @@ public record RequisitionDto(
     String jiraIssueKey,
     String jiraIssueUrl,
     List<RequisitionItemDto> items,
-    List<AttachmentDto> attachments
+    List<AttachmentDto> attachments,
+    String state
 ) {}

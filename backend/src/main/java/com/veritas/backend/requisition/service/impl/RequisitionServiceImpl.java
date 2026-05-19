@@ -4,6 +4,7 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
+import com.veritas.backend.requisition.dto.RequisitionRejectDto;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
@@ -11,6 +12,7 @@ import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.repository.UserRepository;
@@ -32,6 +34,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.veritas.backend.workflow.service.WorkflowEngineService;
+import com.veritas.backend.auth.exception.WorkflowStateException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -53,6 +57,8 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final AttachmentRepository attachmentRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final RequisitionMapper requisitionMapper;
+
+    private final WorkflowEngineService workflowEngineService;
 
     private static final String UPLOAD_DIR = "uploads/requisitions";
 
@@ -122,7 +128,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         String searchFilter = (search != null && !search.isBlank()) ? search : null;
 
         String userRole = user.getRole().name();
-        
+
         if (userRole.equals("REQUESTER")) {
             if (user.getTeam() != null) {
                 teamIdFilter = user.getTeam().getTeamId();
@@ -214,5 +220,70 @@ public class RequisitionServiceImpl implements RequisitionService {
         } catch (MalformedURLException e) {
             throw new RuntimeException("Could not read file: " + attachment.getFileName(), e);
         }
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto approveRequest(Long id, User actor) {
+
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Request " + id + " is already finished and cannot be approved");
+        }
+
+        if (request.getState() == RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Request " + id + " is in draft and must be submitted");
+        }
+
+        workflowEngineService.moveToNextStep(request, actor);
+
+        Request saved = requestRepository.save(request);
+
+        return requisitionMapper.toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData) {
+
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Request " + id + " is already finished and cannot be rejected");
+        }
+
+        if (request.getState() == RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Request " + id + " is in draft and cannot be rejected");
+        }
+
+        workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
+
+
+        Request savedRequest = requestRepository.save(request);
+
+
+        return requisitionMapper.toDto(savedRequest);
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto submitRequest(Long id, User actor) {
+
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+
+        if (request.getState() != RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Only drafts can be submitted.");
+        }
+
+        request.setState(RequestStatus.ACTIVE);
+
+        workflowEngineService.startWorkflow(request, actor);
+
+        Request savedRequest = requestRepository.save(request);
+        return requisitionMapper.toDto(savedRequest);
     }
 }

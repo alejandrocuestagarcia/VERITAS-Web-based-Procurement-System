@@ -23,4 +23,6 @@ public class WorkflowTransition {
     @JoinColumn(name = "to_step_id")
     private WorkflowStep toStep;
 
+    @Column(name = "condition_expression")
+    private String conditionExpression;
 }

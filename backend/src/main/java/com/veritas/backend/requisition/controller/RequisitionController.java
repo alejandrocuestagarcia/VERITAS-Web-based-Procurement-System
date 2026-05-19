@@ -68,22 +68,24 @@ public class RequisitionController {
     @Operation(summary = "Submit request", description = "Finalizes a draft and moves it into the workflow engine.")
     @IsRequester
     @PostMapping("/{id}/submit")
-    public ResponseEntity<RequisitionDto> submitRequest(@PathVariable Long id) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<RequisitionDto> submitRequest(@PathVariable Long id, @AuthenticationPrincipal User actor) {
+        RequisitionDto submittedRequest = requisitionService.submitRequest(id, actor);
+        return ResponseEntity.ok(submittedRequest);
     }
 
     @Operation(summary = "Approve request", description = "Moves the request to the next workflow step.")
-    @IsProcurementOfficer
+    @IsRequester
     @PostMapping("/{id}/approve")
-    public ResponseEntity<RequisitionDto> approveRequest(@PathVariable Long id) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<RequisitionDto> approveRequest(@PathVariable Long id, @AuthenticationPrincipal User actor) {
+        return ResponseEntity.ok(requisitionService.approveRequest(id, actor));
     }
 
     @Operation(summary = "Reject request", description = "Rejects the request. Requires a reason in the body.")
-    @IsProcurementOfficer
+    @IsRequester
     @PostMapping("/{id}/reject")
-    public ResponseEntity<RequisitionDto> rejectRequest(@PathVariable Long id, @RequestBody RequisitionRejectDto rejectionData) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<RequisitionDto> rejectRequest(@PathVariable Long id, @AuthenticationPrincipal User actor, @RequestBody RequisitionRejectDto rejectionData) {
+        RequisitionDto updatedRequest = requisitionService.rejectRequest(id, actor, rejectionData);
+        return ResponseEntity.ok(updatedRequest);
     }
 
     @Operation(summary = "Bulk upload quotes", description = "Uploads a CSV file containing multiple vendor quotes for a specific request.")

@@ -24,7 +24,7 @@ class RequisitionMapperUnitTest {
     }
 
     @Test
-    void ToDto_WithCurrentStep_MapsStepNameAsStatus() {
+    void ToDto_WithCurrentStep_MapsStepNameAsCurrentStep() {
         WorkflowStep step = new WorkflowStep();
         step.setName("Manager Approval");
 

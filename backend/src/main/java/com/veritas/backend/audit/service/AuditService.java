@@ -6,6 +6,8 @@ import com.veritas.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.veritas.backend.workflow.entity.WorkflowTransition;
+
 public interface AuditService {
     /**
      * Records a new action. Actor is the User entity performing the action.
@@ -14,4 +16,5 @@ public interface AuditService {
     void createPasswordResetLog(User actor, String action, String details);
     void createJiraSyncLog(User actor, Request request, String details);
     Page<AuditLogDto> getJiraIssueLogsByAction(String action, Pageable pageable, String search);
+    void createWorkflowTransitionLog(User actor, Request request, WorkflowTransition transition, String action, String description);
 }

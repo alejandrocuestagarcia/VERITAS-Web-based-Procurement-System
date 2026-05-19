@@ -140,7 +140,7 @@ public class BackendApplication {
 			if (workflowDefinitionRepository.count() == 0) {
 				String xml = """
 						<?xml version="1.0" encoding="UTF-8"?>
-						<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+						<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
 						<bpmn:process id="PR_Tiered_Approval_001" name="Tiered Procurement Approval" isExecutable="false">
 						<bpmn:startEvent id="Event_1if1b7g" name="Start Procurement">
 						<bpmn:outgoing>Flow_1hlbu7w</bpmn:outgoing>
@@ -170,9 +170,21 @@ public class BackendApplication {
 						<bpmn:incoming>Flow_1kxm0s8</bpmn:incoming>
 						<bpmn:outgoing>Flow_0nupddp</bpmn:outgoing>
 						</bpmn:task>
-						<bpmn:sequenceFlow id="Flow_1kxm0s8" name="budget &gt; $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_05zq0ij"/>
-						<bpmn:sequenceFlow id="Flow_0z8w32s" name="$500 &gt; budget &gt; $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i"/>
-						<bpmn:sequenceFlow id="Flow_04ni0t0" name="budget &lt; $500" sourceRef="Gateway_0dumvhe" targetRef="Activity_0mib3l3"/>
+						<bpmn:sequenceFlow id="Flow_1kxm0s8" name="budget &gt; $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_05zq0ij">
+						    <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
+						        ${true}    \s
+						    </bpmn:conditionExpression>
+						</bpmn:sequenceFlow>
+						<bpmn:sequenceFlow id="Flow_0z8w32s" name="$500 &gt; budget &gt; $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i">
+							<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
+						        ${false}   \s
+						    </bpmn:conditionExpression>
+						</bpmn:sequenceFlow>
+						<bpmn:sequenceFlow id="Flow_04ni0t0" name="budget &lt; $500" sourceRef="Gateway_0dumvhe" targetRef="Activity_0mib3l3">
+						<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
+						        ${false}  \s
+						    </bpmn:conditionExpression>
+						</bpmn:sequenceFlow>
 						<bpmn:exclusiveGateway id="Gateway_0jludpd">
 						<bpmn:incoming>Flow_1pumtq5</bpmn:incoming>
 						<bpmn:incoming>Flow_0nupddp</bpmn:incoming>
