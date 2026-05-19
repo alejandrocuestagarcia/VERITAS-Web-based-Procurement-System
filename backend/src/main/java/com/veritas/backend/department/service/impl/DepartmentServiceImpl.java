@@ -59,6 +59,12 @@ public class DepartmentServiceImpl implements DepartmentService {
             throw new EntityExistsException("Department with name " + request.name() + " already exists");
         }
         department.setName(request.name());
+        if (request.budget() != null) {
+            InternalBudget budget = new InternalBudget();
+            budget.setBudgetName("Department: " + department.getName());
+            budget.setTotalAmount(request.budget());
+            department.setInternalBudget(budget);
+        }
         return departmentMapper.toDepartmentDto(departmentRepository.save(department));
     }
 
