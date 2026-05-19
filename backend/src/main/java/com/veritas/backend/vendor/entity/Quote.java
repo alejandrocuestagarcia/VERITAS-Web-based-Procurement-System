@@ -1,12 +1,12 @@
 package com.veritas.backend.vendor.entity;
 
+import com.veritas.backend.requisition.entity.Request;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,8 +24,16 @@ public class Quote {
     @JoinColumn(name = "vendor_id")
     private Vendor vendorID;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_id")
+    private Request request;
+
+    @Column(name = "is_selected")
+    private boolean isSelected = false;
+
+    @Enumerated(EnumType.STRING)
     @Column(length = 3)
-    private String currency;
+    private Currency currency;
 
     @Column(name = "base_amount")
     private BigDecimal baseAmount;
@@ -36,21 +44,21 @@ public class Quote {
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
-    @Column(name = "converted_amount")
-    private BigDecimal convertedAmount;
-
-    @Column(name = "conversion_rate", precision = 19, scale = 10)
-    private BigDecimal conversionRate;
-
-    @Column(name = "expiry_date")
-    private LocalDate expiryDate;
-
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

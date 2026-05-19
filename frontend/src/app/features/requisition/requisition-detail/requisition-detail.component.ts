@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RequisitionModuleService, RequisitionDto } from 'src/app/core/api';
+import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
 import { AuthService } from 'src/app/core/services/auth.service';
 
 @Component({
@@ -9,12 +9,14 @@ import { AuthService } from 'src/app/core/services/auth.service';
 })
 export class RequisitionDetailComponent implements OnInit {
   request: RequisitionDto | null = null;
+  selectedQuote: QuoteDto | null = null;
   loading = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private requisitionService: RequisitionModuleService,
+    private quotesService: RequisitionQuotesModuleService,
     public authService: AuthService
   ) { }
 
@@ -32,10 +34,28 @@ export class RequisitionDetailComponent implements OnInit {
     this.requisitionService.getRequestById(id).subscribe({
       next: (req) => {
         this.request = req;
-        this.loading = false;
+        this.loadSelectedQuote(id);
       },
       error: (err) => {
         console.error('Failed to load request details', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  loadSelectedQuote(id: number): void {
+    this.quotesService.getQuotesForRequest(id).subscribe({
+      next: (quotes) => {
+        if (quotes && Array.isArray(quotes)) {
+          this.selectedQuote = quotes.find(q => q.isSelected) || null;
+        } else {
+          this.selectedQuote = null;
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load quotes for request', err);
+        this.selectedQuote = null;
         this.loading = false;
       }
     });
@@ -54,6 +74,12 @@ export class RequisitionDetailComponent implements OnInit {
     return role.replace(/_/g, ' ').replace(/\w\S*/g, txt =>
       txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
     );
+  }
+
+  viewVendorQuotes(): void {
+    if (this.request) {
+      this.router.navigate([`/requisitions/${this.request.id}/vendor-quotes`]);
+    }
   }
 
   downloadAttachment(attachment: any): void {
