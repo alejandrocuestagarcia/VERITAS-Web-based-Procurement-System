@@ -86,7 +86,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "FINANCE_OFFICER")
     void WorkflowCreation_AsFinanceOfficer_ReturnsCreatedWorkflow() throws Exception {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
 
         mockMvc.perform(post("/api/v1/workflows")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "REQUESTER")
     void WorkflowCreation_AsRequester_ReturnsForbidden() throws Exception {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
 
         mockMvc.perform(post("/api/v1/workflows")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +112,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "FINANCE_OFFICER")
     void WorkflowCreation_WithInvalidXml_ReturnsInvalidArgument() throws Exception {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(INVALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(INVALID_BPMN_XML, null);
 
         mockMvc.perform(post("/api/v1/workflows")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -123,7 +123,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "FINANCE_OFFICER")
     void WorkflowCreation_WithBlankXml_ReturnsInvalidArgument() throws Exception {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(BLANK_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(BLANK_BPMN_XML, null);
 
         mockMvc.perform(post("/api/v1/workflows")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -134,7 +134,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "FINANCE_OFFICER")
     void WorkflowRetrieval_AsFinanceOfficer_ReturnsWorkflow() throws Exception {
-        WorkflowDto created = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+        WorkflowDto created = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
         mockMvc.perform(get("/api/v1/workflows/" + created.id()))
                 .andExpect(status().isOk())
@@ -151,10 +151,10 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "FINANCE_OFFICER")
     void WorkflowEdit_AsFinanceOfficer_ReturnsUpdatedWorkflow() throws Exception {
-        WorkflowDto created = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+        WorkflowDto created = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
         String updatedBpmnXml = VALID_BPMN_XML.replace("Test Workflow", "Edited Workflow Name");
-        WorkflowEditDto editDto = new WorkflowEditDto(updatedBpmnXml);
+        WorkflowEditDto editDto = new WorkflowEditDto(updatedBpmnXml, null);
 
         mockMvc.perform(patch("/api/v1/workflows/" + created.id())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -170,8 +170,8 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "FINANCE_OFFICER")
     void GetAllWorkflows_NoParams_ReturnsPaginatedList() throws Exception {
         // Setup: Create 2 workflows
-        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
-        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML.replace("Test Workflow", "Another Workflow")));
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML.replace("Test Workflow", "Another Workflow"), null));
 
         mockMvc.perform(get("/api/v1/workflows")
                         .param("page", "0")
@@ -186,8 +186,8 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "FINANCE_OFFICER")
     void GetAllWorkflows_WithSearch_ReturnsFilteredResults() throws Exception {
         // Setup: Create two distinct workflows
-        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML)); // "Test Workflow"
-        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML.replace("Test Workflow", "Unique Name")));
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null)); // "Test Workflow"
+        workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML.replace("Test Workflow", "Unique Name"), null));
 
         mockMvc.perform(get("/api/v1/workflows")
                         .param("search", "Unique"))
@@ -200,7 +200,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @WithMockUser(roles = "FINANCE_OFFICER")
     void GetAllWorkflows_WithIsActiveFilter_ReturnsCorrectWorkflows() throws Exception {
         // Setup: Create one workflow (active by default)
-        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
         // Manual cleanup logic might be needed if your service/DB doesn't allow
         // easy toggling, but assuming search for isActive=true works:

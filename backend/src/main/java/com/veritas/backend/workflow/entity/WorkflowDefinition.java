@@ -1,5 +1,6 @@
 package com.veritas.backend.workflow.entity;
 
+import com.veritas.backend.department.entity.Department;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -27,6 +28,10 @@ public class WorkflowDefinition {
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
     private LocalDateTime deactivatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     @PrePersist
     protected void onCreate() {

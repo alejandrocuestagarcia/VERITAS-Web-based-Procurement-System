@@ -72,7 +72,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void WorkflowCreation_ValidInput_ReturnsCreatedWorkflow() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
         WorkflowDto result = workflowService.createWorkflow(saveDto);
 
         assertNotNull(result);
@@ -85,7 +85,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void WorkflowRetrieval_ExistingId_ReturnsWorkflow() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
         WorkflowDto created = workflowService.createWorkflow(saveDto);
 
         WorkflowDto fetched = workflowService.getWorkflow(created.id());
@@ -102,25 +102,25 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void WorkflowCreate_BlankXmlInput_ThrowsIllegalArgumentException() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(BLANK_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(BLANK_BPMN_XML, null);
 
         assertThrows(IllegalArgumentException.class, () -> workflowService.createWorkflow(saveDto));
     }
 
     @Test
     void WorkflowCreate_InvalidXmlInput_ThrowsIllegalArgumentException() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(INVALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(INVALID_BPMN_XML, null);
 
         assertThrows(IllegalArgumentException.class, () -> workflowService.createWorkflow(saveDto));
     }
 
     @Test
     void WorkflowEdit_ValidInput_UpdatesWorkflowAndIncrementsVersion() {
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML);
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
         WorkflowDto created = workflowService.createWorkflow(saveDto);
 
         String updatedBpmnXml = VALID_BPMN_XML.replace("Test Workflow", "Updated Workflow Name");
-        WorkflowEditDto editDto = new WorkflowEditDto(updatedBpmnXml);
+        WorkflowEditDto editDto = new WorkflowEditDto(updatedBpmnXml, null);
 
         WorkflowDto updated = workflowService.editWorkflow(created.id(), editDto);
 
@@ -137,7 +137,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void WorkflowEdit_NonExistingId_ThrowsEntityNotFoundException() {
-        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML);
+        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML, null);
         assertThrows(EntityNotFoundException.class, () -> workflowService.editWorkflow(99999L, editDto));
     }
 }

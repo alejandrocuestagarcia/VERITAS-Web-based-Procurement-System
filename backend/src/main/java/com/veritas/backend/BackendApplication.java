@@ -66,6 +66,15 @@ public class BackendApplication {
 				return teamRepo.save(team);
 			});
 
+			Team teamTwo = teamRepo.findByName("Human Resources").orElseGet(() -> {
+				Team team = new Team();
+				team.setName("Human Resources");
+				team.setDepartment(department2);
+				team.setDescription("HR core team");
+				log.info("Seeded team: {}", team.getName());
+				return teamRepo.save(team);
+			});
+
 			if (userRepo.findByEmail("admin@veritas.com").isEmpty()) {
 				User admin = User.builder()
 						.name("Veritas Admin")
@@ -120,6 +129,25 @@ public class BackendApplication {
 				teamOne.setLeader(savedRequester);
 				teamRepo.save(teamOne);
 				log.info("Set user {} as leader of team {}", savedRequester.getEmail(), teamOne.getName());
+			}
+
+			if (userRepo.findByEmail("hr_requester@veritas.com").isEmpty()) {
+				User hrRequester = User.builder()
+						.name("Veritas HR Requester")
+						.email("hr_requester@veritas.com")
+						.passwordHash(encoder.encode("password123"))
+						.role(UserRole.REQUESTER)
+						.isActive(true)
+						.team(teamTwo)
+						.requiresPasswordChange(false)
+						.build();
+				User savedHrRequester = userRepo.save(hrRequester);
+				log.info("Seeded user: {} (role={}, team={})", hrRequester.getEmail(), hrRequester.getRole(), teamTwo.getName());
+
+				// Set requester as team leader
+				teamTwo.setLeader(savedHrRequester);
+				teamRepo.save(teamTwo);
+				log.info("Set user {} as leader of team {}", savedHrRequester.getEmail(), teamTwo.getName());
 			}
 
 			if (projectRepo.count() == 0) {
@@ -328,7 +356,7 @@ public class BackendApplication {
 						</bpmndi:BPMNDiagram>
 						</bpmn:definitions>
 						""";
-				workflowService.createWorkflow(new WorkflowSaveDto(xml));
+				workflowService.createWorkflow(new WorkflowSaveDto(xml, null));
 				log.info("Seeded 1 workflow");
 			}
 
