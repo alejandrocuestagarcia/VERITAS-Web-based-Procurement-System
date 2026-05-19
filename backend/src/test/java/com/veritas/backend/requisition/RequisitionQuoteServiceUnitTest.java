@@ -252,7 +252,7 @@ class RequisitionQuoteServiceUnitTest {
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(vendorRepository.findById(3L)).thenReturn(Optional.of(newVendor));
         when(quoteRepository.save(quote)).thenReturn(quote);
-        when(quoteLineItemRepository.findAll()).thenReturn(List.of(existingItem));
+        when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(List.of(existingItem));
         when(quoteMapper.toDto(eq(quote), anyList())).thenReturn(expectedDto);
 
         QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
@@ -281,7 +281,7 @@ class RequisitionQuoteServiceUnitTest {
         item.setQuote(quote);
 
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
-        when(quoteLineItemRepository.findAll()).thenReturn(List.of(item));
+        when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(List.of(item));
 
         quoteService.deleteQuoteForRequest(requestId, quoteId);
 

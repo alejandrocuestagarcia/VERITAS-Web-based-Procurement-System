@@ -60,9 +60,9 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
     this.quoteForm = this.fb.group({
       vendorId: ['', Validators.required],
       currency: [Currency.EUR, [Validators.required, Validators.maxLength(3)]],
-      baseAmount: [0, [Validators.required, Validators.min(0)]],
+      baseAmount: [0, [Validators.required, Validators.min(1)]],
       shippingCosts: [0, [Validators.required, Validators.min(0)]],
-      totalAmount: [0, [Validators.required, Validators.min(0)]],
+      totalAmount: [0, [Validators.required, Validators.min(1)]],
       items: this.fb.array([])
     });
 
@@ -78,11 +78,26 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
     const itemGroup = this.fb.group({
       productDescription: [description, Validators.required],
       quantity: [quantity, [Validators.required, Validators.min(1)]],
-      unitPrice: [unitPrice, [Validators.required, Validators.min(0)]],
+      unitPrice: [unitPrice, [Validators.required, Validators.min(1)]],
       requestItemId: [requestItemId]
     });
 
     itemGroup.valueChanges.subscribe(() => this.calculateBaseAmountFromItems());
+
+    itemGroup.get('requestItemId')?.valueChanges.subscribe((id: number | null) => {
+      if (!id || !this.requisition?.items) return;
+
+      const reqItem = this.requisition.items.find((r: any) => r.id === id);
+      if (!reqItem) return;
+
+      itemGroup.patchValue({
+        productDescription: reqItem.name,
+        quantity: reqItem.quantity,
+        unitPrice: 0
+      }, { emitEvent: false });
+
+      this.calculateBaseAmountFromItems();
+    });
 
     this.itemsFormArray.push(itemGroup);
     this.calculateBaseAmountFromItems();

@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -69,6 +70,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             
         Vendor vendor = vendorRepository.findById(createDto.vendorId())
             .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + createDto.vendorId()));
+
+        validateAmounts(createDto);
             
         Quote quote = new Quote();
         quote.setRequest(request);
@@ -118,6 +121,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
                 .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + updateDto.vendorId()));
             quote.setVendorID(vendor);
         }
+
+        validateAmounts(updateDto);
         
         quote.setCurrency(updateDto.currency());
         quote.setBaseAmount(updateDto.baseAmount());
@@ -125,10 +130,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quote.setTotalAmount(updateDto.totalAmount());
         
         Quote updatedQuote = quoteRepository.save(quote);
-        
-        List<QuoteLineItem> existingItems = quoteLineItemRepository.findAll().stream()
-            .filter(item -> item.getQuote().getQuoteID().equals(quoteId))
-            .toList();
+
+        List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
         
         if (updateDto.items() != null && !updateDto.items().isEmpty()) {
@@ -162,10 +165,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         if (!quote.getRequest().getRequestID().equals(requestId)) {
             throw new EntityNotFoundException("Quote does not belong to this request");
         }
-        
-        List<QuoteLineItem> existingItems = quoteLineItemRepository.findAll().stream()
-            .filter(item -> item.getQuote().getQuoteID().equals(quoteId))
-            .toList();
+
+        List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
         
         quoteRepository.delete(quote);
@@ -190,6 +191,25 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         
         quoteToSelect.setSelected(true);
         quoteRepository.save(quoteToSelect);
+    }
+
+    private void validateAmounts(QuoteCreateDto dto) {
+        BigDecimal computedBaseAmount = BigDecimal.ZERO;
+
+        for (QuoteLineItemCreateDto item : dto.items()) {
+            BigDecimal subtotal = item.unitPrice().multiply(BigDecimal.valueOf(item.quantity()));
+            computedBaseAmount = computedBaseAmount.add(subtotal);
+        }
+
+        BigDecimal computedTotalAmount = computedBaseAmount.add(dto.shippingCosts());
+
+        if (dto.baseAmount().compareTo(computedBaseAmount) != 0) {
+            throw new IllegalArgumentException("Base amount is incorrect");
+        }
+
+        if (dto.totalAmount().compareTo(computedTotalAmount) != 0) {
+            throw new IllegalArgumentException("Total amount is incorrect");
+        }
     }
 
     private QuoteDto mapToDto(Quote quote) {

@@ -58,6 +58,9 @@
             <mat-error *ngIf="quoteForm.get('shippingCosts')?.hasError('required') && quoteForm.get('shippingCosts')?.touched">
               Shipping costs are required
             </mat-error>
+            <mat-error *ngIf="quoteForm.get('shippingCosts')?.hasError('min') && quoteForm.get('shippingCosts')?.touched">
+              Shipping costs cannot be negative
+            </mat-error>
           </mat-form-field>
         </app-shared-form-field>
 
