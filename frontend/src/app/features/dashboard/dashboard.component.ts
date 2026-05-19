@@ -88,8 +88,8 @@ export class DashboardComponent implements OnInit {
       this.stats.finishedRequisitions = closedRequisitions.length;
 
       if (isRequester) {
-        this.pendingRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole === 'REQUESTER');
-        this.inProgressRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole !== 'REQUESTER');
+        this.pendingRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole === 'REQUESTER' || requisition.state === 'DRAFT');
+        this.inProgressRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole !== 'REQUESTER' && requisition.state !== 'DRAFT');
       } else {
         this.pendingRequisitions = recentRequisitions.filter(requisition => requisition.responsibleRole === this.userRole);
         this.inProgressRequisitions = [];
