@@ -213,7 +213,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "FINANCE_OFFICER")
     void DeleteWorkflow_AsFinanceOfficer_DeactivatesAndReturnsNoContent() throws Exception {
-        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
         mockMvc.perform(delete("/api/v1/workflows/" + dto.id()))
                 .andExpect(status().isNoContent());
@@ -226,7 +226,7 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "REQUESTER")
     void DeleteWorkflow_AsRequester_ReturnsForbidden() throws Exception {
-        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML));
+        WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
         mockMvc.perform(delete("/api/v1/workflows/" + dto.id()))
                 .andExpect(status().isForbidden());

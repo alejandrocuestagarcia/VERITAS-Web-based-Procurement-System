@@ -243,7 +243,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         Long departmentId = null;
         boolean includeGlobal = true;
 
-        if (authUser != null && authUser.getRole() == UserRole.REQUESTER) {
+        if (authUser != null && (authUser.getRole() == UserRole.REQUESTER || authUser.getRole() == UserRole.PROCUREMENT_OFFICER)) {
             User fullUser = userRepository.findById(authUser.getId()).orElse(authUser);
             if (fullUser.getDepartment() != null) {
                 departmentId = fullUser.getDepartment().getDepartmentId();
