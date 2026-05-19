@@ -14,7 +14,6 @@ import java.util.List;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByTeam(Team team);
-    List<Project> findByTeamDepartment(Department department);
     boolean existsByNameOrProjectKey(String name, String projectKey);
 
     @Query("SELECT p FROM Project p WHERE p.team.department = :department")

@@ -89,7 +89,7 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").department(department).build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, "Testing Team");
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team");
 
         User user = User.builder()
                 .role(UserRole.PROCUREMENT_OFFICER)
