@@ -1,9 +1,12 @@
 package com.veritas.backend.vendor;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.requisition.entity.RequestQuote;
+import com.veritas.backend.requisition.repository.RequestQuoteRepository;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.VendorService;
 import jakarta.persistence.EntityExistsException;
@@ -27,13 +30,21 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     private VendorRepository vendorRepository;
 
+    @Autowired
+    private QuoteRepository quoteRepository;
+    @Autowired
+    private RequestQuoteRepository requestQuoteRepository;
+
     @BeforeEach
     void setUp() {
+        requestQuoteRepository.deleteAll();
+        quoteRepository.deleteAll();
         vendorRepository.deleteAll();
     }
 
     @AfterEach
-    void cleanUp() { vendorRepository.deleteAll(); }
+    void cleanUp() {
+        vendorRepository.deleteAll(); }
 
     @Test
     void VendorCreation_ValidInput_PersistsInDatabase() {
