@@ -26,6 +26,7 @@ public record RequisitionDto(
     String jiraIssueUrl,
     Long vendorId,
     String vendorName,
+    Boolean isEvaluated,
     List<RequisitionItemDto> items,
     List<AttachmentDto> attachments,
     String state,

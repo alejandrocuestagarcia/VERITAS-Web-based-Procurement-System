@@ -34,6 +34,7 @@ public interface RequisitionMapper {
     @Mapping(target = "attachments", source = "attachments")
     @Mapping(target = "vendorId", expression = "java(resolveSelectedVendorId(request))")
     @Mapping(target = "vendorName", expression = "java(resolveSelectedVendorName(request))")
+    @Mapping(target = "isEvaluated", expression = "java(request.getVendorEvaluations() != null && !request.getVendorEvaluations().isEmpty())")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);
