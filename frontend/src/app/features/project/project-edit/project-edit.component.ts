@@ -1,11 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { FormBuilder, FormGroup, Validators} from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
-import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ResetPasswordDialogComponent } from "../../login/reset-password-dialog/reset-password-dialog.component";
-import { MatDialog } from "@angular/material/dialog";
-import {ProjectModuleService} from "../../../core/api";
+import {ProjectModuleService, TeamDto, TeamsModuleService} from "../../../core/api";
 
 @Component({
   selector: 'app-project-edit',
@@ -17,12 +14,14 @@ export class ProjectEditComponent implements OnInit{
   projectForm!: FormGroup;
   loading = false;
   projectId!: number;
+  teams: TeamDto[] = [];
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
     private projectService: ProjectModuleService,
+    private teamService: TeamsModuleService,
     private toastService: ToastService
   ) { }
 
@@ -30,22 +29,38 @@ export class ProjectEditComponent implements OnInit{
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     this.initForm();
     this.loadProject();
+    this.loadTeams();
+
   }
 
   private initForm(): void {
     this.projectForm = this.fb.group({
       name: ['', Validators.required],
+      teamId: [null, Validators.required],
       budget: [null, [Validators.required, Validators.min(0)]],
       startDate: [null, Validators.required],
       endDate: [null, Validators.required],
     });
   }
 
+  private loadTeams(): void {
+    this.teamService.getAllTeams().subscribe({
+      next: (teams) => {
+        this.teams = teams;
+
+        this.loadProject();
+      },
+      error: () => this.toastService.showError('Failed to load organizational team selections.')
+    });
+  }
+
   private loadProject(): void {
     this.projectService.getProject(this.projectId).subscribe({
       next: (project) => {
+        console.log(project);
         this.projectForm.patchValue({
           name: project.name,
+          teamId: project.teamId,
           budget: project.budget,
           startDate: project.startDate,
           endDate: project.endDate,
@@ -65,6 +80,7 @@ export class ProjectEditComponent implements OnInit{
 
       const request = {
         name: formValue.name,
+        teamId: formValue.teamId,
         budget: formValue.budget,
         startDate: formValue.startDate,
         endDate: formValue.endDate,

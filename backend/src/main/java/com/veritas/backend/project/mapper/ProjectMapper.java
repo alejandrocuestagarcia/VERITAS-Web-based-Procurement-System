@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 @Mapper(unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public interface ProjectMapper {
     @Mapping(source = "team.name", target = "teamName")
+    @Mapping(source = "team.teamId", target = "teamId")
     @Mapping(source = "internalBudget.totalAmount", target = "budget")
     @Mapping(source = "internalBudget.committedSpend", target = "committedSpend")
     @Mapping(source = "internalBudget.actualSpend", target = "actualSpend")

@@ -260,7 +260,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
         String token = jwtService.generateAccessToken(financeOfficer);
 
         ProjectEditDto editDto =
-                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
+                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),null,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
 
 
         mockMvc.perform(patch("/api/v1/projects/" + project.getId())
@@ -286,7 +286,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
         String token = jwtService.generateAccessToken(financeOfficer);
 
         ProjectEditDto editDto =
-                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),LocalDate.now().plusDays(-1),LocalDate.now().plusYears(1));
+                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),null ,LocalDate.now().plusDays(-1),LocalDate.now().plusYears(1));
 
 
         mockMvc.perform(patch("/api/v1/projects/" + project.getId())
@@ -311,7 +311,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
         String token = jwtService.generateAccessToken(financeOfficer);
 
         ProjectEditDto editDto =
-                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),LocalDate.now().plusDays(1),LocalDate.now().plusYears(-1));
+                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(-1));
 
 
         mockMvc.perform(patch("/api/v1/projects/" + project.getId())
@@ -335,7 +335,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
 
         String token = jwtService.generateAccessToken(unauthorizedRequester);
         ProjectEditDto editDto =
-                new ProjectEditDto("Hack Attempt Name", BigDecimal.valueOf(0),LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
+                new ProjectEditDto("Hack Attempt Name", BigDecimal.valueOf(0),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/projects/" + project.getId())
                         .header("Authorization", "Bearer " + token)

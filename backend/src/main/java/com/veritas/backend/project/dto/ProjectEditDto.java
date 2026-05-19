@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 public record ProjectEditDto (
     String name,
     @Positive BigDecimal budget,
+    Long teamId,
     LocalDate startDate,
     LocalDate endDate
 ){}

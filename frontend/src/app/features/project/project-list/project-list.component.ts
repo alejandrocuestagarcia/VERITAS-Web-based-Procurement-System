@@ -5,6 +5,7 @@ import { SharedTableComponent } from '../../../shared/components/table/shared-ta
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import {Router} from "@angular/router";
+import {AuthService} from "../../../core/services/auth.service";
 
 @Component({
   selector: 'app-project-list',
@@ -21,6 +22,7 @@ export class ProjectListComponent implements OnInit {
 
   constructor(
     private projectService: ProjectModuleService,
+    private authService: AuthService,
     private router: Router,
     private dialog: MatDialog
   ) { }
@@ -57,5 +59,13 @@ export class ProjectListComponent implements OnInit {
         // TODO: call deleteProject
       }
     });
+  }
+
+  get isFinanceOfficer(): boolean {
+    return this.authService.hasRole('FINANCE_OFFICER');
+  }
+
+  get isAdministrator(): boolean {
+    return this.authService.hasRole('ADMINISTRATOR');
   }
 }

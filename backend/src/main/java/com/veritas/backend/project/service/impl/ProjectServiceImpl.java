@@ -1,5 +1,6 @@
 package com.veritas.backend.project.service.impl;
 
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
 import com.veritas.backend.project.dto.ProjectEditDto;
@@ -164,8 +165,18 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         if(updatedProject.name()!= null) project.setName(updatedProject.name());
-        if(updatedProject.budget()!= null) project.setBudget(updatedProject.budget());
+        if(updatedProject.budget()!= null){
+            if (project.getInternalBudget() == null) {
+                throw new EntityNotFoundException("No internal budget is currently assigned to project id: " + project.getId());
+            }
 
+            project.getInternalBudget().setTotalAmount(updatedProject.budget());
+        }
+        if(updatedProject.teamId()!=null) {
+            Team team = teamRepository.findById(updatedProject.teamId())
+                    .orElseThrow(() -> new EntityNotFoundException("Team with id " + updatedProject.teamId() + " not found"));
+            project.setTeam(team);
+        }
         Project saved = projectRepository.save(project);
         log.info("Project edited successfully – id: {}", saved.getId());
         return projectMapper.toProjectDto(saved);
