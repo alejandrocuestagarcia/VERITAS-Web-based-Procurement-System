@@ -41,6 +41,20 @@
       </td>
     </ng-container>
 
+    <ng-container matColumnDef="committed">
+      <th mat-header-cell *matHeaderCellDef>COMMITTED</th>
+      <td mat-cell *matCellDef="let project" class="font-medium">
+        {{ project.committedSpend | currency:'EUR':'symbol':'1.0-0' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actual">
+      <th mat-header-cell *matHeaderCellDef>ACTUAL</th>
+      <td mat-cell *matCellDef="let project" class="font-medium">
+        {{ project.actualSpend | currency:'EUR':'symbol':'1.0-0' }}
+      </td>
+    </ng-container>
+
     <ng-container matColumnDef="startDate">
       <th mat-header-cell *matHeaderCellDef>START DATE</th>
       <td mat-cell *matCellDef="let project" class="text-sm text-muted-grey">

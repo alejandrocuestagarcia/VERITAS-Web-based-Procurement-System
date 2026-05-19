@@ -12,6 +12,7 @@ import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
+import com.veritas.backend.budget.entity.InternalBudget;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
@@ -40,11 +41,19 @@ public class BackendApplication {
 			Department department = departmentRepository.findByName("IT").orElseGet(() -> {
 				Department it = new Department();
 				it.setName("IT");
+				it.setInternalBudget(InternalBudget.builder()
+						.budgetName("Project: Enterprise Lifecycle Management")
+						.totalAmount(new BigDecimal("900000"))
+						.build());
 				return departmentRepository.save(it);
 			});
 			Department department2 = departmentRepository.findByName("HR").orElseGet(() -> {
 				Department hr = new Department();
 				hr.setName("HR");
+				hr.setInternalBudget(InternalBudget.builder()
+						.budgetName("Project: Enterprise Lifecycle Management")
+						.totalAmount(new BigDecimal("800000"))
+						.build());
 				return departmentRepository.save(hr);
 			});
 
@@ -116,7 +125,10 @@ public class BackendApplication {
 			if (projectRepo.count() == 0) {
 				Project p1 = Project.builder()
 						.name("Apollo Architecture Audit")
-						.budget(new BigDecimal("150000"))
+						.internalBudget(InternalBudget.builder()
+								.budgetName("Project: Apollo Architecture Audit")
+								.totalAmount(new BigDecimal("150000"))
+								.build())
 						.projectKey("apollo-architecture-audit")
 						.startDate(LocalDate.of(2026, 1, 1))
 						.endDate(LocalDate.of(2026, 12, 31))
@@ -126,7 +138,10 @@ public class BackendApplication {
 				Project p2 = Project.builder()
 						.name("Enterprise Lifecycle Management")
 						.projectKey("Second")
-						.budget(new BigDecimal("275000"))
+						.internalBudget(InternalBudget.builder()
+								.budgetName("Project: Enterprise Lifecycle Management")
+								.totalAmount(new BigDecimal("275000"))
+								.build())
 						.startDate(LocalDate.of(2026, 3, 15))
 						.endDate(LocalDate.of(2027, 6, 1))
 						.team(teamOne)

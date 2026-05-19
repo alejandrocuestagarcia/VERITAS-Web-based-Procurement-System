@@ -9,7 +9,12 @@ import org.mapstruct.Mapping;
 @Mapper(unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public interface ProjectMapper {
     @Mapping(source = "team.name", target = "teamName")
+    @Mapping(source = "internalBudget.totalAmount", target = "budget")
+    @Mapping(source = "internalBudget.committedSpend", target = "committedSpend")
+    @Mapping(source = "internalBudget.actualSpend", target = "actualSpend")
+    @Mapping(source = "internalBudget.safetyBuffer", target = "safetyBuffer")
     ProjectDto toProjectDto(Project project);
 
+    @Mapping(target = "internalBudget", ignore = true) // Handled in Service
     Project toProject(ProjectCreationDto dto);
 }

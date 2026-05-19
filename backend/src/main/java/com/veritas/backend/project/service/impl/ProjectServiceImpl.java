@@ -10,6 +10,9 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.department.entity.Department;
+import java.math.BigDecimal;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -70,8 +73,35 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Team with id " + projectCreationDto.teamId() + " not found"));
         log.debug("Assigned project to team: {} (id={})", team.getName(), team.getTeamId());
 
+        // Department Budget Check
+        Department department = team.getDepartment();
+        if (department != null && department.getInternalBudget() != null) {
+            BigDecimal deptLimit = department.getInternalBudget().getTotalAmount();
+            if (deptLimit != null) {
+                BigDecimal existingTotal = projectRepository.findByTeamDepartment(department).stream()
+                        .map(p -> p.getInternalBudget() != null ? p.getInternalBudget().getTotalAmount() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                BigDecimal newTotal = existingTotal.add(projectCreationDto.budget());
+                if (newTotal.compareTo(deptLimit) > 0) {
+                    log.warn("Project creation blocked – budget limit exceeded for department: {} (Limit: {}, Attempted: {})", 
+                            department.getName(), deptLimit, newTotal);
+                    throw new IllegalArgumentException("Project budget of " + projectCreationDto.budget() 
+                            + " exceeds the remaining department budget of " + deptLimit.subtract(existingTotal) 
+                            + " (Total Limit: " + deptLimit + ")");
+                }
+            }
+        }
+
         Project project = projectMapper.toProject(projectCreationDto);
         project.setTeam(team);
+
+        // Initialize budget
+        InternalBudget budget = new InternalBudget();
+        budget.setBudgetName("Project: " + project.getName());
+        budget.setTotalAmount(projectCreationDto.budget());
+        project.setInternalBudget(budget);
+
         Project saved = projectRepository.save(project);
 
         log.info("Project created successfully – id: {}, name: {}", saved.getId(), saved.getName());

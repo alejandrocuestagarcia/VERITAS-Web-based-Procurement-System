@@ -45,8 +45,8 @@ class ProjectServiceUnitTest {
         Project project1 = Project.builder().team(team).build();
         Project project2 = Project.builder().team(team).build();
 
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, "Testing Team");
-        ProjectDto dto2 = new ProjectDto(2L, "Project 2", null, null, null, "Testing Team");
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null, "Testing Team");
+        ProjectDto dto2 = new ProjectDto(2L, "Project 2", null, null, null, null, null, null, "Testing Team");
 
         User financeOfficer = User.builder()
                 .role(UserRole.FINANCE_OFFICER)
@@ -67,7 +67,7 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, "Testing Team");
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team");
 
         User user = User.builder()
                 .role(UserRole.REQUESTER)
@@ -89,7 +89,7 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").department(department).build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, "Testing Team");
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team");
 
         User user = User.builder()
                 .role(UserRole.PROCUREMENT_OFFICER)
@@ -114,7 +114,7 @@ class ProjectServiceUnitTest {
         Project project = Project.builder().name("Secret Project").projectKey("KEY-123").build();
         Project saved = Project.builder().id(1L).name("Secret Project").projectKey("KEY-123").team(team).build();
 
-        ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, "Team A");
+        ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, null, null, null,"Team A");
 
         when(projectRepository.existsByNameOrProjectKey("Secret Project", "KEY-123")).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(team));

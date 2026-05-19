@@ -12,6 +12,10 @@ public interface DepartmentMapper {
     Department toDepartment(DepartmentDto departmentDto);
 
     @Mapping(source = "departmentId", target = "id")
+    @Mapping(source = "internalBudget.totalAmount", target = "budget")
+    @Mapping(source = "internalBudget.committedSpend", target = "committedSpend")
+    @Mapping(source = "internalBudget.actualSpend", target = "actualSpend")
+    @Mapping(source = "internalBudget.safetyBuffer", target = "safetyBuffer")
     DepartmentDto toDepartmentDto(Department department);
 
     Department toDepartment(DepartmentCreateDto departmentCreateDto);

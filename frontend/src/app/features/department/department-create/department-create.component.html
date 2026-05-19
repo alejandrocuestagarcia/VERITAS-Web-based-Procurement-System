@@ -17,5 +17,15 @@
       </app-shared-form-field>
     </app-shared-form-card>
 
+    <app-shared-form-card icon="account_balance" title="Financials">
+      <app-shared-form-field label="TOTAL BUDGET">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>payments</mat-icon>
+          <input matInput type="number" formControlName="budget" placeholder="e.g. 50000">
+          <mat-error *ngIf="departmentForm.get('budget')?.hasError('min') && departmentForm.get('budget')?.touched">Budget must be positive.</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
   </app-shared-form>
 </div>

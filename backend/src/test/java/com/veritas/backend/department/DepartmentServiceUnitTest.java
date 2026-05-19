@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,10 +41,10 @@ class DepartmentServiceUnitTest {
 
     @Test
     void CreateDepartment_ValidRequest_SavesAndReturnsDepartment() {
-        DepartmentCreateDto request = new DepartmentCreateDto("Engineering");
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
         Department department = Department.builder().name("Engineering").build();
         Department savedDepartment = Department.builder().departmentId(1L).name("Engineering").build();
-        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering");
+        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
 
         when(departmentRepository.existsByName("Engineering")).thenReturn(false);
         when(departmentMapper.toDepartment(request)).thenReturn(department);
@@ -62,7 +63,7 @@ class DepartmentServiceUnitTest {
 
     @Test
     void CreateDepartment_DuplicateName_ThrowsEntityExistsException() {
-        DepartmentCreateDto request = new DepartmentCreateDto("Engineering");
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
 
         when(departmentRepository.existsByName("Engineering")).thenReturn(true);
 
@@ -76,8 +77,8 @@ class DepartmentServiceUnitTest {
         Department dept1 = Department.builder().departmentId(1L).name("Engineering").build();
         Department dept2 = Department.builder().departmentId(2L).name("HR").build();
 
-        DepartmentDto dto1 = new DepartmentDto(1L, "Engineering");
-        DepartmentDto dto2 = new DepartmentDto(2L, "HR");
+        DepartmentDto dto1 = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
+        DepartmentDto dto2 = new DepartmentDto(2L, "HR", BigDecimal.valueOf(10000.0), null, null, null);
 
         when(departmentRepository.findAll()).thenReturn(List.of(dept1, dept2));
         when(departmentMapper.toDepartmentDto(dept1)).thenReturn(dto1);
@@ -95,7 +96,7 @@ class DepartmentServiceUnitTest {
     @Test
     void GetDepartmentById_ValidId_ReturnsDepartment() {
         Department department = Department.builder().departmentId(1L).name("Engineering").build();
-        DepartmentDto dto = new DepartmentDto(1L, "Engineering");
+        DepartmentDto dto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
 
         when(departmentRepository.getDepartmentByDepartmentId(1L)).thenReturn(department);
         when(departmentMapper.toDepartmentDto(department)).thenReturn(dto);
@@ -111,10 +112,10 @@ class DepartmentServiceUnitTest {
 
     @Test
     void UpdateDepartment_ValidRequest_UpdatesAndReturns() {
-        DepartmentCreateDto request = new DepartmentCreateDto("R&D");
+        DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
         Department existing = Department.builder().departmentId(1L).name("Engineering").build();
         Department saved = Department.builder().departmentId(1L).name("R&D").build();
-        DepartmentDto expectedDto = new DepartmentDto(1L, "R&D");
+        DepartmentDto expectedDto = new DepartmentDto(1L, "R&D", BigDecimal.valueOf(10000.0), null, null, null);
 
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(departmentRepository.existsByName("R&D")).thenReturn(false);
@@ -134,10 +135,10 @@ class DepartmentServiceUnitTest {
 
     @Test
     void UpdateDepartment_SameName_UpdatesAndReturnsWithoutCheckingDuplicate() {
-        DepartmentCreateDto request = new DepartmentCreateDto("Engineering");
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
         Department existing = Department.builder().departmentId(1L).name("Engineering").build();
         Department saved = Department.builder().departmentId(1L).name("Engineering").build();
-        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering");
+        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
 
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(existing));
         // existsByName is called in impl, but since name is same as existing, it shouldn't trigger duplicate exception
@@ -156,7 +157,7 @@ class DepartmentServiceUnitTest {
 
     @Test
     void UpdateDepartment_NotFound_ThrowsEntityNotFoundException() {
-        DepartmentCreateDto request = new DepartmentCreateDto("R&D");
+        DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
 
         when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -167,7 +168,7 @@ class DepartmentServiceUnitTest {
 
     @Test
     void UpdateDepartment_DuplicateName_ThrowsEntityExistsException() {
-        DepartmentCreateDto request = new DepartmentCreateDto("R&D");
+        DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
         Department existing = Department.builder().departmentId(1L).name("Engineering").build();
 
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(existing));

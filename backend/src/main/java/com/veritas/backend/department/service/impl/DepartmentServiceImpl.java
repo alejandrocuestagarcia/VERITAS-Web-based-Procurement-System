@@ -12,7 +12,7 @@ import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
+import com.veritas.backend.budget.entity.InternalBudget;
 import java.util.List;
 
 @Slf4j
@@ -30,6 +30,14 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
         Department department = departmentMapper.toDepartment(request);
+        
+        if (request.budget() != null) {
+            InternalBudget budget = new InternalBudget();
+            budget.setBudgetName("Department: " + department.getName());
+            budget.setTotalAmount(request.budget());
+            department.setInternalBudget(budget);
+        }
+        
         return departmentMapper.toDepartmentDto(departmentRepository.save(department));
     }
 
@@ -51,6 +59,12 @@ public class DepartmentServiceImpl implements DepartmentService {
             throw new EntityExistsException("Department with name " + request.name() + " already exists");
         }
         department.setName(request.name());
+        if (request.budget() != null) {
+            InternalBudget budget = new InternalBudget();
+            budget.setBudgetName("Department: " + department.getName());
+            budget.setTotalAmount(request.budget());
+            department.setInternalBudget(budget);
+        }
         return departmentMapper.toDepartmentDto(departmentRepository.save(department));
     }
 

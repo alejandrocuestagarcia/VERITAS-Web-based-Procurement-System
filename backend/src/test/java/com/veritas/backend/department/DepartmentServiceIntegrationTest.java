@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +52,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void CreateDepartment_SavesToDatabase() {
-        DepartmentCreateDto request = new DepartmentCreateDto("Engineering");
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
 
         DepartmentDto result = departmentService.createDepartment(request);
 
@@ -67,7 +68,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void CreateDepartment_DuplicateName_ThrowsEntityExistsException() {
         departmentRepository.save(Department.builder().name("Engineering").build());
-        DepartmentCreateDto request = new DepartmentCreateDto("Engineering");
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
 
         assertThrows(EntityExistsException.class, () -> departmentService.createDepartment(request));
     }
@@ -97,7 +98,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void UpdateDepartment_PersistsChanges() {
         Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
-        DepartmentCreateDto request = new DepartmentCreateDto("R&D");
+        DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
 
         DepartmentDto result = departmentService.updateDepartment(saved.getDepartmentId(), request);
 
@@ -113,7 +114,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
         Department dept1 = departmentRepository.save(Department.builder().name("Engineering").build());
         departmentRepository.save(Department.builder().name("R&D").build());
 
-        DepartmentCreateDto request = new DepartmentCreateDto("R&D");
+        DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
 
         assertThrows(EntityExistsException.class,
                 () -> departmentService.updateDepartment(dept1.getDepartmentId(), request));

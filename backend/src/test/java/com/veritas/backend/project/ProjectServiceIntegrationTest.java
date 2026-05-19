@@ -1,6 +1,7 @@
 package com.veritas.backend.project;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
@@ -86,7 +87,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .team(testingTeam)
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusDays(30))
-                .budget(BigDecimal.valueOf(10000.00))
+                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
                 .build());
     }
 
