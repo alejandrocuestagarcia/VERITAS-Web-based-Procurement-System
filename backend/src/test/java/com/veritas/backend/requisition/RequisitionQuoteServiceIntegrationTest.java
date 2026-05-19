@@ -1,12 +1,20 @@
 package com.veritas.backend.requisition;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
+import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
 import com.veritas.backend.requisition.dto.QuoteLineItemCreateDto;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.RequisitionQuoteService;
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.team.repository.TeamRepository;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.vendor.entity.Currency;
 import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.QuoteLineItem;
@@ -18,6 +26,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,7 +36,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
+class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private RequisitionQuoteService quoteService;
@@ -40,6 +51,18 @@ public class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTes
     private QuoteRepository quoteRepository;
 
     @Autowired
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
     private QuoteLineItemRepository quoteLineItemRepository;
 
     private Request request;
@@ -49,8 +72,19 @@ public class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTes
     void setUp() {
         cleanAllData();
 
+        Department department = new Department();
+        department.setName("IT");
+        department = departmentRepository.save(department);
+
+        Team team = new Team();
+        team.setName("Testing Team");
+        team.setDescription("We do tests");
+        team.setDepartment(department);
+        team = teamRepository.save(team);
+
         request = new Request();
         request.setRequestName("Integration Request");
+        request.setTeamID(team);
         request = requestRepository.save(request);
 
         vendor = new Vendor();
@@ -58,17 +92,34 @@ public class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTes
         vendor.setTaxId("TAX-INT-999");
         vendor.setDescription("Integration description");
         vendor = vendorRepository.save(vendor);
+
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.PROCUREMENT_OFFICER);
+        user.setDepartment(department);
+        user.setEmail("test@test.com");
+
+        SecurityContextHolder.clearContext();
+        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @AfterEach
     void cleanUp() {
         cleanAllData();
+        SecurityContextHolder.clearContext();
     }
 
     private void cleanAllData() {
         quoteLineItemRepository.deleteAll();
         quoteRepository.deleteAll();
         requestRepository.deleteAll();
+
+        projectRepository.deleteAll();
+        teamRepository.deleteAll();
+        userRepository.deleteAll();
+        departmentRepository.deleteAll();
+
         vendorRepository.deleteAll();
     }
 

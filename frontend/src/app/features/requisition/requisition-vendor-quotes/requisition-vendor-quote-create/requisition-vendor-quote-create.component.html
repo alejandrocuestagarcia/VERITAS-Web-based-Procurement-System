@@ -54,7 +54,7 @@
         <app-shared-form-field label="Shipping & Handling" [required]="true">
           <mat-form-field appearance="outline" class="w-full">
             <span matPrefix class="text-slate-400 font-semibold ml-2 mr-2">{{ quoteForm.get('currency')?.value }}</span>
-            <input matInput type="number" step="0.01" formControlName="shippingCosts">
+            <input matInput type="number" step="1" formControlName="shippingCosts">
             <mat-error *ngIf="quoteForm.get('shippingCosts')?.hasError('required') && quoteForm.get('shippingCosts')?.touched">
               Shipping costs are required
             </mat-error>
@@ -112,7 +112,7 @@
                 <app-shared-form-field label="Unit Price">
                   <mat-form-field appearance="outline" class="w-full">
                     <span matPrefix class="text-slate-400 font-semibold ml-2 mr-2">{{ quoteForm.get('currency')?.value }}</span>
-                    <input matInput type="number" step="0.01" formControlName="unitPrice">
+                    <input matInput type="number" step="1" formControlName="unitPrice">
                   </mat-form-field>
                 </app-shared-form-field>
               </div>

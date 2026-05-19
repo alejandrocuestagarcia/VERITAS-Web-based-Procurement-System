@@ -9,6 +9,8 @@ import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.vendor.entity.Currency;
 import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.QuoteLineItem;
@@ -18,11 +20,17 @@ import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -59,6 +67,24 @@ class RequisitionQuoteServiceUnitTest {
 
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;
+
+    @BeforeEach
+    void setupSecurity() {
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.ADMINISTRATOR);
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, List.of());
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+    }
+
+    @AfterEach
+    void tearDownSecurity() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void GetQuotesForRequest_ValidRequestId_ReturnsQuotesList() {
@@ -113,6 +139,7 @@ class RequisitionQuoteServiceUnitTest {
         List<QuoteLineItem> items = new ArrayList<>();
         QuoteDto expectedDto = new QuoteDto(quoteId, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
 
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(items);
         when(quoteMapper.toDto(quote, items)).thenReturn(expectedDto);
@@ -125,6 +152,10 @@ class RequisitionQuoteServiceUnitTest {
 
     @Test
     void GetQuoteById_QuoteNotFound_ThrowsEntityNotFoundException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> quoteService.getQuoteById(1L, 99L))
@@ -145,6 +176,7 @@ class RequisitionQuoteServiceUnitTest {
         quote.setQuoteID(quoteId);
         quote.setRequest(request);
 
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
 
         assertThatThrownBy(() -> quoteService.getQuoteById(requestId, quoteId))
@@ -249,6 +281,7 @@ class RequisitionQuoteServiceUnitTest {
 
         QuoteDto expectedDto = new QuoteDto(quoteId, 3L, null, Currency.USD, BigDecimal.valueOf(200), BigDecimal.valueOf(15), BigDecimal.valueOf(215), false, List.of());
 
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(vendorRepository.findById(3L)).thenReturn(Optional.of(newVendor));
         when(quoteRepository.save(quote)).thenReturn(quote);
@@ -280,6 +313,7 @@ class RequisitionQuoteServiceUnitTest {
         item.setLineItemId(5L);
         item.setQuote(quote);
 
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(List.of(item));
 
@@ -307,6 +341,7 @@ class RequisitionQuoteServiceUnitTest {
         otherQuote.setRequest(request);
         otherQuote.setSelected(true);
 
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
         when(quoteRepository.findByRequestRequestID(requestId)).thenReturn(List.of(quoteToSelect, otherQuote));
 

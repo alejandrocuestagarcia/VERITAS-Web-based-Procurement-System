@@ -1,5 +1,7 @@
 package com.veritas.backend.requisition.service.impl;
 
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
@@ -18,6 +20,9 @@ import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,9 +44,11 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional(readOnly = true)
     public List<QuoteDto> getQuotesForRequest(Long requestId) {
-        requestRepository.findById(requestId)
+        Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
-            
+
+        canRequesterOrProcurementOfficerAccessRequestDetails(request);
+
         List<Quote> quotes = quoteRepository.findByRequestRequestID(requestId);
         
         return quotes.stream()
@@ -52,6 +59,11 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional(readOnly = true)
     public QuoteDto getQuoteById(Long requestId, Long quoteId) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        canRequesterOrProcurementOfficerAccessRequestDetails(request);
+
         Quote quote = quoteRepository.findById(quoteId)
             .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
             
@@ -67,6 +79,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     public QuoteDto createQuoteForRequest(Long requestId, QuoteCreateDto createDto) {
         Request request = requestRepository.findById(requestId)
             .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        canRequesterOrProcurementOfficerAccessRequestDetails(request);
             
         Vendor vendor = vendorRepository.findById(createDto.vendorId())
             .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + createDto.vendorId()));
@@ -109,6 +123,11 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional
     public QuoteDto updateQuoteForRequest(Long requestId, Long quoteId, QuoteCreateDto updateDto) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        canRequesterOrProcurementOfficerAccessRequestDetails(request);
+
         Quote quote = quoteRepository.findById(quoteId)
             .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
             
@@ -159,9 +178,14 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional
     public void deleteQuoteForRequest(Long requestId, Long quoteId) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        canRequesterOrProcurementOfficerAccessRequestDetails(request);
+
         Quote quote = quoteRepository.findById(quoteId)
             .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
-            
+
         if (!quote.getRequest().getRequestID().equals(requestId)) {
             throw new EntityNotFoundException("Quote does not belong to this request");
         }
@@ -175,9 +199,14 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional
     public void selectQuoteForRequest(Long requestId, Long quoteId) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        canRequesterOrProcurementOfficerAccessRequestDetails(request);
+
         Quote quoteToSelect = quoteRepository.findById(quoteId)
             .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
-            
+
         if (!quoteToSelect.getRequest().getRequestID().equals(requestId)) {
             throw new EntityNotFoundException("Quote does not belong to this request");
         }
@@ -215,5 +244,24 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private QuoteDto mapToDto(Quote quote) {
         List<QuoteLineItem> items = quoteLineItemRepository.findByQuoteQuoteID(quote.getQuoteID());
         return quoteMapper.toDto(quote, items);
+    }
+
+    private void canRequesterOrProcurementOfficerAccessRequestDetails(Request request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) auth.getPrincipal();
+
+        if (user.getRole() == UserRole.REQUESTER && !request.getUserID().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Not allowed to access this request");
+        }
+
+        if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            if (request.getTeamID() == null || user.getDepartment() == null) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+
+            if (!request.getTeamID().getDepartment().getDepartmentId().equals(user.getDepartment().getDepartmentId())) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+        }
     }
 }
