@@ -4,7 +4,6 @@ import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
-import com.veritas.backend.workflow.entity.TransitionRule;
 
 import com.veritas.backend.user.entity.User;
 
@@ -32,9 +31,8 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
-import com.veritas.backend.auth.exception.WorkflowStateException;
+import com.veritas.backend.common.exception.WorkflowStateException;
 
 import java.util.List;
 import java.util.Optional;

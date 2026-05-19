@@ -1,4 +1,4 @@
-package com.veritas.backend.auth.exception;
+package com.veritas.backend.common.exception;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;

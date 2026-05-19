@@ -1,4 +1,4 @@
-package com.veritas.backend.auth.exception;
+package com.veritas.backend.common.exception;
 
 /**
  * Thrown when an action is performed on a workflow request
