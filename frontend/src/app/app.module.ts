@@ -70,6 +70,7 @@ import { ProjectCreateComponent } from './features/project/project-create/projec
 import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
 import { VendorCreateComponent } from './features/vendor/vendor-create/vendor-create.component';
 import { VendorEditComponent } from './features/vendor/vendor-edit/vendor-edit.component';
+import { VendorEvaluationDialogComponent } from './features/vendor/vendor-evaluation-dialog/vendor-evaluation-dialog.component';
 
 import { TeamListComponent } from './features/team/team-list/team-list.component';
 import { TeamCreateComponent } from './features/team/team-create/team-create.component';
@@ -119,6 +120,7 @@ import { RejectDialogComponent } from './shared/components/reject-dialog/reject-
     VendorListComponent,
     VendorCreateComponent,
     VendorEditComponent,
+    VendorEvaluationDialogComponent,
 
     // Team
     TeamListComponent,

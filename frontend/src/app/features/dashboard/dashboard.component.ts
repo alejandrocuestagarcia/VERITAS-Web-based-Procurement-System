@@ -9,6 +9,8 @@ import {
 } from '../../core/api';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from "../../core/services/toast.service";
+import { MatDialog } from '@angular/material/dialog';
+import { VendorEvaluationDialogComponent } from '../vendor/vendor-evaluation-dialog/vendor-evaluation-dialog.component';
 
 interface DashboardStats {
   total: number;
@@ -26,6 +28,8 @@ interface DashboardStats {
 export class DashboardComponent implements OnInit {
   public pendingRequisitions: RequisitionDto[] = [];
   public inProgressRequisitions: RequisitionDto[] = [];
+  public closedRequisitions: RequisitionDto[] = [];
+  public displayedColumns: string[] = ['requestName', 'projectName', 'vendorName', 'status', 'actions'];
   public loading: boolean = false;
   public userName: string = 'User';
   public greeting: string = '';
@@ -44,7 +48,8 @@ export class DashboardComponent implements OnInit {
     private projectService: ProjectModuleService,
     private authService: AuthService,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) { }
 
   public ngOnInit(): void {
@@ -93,6 +98,10 @@ export class DashboardComponent implements OnInit {
       } else {
         this.pendingRequisitions = recentRequisitions.filter(requisition => requisition.responsibleRole === this.userRole);
         this.inProgressRequisitions = [];
+      }
+
+      if (this.authService.hasRole('PROCUREMENT_OFFICER')) {
+        this.closedRequisitions = closedRequisitions.filter(req => req.vendorId != null);
       }
 
       this.stats.pendingActions = this.pendingRequisitions.length;
@@ -170,5 +179,24 @@ export class DashboardComponent implements OnInit {
       case 'LOW': return 'arrow_downward';
       default: return 'remove';
     }
+  }
+
+  public openEvaluationDialog(requisition: RequisitionDto): void {
+    if (!requisition.id || !requisition.vendorId) return;
+
+    const dialogRef = this.dialog.open(VendorEvaluationDialogComponent, {
+      width: '500px',
+      data: {
+        vendorId: requisition.vendorId,
+        requestId: requisition.id,
+        vendorName: requisition.vendorName
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadDashboardData();
+      }
+    });
   }
 }
