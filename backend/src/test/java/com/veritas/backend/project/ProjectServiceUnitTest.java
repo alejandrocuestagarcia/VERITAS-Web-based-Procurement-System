@@ -3,6 +3,7 @@ package com.veritas.backend.project;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
+import com.veritas.backend.project.dto.ProjectEditDto;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.mapper.ProjectMapper;
 import com.veritas.backend.project.repository.ProjectRepository;
@@ -12,6 +13,7 @@ import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,9 +21,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -117,7 +121,7 @@ class ProjectServiceUnitTest {
         ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, null, null, null,"Team A");
 
         when(projectRepository.existsByNameOrProjectKey("Secret Project", "KEY-123")).thenReturn(false);
-        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(team));
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
         when(projectMapper.toProject(dto)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(saved);
         when(projectMapper.toProjectDto(saved)).thenReturn(mapped);
@@ -144,8 +148,139 @@ class ProjectServiceUnitTest {
         ProjectCreationDto dto = new ProjectCreationDto("Secret New", "SEC-KEY", 1L, null, null, null);
 
         when(projectRepository.existsByNameOrProjectKey("Secret New", "SEC-KEY")).thenReturn(false);
-        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+        when(teamRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(jakarta.persistence.EntityNotFoundException.class, () -> projectService.createProject(dto));
+        assertThrows(EntityNotFoundException.class, () -> projectService.createProject(dto));
+    }
+
+    //AI-Generated
+    @Test
+    void GetProjectById_RequesterSameTeam_ReturnsProjectDto() {
+
+        Team team = Team.builder().teamId(10L).name("Testing Team").build();
+        Project project = Project.builder().id(1L).name("Secret Project").team(team).build();
+        ProjectDto expectedDto = new ProjectDto(1L, "Secret Project", null, null, null, "Testing Team");
+        User requester = User.builder().role(UserRole.REQUESTER).team(team).build();
+
+        when(projectRepository.findByIdAndTeam(1L, team)).thenReturn(Optional.of(project));
+        when(projectMapper.toProjectDto(project)).thenReturn(expectedDto);
+
+        ProjectDto result = projectService.getProjectById(1L, requester);
+
+        assertAll(
+                ()->assertThat(result).isNotNull(),
+                ()->assertThat(result.name()).isEqualTo("Secret Project")
+        );
+        verify(projectRepository).findByIdAndTeam(1L, team);
+    }
+
+    //AI-Generated
+    @Test
+    void GetProjectById_RequesterDifferentTeam_ThrowsEntityNotFoundException() {
+
+        Team correctTeam = Team.builder().teamId(10L).name("Testing Team").build();
+        Team wrongTeam = Team.builder().teamId(20L).name("Dev Team").build();
+        User requester = User.builder().role(UserRole.REQUESTER).team(wrongTeam).build();
+
+        when(projectRepository.findByIdAndTeam(1L, wrongTeam)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+                projectService.getProjectById(1L, requester)
+        );
+        verify(projectMapper, never()).toProjectDto(any());
+    }
+
+    //AI-Generated
+    @Test
+    void GetProjectById_ProcurementOfficerSameDepartment_ReturnsProjectDto() {
+
+        Department department = Department.builder().departmentId(5L).name("Logistics").build();
+        Team team = Team.builder().teamId(10L).department(department).build();
+        Project project = Project.builder().id(1L).name("Logistics Project").team(team).build();
+        ProjectDto expectedDto = new ProjectDto(1L, "Logistics Project", null, null, null, "Team Logistics");
+        User procurementOfficer = User.builder().role(UserRole.PROCUREMENT_OFFICER).department(department).build();
+
+        when(projectRepository.findByIdAndTeamDepartment(1L, department)).thenReturn(Optional.of(project));
+        when(projectMapper.toProjectDto(project)).thenReturn(expectedDto);
+
+        ProjectDto result = projectService.getProjectById(1L, procurementOfficer);
+
+        assertThat(result).isNotNull();
+        verify(projectRepository).findByIdAndTeamDepartment(1L, department);
+    }
+
+    //AI-Generated
+    @Test
+    void GetProjectById_ProcurementOfficerDifferentDepartment_ThrowsEntityNotFoundException() {
+        Department wrongDepartment = Department.builder().departmentId(9L).name("HR").build();
+        User procurementOfficer = User.builder().role(UserRole.PROCUREMENT_OFFICER).department(wrongDepartment).build();
+
+        when(projectRepository.findByIdAndTeamDepartment(1L, wrongDepartment)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+                projectService.getProjectById(1L, procurementOfficer)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void EditProject_ProjectExists_UpdatesFieldsAndReturnsDto() {
+
+        Long projectId = 1L;
+        ProjectEditDto editDto =
+                new ProjectEditDto("Updated Project Name", java.math.BigDecimal.valueOf(50000.00),null,null);
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project Name")
+                .budget(java.math.BigDecimal.valueOf(10000.00))
+                .build();
+
+        Project savedProject = Project.builder()
+                .id(projectId)
+                .name("Updated Project Name")
+                .budget(java.math.BigDecimal.valueOf(50000.00))
+                .build();
+
+        ProjectDto expectedDto = new ProjectDto(projectId, "Updated Project Name", null, null, java.math.BigDecimal.valueOf(50000.00), null);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(projectRepository.save(existingProject)).thenReturn(savedProject);
+        when(projectMapper.toProjectDto(savedProject)).thenReturn(expectedDto);
+
+
+        ProjectDto result = projectService.editProject(projectId, editDto);
+        assertAll(
+                () -> assertThat(result).isNotNull(),
+                () -> assertThat(result.name()).isEqualTo("Updated Project Name"),
+                () -> assertThat(result.budget()).isLessThanOrEqualTo(java.math.BigDecimal.valueOf(50000.00)),
+
+
+                () -> assertThat(existingProject.getName()).isEqualTo("Updated Project Name"),
+                () -> assertThat(existingProject.getBudget()).isEqualTo(java.math.BigDecimal.valueOf(50000.00))
+        );
+
+
+        verify(projectRepository).findById(projectId);
+        verify(projectRepository).save(existingProject);
+    }
+
+    //AI-Generated
+    @Test
+    void EditProject_ProjectDoesNotExist_ThrowsEntityNotFoundException() {
+
+        Long projectId = 404L;
+        ProjectEditDto editDto =
+                new ProjectEditDto("Ghost Update", java.math.BigDecimal.valueOf(100),null,null);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+
+        assertThrows(EntityNotFoundException.class, () ->
+                projectService.editProject(projectId, editDto)
+        );
+
+        verify(projectRepository, never()).save(any());
+        verify(projectMapper, never()).toProjectDto(any());
     }
 }

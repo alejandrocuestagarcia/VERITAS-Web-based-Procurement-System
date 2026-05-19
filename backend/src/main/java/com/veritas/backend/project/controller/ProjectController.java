@@ -40,17 +40,17 @@ public class ProjectController {
     @Operation(summary = "Get project", description = "Retrieves a project.")
     @IsRequester
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ProjectDto> getProject(@PathVariable Long id) {
-        log.info("GET /projects/{}", id);
-        return null;
+    public ResponseEntity<ProjectDto> getProject(@PathVariable Long id,@AuthenticationPrincipal User user) {
+        log.info("GET /projects/{} as user {}", id,user.getEmail());
+        return ResponseEntity.ok(projectService.getProjectById(id,user));
     }
 
     @Operation(summary = "Edit project", description = "Edits a projects basic info.")
     @IsFinanceOfficer
     @PatchMapping("/{id}")
-    public ResponseEntity<ProjectDto> editProject(@PathVariable Long id, @RequestBody ProjectEditDto updates) {
+    public ResponseEntity<ProjectDto> editProject(@PathVariable Long id, @RequestBody ProjectEditDto updatedProject) {
         log.info("PATCH /projects/{}", id);
-        return null;
+        return ResponseEntity.ok(projectService.editProject(id, updatedProject));
     }
 
     @Operation(summary = "Create project", description = "Creates a project")

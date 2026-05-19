@@ -2,6 +2,7 @@ package com.veritas.backend.project.service.impl;
 
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
+import com.veritas.backend.project.dto.ProjectEditDto;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.mapper.ProjectMapper;
 import com.veritas.backend.project.repository.ProjectRepository;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -105,6 +107,67 @@ public class ProjectServiceImpl implements ProjectService {
         Project saved = projectRepository.save(project);
 
         log.info("Project created successfully – id: {}, name: {}", saved.getId(), saved.getName());
+        return projectMapper.toProjectDto(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProjectDto getProjectById(Long id,User user) {
+        log.debug("Fetching project by id: {}", id);
+
+        if (user.getRole() == UserRole.REQUESTER) {
+
+            Project project = projectRepository.findByIdAndTeam(id,user.getTeam())
+                    .orElseThrow(() -> new EntityNotFoundException("Project with id " + id + " not found"));
+            return projectMapper.toProjectDto(project);
+        }
+
+        if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            Project project = projectRepository.findByIdAndTeamDepartment(id,user.getDepartment())
+                    .orElseThrow(() -> new EntityNotFoundException("Project with id " + id + " not found"));
+            return projectMapper.toProjectDto(project);
+        }
+
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project with id " + id + " not found"));
+        return projectMapper.toProjectDto(project);
+    }
+
+    @Override
+    @Transactional
+    public ProjectDto editProject(Long id, ProjectEditDto updatedProject) {
+        log.info("Editing project id: {}", id);
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project with id " + id + " not found"));
+
+        if (updatedProject.startDate() != null && !project.getStartDate().equals(updatedProject.startDate())) {
+
+            if(project.getStartDate().isBefore(LocalDate.now())){
+                throw new IllegalArgumentException("Start date can only be changed if the project has not started already");
+            }
+            if (updatedProject.startDate().isBefore(LocalDate.now())) {
+                throw new IllegalArgumentException("Start date can only be changed if the new date is in the future");
+            }
+            project.setStartDate(updatedProject.startDate());
+        }
+        if (updatedProject.endDate() != null && !project.getEndDate().equals(updatedProject.endDate())) {
+
+            if (updatedProject.endDate().isBefore(updatedProject.startDate())) {
+                throw new IllegalArgumentException("End date must be after start date");
+            }
+
+            if (updatedProject.endDate().isBefore(LocalDate.now())) {
+                throw new IllegalArgumentException("End date can only be changed if the new date is in the future");
+            }
+
+            project.setEndDate(updatedProject.startDate());
+        }
+
+        if(updatedProject.name()!= null) project.setName(updatedProject.name());
+        if(updatedProject.budget()!= null) project.setBudget(updatedProject.budget());
+
+        Project saved = projectRepository.save(project);
+        log.info("Project edited successfully – id: {}", saved.getId());
         return projectMapper.toProjectDto(saved);
     }
 }

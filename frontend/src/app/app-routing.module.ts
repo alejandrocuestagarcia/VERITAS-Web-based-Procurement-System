@@ -32,7 +32,7 @@ import { RequisitionDetailComponent } from "./features/requisition/requisition-d
 import { RequisitionVendorQuotesComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quotes-list/requisition-vendor-quotes.component";
 import { RequisitionVendorQuoteCreateComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component";
 import { RequisitionVendorQuoteViewComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component";
-
+import { ProjectEditComponent } from "./features/project/project-edit/project-edit.component";
 
 const routes: Routes = [
   {
@@ -81,6 +81,12 @@ const routes: Routes = [
   {
     path: 'projects/create',
     component: ProjectCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
+  },
+  {
+    path: 'projects/edit/:id',
+    component: ProjectEditComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR', 'FINANCE_OFFICER'] }
   },

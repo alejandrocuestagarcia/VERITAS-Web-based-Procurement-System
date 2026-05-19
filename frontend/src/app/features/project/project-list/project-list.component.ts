@@ -1,9 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ProjectModuleService, ProjectDto } from '../../../core/api';
+import {ProjectModuleService, ProjectDto} from '../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
 import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-project-list',
@@ -20,6 +21,7 @@ export class ProjectListComponent implements OnInit {
 
   constructor(
     private projectService: ProjectModuleService,
+    private router: Router,
     private dialog: MatDialog
   ) { }
 
@@ -43,7 +45,7 @@ export class ProjectListComponent implements OnInit {
   }
 
   editProject(project: ProjectDto) {
-    return ""
+    this.router.navigate(['/projects/edit', project.id]);
   }
 
   deleteProject(project: ProjectDto) {
