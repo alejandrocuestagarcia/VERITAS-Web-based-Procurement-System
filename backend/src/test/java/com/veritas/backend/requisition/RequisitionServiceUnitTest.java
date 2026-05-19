@@ -448,7 +448,7 @@ class RequisitionServiceUnitTest {
                 100L,                         // 1. id
                 "Draft Test",                    // 2. requestName
                 "PRJ-12",                        // 3. requestKey
-                "Start",                         // 4. currentStep
+                "Start",                         // 4. status
                 false,                           // 5. isClosed
                 Priority.MEDIUM,                 // 6. priority
                 "Test Project",                  // 7. projectName
