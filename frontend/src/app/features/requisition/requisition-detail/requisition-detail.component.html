@@ -37,10 +37,28 @@
         <mat-icon class="scale-90">request_quote</mat-icon>
         Vendor Quotes
       </button>
-      <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
-        <mat-icon class="scale-90">edit</mat-icon>
-        Edit
-      </button>
+      <div *ngIf= "request.responsibleRole === role || !request.responsibleRole " class="flex items-center gap-2" >
+        <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
+          <mat-icon class="scale-90">edit</mat-icon>
+          Edit
+        </button>
+        <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state != 'DRAFT' " class="flex items-center gap-2" >
+          <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+            <mat-icon class="scale-90">close</mat-icon>
+            Reject
+          </button>
+          <button (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors">
+            <mat-icon class="scale-90">check</mat-icon>
+            Approve
+          </button>
+        </div>
+        <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state == 'DRAFT' " class="flex items-center gap-2" >
+          <button (click)="submitRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+            <mat-icon class="scale-90">upload</mat-icon>
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -115,11 +133,22 @@
     <div class="lg:col-span-5 flex flex-col gap-8">
       <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-7 flex-1 flex flex-col">
         <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5">Description & Context</h3>
-        <p class="text-[15px] text-slate-700 leading-relaxed flex-1 whitespace-pre-wrap">
-          {{ request.description || 'No additional description provided.' }}
-        </p>
+        <div class="w-full max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+          <p class="text-[15px] text-slate-700 leading-relaxed flex-1 whitespace-pre-wrap">
+            {{ request.description || 'No additional description provided.' }}
+          </p>
+        </div>
       </div>
-
+      <div *ngIf="request.rejectionReason" class="bg-red-50/40 rounded-[20px] border border-red-200 p-7 border-l-[6px] border-l-red-500 shadow-sm">
+        <div class="flex items-center gap-2 mb-4">
+          <h3 class="text-[11px] font-bold text-red-700 uppercase tracking-widest">Rejection Context / Feedback</h3>
+        </div>
+        <div class="w-full max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+          <p class="text-[14px] text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
+            {{ request.rejectionReason }}
+          </p>
+        </div>
+      </div>
       <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-7 border-l-[6px] border-l-[#0042d1]">
         <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5">Current Workflow Step</h3>
         <p class="text-[14px] text-slate-600 leading-relaxed">

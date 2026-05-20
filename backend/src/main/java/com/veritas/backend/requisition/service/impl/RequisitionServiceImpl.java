@@ -274,7 +274,6 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
 
-
         Request savedRequest = requestRepository.save(request);
 
 

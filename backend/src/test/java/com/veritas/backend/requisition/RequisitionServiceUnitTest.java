@@ -153,7 +153,7 @@ class RequisitionServiceUnitTest {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
                 1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, "");
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, "",null);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -464,7 +464,8 @@ class RequisitionServiceUnitTest {
                 "https://jira.com/123",          // 17. jiraIssueUrl (or null)
                 null,// 18. items
                 null,// 19. attachments
-                "ACTIVE"                         // 20. status (Moved to the end!)
+                "ACTIVE", // 20. status (Moved to the end!)
+                null     //21. rejection reason
         );
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
