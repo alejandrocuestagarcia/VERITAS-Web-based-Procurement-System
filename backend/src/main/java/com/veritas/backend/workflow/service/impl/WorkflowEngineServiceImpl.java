@@ -4,6 +4,7 @@ import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
+import com.veritas.backend.workflow.entity.TransitionRule;
 
 import com.veritas.backend.user.entity.User;
 
@@ -38,6 +39,7 @@ import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.security.access.AccessDeniedException;
 import com.veritas.backend.common.exception.WorkflowStateException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -77,25 +79,15 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request,transition)) {
                 
-                InternalBudget budget = request.getBudgetID();
-                if (budget != null) {
-                    BigDecimal actual = budget.getActualSpend() != null ? budget.getActualSpend() : BigDecimal.ZERO;
-                    BigDecimal committed = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
-                    BigDecimal total = budget.getTotalAmount() != null ? budget.getTotalAmount() : BigDecimal.ZERO;
-                    BigDecimal safetyBuffer = budget.getSafetyBuffer() != null ? budget.getSafetyBuffer() : BigDecimal.ZERO;
-                    
-                    BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
-                    BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
-                    
-                    if (actual.add(committed).compareTo(totalWithBuffer) > 0) {
-                        throw new WorkflowStateException("Budget exhausted including safety buffer.");
-                    }
-                }
+                assertBudgetWithinSafetyBuffer(request.getBudgetID());
 
                 Optional<TransitionRule> optRule = transitionRuleRepository.findByTransition(transition);
                 if (optRule.isPresent()) {
                     TransitionRule rule = optRule.get();
-                    
+
+                    List<String> validationErrors = new ArrayList<>();
+                    List<String> missingAttachments = new ArrayList<>();
+
                     if (rule.getMinRequiredVendors() != null && rule.getMinRequiredVendors() > 0) {
                         Long requestId = request.getRequestID();
                         List<Quote> quotes = requestId != null
@@ -109,24 +101,37 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                             .distinct()
                             .count();
                         if (distinctVendors < rule.getMinRequiredVendors()) {
-                            throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "Not enough vendors");
+                            validationErrors.add("Not enough vendors");
                         }
                     }
-                    
+
                     if (rule.getIsPdfRequired() != null && rule.getIsPdfRequired()) {
                         boolean hasPdf = request.getAttachments().stream()
                                 .anyMatch(a -> "application/pdf".equalsIgnoreCase(a.getFileType()));
-                        if (!hasPdf) throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "PDF attachment required");
+                        if (!hasPdf) missingAttachments.add("PDF");
                     }
                     if (rule.getIsCsvRequired() != null && rule.getIsCsvRequired()) {
                         boolean hasCsv = request.getAttachments().stream()
                                 .anyMatch(a -> "text/csv".equalsIgnoreCase(a.getFileType()));
-                        if (!hasCsv) throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "CSV attachment required");
+                        if (!hasCsv) missingAttachments.add("CSV");
                     }
                     if (rule.getIsImageRequired() != null && rule.getIsImageRequired()) {
                         boolean hasImage = request.getAttachments().stream()
                                 .anyMatch(a -> a.getFileType() != null && a.getFileType().toLowerCase().startsWith("image/"));
-                        if (!hasImage) throw new WorkflowStateException(rule.getOptionalFailureMessage() != null ? rule.getOptionalFailureMessage() : "Image attachment required");
+                        if (!hasImage) missingAttachments.add("Image");
+                    }
+
+                    if (missingAttachments.size() == 1) {
+                        validationErrors.add(missingAttachments.get(0) + " attachment required");
+                    } else if (!missingAttachments.isEmpty()) {
+                        validationErrors.add("Missing required attachments: " + String.join(", ", missingAttachments));
+                    }
+
+                    if (!validationErrors.isEmpty()) {
+                        boolean forceDetails = missingAttachments.size() > 1 || validationErrors.size() > 1;
+                        throw new WorkflowStateException(
+                                buildRuleFailureMessage(rule.getOptionalFailureMessage(), validationErrors, forceDetails)
+                        );
                     }
                 }
 
@@ -223,6 +228,36 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     .getValue(context, requisition, Boolean.class);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private String buildRuleFailureMessage(String optionalFailureMessage, List<String> validationErrors, boolean forceDetails) {
+        String details = String.join(" ", validationErrors);
+        if (optionalFailureMessage == null || optionalFailureMessage.isBlank()) {
+            return details;
+        }
+        if (!forceDetails) {
+            return optionalFailureMessage;
+        }
+        return optionalFailureMessage + " " + details;
+    }
+
+    private void assertBudgetWithinSafetyBuffer(InternalBudget budget) {
+        InternalBudget currentBudget = budget;
+        while (currentBudget != null) {
+            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend() : BigDecimal.ZERO;
+            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend() : BigDecimal.ZERO;
+            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer() != null ? currentBudget.getSafetyBuffer() : BigDecimal.ZERO;
+
+            BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+            BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
+
+            if (actual.add(committed).compareTo(totalWithBuffer) > 0) {
+                throw new WorkflowStateException("Budget exhausted including safety buffer.");
+            }
+
+            currentBudget = currentBudget.getParentBudget();
         }
     }
 

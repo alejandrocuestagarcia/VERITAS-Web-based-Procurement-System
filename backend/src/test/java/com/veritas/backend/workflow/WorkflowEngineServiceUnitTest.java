@@ -20,7 +20,7 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.impl.WorkflowEngineServiceImpl;
-import com.veritas.backend.auth.exception.WorkflowStateException;
+import com.veritas.backend.common.exception.WorkflowStateException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
