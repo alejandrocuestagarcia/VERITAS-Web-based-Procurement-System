@@ -136,7 +136,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 }
 
                 request.setCurrentStepID(transition.getToStep());
-
+                request.setRejectionReason(null);
                 auditService.createWorkflowTransitionLog(
                         actor,
                         request,
@@ -204,6 +204,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             request.setState(RequestStatus.DRAFT);
         }
 
+        request.setRejectionReason(reason);
         request.setCurrentStepID(targetStep);
 
         auditService.createWorkflowTransitionLog(

@@ -100,4 +100,7 @@ public class Request {
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false)
     private RequestStatus state = RequestStatus.DRAFT;
+
+    @Column(name = "rejection_reason",columnDefinition = "TEXT")
+    private String rejectionReason;
 }
