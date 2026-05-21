@@ -22,9 +22,14 @@ public class JwtService {
   private long accessTokenExpire;
 
   public String generateAccessToken(User user) {
-    return Jwts.builder().subject(user.getEmail()).claim("role", user.getRole().name())
-        .issuedAt(new Date()).expiration(new Date(System.currentTimeMillis() + accessTokenExpire))
-        .signWith(getSigninKey()).compact();
+    return Jwts.builder()
+            .subject(user.getEmail())
+            .claim("role", user.getRole().name())
+            .claim("name", user.getName())
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + accessTokenExpire))
+            .signWith(getSigninKey())
+            .compact();
   }
 
   public String extractEmail(String token) {
