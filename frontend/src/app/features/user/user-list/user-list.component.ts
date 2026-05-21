@@ -1,14 +1,13 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableDataSource } from "@angular/material/table";
-import { Pageable, UserDto, UserDtoRoleEnum, UserModuleService } from "../../../core/api";
-import { PageEvent } from "@angular/material/paginator";
-import { SharedTableComponent } from "../../../shared/components/table/shared-table.component";
-import { AuthService } from "../../../core/services/auth.service";
-import { Router } from "@angular/router";
-import { MatDialog } from '@angular/material/dialog';
-import { ToastService } from "../../../core/services/toast.service";
-import { UserDeletionDialogComponent } from '../user-deletion-dialog/user-deletion-dialog.component';
-import { RequisitionDto } from '../../../core/api';
+import {Component, OnInit, ViewChild} from '@angular/core';
+import {MatTableDataSource} from "@angular/material/table";
+import {Pageable, RequisitionDto, UserDto, UserDtoRoleEnum, UserModuleService} from "../../../core/api";
+import {PageEvent} from "@angular/material/paginator";
+import {SharedTableComponent} from "../../../shared/components/table/shared-table.component";
+import {AuthService} from "../../../core/services/auth.service";
+import {Router} from "@angular/router";
+import {MatDialog} from '@angular/material/dialog';
+import {ToastService} from "../../../core/services/toast.service";
+import {UserDeletionDialogComponent} from '../user-deletion-dialog/user-deletion-dialog.component';
 
 @Component({
   selector: 'app-user-list',
@@ -102,7 +101,7 @@ export class UserListComponent implements OnInit {
       next: (pendingRequests: RequisitionDto[]) => {
         this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
           next: (response) => {
-            const fallbackUsers = response.content!.filter(u => u.id !== user.id && u.active !== false);
+            const fallbackUsers = response.content!.filter(u => u.id !== user.id && u.active !== false && u.role === UserDtoRoleEnum.Requester && u.teamId === user.teamId);
 
             const dialogReturnValue = this.dialog.open(UserDeletionDialogComponent, {
               width: '500px',

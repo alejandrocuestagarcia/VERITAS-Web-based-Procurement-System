@@ -39,7 +39,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Autowired
@@ -119,7 +118,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     User john =
             User.builder().name("John Doe").email("john@test.com").team(testTeam).isActive(true)
-                    .passwordHash(encoder.encode("password123")).role(UserRole.FINANCE_OFFICER).build();
+                    .passwordHash(encoder.encode("password123")).role(UserRole.REQUESTER).build();
 
     userRepository.saveAll(java.util.List.of(alex, john));
 
