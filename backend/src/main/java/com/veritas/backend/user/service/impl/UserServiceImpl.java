@@ -228,7 +228,6 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public void deleteUser(Long id, Long fallbackUserId) {
-
     Optional<User> user = userRepository.findById(id);
 
     if (user.isPresent()) {
@@ -239,6 +238,11 @@ public class UserServiceImpl implements UserService {
       if (fallbackUserId != null) {
         User fallbackUser = userRepository.findById(fallbackUserId)
             .orElseThrow(() -> new EntityNotFoundException("Fallback user not found"));
+
+        if (fallbackUser.getRole() != UserRole.REQUESTER || !fallbackUser.getTeam().getTeamId().equals(actualUser.getTeam().getTeamId())) {
+          throw new IllegalArgumentException("Fallback user must be a requester from the same team");
+        }
+
         List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
         for (Request req : activeRequests) {
           req.setUserID(fallbackUser);

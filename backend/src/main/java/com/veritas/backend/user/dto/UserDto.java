@@ -10,6 +10,7 @@ public record UserDto(
         boolean active,
         UserRole role,
         String teamName,
+        Long teamId,
         String departmentName,
         LocalDateTime createdAt
 ) {}

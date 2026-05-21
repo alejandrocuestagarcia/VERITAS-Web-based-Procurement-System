@@ -101,9 +101,9 @@ export class DashboardComponent implements OnInit {
   }
 
   private fetchUserProfile(): void {
-    const email = this.authService.getDecodedToken()?.sub;
-    if (email) {
-      this.userName = email;
+    const userName = this.authService.getDecodedToken()?.name;
+    if (userName) {
+      this.userName = userName;
     }
   }
 

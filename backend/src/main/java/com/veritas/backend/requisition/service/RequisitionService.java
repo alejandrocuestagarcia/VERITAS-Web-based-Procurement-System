@@ -19,4 +19,5 @@ public interface RequisitionService {
     RequisitionDto approveRequest(Long id, User actor);
     RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData);
     RequisitionDto submitRequest(Long id, User actor);
+    RequisitionDto changeRequester(Long id, Long newRequesterId);
 }

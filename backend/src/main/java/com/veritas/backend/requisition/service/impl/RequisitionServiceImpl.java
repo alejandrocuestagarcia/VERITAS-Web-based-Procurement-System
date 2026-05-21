@@ -15,6 +15,7 @@ import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
@@ -298,5 +299,27 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request savedRequest = requestRepository.save(request);
         return requisitionMapper.toDto(savedRequest);
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto changeRequester(Long id, Long newRequesterId) {
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+
+        if (newRequesterId == null) {
+            throw new IllegalArgumentException("New assigned user must be stated");
+        }
+
+        User newRequester = userRepository.findById(newRequesterId)
+                .orElseThrow(() -> new EntityNotFoundException("New assigned user not found"));
+
+        if (newRequester.getRole() != UserRole.REQUESTER || !newRequester.getTeam().getTeamId().equals(request.getUserID().getTeam().getTeamId())) {
+            throw new IllegalArgumentException("New assigned user must be a requester from the same team");
+        }
+
+        request.setUserID(newRequester);
+        Request updatedRequest = requestRepository.save(request);
+        return requisitionMapper.toDto(updatedRequest);
     }
 }

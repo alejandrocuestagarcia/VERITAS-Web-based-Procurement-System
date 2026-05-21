@@ -91,6 +91,7 @@ import { RequisitionDetailComponent } from './features/requisition/requisition-d
 import { RequisitionVendorQuotesComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quotes-list/requisition-vendor-quotes.component';
 import { RequisitionVendorQuoteCreateComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component';
 import { RequisitionVendorQuoteViewComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component';
+import { RequisitionChangeRequesterDialogComponent } from './features/requisition/requisition-change-requester-dialog/requisition-change-requester-dialog.component';
 
 @NgModule({
   declarations: [
@@ -141,6 +142,7 @@ import { RequisitionVendorQuoteViewComponent } from './features/requisition/requ
     RequisitionVendorQuotesComponent,
     RequisitionVendorQuoteCreateComponent,
     RequisitionVendorQuoteViewComponent,
+    RequisitionChangeRequesterDialogComponent,
 
     // Shared
     SharedTableComponent,

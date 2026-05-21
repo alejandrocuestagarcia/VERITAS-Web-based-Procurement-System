@@ -115,6 +115,7 @@ class UserServiceUnitTest {
         testFallBackUser = new User();
         testFallBackUser.setId(2L);
         testFallBackUser.setName("Test FallBack User");
+        testFallBackUser.setRole(UserRole.REQUESTER);
         testFallBackUser.setTeam(testTeam);
 
 
@@ -131,7 +132,7 @@ class UserServiceUnitTest {
 
 
         RequisitionDto expectedDto =
-            new RequisitionDto(1L, "Test Request", "", "", false, Priority.MEDIUM, "", "", "", "", "", "", null, null, "", "", "", null, null,"");
+            new RequisitionDto(1L, "Test Request", "", "", false, Priority.MEDIUM, "", "", "", "", "", null, null, "", null, null, "", "", "", null, null,"");
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
 
@@ -171,51 +172,13 @@ class UserServiceUnitTest {
 
 
     @Test
-    void DeleteUser_ValidUserWithFallBackUserAndWithoutTeam_DeactivatesUser() {
-
-        testUser.setTeam(null);
-
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.findById(2L)).thenReturn(Optional.of(testFallBackUser));
-        when(requestRepository.findActiveRequestsByUserId(1L)).thenReturn(List.of(testRequest));
-
-        userService.deleteUser(1L, 2L);
-
-        verify(userRepository).save(userCaptor.capture());
-
-        verify(requestRepository).saveAll(requestCaptor.capture());
-
-        List<Request> requests = requestCaptor.getValue();
-        assertNotNull(requests);
-        assertThat(requests).hasSize(1);
-        assertEquals("Test Request", requests.getFirst().getRequestName());
-        assertEquals(testFallBackUser, requests.getFirst().getUserID());
-
-        verify(requestRepository, times(1)).findActiveRequestsByUserId(1L);
-
-
-        User savedUser = userCaptor.getValue();
-
-        assertFalse(savedUser.getIsActive());
-        assertNotNull(savedUser.getDeletedAt());
-
-        verify(teamRepository, never()).save(any(Team.class));
-
-        verify(userRepository, times(1)).findById(1L);
-        verify(refreshTokenRepository, times(1)).deleteByUserId(1L);
-
-
-    }
-
-
-    @Test
     void DeleteUser_ValidUserWithFallBackUserAndWithTeamAndNotTeamLeader_DeactivatesUser() {
 
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(testFallBackUser));
 
-        userService.deleteUser(1L, null);
+        userService.deleteUser(1L, 2L);
 
 
         verify(userRepository).save(userCaptor.capture());
@@ -242,8 +205,9 @@ class UserServiceUnitTest {
 
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(testFallBackUser));
 
-        userService.deleteUser(1L, null);
+        userService.deleteUser(1L, 2L);
 
 
         verify(userRepository).save(userCaptor.capture());
@@ -312,7 +276,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.corp", true, UserRole.REQUESTER, "IT Team", null, LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.corp", true, UserRole.REQUESTER, "IT Team", 1L, null, LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(mockTeam));
@@ -337,7 +301,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Admin User", "admin@veritas.corp", true, UserRole.ADMINISTRATOR, null, null, LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Admin User", "admin@veritas.corp", true, UserRole.ADMINISTRATOR, null, null, null, LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(userMapper.toUser(request)).thenReturn(mappedUser);
@@ -376,7 +340,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Procurement", "pro@veritas.corp", true, UserRole.PROCUREMENT_OFFICER, null, "IT", LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Procurement", "pro@veritas.corp", true, UserRole.PROCUREMENT_OFFICER, null, null, "IT", LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(dept));

@@ -1,10 +1,10 @@
 package com.veritas.backend.requisition.controller;
  
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
-import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.requisition.dto.*;
 import com.veritas.backend.requisition.service.RequisitionService;
@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 @RequestMapping(path = "/requisitions", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
@@ -58,11 +59,19 @@ public class RequisitionController {
         return requisitionService.getRequestById(id);
     }
 
-    @Operation(summary = "Update/Edit request", description = "Edit draft details or change the assigned requester.")
+    @Operation(summary = "Update/Edit request", description = "Edit draft details.")
     @IsRequester
     @PatchMapping("/{id}")
     public ResponseEntity<RequisitionDto> updateRequest(@PathVariable Long id, @RequestBody RequisitionUpdateDto updates) {
         return ResponseEntity.ok(null);
+    }
+
+    @Operation(summary = "Change requester", description = "Change the assigned requester.")
+    @IsFinanceOfficer
+    @PatchMapping ("/{requestId}/requester-change")
+    public ResponseEntity<RequisitionDto> changeRequester(@PathVariable Long requestId, @RequestBody Long newRequesterId) {
+        log.info("PATCH /requisitions/{}/requester-change", requestId);
+        return ResponseEntity.ok(requisitionService.changeRequester(requestId, newRequesterId));
     }
 
     @Operation(summary = "Submit request", description = "Finalizes a draft and moves it into the workflow engine.")

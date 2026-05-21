@@ -153,7 +153,7 @@ class RequisitionServiceUnitTest {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
                 1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, "");
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", 1L, 1L, null, null, null, null, null, null, null, null, "");
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -445,7 +445,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         RequisitionDto expectedDto = new RequisitionDto(
-                100L,                            // 1. id
+                100L,                         // 1. id
                 "Draft Test",                    // 2. requestName
                 "PRJ-12",                        // 3. requestKey
                 "Start",                         // 4. currentStep
@@ -456,15 +456,17 @@ class RequisitionServiceUnitTest {
                 "Standard Workflow",             // 9. workflowName
                 "Engineering",                   // 10. teamName
                 "Test User",                     // 11. requesterName
-                "ROLE_MANAGER",                  // 12. responsibleRole (or null)
-                java.time.LocalDateTime.now(),   // 13. createdAt
-                java.time.LocalDateTime.now(),   // 14. updatedAt
-                "Test Description",              // 15. description
-                "JIRA-123",                      // 16. jiraIssueKey (or null)
-                "https://jira.com/123",          // 17. jiraIssueUrl (or null)
-                null,// 18. items
-                null,// 19. attachments
-                "ACTIVE"                         // 20. status (Moved to the end!)
+                1L,                              // 12. requesterId
+                1L,                              // 13. requesterTeamId
+                "ROLE_MANAGER",                  // 14. responsibleRole (or null)
+                java.time.LocalDateTime.now(),   // 15. createdAt
+                java.time.LocalDateTime.now(),   // 16. updatedAt
+                "Test Description",              // 17. description
+                "JIRA-123",                      // 18. jiraIssueKey (or null)
+                "https://jira.com/123",          // 19. jiraIssueUrl (or null)
+                null,                            // 20. items
+                null,                            // 21. attachments
+                "ACTIVE"                         // 22. status (Moved to the end!)
         );
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
@@ -507,5 +509,139 @@ class RequisitionServiceUnitTest {
         verify(requestRepository, never()).save(any());
     }
 
+    @Test
+    void ChangeRequester_ValidInput_UpdatesRequesterAndReturnsDto() {
+        Team team = new Team();
+        team.setTeamId(10L);
 
+        User currentRequester = new User();
+        currentRequester.setId(1L);
+        currentRequester.setRole(UserRole.REQUESTER);
+        currentRequester.setTeam(team);
+
+        User newRequester = new User();
+        newRequester.setId(2L);
+        newRequester.setName("New Requester");
+        newRequester.setRole(UserRole.REQUESTER);
+        newRequester.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setUserID(currentRequester);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(newRequester));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionDto result = requisitionService.changeRequester(1L, 2L);
+
+        assertNotNull(result);
+        verify(requestRepository).save(requestCaptor.capture());
+        assertEquals(newRequester, requestCaptor.getValue().getUserID());
+    }
+
+    @Test
+    void ChangeRequester_RequestNotFound_ThrowsIllegalArgument() {
+        when(requestRepository.findById(99L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.changeRequester(99L, 2L));
+        assertTrue(ex.getMessage().contains("Request not found with id: 99"));
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void ChangeRequester_NullNewRequesterId_ThrowsIllegalArgument() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.changeRequester(1L, null));
+        assertTrue(ex.getMessage().contains("New assigned user must be stated"));
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void ChangeRequester_NewRequesterNotFound_ThrowsEntityNotFoundException() {
+        Team team = new Team();
+        team.setTeamId(10L);
+
+        User currentRequester = new User();
+        currentRequester.setId(1L);
+        currentRequester.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setUserID(currentRequester);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class,
+                () -> requisitionService.changeRequester(1L, 99L));
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void ChangeRequester_NewRequesterWrongRole_ThrowsIllegalArgument() {
+        Team team = new Team();
+        team.setTeamId(10L);
+
+        User currentRequester = new User();
+        currentRequester.setId(1L);
+        currentRequester.setRole(UserRole.REQUESTER);
+        currentRequester.setTeam(team);
+
+        User manager = new User();
+        manager.setId(2L);
+        manager.setRole(UserRole.PROCUREMENT_OFFICER);
+        manager.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setUserID(currentRequester);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.changeRequester(1L, 2L));
+        assertTrue(ex.getMessage().contains("New assigned user must be a requester from the same team"));
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void ChangeRequester_NewRequesterDifferentTeam_ThrowsIllegalArgument() {
+        Team teamA = new Team();
+        teamA.setTeamId(10L);
+
+        Team teamB = new Team();
+        teamB.setTeamId(20L);
+
+        User currentRequester = new User();
+        currentRequester.setId(1L);
+        currentRequester.setRole(UserRole.REQUESTER);
+        currentRequester.setTeam(teamA);
+
+        User newRequester = new User();
+        newRequester.setId(2L);
+        newRequester.setRole(UserRole.REQUESTER);
+        newRequester.setTeam(teamB);
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setUserID(currentRequester);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(newRequester));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.changeRequester(1L, 2L));
+        assertTrue(ex.getMessage().contains("New assigned user must be a requester from the same team"));
+        verify(requestRepository, never()).save(any());
+    }
 }
