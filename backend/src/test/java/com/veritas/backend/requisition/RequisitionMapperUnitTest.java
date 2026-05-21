@@ -7,7 +7,7 @@ import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
-import com.veritas.backend.requisition.mapper.RequisitionMapperImpl;
+import org.mapstruct.factory.Mappers;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.workflow.entity.WorkflowStep;
@@ -20,7 +20,7 @@ class RequisitionMapperUnitTest {
 
     @BeforeEach
     void setUp() {
-        mapper = new RequisitionMapperImpl();
+        mapper = Mappers.getMapper(RequisitionMapper.class);
     }
 
     @Test
