@@ -16,7 +16,7 @@
 
       <ul class="mt-3 pl-5 list-disc text-sm  max-h-32 overflow-y-auto">
         <li *ngFor="let req of data.pendingRequests" class="mb-1">
-          <a [routerLink]="['/requests', req.id]" target="_blank"
+          <a [routerLink]="['/requisitions', req.id]" target="_blank"
             class="text-blue-600 hover:text-blue-800 hover:underline font-medium">
             {{ req.requestKey }}
           </a>: {{ req.requestName }}
