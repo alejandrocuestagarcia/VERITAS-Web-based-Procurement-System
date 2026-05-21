@@ -3,6 +3,7 @@ package com.veritas.backend.requisition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,6 +49,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+
 //AI-GENERATED
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -82,6 +84,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private AuditLogRepository auditLogRepository;
 
     private String requesterToken;
+    private String financeOfficerToken;
     private Long projectId;
     private Long workflowId;
 
@@ -114,6 +117,17 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         requester.setTeam(team);
         requester = userRepository.save(requester);
 
+        User financeOfficer = new User();
+        financeOfficer.setEmail("finance-integration@veritas.com");
+        financeOfficer.setName("Integration Finance Officer");
+        financeOfficer.setPasswordHash("hashed");
+        financeOfficer.setRole(UserRole.FINANCE_OFFICER);
+        financeOfficer.setIsActive(true);
+        financeOfficer.setRequiresPasswordChange(false);
+        financeOfficer.setTeam(team);
+        financeOfficer = userRepository.save(financeOfficer);
+
+        financeOfficerToken = jwtService.generateAccessToken(financeOfficer);
         requesterToken = jwtService.generateAccessToken(requester);
 
         Project project = Project.builder()
@@ -428,4 +442,85 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         );
     }
 
+    //AI-Generated
+    @Test
+    void ChangeRequester_ValidSameTeam_UpdatesRequesterAndReturnsOk() throws Exception {
+        User secondRequester = new User();
+        secondRequester.setEmail("req2-integration@veritas.com");
+        secondRequester.setName("Second Requester");
+        secondRequester.setPasswordHash("hashed");
+        secondRequester.setRole(UserRole.REQUESTER);
+        secondRequester.setIsActive(true);
+        secondRequester.setRequiresPasswordChange(false);
+        secondRequester.setTeam(userRepository.findAll().getFirst().getTeam());
+        secondRequester = userRepository.save(secondRequester);
+
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+
+        mockMvc.perform(patch("/api/v1/requisitions/" + requestId + "/requester-change")
+                        .header("Authorization", "Bearer " + financeOfficerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(secondRequester.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requesterName").value("Second Requester"));
+    }
+
+    //AI-Generated
+    @Test
+    void ChangeRequester_RequestNotFound_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(patch("/api/v1/requisitions/999/requester-change")
+                        .header("Authorization", "Bearer " + financeOfficerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(1L)))
+                .andExpect(status().isBadRequest());
+    }
+
+    //AI-Generated
+    @Test
+    void ChangeRequester_NewRequesterFromDifferentTeam_ReturnsBadRequest() throws Exception {
+        Team otherTeam = teamRepository.save(Team.builder()
+                .name("Marketing")
+                .description("Marketing Team")
+                .isActive(true)
+                .build());
+
+        User outsider = new User();
+        outsider.setEmail("outsider@veritas.com");
+        outsider.setName("Outsider");
+        outsider.setPasswordHash("hashed");
+        outsider.setRole(UserRole.REQUESTER);
+        outsider.setIsActive(true);
+        outsider.setRequiresPasswordChange(false);
+        outsider.setTeam(otherTeam);
+        outsider = userRepository.save(outsider);
+
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+
+        mockMvc.perform(patch("/api/v1/requisitions/" + requestId + "/requester-change")
+                        .header("Authorization", "Bearer " + financeOfficerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(outsider.getId())))
+                .andExpect(status().isBadRequest());
+    }
+
+    //AI-Generated
+    @Test
+    void ChangeRequester_Unauthenticated_ReturnsForbidden() throws Exception {
+        mockMvc.perform(patch("/api/v1/requisitions/1/requester-change")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(2L)))
+                .andExpect(status().isForbidden());
+    }
 }
