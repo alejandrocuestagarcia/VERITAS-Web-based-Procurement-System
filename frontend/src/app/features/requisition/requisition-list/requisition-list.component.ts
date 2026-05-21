@@ -1,8 +1,20 @@
 import { Component, OnInit } from '@angular/core';
-import { RequisitionModuleService, RequisitionDto, ProjectModuleService, ProjectDto } from 'src/app/core/api';
+import {
+  RequisitionModuleService,
+  RequisitionDto,
+  ProjectModuleService,
+  ProjectDto,
+  UserModuleService, UserDtoRoleEnum
+} from 'src/app/core/api';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { PageEvent } from '@angular/material/paginator';
+import {MatDialog} from "@angular/material/dialog";
+import {ToastService} from "../../../core/services/toast.service";
+import {
+  RequisitionChangeRequesterDialogComponent
+} from "../requisition-change-requester-dialog/requisition-change-requester-dialog.component";
+import {AuthService} from "../../../core/services/auth.service";
 
 @Component({
   selector: 'app-requisition-list',
@@ -32,6 +44,10 @@ export class RequisitionListComponent implements OnInit {
   constructor(
     private requisitionService: RequisitionModuleService,
     private projectService: ProjectModuleService,
+    private userService: UserModuleService,
+    private authService: AuthService,
+    private dialog: MatDialog,
+    private toastService: ToastService,
     private router: Router
   ) { }
 
@@ -118,5 +134,47 @@ export class RequisitionListComponent implements OnInit {
 
   createNewRequest(): void {
     this.router.navigate(['/requisitions/create']);
+  }
+
+  get isFinanceOfficer(): boolean {
+    return this.authService.hasRole('FINANCE_OFFICER');
+  }
+
+  get isAdministrator(): boolean {
+    return this.authService.hasRole('ADMINISTRATOR');
+  }
+
+  changeRequester(req: RequisitionDto) {
+    this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
+      next: (response) => {
+        const fallbackUsers = response.content!.filter(u => u.id !== req.requesterId && u.active !== false && u.role === UserDtoRoleEnum.Requester && u.teamId === req.requesterTeamId);
+
+        const dialogReturnValue = this.dialog.open(RequisitionChangeRequesterDialogComponent, {
+              width: '500px',
+              data: {
+                requesterId: req.requesterId,
+                requesterName: req.requesterName,
+                fallbackUsers: fallbackUsers
+              }
+        });
+
+        dialogReturnValue.afterClosed().subscribe(fallbackUserId => {
+          if (fallbackUserId !== undefined) {
+            this.requisitionService.changeRequester(req.id!, fallbackUserId).subscribe({
+              next: () => {
+                this.toastService.showSuccess('Requester changed successfully for requisition ' + req.requestName);
+                this.loadRequests();
+                },
+              error: (err) => {
+                this.toastService.showError("Requester change failed: " + err.message);
+              }
+            });
+          }
+        });
+        },
+      error: (err) => {
+        this.toastService.showError("Could not fetch users for fallback selection: " + err.message);
+      }
+    });
   }
 }

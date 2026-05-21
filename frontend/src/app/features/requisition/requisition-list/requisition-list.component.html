@@ -109,6 +109,9 @@
         <button mat-icon-button (click)="viewDetails(req.id)" matTooltip="View Details" class="text-slate-600">
           <mat-icon>visibility</mat-icon>
         </button>
+        <button mat-icon-button (click)="changeRequester(req)" matTooltip="Change Requester" [disabled]="!isAdministrator && !isFinanceOfficer">
+          <mat-icon>swap_horiz</mat-icon>
+        </button>
       </td>
     </ng-container>
   </ng-container>

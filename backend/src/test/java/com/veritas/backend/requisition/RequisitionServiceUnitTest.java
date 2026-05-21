@@ -153,7 +153,7 @@ class RequisitionServiceUnitTest {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
                 1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", null, null, null, null, null, null, null, null, "");
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", 1L, 1L, null, null, null, null, null, null, null, null, "");
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -456,6 +456,8 @@ class RequisitionServiceUnitTest {
                 "Standard Workflow",             // 9. workflowName
                 "Engineering",                   // 10. teamName
                 "Test User",                     // 11. requesterName
+                1L,
+                1L,
                 "ROLE_MANAGER",                  // 12. responsibleRole (or null)
                 java.time.LocalDateTime.now(),   // 13. createdAt
                 java.time.LocalDateTime.now(),   // 14. updatedAt

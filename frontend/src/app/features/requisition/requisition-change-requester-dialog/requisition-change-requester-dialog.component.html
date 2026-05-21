@@ -1,0 +1,49 @@
+<h2 mat-dialog-title class="!text-xl !font-bold">Change Requester</h2>
+
+<mat-dialog-content class="!pt-2">
+  <p class="mb-4 ">Are you sure you want to change requester <strong>{{ data.requesterName }}</strong>?</p>
+
+    <div class="mt-4">
+      <label class="block text-sm font-medium mb-1">Reassign to User</label>
+      <ng-container *ngIf="filteredUsers | async as users">
+        <ng-container *ngIf="users.length > 0; else noFallbackUsers">
+          <div
+            class="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-3 py-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+            <mat-icon class="text-gray-400 text-sm h-5 w-5 leading-5">search</mat-icon>
+            <input type="text"
+                   class="border-0 outline-none bg-transparent w-full text-sm text-gray-900 placeholder-gray-400"
+                   placeholder="Search and select a user..."
+                   [formControl]="userSearchControl"
+                   [matAutocomplete]="auto"
+                   required>
+          </div>
+          <mat-autocomplete #auto="matAutocomplete"
+                            [displayWith]="formatUserSelection"
+                            (optionSelected)="onUserSelected($event)">
+            <mat-option *ngFor="let fallbackUser of users" [value]="fallbackUser">
+              {{ fallbackUser.name }} ({{ fallbackUser.email }})
+            </mat-option>
+          </mat-autocomplete>
+
+          <div *ngIf="!selectedFallbackUserId && userSearchControl.touched"
+               class="text-red-500 text-xs mt-1">
+            You must select a user.
+          </div>
+        </ng-container>
+
+        <ng-template #noFallbackUsers>
+          <div class="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+            There are no fallback requester users available in the team.
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="!pb-4 !pr-6">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="warn" [disabled]="!selectedFallbackUserId"
+          (click)="onConfirm()">
+    Confirm Change
+  </button>
+</mat-dialog-actions>
