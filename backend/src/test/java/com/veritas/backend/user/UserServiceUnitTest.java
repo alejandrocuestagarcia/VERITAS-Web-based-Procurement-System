@@ -148,6 +148,7 @@ class UserServiceUnitTest {
                 .jiraIssueKey("")
                 .jiraIssueUrl("")
                 .state("")
+                .isPaid(false)
                 .build();
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 

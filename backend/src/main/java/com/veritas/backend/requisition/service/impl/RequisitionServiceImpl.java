@@ -10,11 +10,12 @@ import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
-import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
@@ -77,6 +78,8 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final UserMapper userMapper;
     private final QuoteLineItemRepository quoteLineItemRepository;
     private final QuoteRepository quoteRepository;
+    private final InvoiceRepository invoiceRepository;
+
 
     private final WorkflowEngineService workflowEngineService;
     private final AuditService auditService;
@@ -533,4 +536,50 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         return false;
     }
+
+    @Override
+    @Transactional
+    public void processPayment(Long requestId) {
+
+        Request request = requestRepository.findById(requestId).orElseThrow(
+                () -> new EntityNotFoundException("Request not found with id: " + requestId)
+        );
+
+        Invoice invoice = invoiceRepository.findByRequest(request).orElseThrow(
+                () -> new EntityNotFoundException("Invoice not found with id " + requestId)
+        );
+
+        if (request.getBudgetID() != null) {
+            addToBudgets(request.getBudgetID(), invoice);
+            invoice.setIsPaid(true);
+            invoiceRepository.save(invoice);
+        }
+
+
+    }
+
+    private void addToBudgets(InternalBudget budget, Invoice invoice) {
+
+
+        BigDecimal requestCommittedSpent = budget.getCommittedSpend();
+        while (budget != null) {
+
+            if (invoice.getTotalAmount() == null) {
+                throw new IllegalStateException("Invoice has no Total amount defined");
+            }
+
+            BigDecimal newTotalSpend = budget.getActualSpend().add(invoice.getTotalAmount());
+            budget.setActualSpend(newTotalSpend);
+
+            budget.setCommittedSpend(budget.getCommittedSpend().subtract(requestCommittedSpent));
+
+
+            internalBudgetRepository.save(budget);
+            budget = budget.getParentBudget();
+
+
+        }
+
+    }
+
 }

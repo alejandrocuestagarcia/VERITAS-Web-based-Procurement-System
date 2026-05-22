@@ -28,4 +28,6 @@ public interface RequisitionService {
     List<UserDto> getEligibleAssignees(Long id, String roleName);
     boolean canAct(Long id, User actor);
     RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor);
+
+    void processPayment(Long requestId);
 }

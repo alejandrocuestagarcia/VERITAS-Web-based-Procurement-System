@@ -184,6 +184,7 @@ class RequisitionServiceUnitTest {
                 .requesterId(1L)
                 .requesterTeamId(1L)
                 .state("")
+                .isPaid(false)
                 .build();
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
@@ -496,6 +497,7 @@ class RequisitionServiceUnitTest {
                 .jiraIssueKey("JIRA-123")
                 .jiraIssueUrl("https://jira.com/123")
                 .state("ACTIVE")
+                .isPaid(false)
                 .build();
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 

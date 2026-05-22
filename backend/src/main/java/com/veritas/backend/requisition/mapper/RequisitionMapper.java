@@ -39,6 +39,7 @@ public interface RequisitionMapper {
     @Mapping(target = "assigneeName", source = "assignee.name")
     @Mapping(target = "assigneeEmail", source = "assignee.email")
     @Mapping(target = "workflowDefinitionId", source = "workflowDefinitionID.id")
+    @Mapping(target = "isPaid", expression = "java(request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid()))")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);
