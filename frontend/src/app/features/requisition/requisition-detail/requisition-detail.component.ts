@@ -7,6 +7,7 @@ import { AssigneeSelectDialogComponent } from '../../../shared/components/assign
 import {MatDialog} from "@angular/material/dialog";
 import {ToastService} from "../../../core/services/toast.service";
 import { Location } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-requisition-detail',
@@ -19,6 +20,12 @@ export class RequisitionDetailComponent implements OnInit {
   role: string = this.authService.getRole() ?? '';
   canAct = false;
 
+  isDrawerOpen = false;
+  isDrawerExpanded = false;
+  pdfUrl: SafeResourceUrl | null = null;
+  rawPdfUrl = '';
+  isProcessingPayment = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -27,13 +34,17 @@ export class RequisitionDetailComponent implements OnInit {
     public authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService,
+    private sanitizer: DomSanitizer,
     private location: Location
   ) { }
+
+  private requestId!: number;
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
       this.loadRequest(id);
+      this.requestId = id;
     } else {
       this.router.navigate(['/requisitions']);
     }
@@ -290,5 +301,51 @@ export class RequisitionDetailComponent implements OnInit {
           alert('Failed to download attachment');
         }
       });
+  }
+
+  processPayment(): void {
+    if (!this.request) return;
+    this.isDrawerOpen = true;
+    this.isDrawerExpanded = false;
+
+    const invoicePdf = this.request.attachments?.find(
+      (a: any) => a.fileType === 'application/pdf'
+    );
+
+    if (invoicePdf) {
+      this.rawPdfUrl = `http://localhost:8080/api/v1/requisitions/attachments/${invoicePdf.attachmentId}`;
+      this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.rawPdfUrl);
+    } else {
+      this.pdfUrl = null;
+      this.rawPdfUrl = '';
+    }
+  }
+
+  closePaymentDrawer(): void {
+    this.isDrawerOpen = false;
+    this.isDrawerExpanded = false;
+    this.pdfUrl = null;
+    this.rawPdfUrl = '';
+  }
+
+  toggleDrawerExpand(): void {
+    this.isDrawerExpanded = !this.isDrawerExpanded;
+  }
+
+  confirmPayment(): void {
+    if (!this.request?.id) return;
+    this.isProcessingPayment = true;
+    this.requisitionService.processPayment(this.request.id).subscribe({
+      next: () => {
+        this.isProcessingPayment = false;
+        this.toastService.showSuccess('Payment processed successfully');
+        this.closePaymentDrawer();
+        this.loadRequest(this.requestId);
+      },
+      error: (err) => {
+        this.isProcessingPayment = false;
+        this.toastService.showError('Failed to process payment');
+      }
+    });
   }
 }
