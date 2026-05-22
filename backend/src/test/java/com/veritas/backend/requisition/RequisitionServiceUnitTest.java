@@ -151,9 +151,22 @@ class RequisitionServiceUnitTest {
     @Test
     void CreateRequest_ValidInput_SavesAndReturnsDto() {
         stupRepositories();
-        RequisitionDto expectedDto = new RequisitionDto(
-                1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", 1L, 1L, null, null, null, null, null, null, null, null, "", null);
+        RequisitionDto expectedDto = RequisitionDto.builder()
+                .id(1L)
+                .requestName("New Laptop")
+                .requestKey("PRJ-11")
+                .status("Start")
+                .isClosed(false)
+                .priority(Priority.MEDIUM)
+                .projectName("Test Project")
+                .projectKey("PRJ")
+                .workflowName("Standard Workflow")
+                .teamName("Engineering")
+                .requesterName("Test User")
+                .requesterId(1L)
+                .requesterTeamId(1L)
+                .state("")
+                .build();
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -444,31 +457,28 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        RequisitionDto expectedDto = new RequisitionDto(
-                100L,                         // 1. id
-                "Draft Test",                    // 2. requestName
-                "PRJ-12",                        // 3. requestKey
-                "Start",                         // 4. status
-                false,                           // 5. isClosed
-                Priority.MEDIUM,                 // 6. priority
-                "Test Project",                  // 7. projectName
-                "PRJ",                           // 8. projectKey (Using project code)
-                "Standard Workflow",             // 9. workflowName
-                "Engineering",                   // 10. teamName
-                "Test User",                     // 11. requesterName
-                1L,                              // 12. requesterId
-                1L,                              // 13. requesterTeamId
-                "ROLE_MANAGER",                  // 14. responsibleRole (or null)
-                java.time.LocalDateTime.now(),   // 15. createdAt
-                java.time.LocalDateTime.now(),   // 16. updatedAt
-                "Test Description",              // 17. description
-                "JIRA-123",                      // 18. jiraIssueKey (or null)
-                "https://jira.com/123",          // 19. jiraIssueUrl (or null)
-                null,                            // 20. items
-                null,                            // 21. attachments
-                "ACTIVE",                        // 22. status (Moved to the end!)
-                null                             // 23. rejection reason
-        );
+        RequisitionDto expectedDto = RequisitionDto.builder()
+                .id(100L)
+                .requestName("Draft Test")
+                .requestKey("PRJ-12")
+                .status("Start")
+                .isClosed(false)
+                .priority(Priority.MEDIUM)
+                .projectName("Test Project")
+                .projectKey("PRJ")
+                .workflowName("Standard Workflow")
+                .teamName("Engineering")
+                .requesterName("Test User")
+                .requesterId(1L)
+                .requesterTeamId(1L)
+                .responsibleRole("ROLE_MANAGER")
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
+                .description("Test Description")
+                .jiraIssueKey("JIRA-123")
+                .jiraIssueUrl("https://jira.com/123")
+                .state("ACTIVE")
+                .build();
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         doAnswer(invocation -> {

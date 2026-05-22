@@ -4,6 +4,9 @@ import com.veritas.backend.requisition.entity.Priority;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.Builder;
+
+@Builder
 public record RequisitionDto(
     Long id,
     String requestName,

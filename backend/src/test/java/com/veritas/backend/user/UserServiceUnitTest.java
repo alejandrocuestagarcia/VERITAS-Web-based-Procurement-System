@@ -131,8 +131,24 @@ class UserServiceUnitTest {
         when(requestRepository.findActiveRequestsByUserId(1L)).thenReturn(List.of(testRequest));
 
 
-        RequisitionDto expectedDto =
-            new RequisitionDto(1L, "Test Request", "", "", false, Priority.MEDIUM, "", "", "", "", "", null, null, "", null, null, "", "", "", null, null,"",null);
+        RequisitionDto expectedDto = RequisitionDto.builder()
+                .id(1L)
+                .requestName("Test Request")
+                .requestKey("")
+                .status("")
+                .isClosed(false)
+                .priority(Priority.MEDIUM)
+                .projectName("")
+                .projectKey("")
+                .workflowName("")
+                .teamName("")
+                .requesterName("")
+                .responsibleRole("")
+                .description("")
+                .jiraIssueKey("")
+                .jiraIssueUrl("")
+                .state("")
+                .build();
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
 
