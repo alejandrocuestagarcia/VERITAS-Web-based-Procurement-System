@@ -2,6 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { RejectDialogComponent} from "../../../shared/components/reject-dialog/reject-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
+import {ToastService} from "../../../core/services/toast.service";
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-requisition-detail',
@@ -11,13 +15,17 @@ export class RequisitionDetailComponent implements OnInit {
   request: RequisitionDto | null = null;
   selectedQuote: QuoteDto | null = null;
   loading = false;
+  role: string = this.authService.getRole() ?? '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private requisitionService: RequisitionModuleService,
     private quotesService: RequisitionQuotesModuleService,
-    public authService: AuthService
+    public authService: AuthService,
+    private dialog: MatDialog,
+    private toastService: ToastService,
+    private location: Location
   ) { }
 
   ngOnInit(): void {
@@ -62,11 +70,73 @@ export class RequisitionDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/requisitions']);
+    this.location.back();
   }
 
   modifyRequest(): void {
     alert('Modification flow coming soon.');
+  }
+
+  rejectRequest(): void {
+    const dialogRef = this.dialog.open(RejectDialogComponent, {
+      width: '80vw',
+      maxWidth: '550px',
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe((reason: string | undefined) => {
+      if (!reason) {
+        return;
+      }
+
+      this.loading = true;
+      this.requisitionService.rejectRequest(this.request!.id!, {reason: reason}).subscribe({
+        next: () => {
+          this.loading = false;
+          this.toastService.showInfo("Requisition rejected successfully!");
+          this.goBack();
+        },
+        error: (err) => {
+          this.toastService.showError(err.error);
+          this.loading = false;
+        }
+      });
+    });
+  }
+
+  approveRequest(): void {
+    if (!this.request || !this.request.id) return;
+    this.loading = true;
+    this.requisitionService.approveRequest(this.request.id).subscribe({
+      next: () => {
+        this.loading = false;
+        this.toastService.showInfo("Requisition approved successfully!");
+        this.goBack();
+      },
+      error: (err) => {
+        this.toastService.showError(err.error);
+        this.loading = false;
+      }
+    });
+  }
+
+  submitRequest(): void {
+    if (!this.request || !this.request.id) return;
+
+    this.loading = true;
+
+    this.requisitionService.submitRequest(this.request.id).subscribe({
+      next: () => {
+        this.loading = false;
+        this.toastService.showInfo("Requisition submitted successfully!");
+        this.goBack();
+      },
+      error: (err) => {
+        this.toastService.showError(err.error);
+        this.loading = false;
+      }
+    });
+
   }
 
   formatRole(role: string | undefined): string {

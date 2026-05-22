@@ -32,6 +32,7 @@ public class AuditLog {
     @Column(nullable = false)
     private String action;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)

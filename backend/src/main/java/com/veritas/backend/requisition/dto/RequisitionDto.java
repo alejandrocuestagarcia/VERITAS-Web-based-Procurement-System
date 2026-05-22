@@ -26,5 +26,6 @@ public record RequisitionDto(
     String jiraIssueUrl,
     List<RequisitionItemDto> items,
     List<AttachmentDto> attachments,
-    String state
+    String state,
+    String rejectionReason
 ) {}

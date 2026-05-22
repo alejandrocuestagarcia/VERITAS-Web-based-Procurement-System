@@ -92,6 +92,7 @@ import { RequisitionVendorQuotesComponent } from './features/requisition/requisi
 import { RequisitionVendorQuoteCreateComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component';
 import { RequisitionVendorQuoteViewComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component';
 import { RequisitionChangeRequesterDialogComponent } from './features/requisition/requisition-change-requester-dialog/requisition-change-requester-dialog.component';
+import { RejectDialogComponent } from './shared/components/reject-dialog/reject-dialog.component';
 
 @NgModule({
   declarations: [
@@ -152,6 +153,7 @@ import { RequisitionChangeRequesterDialogComponent } from './features/requisitio
     SharedFormFieldComponent,
     ConfirmationDialogComponent,
     PriorityBadgeComponent,
+    RejectDialogComponent,
 
     // Directives & Pipes
     HasRoleDirective,
