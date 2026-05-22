@@ -35,6 +35,7 @@ public interface RequisitionMapper {
     @Mapping(target = "vendorId", expression = "java(resolveSelectedVendorId(request))")
     @Mapping(target = "vendorName", expression = "java(resolveSelectedVendorName(request))")
     @Mapping(target = "isEvaluated", expression = "java(request.getVendorEvaluation() != null)")
+    @Mapping(target = "isPaid", expression = "java(request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid()))")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);

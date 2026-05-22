@@ -22,4 +22,6 @@ public interface RequisitionService {
     RequisitionDto submitRequest(Long id, User actor);
     RequisitionDto changeRequester(Long id, Long newRequesterId);
     RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor);
+
+    void processPayment(Long requestId);
 }
