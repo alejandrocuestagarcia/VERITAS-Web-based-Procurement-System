@@ -167,19 +167,8 @@ export class RequisitionDetailComponent implements OnInit {
 
   downloadAttachment(attachment: any): void {
     if (!attachment || !attachment.attachmentId) return;
-    const url = `http://localhost:8080/api/v1/requisitions/attachments/${attachment.attachmentId}`;
-    const token = this.authService.getToken();
-    const headers: any = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    fetch(url, { headers })
-      .then(response => {
-        if (!response.ok) throw new Error('Download failed');
-        return response.blob();
-      })
-      .then(blob => {
+    this.requisitionService.downloadAttachment(attachment.attachmentId).subscribe({
+      next: (blob) => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -189,11 +178,12 @@ export class RequisitionDetailComponent implements OnInit {
         a.click();
         window.URL.revokeObjectURL(downloadUrl);
         document.body.removeChild(a);
-      })
-      .catch(err => {
+      },
+      error: (err) => {
         console.error('Failed to download attachment', err);
         alert('Failed to download attachment');
-      });
+      }
+    });
   }
 
   processPayment(): void {
@@ -205,9 +195,19 @@ export class RequisitionDetailComponent implements OnInit {
       (a: any) => a.fileType === 'application/pdf'
     );
 
-    if (invoicePdf) {
-      this.rawPdfUrl = `http://localhost:8080/api/v1/requisitions/attachments/${invoicePdf.attachmentId}`;
-      this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.rawPdfUrl);
+    if (invoicePdf && invoicePdf.attachmentId) {
+      this.requisitionService.downloadAttachment(invoicePdf.attachmentId).subscribe({
+        next: (blob) => {
+          const blobUrl = window.URL.createObjectURL(blob);
+          this.rawPdfUrl = blobUrl;
+          this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+        },
+        error: (err) => {
+          console.error('Failed to load PDF preview', err);
+          this.pdfUrl = null;
+          this.rawPdfUrl = '';
+        }
+      });
     } else {
       this.pdfUrl = null;
       this.rawPdfUrl = '';
@@ -217,6 +217,9 @@ export class RequisitionDetailComponent implements OnInit {
   closePaymentDrawer(): void {
     this.isDrawerOpen = false;
     this.isDrawerExpanded = false;
+    if (this.rawPdfUrl && this.rawPdfUrl.startsWith('blob:')) {
+      window.URL.revokeObjectURL(this.rawPdfUrl);
+    }
     this.pdfUrl = null;
     this.rawPdfUrl = '';
   }

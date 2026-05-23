@@ -38,7 +38,7 @@
           <mat-icon class="scale-90">request_quote</mat-icon>
           Vendor Quotes
         </button>
-        <button *ngIf="authService.hasRole('FINANCE_OFFICER') && !request?.isPaid" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
+        <button *ngIf="authService.hasRole('FINANCE_OFFICER') && !request?.isPaid && request?.responsibleRole === 'FINANCE_OFFICER'" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
           <mat-icon class="scale-90">payment</mat-icon>
           Pay Invoice
         </button>
@@ -346,11 +346,22 @@
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mt-auto flex flex-col gap-4">
                   <div>
                     <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider">Verification Amount</h4>
-                    <div class="flex items-baseline justify-between mt-2">
-                      <span class="text-xs font-medium text-blue-600">Invoice Total:</span>
-                      <span class="text-3xl font-extrabold text-blue-900">
-                        {{ selectedQuote?.totalAmount | currency }}
-                      </span>
+                    <div class="space-y-3 mt-3">
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-blue-600/90">Shipping Cost</span>
+                        <span class="font-semibold text-blue-900">
+                          {{ (selectedQuote?.shippingCosts || 0) | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div class="border-t border-blue-200/50 my-1"></div>
+
+                      <div class="flex items-baseline justify-between">
+                        <span class="text-sm font-bold text-blue-800">Invoice Total</span>
+                        <span class="text-3xl font-black text-blue-900 tracking-tight">
+                          {{ selectedQuote?.totalAmount | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
