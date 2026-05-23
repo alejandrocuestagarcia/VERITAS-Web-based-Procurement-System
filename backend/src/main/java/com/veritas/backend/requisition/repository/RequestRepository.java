@@ -1,7 +1,6 @@
 package com.veritas.backend.requisition.repository;
 
 import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.workflow.entity.WorkflowComponent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,7 +15,7 @@ import java.util.Optional;
 public interface RequestRepository extends JpaRepository<Request, Long> {
     Optional<Request> findByJiraIssueKey(String jiraIssueKey);
 
-    @Query("SELECT r FROM Request r WHERE r.userID.id = :userId AND r.currentStepID.workflowComponent != 'END_EVENT'")
+    @Query("SELECT r FROM Request r WHERE r.userID.id = :userId AND r.state <> 'FINISHED'")
     List<Request> findActiveRequestsByUserId(@Param("userId") Long userId);
 
     @Query("SELECT r FROM Request r " +
@@ -26,8 +25,8 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "LEFT JOIN r.teamID t " +
             "LEFT JOIN t.department d " +
             "WHERE (:status IS NULL OR " +
-            "      (:status = 'OPEN' AND (s IS NULL OR s.workflowComponent <> :endEvent)) OR " +
-            "      (:status = 'CLOSED' AND s IS NOT NULL AND s.workflowComponent = :endEvent)) " +
+            "      (:status = 'OPEN' AND r.state <> 'FINISHED') OR " +
+            "      (:status = 'CLOSED' AND r.state = 'FINISHED')) " +
             "AND (:userId IS NULL OR u.id = :userId) " +
             "AND (:teamId IS NULL OR t.teamId = :teamId) " +
             "AND (:departmentId IS NULL OR d.departmentId = :departmentId) " +
@@ -41,6 +40,5 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                      @Param("userId") Long userId,
                                      @Param("teamId") Long teamId,
                                      @Param("departmentId") Long departmentId,
-                                     @Param("endEvent") WorkflowComponent endEvent,
                                      Pageable pageable);
 }

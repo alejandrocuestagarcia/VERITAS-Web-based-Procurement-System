@@ -23,7 +23,7 @@ public interface RequisitionMapper {
     @Mapping(target = "requesterTeamId", source = "userID.team.teamId")
     @Mapping(target = "state", source = "state")
     @Mapping(target = "status", expression = "java(request.getCurrentStepID() != null ? request.getCurrentStepID().getName() : (request.getJiraIssueKey() != null ? \"Jira Synced\" : \"DRAFT\"))")
-    @Mapping(target = "isClosed", expression = "java(request.getCurrentStepID() != null && com.veritas.backend.workflow.entity.WorkflowComponent.END_EVENT.equals(request.getCurrentStepID().getWorkflowComponent()))")
+    @Mapping(target = "isClosed", expression = "java(request.getState() == com.veritas.backend.requisition.entity.RequestStatus.FINISHED)")
     @Mapping(target = "responsibleRole", expression = "java(request.getCurrentStepID() != null && request.getCurrentStepID().getRole() != null ? request.getCurrentStepID().getRole().name() : (request.getJiraIssueKey() != null && request.getCurrentStepID() == null ? \"REQUESTER\" : null))")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "jiraIssueKey", source = "jiraIssueKey")
