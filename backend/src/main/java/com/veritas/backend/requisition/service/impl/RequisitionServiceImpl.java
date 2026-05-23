@@ -5,6 +5,8 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
+import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
+import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
@@ -17,6 +19,9 @@ import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.vendor.entity.Quote;
+import com.veritas.backend.vendor.entity.QuoteLineItem;
+import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
@@ -26,6 +31,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import java.math.BigDecimal;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -40,6 +46,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 import com.veritas.backend.common.exception.WorkflowStateException;
+import org.springframework.security.access.AccessDeniedException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -47,6 +54,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -62,6 +72,8 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final WorkflowStepRepository workflowStepRepository;
     private final RequisitionMapper requisitionMapper;
     private final InternalBudgetRepository internalBudgetRepository;
+    private final QuoteLineItemRepository quoteLineItemRepository;
+    private final QuoteRepository quoteRepository;
 
     private final WorkflowEngineService workflowEngineService;
 
@@ -320,5 +332,106 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setUserID(newRequester);
         Request updatedRequest = requestRepository.save(request);
         return requisitionMapper.toDto(updatedRequest);
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor) {
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Procurement Request with id '" + id + "' not found"));
+
+        if (request.getState() != RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Only drafts can be updated/edited");
+        }
+
+        if (!request.getUserID().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("You are not authorized to edit this request");
+        }
+
+        request.setRequestName(updates.requestName());
+        request.setDescription(updates.description());
+        request.setPriority(updates.priority());
+
+        if (updates.projectId() != null && !request.getProjectID().getId().equals(updates.projectId())) {
+            Project newProject = projectRepository.findById(updates.projectId())
+                    .orElseThrow(
+                            () -> new IllegalArgumentException("Project not found with ID: " + updates.projectId()));
+
+            newProject.setRequestCounter(newProject.getRequestCounter() + 1);
+            projectRepository.save(newProject);
+            request.setRequestKey(newProject.getProjectKey() + "-" + newProject.getRequestCounter());
+            request.setProjectID(newProject);
+
+            if (request.getBudgetID() != null) {
+                request.getBudgetID().setParentBudget(newProject.getInternalBudget());
+            }
+        }
+
+        if (request.getBudgetID() != null) {
+            request.getBudgetID().setBudgetName("Request: " + updates.requestName());
+            internalBudgetRepository.save(request.getBudgetID());
+        }
+
+        if (updates.workflowDefinitionId() != null
+                && !request.getWorkflowDefinitionID().getId().equals(updates.workflowDefinitionId())) {
+            WorkflowDefinition newWorkflow = workflowDefinitionRepository.findById(updates.workflowDefinitionId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Workflow not found with ID: " + updates.workflowDefinitionId()));
+
+            request.setWorkflowDefinitionID(newWorkflow);
+            WorkflowStep startStep = workflowStepRepository
+                    .findByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
+                    .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
+            request.setCurrentStepID(startStep);
+        }
+
+        boolean itemsChanged = hasLineItemsChanged(request.getItems(), updates.items());
+
+        if (itemsChanged) {
+            quoteLineItemRepository.deleteByQuoteRequestID(id);
+            quoteRepository.deleteByRequestID(id);
+
+            request.getItems().clear();
+            requestItemRepository.deleteByRequestID(id);
+
+            if (updates.items() != null && !updates.items().isEmpty()) {
+                updates.items().forEach(itemDto -> {
+                    RequestItem item = new RequestItem();
+                    item.setRequest(request);
+                    item.setName(itemDto.name());
+                    item.setQuantity(itemDto.quantity());
+                    item.setUnit(itemDto.unit());
+                    item.setDescription(itemDto.description());
+                    requestItemRepository.save(item);
+                    request.getItems().add(item);
+                });
+            }
+        }
+
+        Request saved = requestRepository.save(request);
+        return requisitionMapper.toDto(saved);
+    }
+
+    private boolean hasLineItemsChanged(List<RequestItem> currentItems, List<RequisitionItemCreateDto> incomingItems) {
+        if (incomingItems == null) {
+            return currentItems != null && !currentItems.isEmpty();
+        }
+        if (currentItems == null || currentItems.size() != incomingItems.size()) {
+            return true;
+        }
+
+        for (int i = 0; i < currentItems.size(); i++) {
+            RequestItem current = currentItems.get(i);
+            RequisitionItemCreateDto incoming = incomingItems.get(i);
+
+            if (!Objects.equals(current.getName(), incoming.name()) ||
+                    !Objects.equals(current.getQuantity(), incoming.quantity()) ||
+                    !Objects.equals(current.getUnit(), incoming.unit()) ||
+                    !Objects.equals(current.getDescription(), incoming.description())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

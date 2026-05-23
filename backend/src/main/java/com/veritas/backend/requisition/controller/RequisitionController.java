@@ -62,8 +62,9 @@ public class RequisitionController {
     @Operation(summary = "Update/Edit request", description = "Edit draft details.")
     @IsRequester
     @PatchMapping("/{id}")
-    public ResponseEntity<RequisitionDto> updateRequest(@PathVariable Long id, @RequestBody RequisitionUpdateDto updates) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<RequisitionDto> updateRequest(@PathVariable Long id, @Valid @RequestBody RequisitionUpdateDto updates,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(requisitionService.updateRequest(id, updates, user));
     }
 
     @Operation(summary = "Change requester", description = "Change the assigned requester.")

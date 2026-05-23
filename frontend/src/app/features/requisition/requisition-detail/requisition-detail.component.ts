@@ -70,11 +70,13 @@ export class RequisitionDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.location.back();
+    this.router.navigate(['/dashboard']);
   }
 
   modifyRequest(): void {
-    alert('Modification flow coming soon.');
+    if (this.request?.id) {
+      this.router.navigate(['/requisitions/edit', this.request.id]);
+    }
   }
 
   rejectRequest(): void {

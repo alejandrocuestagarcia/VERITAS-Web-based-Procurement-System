@@ -21,6 +21,8 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
+import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
+import org.springframework.security.access.AccessDeniedException;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
@@ -30,6 +32,8 @@ import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
+import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.user.entity.User;
@@ -41,10 +45,12 @@ import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,8 +68,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
+
 import java.nio.file.Path;
 import java.nio.file.Files;
+
 import com.veritas.backend.common.exception.WorkflowStateException;
 
 @ExtendWith(MockitoExtension.class)
@@ -86,9 +94,15 @@ class RequisitionServiceUnitTest {
     @Mock
     private RequisitionMapper requisitionMapper;
     @Mock
-    private WorkflowEngineService workflowEngineService;;
+    private WorkflowEngineService workflowEngineService;
+    ;
     @Mock
     private InternalBudgetRepository internalBudgetRepository;
+
+    @Mock
+    private QuoteLineItemRepository quoteLineItemRepository;
+    @Mock
+    private QuoteRepository quoteRepository;
 
     @InjectMocks
     private RequisitionServiceImpl requisitionService;
@@ -653,6 +667,81 @@ class RequisitionServiceUnitTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> requisitionService.changeRequester(1L, 2L));
         assertTrue(ex.getMessage().contains("New assigned user must be a requester from the same team"));
+        verify(requestRepository, never()).save(any());
+    }
+    //AI-Generated
+    @Test
+    void UpdateRequest_ValidInput_SavesAndReturnsDto() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+
+        InternalBudget budget = new InternalBudget();
+        budget.setBudgetName("Request: Old Name");
+        request.setBudgetID(budget);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated Laptop", "Need an updated laptop", 1L, 1L, Priority.HIGH,
+                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, "pcs", "updated")));
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionDto result = requisitionService.updateRequest(1L, updates, testUser);
+
+
+        assertAll("Requisition update validation",
+                () -> assertNotNull(result, "Resulting DTO should not be null"),
+                () -> assertEquals(expectedDto, result, "Returned DTO should match expected mock output"),
+                () -> assertEquals("Updated Laptop", request.getRequestName(), "Request name should be updated"),
+                () -> assertEquals("Need an updated laptop", request.getDescription(), "Description should be updated"),
+                () -> assertEquals(Priority.HIGH, request.getPriority(), "Priority should be updated to HIGH"),
+                () -> assertEquals("Request: Updated Laptop", budget.getBudgetName(), "Internal budget name should be synchronized with new request name")
+        );
+        verify(requestRepository).save(request);
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_NotDraft_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.FINISHED);
+        request.setUserID(testUser);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated", "Desc", 1L, 1L, Priority.HIGH, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class,
+                () -> requisitionService.updateRequest(1L, updates, testUser));
+        verify(requestRepository, never()).save(any());
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_NotOwner_ThrowsAccessDeniedException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+
+        User anotherUser = new User();
+        anotherUser.setId(999L);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated", "Desc", 1L, 1L, Priority.HIGH, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class,
+                () -> requisitionService.updateRequest(1L, updates, anotherUser));
         verify(requestRepository, never()).save(any());
     }
 }

@@ -38,11 +38,13 @@
           <mat-icon class="scale-90">request_quote</mat-icon>
           Vendor Quotes
         </button>
-        <div *ngIf= "request.responsibleRole === role || !request.responsibleRole " class="flex items-center gap-2" >
-          <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
-            <mat-icon class="scale-90">edit</mat-icon>
-            Edit
-          </button>
+        <div *ngIf= "request.responsibleRole === role || !request.responsibleRole && request.state != 'FINISHED'  " class="flex items-center gap-2" >
+          <div *ngIf= "authService.hasRole('REQUESTER')">
+            <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
+              <mat-icon class="scale-90">edit</mat-icon>
+              Edit
+            </button>
+          </div>
           <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state != 'DRAFT' " class="flex items-center gap-2" >
             <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">close</mat-icon>

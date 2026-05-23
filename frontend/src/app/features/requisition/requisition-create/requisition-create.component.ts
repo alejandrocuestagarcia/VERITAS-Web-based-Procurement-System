@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild, ElementRef, OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ToastService } from '../../../core/services/toast.service';
 import {
   debounceTime,
@@ -34,6 +34,9 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   basicInfoForm!: FormGroup;
   lineItemsForm!: FormGroup;
   loading = false;
+  isEditMode = false;
+  requestId?: number;
+  requestState?: string;
 
   projects: ProjectDto[] = [];
   projectSearch: string = '';
@@ -50,6 +53,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private projectService: ProjectModuleService,
     private workflowService: WorkflowModuleService,
     private requisitionService: RequisitionModuleService,
@@ -63,6 +67,13 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.initForms();
     this.loadData();
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
+      this.isEditMode = true;
+      this.requestId = Number(idParam);
+      this.loadRequestDetails(this.requestId);
+    }
 
     this.searchSubscription = this.workflowSearch$.pipe(
       startWith(''),
@@ -80,6 +91,72 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
         this.toastService.showError('Error searching workflows');
       }
     });
+  }
+
+  loadRequestDetails(id: number): void {
+    this.loading = true;
+    this.projectService.getAllProjects().subscribe({
+      next: (projects) => {
+        this.projects = projects;
+        const pageable = { page: 0, size: 100, sort: ['name,asc'] };
+        this.workflowService.getAllWorkflows(pageable, '', true).subscribe({
+          next: (workflowPage) => {
+            this.workflows = workflowPage.content || [];
+            this.requisitionService.getRequestById(id).subscribe({
+              next: (req) => {
+                if (req.state !== 'DRAFT') {
+                  this.router.navigate(['/dashboard']);
+                  return;
+                }
+                this.loading = false;
+                this.requestState = req.state;
+                this.patchFormWithRequest(req);
+              },
+              error: () => {
+                this.loading = false;
+                this.toastService.showError('Failed to load request details');
+              }
+            });
+          },
+          error: () => {
+            this.loading = false;
+            this.toastService.showError('Failed to load workflows');
+          }
+        });
+      },
+      error: () => {
+        this.loading = false;
+        this.toastService.showError('Failed to load projects');
+      }
+    });
+  }
+
+  patchFormWithRequest(req: any): void {
+    const project = this.projects.find(p => p.name === req.projectName);
+    const workflow = this.workflows.find(w => w.name === req.workflowName);
+
+    this.basicInfoForm.patchValue({
+      requestName: req.requestName,
+      projectId: project ? project.id : null,
+      priority: req.priority,
+      workflowDefinitionId: workflow ? workflow.id : null,
+      description: req.description
+    });
+
+    const itemsFormArray = this.items;
+    itemsFormArray.clear();
+    if (req.items && req.items.length > 0) {
+      req.items.forEach((item: any) => {
+        itemsFormArray.push(this.fb.group({
+          name: [item.name, Validators.required],
+          quantity: [item.quantity, [Validators.required, Validators.min(1)]],
+          unit: [item.unit, Validators.required],
+          description: [item.description || '']
+        }));
+      });
+    } else {
+      itemsFormArray.push(this.createItem());
+    }
   }
 
   getFilteredProjects(): ProjectDto[] {
@@ -208,16 +285,22 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   }
 
   private loadData(): void {
-    this.projectService.getAllProjects().subscribe({
-      next: (projects) => this.projects = projects,
-      error: () => this.toastService.showError('Failed to load projects')
-    });
+    if (!this.isEditMode) {
+      this.projectService.getAllProjects().subscribe({
+        next: (projects) => this.projects = projects,
+        error: () => this.toastService.showError('Failed to load projects')
+      });
+    }
   }
 
-  onSubmit(): void {
+  isDraft(): boolean {
+    return !this.isEditMode || this.requestState === 'DRAFT';
+  }
+
+  onSubmit(submitAfterSave = false): void {
     if (this.basicInfoForm.valid && this.lineItemsForm.valid) {
       this.loading = true;
-      const request: RequisitionCreateDto = {
+      const request: any = {
         requestName: this.basicInfoForm.value.requestName,
         projectId: this.basicInfoForm.value.projectId,
         workflowDefinitionId: this.basicInfoForm.value.workflowDefinitionId,
@@ -231,42 +314,67 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
         }))
       };
 
-      this.requisitionService.createRequest(request).subscribe({
-        next: (createdRequest) => {
-          if (this.uploadedFiles.length > 0 && createdRequest.id) {
-            const uploadTasks: Observable<any>[] = this.uploadedFiles.map(file => {
-              return this.requisitionService.uploadQuotes(createdRequest.id!, file as any).pipe(
-                catchError(err => {
-                  return of(null);
-                })
-              );
-            });
-
-            forkJoin(uploadTasks).subscribe({
-              next: (results) => {
-                this.loading = false;
-                this.toastService.showSuccess('Procurement request & attachments saved successfully');
-                this.router.navigate(['/requisitions']);
-              },
-              error: (err) => {
-                this.loading = false;
-              }
-            });
-          } else {
+      if (this.isEditMode && this.requestId) {
+        this.requisitionService.updateRequest(this.requestId, request).subscribe({
+          next: (updatedRequest) => {
+            this.handleUploadAndNavigate(updatedRequest, 'Procurement request updated successfully', submitAfterSave);
+          },
+          error: (err) => {
             this.loading = false;
-            this.toastService.showSuccess('Procurement request created successfully');
-            this.router.navigate(['/requisitions']);
+            this.toastService.showError('Failed to update request: ' + (err.error || 'Unknown error'));
           }
-        },
-        error: (err) => {
-          this.loading = false;
-          this.toastService.showError('Failed to create request: ' + (err.error?.message || 'Unknown error'));
-        }
-      });
+        });
+      } else {
+        this.requisitionService.createRequest(request).subscribe({
+          next: (createdRequest) => {
+            this.handleUploadAndNavigate(createdRequest, 'Procurement request created successfully', submitAfterSave);
+          },
+          error: (err) => {
+            this.loading = false;
+            this.toastService.showError('Failed to create request: ' + (err.error || 'Unknown error'));
+          }
+        });
+      }
     } else {
       this.toastService.showError('Please fill out all required fields properly.');
       this.basicInfoForm.markAllAsTouched();
       this.lineItemsForm.markAllAsTouched();
+    }
+  }
+  private handleUploadAndNavigate(req: any, successMessage: string, submitAfterSave: boolean): void {
+    if (this.uploadedFiles.length > 0 && req.id) {
+      const uploadTasks: Observable<any>[] = this.uploadedFiles.map(file => {
+        return this.requisitionService.uploadQuotes(req.id!, file as any).pipe(
+          catchError(() => of(null)) // Prevent a single bad upload from blocking everything
+        );
+      });
+
+      forkJoin(uploadTasks).subscribe({
+        next: () => this.finalizeNavigation(req.id, successMessage, submitAfterSave),
+        error: () => this.finalizeNavigation(req.id, successMessage, submitAfterSave)
+      });
+    } else {
+      this.finalizeNavigation(req.id, successMessage, submitAfterSave);
+    }
+  }
+  private finalizeNavigation(requestId: number, successMessage: string, submitAfterSave: boolean): void {
+    if (submitAfterSave && requestId) {
+      this.requisitionService.submitRequest(requestId).subscribe({
+        next: () => {
+          this.loading = false;
+          this.toastService.showSuccess(`${successMessage} & submitted successfully`);
+          this.router.navigate(['/requisitions', requestId]);
+        },
+        error: (err) => {
+          this.loading = false;
+          this.toastService.showError('Request was saved, but failed to submit: ' + (err.error?.message || 'Unknown error'));
+          this.router.navigate(['/requisitions', requestId]);
+        }
+      });
+    } else {
+      this.loading = false;
+      this.toastService.showSuccess(successMessage);
+      this.router.navigate(['/requisitions', requestId]);
     }
   }
 
