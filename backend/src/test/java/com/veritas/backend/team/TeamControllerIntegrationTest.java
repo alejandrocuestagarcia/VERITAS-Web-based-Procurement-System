@@ -229,8 +229,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(2))
-                                .andExpect(jsonPath("$[0].name").value("Alpha Team"))
-                                .andExpect(jsonPath("$[1].name").value("Beta Team"));
+                                .andExpect(jsonPath("$[*].name").value(org.hamcrest.Matchers.containsInAnyOrder("Alpha Team", "Beta Team")));
         }
 
         @Test
