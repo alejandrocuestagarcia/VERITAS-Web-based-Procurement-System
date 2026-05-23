@@ -25,6 +25,7 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -49,7 +50,8 @@ public class BackendApplication {
 							   WorkflowDefinitionRepository workflowDefinitionRepository,
 							   VendorRepository vendorRepository,
 							   RequestRepository requestRepository,
-							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository) {
+							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository,
+							   Environment env) {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
@@ -398,6 +400,11 @@ public class BackendApplication {
 			}
 
 			// AI-REFACTORED
+			if (env.acceptsProfiles(org.springframework.core.env.Profiles.of("test"))) {
+				log.info("Skipping mock vendor and request seeding in test profile.");
+				return;
+			}
+
 			if (vendorRepository.findByTaxId("MOCK-1234").isEmpty()) {
 				Vendor vendor = new Vendor();
 				vendor.setVendorName("Mock Vendor Inc");
