@@ -43,6 +43,11 @@ export class AuthService {
     return decodedToken ? decodedToken.role : null;
   }
 
+  getUserId(): number | null {
+    const decodedToken = this.getDecodedToken();
+    return decodedToken ? decodedToken.id : null;
+  }
+
   isPasswordChangeRequired(): boolean {
     return localStorage.getItem('requires_password_change') === 'true';
   }

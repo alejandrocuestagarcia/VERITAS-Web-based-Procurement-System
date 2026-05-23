@@ -37,12 +37,12 @@
         <mat-icon class="scale-90">request_quote</mat-icon>
         Vendor Quotes
       </button>
-      <div *ngIf= "request.responsibleRole === role || !request.responsibleRole " class="flex items-center gap-2" >
-        <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
+      <div *ngIf="canAct || (request.state === 'DRAFT' && isRequester())" class="flex items-center gap-2" >
+        <button *ngIf="request.state === 'DRAFT' && isRequester()" (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
           <mat-icon class="scale-90">edit</mat-icon>
           Edit
         </button>
-        <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state != 'DRAFT' " class="flex items-center gap-2" >
+        <div *ngIf="canAct && request.state !== 'DRAFT'" class="flex items-center gap-2" >
           <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
             <mat-icon class="scale-90">close</mat-icon>
             Reject
@@ -52,7 +52,7 @@
             Approve
           </button>
         </div>
-        <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state == 'DRAFT' " class="flex items-center gap-2" >
+        <div *ngIf= "request.state === 'DRAFT' && isRequester() " class="flex items-center gap-2" >
           <button (click)="submitRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
             <mat-icon class="scale-90">upload</mat-icon>
             Submit
@@ -88,6 +88,10 @@
                       'text-slate-600': request.priority === 'LOW'
                     }">{{ request.priority | titlecase }}</span>
             </div>
+          </div>
+          <div class="flex items-center justify-between" *ngIf="request.assigneeName && request.responsibleRole !== 'REQUESTER' && request.state !== 'DRAFT'">
+            <span class="text-[14px] text-slate-500 font-medium">Assignee</span>
+            <span class="text-[14px] text-slate-900 font-bold text-right">{{ request.assigneeName }}</span>
           </div>
         </div>
       </div>

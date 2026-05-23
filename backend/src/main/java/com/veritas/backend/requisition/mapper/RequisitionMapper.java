@@ -29,6 +29,10 @@ public interface RequisitionMapper {
     @Mapping(target = "updatedAt", source = "updatedAt")
     @Mapping(target = "items", source = "items")
     @Mapping(target = "attachments", source = "attachments")
+    @Mapping(target = "assigneeId", source = "assignee.id")
+    @Mapping(target = "assigneeName", source = "assignee.name")
+    @Mapping(target = "assigneeEmail", source = "assignee.email")
+    @Mapping(target = "workflowDefinitionId", source = "workflowDefinitionID.id")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);

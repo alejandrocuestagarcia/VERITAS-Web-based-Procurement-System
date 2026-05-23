@@ -21,6 +21,8 @@ import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.user.mapper.UserMapper;
+import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 import com.veritas.backend.common.exception.WorkflowStateException;
+import org.springframework.security.access.AccessDeniedException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -48,6 +51,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -62,6 +66,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final WorkflowStepRepository workflowStepRepository;
     private final RequisitionMapper requisitionMapper;
     private final InternalBudgetRepository internalBudgetRepository;
+    private final UserMapper userMapper;
 
     private final WorkflowEngineService workflowEngineService;
 
@@ -135,6 +140,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                 .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
 
         Long userIdFilter = null;
+        Long assigneeIdFilter = null;
         Long teamIdFilter = null;
         Long departmentIdFilter = null;
 
@@ -157,7 +163,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         Page<Request> requests = requestRepository.findFilteredRequests(
-                statusFilter, searchFilter, projectId, userIdFilter, teamIdFilter, departmentIdFilter, WorkflowComponent.END_EVENT, pageable);
+                statusFilter, searchFilter, projectId, userIdFilter, assigneeIdFilter, teamIdFilter, departmentIdFilter, WorkflowComponent.END_EVENT, pageable);
 
         return requests.map(requisitionMapper::toDto);
     }
@@ -238,7 +244,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public RequisitionDto approveRequest(Long id, User actor) {
+    public RequisitionDto approveRequest(Long id, User actor, Long nextAssigneeId) {
 
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
@@ -251,7 +257,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " is in draft and must be submitted");
         }
 
-        workflowEngineService.moveToNextStep(request, actor);
+        workflowEngineService.moveToNextStep(request, actor, nextAssigneeId);
 
         Request saved = requestRepository.save(request);
 
@@ -283,7 +289,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public RequisitionDto submitRequest(Long id, User actor) {
+    public RequisitionDto submitRequest(Long id, User actor, Long nextAssigneeId) {
 
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
@@ -294,7 +300,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setState(RequestStatus.ACTIVE);
 
-        workflowEngineService.startWorkflow(request, actor);
+        workflowEngineService.startWorkflow(request, actor, nextAssigneeId);
 
         Request savedRequest = requestRepository.save(request);
         return requisitionMapper.toDto(savedRequest);
@@ -320,5 +326,66 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setUserID(newRequester);
         Request updatedRequest = requestRepository.save(request);
         return requisitionMapper.toDto(updatedRequest);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getNextStepRole(Long id) {
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+        WorkflowStep nextStep = workflowEngineService.getNextStep(request);
+        if (nextStep != null && nextStep.getRole() != null) {
+            return nextStep.getRole().name();
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserDto> getEligibleAssignees(Long id, String roleName) {
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+        UserRole requiredRole = UserRole.valueOf(roleName);
+        
+        Long requestDepartmentId = null;
+        if (request.getUserID() != null && request.getUserID().getTeam() != null && request.getUserID().getTeam().getDepartment() != null) {
+            requestDepartmentId = request.getUserID().getTeam().getDepartment().getDepartmentId();
+        }
+
+        final Long finalReqDeptId = requestDepartmentId;
+        return userRepository.findAllByRoleAndIsActiveTrue(requiredRole).stream()
+                .filter(u -> {
+                    if (requiredRole == UserRole.FINANCE_OFFICER || requiredRole == UserRole.ADMINISTRATOR) {
+                        return true;
+                    }
+                    if (finalReqDeptId == null) {
+                        return true;
+                    }
+                    if (requiredRole == UserRole.PROCUREMENT_OFFICER) {
+                        return u.getDepartment() != null && u.getDepartment().getDepartmentId().equals(finalReqDeptId);
+                    }
+                    if (requiredRole == UserRole.REQUESTER) {
+                        return u.getTeam() != null && u.getTeam().getDepartment() != null && 
+                               u.getTeam().getDepartment().getDepartmentId().equals(finalReqDeptId);
+                    }
+                    return false;
+                })
+                .map(userMapper::toUserDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean canAct(Long id, User actor) {
+        Request request = requestRepository.findById(id).orElse(null);
+        if (request == null || request.getCurrentStepID() == null) {
+            return false;
+        }
+        try {
+            workflowEngineService.checkAuthorization(request, actor, request.getCurrentStepID());
+            return true;
+        } catch (AccessDeniedException e) {
+            return false;
+        }
     }
 }

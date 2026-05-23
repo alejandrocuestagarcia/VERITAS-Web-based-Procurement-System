@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -36,7 +38,7 @@ public class SecurityConfig {
   };
 
   private static final String[] PUBLIC_FRONTEND_URLS = {
-          "/assets/**", "/*.js", "/*.css", "/*.ico", "/favicon.ico",
+      "/assets/**", "/*.js", "/*.css", "/*.ico", "/favicon.ico",
           "/", "/index.html",
           "/**"
   };
@@ -50,6 +52,13 @@ public class SecurityConfig {
         UserRole.PROCUREMENT_OFFICER.name(), UserRole.REQUESTER.name());
 
     return RoleHierarchyImpl.fromHierarchy(hierarchy);
+  }
+
+  @Bean
+  public static MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+    DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+    expressionHandler.setRoleHierarchy(roleHierarchy);
+    return expressionHandler;
   }
 
   @Bean

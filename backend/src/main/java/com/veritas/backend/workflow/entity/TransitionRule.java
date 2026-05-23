@@ -2,6 +2,8 @@ package com.veritas.backend.workflow.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "transition_rules")
@@ -13,6 +15,8 @@ public class TransitionRule {
 
     @OneToOne
     @JoinColumn(name = "transition_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private WorkflowTransition transition;
 
     private Integer minRequiredVendors = 0;

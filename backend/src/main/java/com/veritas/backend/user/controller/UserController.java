@@ -115,4 +115,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllRequesters(pageable));
     }
 
+    @Operation(summary = "Get users by role", description = "Retrieves all active users with the specified role.")
+    @GetMapping("/by-role")
+    public ResponseEntity<List<UserDto>> getUsersByRole(@RequestParam UserRole role) {
+        log.info("GET /users/by-role – role: {}", role);
+        return ResponseEntity.ok(userService.getUsersByRole(role));
+    }
+
 }

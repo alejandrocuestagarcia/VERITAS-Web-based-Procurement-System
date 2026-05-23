@@ -276,4 +276,13 @@ public class UserServiceImpl implements UserService {
     return userRepository.findAllByRoleAndIsActiveTrue(UserRole.REQUESTER, pageable)
         .map(userMapper::toUserDto);
   }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<UserDto> getUsersByRole(UserRole role) {
+    log.debug("Fetching all active users with role: {}", role);
+    return userRepository.findAllByRoleAndIsActiveTrue(role).stream()
+        .map(userMapper::toUserDto)
+        .toList();
+  }
 }

@@ -153,7 +153,7 @@ class RequisitionServiceUnitTest {
         stupRepositories();
         RequisitionDto expectedDto = new RequisitionDto(
                 1L, "New Laptop", "PRJ-11", "Start", false,
-                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", 1L, 1L, null, null, null, null, null, null, null, null, "", null);
+                Priority.MEDIUM, "Test Project", "PRJ", "Standard Workflow", "Engineering", "Test User", 1L, 1L, null, null, null, null, null, null, null, null, "", null, null, null, null, null);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
@@ -352,12 +352,12 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         Pageable pageable = PageRequest.of(0, 10);
-        when(requestRepository.findFilteredRequests("OPEN", "search", 1L, null, null, null, WorkflowComponent.END_EVENT, pageable))
+        when(requestRepository.findFilteredRequests("OPEN", "search", 1L, null, null, null, null, WorkflowComponent.END_EVENT, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
         requisitionService.getRequests("open", "search", 1L, testUser, pageable);
 
-        verify(requestRepository).findFilteredRequests("OPEN", "search", 1L, null, null, null, WorkflowComponent.END_EVENT, pageable);
+        verify(requestRepository).findFilteredRequests("OPEN", "search", 1L, null, null, null, null, WorkflowComponent.END_EVENT, pageable);
     }
 
     @Test
@@ -366,12 +366,12 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         Pageable pageable = PageRequest.of(0, 10);
-        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, WorkflowComponent.END_EVENT, pageable))
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, null, WorkflowComponent.END_EVENT, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
         requisitionService.getRequests("", "", null, testUser, pageable);
 
-        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, WorkflowComponent.END_EVENT, pageable);
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, null, WorkflowComponent.END_EVENT, pageable);
     }
 
     @Test
@@ -467,7 +467,11 @@ class RequisitionServiceUnitTest {
                 null,                            // 20. items
                 null,                            // 21. attachments
                 "ACTIVE",                        // 22. status (Moved to the end!)
-                null                             // 23. rejection reason
+                null,                            // 23. rejection reason
+                null,                            // 24. assigneeId
+                null,                            // 25. assigneeName
+                null,                            // 26. assigneeEmail
+                null                             // 27. workflowDefinitionId
         );
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
@@ -475,9 +479,9 @@ class RequisitionServiceUnitTest {
             Request req = invocation.getArgument(0);
             req.setCurrentStepID(testStartStep); // Simulates what startWorkflow actually does
             return null;
-        }).when(workflowEngineService).startWorkflow(any(Request.class), any(User.class));
+        }).when(workflowEngineService).startWorkflow(any(Request.class), any(User.class), any());
         // 2. Act
-        RequisitionDto result = requisitionService.submitRequest(100L, testUser);
+        RequisitionDto result = requisitionService.submitRequest(100L, testUser, null);
 
         // 3. Assert
         assertNotNull(result);
@@ -503,7 +507,7 @@ class RequisitionServiceUnitTest {
         // 2. Act & Assert
         WorkflowStateException ex = assertThrows(
                 WorkflowStateException.class,
-                () -> requisitionService.submitRequest(101L, testUser)
+                () -> requisitionService.submitRequest(101L, testUser, null)
         );
 
         assertTrue(ex.getMessage().contains("Only drafts can be submitted."));
