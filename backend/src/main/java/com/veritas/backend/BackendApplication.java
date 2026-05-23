@@ -399,6 +399,8 @@ public class BackendApplication {
 				log.info("Seeded vendor: {}", vendor2.getVendorName());
 			}
 
+			log.info("Seed data initialization complete.");
+
 			// AI-REFACTORED
 			if (env.acceptsProfiles(org.springframework.core.env.Profiles.of("test"))) {
 				log.info("Skipping mock vendor and request seeding in test profile.");
@@ -441,9 +443,9 @@ public class BackendApplication {
 				quote.setRequest(request);
 				quote.setSelected(true);
 				quoteRepository.save(quote);
-			}
 
-			log.info("Seed data initialization complete.");
+				log.info("Successfully initialized additional mock evaluation seed data with finished requisition, selected quote and test vendor '{}'", vendor.getVendorName());
+			}
 		};
 	}
 
