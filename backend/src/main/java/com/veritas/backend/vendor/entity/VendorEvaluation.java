@@ -23,8 +23,8 @@ public class VendorEvaluation {
     @JoinColumn(name = "evaluator_id")
     private User evaluator;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_id", unique = true)
     private Request request;
 
     private Integer deliveryScore;
