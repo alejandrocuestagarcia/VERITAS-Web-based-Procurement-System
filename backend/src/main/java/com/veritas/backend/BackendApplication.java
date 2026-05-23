@@ -1,28 +1,39 @@
 package com.veritas.backend;
 
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.entity.Priority;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
+import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
-import com.veritas.backend.budget.entity.InternalBudget;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Slf4j
 @SpringBootApplication
@@ -37,7 +48,10 @@ public class BackendApplication {
 							   DepartmentRepository departmentRepository, TeamRepository teamRepo,
 							   ProjectRepository projectRepo, WorkflowService workflowService,
 							   WorkflowDefinitionRepository workflowDefinitionRepository,
-							   VendorRepository vendorRepository) {
+							   VendorRepository vendorRepository,
+							   RequestRepository requestRepository,
+							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository,
+							   Environment env) {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
@@ -383,6 +397,50 @@ public class BackendApplication {
 				vendor2.setPrimaryContactEmail("evance@primelogistics.com");
 				vendorRepository.save(vendor2);
 				log.info("Seeded vendor: {}", vendor2.getVendorName());
+			}
+
+			// AI-REFACTORED
+			if (env.acceptsProfiles(org.springframework.core.env.Profiles.of("test"))) {
+				log.info("Skipping mock vendor and request seeding in test profile.");
+				return;
+			}
+
+			if (vendorRepository.findByTaxId("MOCK-1234").isEmpty()) {
+				Vendor vendor = new Vendor();
+				vendor.setVendorName("Mock Vendor Inc");
+				vendor.setTaxId("MOCK-1234");
+				vendor.setDescription("A vendor for testing evaluations.");
+				vendor.setPrimaryContactEmail("contact@mockvendor.com");
+				vendor.setPrimaryContactName("John Doe");
+				vendor = vendorRepository.save(vendor);
+
+				Request request = new Request();
+				request.setRequestName("Mock Finished Requisition");
+				request.setDescription("This is a mock request created for testing vendor evaluations.");
+				request.setPriority(Priority.MEDIUM);
+				request.setUserID(userRepo.findByEmail("requester@veritas.com").orElse(null));
+				request.setProjectID(projectRepo.findAll().stream().findFirst().orElse(null));
+				request.setTeamID(request.getUserID() != null ? request.getUserID().getTeam() : null);
+
+				var workflowDef = workflowDefinitionRepository.findAll().stream().findFirst().orElse(null);
+				if (workflowDef != null) {
+					request.setWorkflowDefinitionID(workflowDef);
+					WorkflowStep endStep = workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT).orElse(null);
+					request.setCurrentStepID(endStep);
+				}
+
+				request.setState(RequestStatus.FINISHED);
+				request = requestRepository.save(request);
+
+				Quote quote = new Quote();
+				quote.setVendorID(vendor);
+				quote.setCurrency(com.veritas.backend.vendor.entity.Currency.USD);
+				quote.setBaseAmount(new BigDecimal("1000.00"));
+				quote.setShippingCosts(new BigDecimal("0.00"));
+				quote.setTotalAmount(new BigDecimal("1000.00"));
+				quote.setRequest(request);
+				quote.setSelected(true);
+				quoteRepository.save(quote);
 			}
 
 			log.info("Seed data initialization complete.");

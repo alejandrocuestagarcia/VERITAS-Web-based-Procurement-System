@@ -54,20 +54,30 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
 
     private static final String INVALID_BPMN_XML = "iNvAlId";
 
-    @BeforeEach
-    void setup() {
+    private void clearDatabase() {
+        jdbcTemplate.update("DELETE FROM invoices");
+        jdbcTemplate.update("DELETE FROM vendor_evaluations");
+        jdbcTemplate.update("DELETE FROM quote_line_items");
+        jdbcTemplate.update("DELETE FROM quotes");
+        jdbcTemplate.update("DELETE FROM request_items");
+        jdbcTemplate.update("DELETE FROM attachments");
+        jdbcTemplate.update("DELETE FROM audit_logs");
+        jdbcTemplate.update("DELETE FROM requests");
+
         workflowTransitionRepository.deleteAll();
         workflowStepRepository.deleteAll();
         jdbcTemplate.update("UPDATE workflow_definitions SET previous_version_id = NULL");
         workflowDefinitionRepository.deleteAll();
     }
 
+    @BeforeEach
+    void setup() {
+        clearDatabase();
+    }
+
     @AfterEach
     void cleanup() {
-        workflowTransitionRepository.deleteAll();
-        workflowStepRepository.deleteAll();
-        jdbcTemplate.update("UPDATE workflow_definitions SET previous_version_id = NULL");
-        workflowDefinitionRepository.deleteAll();
+        clearDatabase();
     }
 
     @Test

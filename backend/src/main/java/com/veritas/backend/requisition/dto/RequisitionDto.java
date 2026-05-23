@@ -4,6 +4,9 @@ import com.veritas.backend.requisition.entity.Priority;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.Builder;
+
+@Builder
 public record RequisitionDto(
     Long id,
     String requestName,
@@ -24,6 +27,9 @@ public record RequisitionDto(
     String description,
     String jiraIssueKey,
     String jiraIssueUrl,
+    Long vendorId,
+    String vendorName,
+    Boolean isEvaluated,
     List<RequisitionItemDto> items,
     List<AttachmentDto> attachments,
     String state,

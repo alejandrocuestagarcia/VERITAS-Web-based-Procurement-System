@@ -33,32 +33,34 @@
         <mat-icon class="scale-90">arrow_back</mat-icon>
         Back
       </button>
-      <button *ngIf="request?.responsibleRole === 'PROCUREMENT_OFFICER' && authService.hasRole('PROCUREMENT_OFFICER')"  (click)="viewVendorQuotes()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
-        <mat-icon class="scale-90">request_quote</mat-icon>
-        Vendor Quotes
-      </button>
-      <div *ngIf= "request.responsibleRole === role || !request.responsibleRole " class="flex items-center gap-2" >
-        <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
-          <mat-icon class="scale-90">edit</mat-icon>
-          Edit
+      <ng-container *ngIf="!request?.isClosed">
+        <button *ngIf="request?.responsibleRole === 'PROCUREMENT_OFFICER' && authService.hasRole('PROCUREMENT_OFFICER')"  (click)="viewVendorQuotes()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+          <mat-icon class="scale-90">request_quote</mat-icon>
+          Vendor Quotes
         </button>
-        <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state != 'DRAFT' " class="flex items-center gap-2" >
-          <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
-            <mat-icon class="scale-90">close</mat-icon>
-            Reject
+        <div *ngIf= "request.responsibleRole === role || !request.responsibleRole " class="flex items-center gap-2" >
+          <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
+            <mat-icon class="scale-90">edit</mat-icon>
+            Edit
           </button>
-          <button (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors">
-            <mat-icon class="scale-90">check</mat-icon>
-            Approve
-          </button>
+          <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state != 'DRAFT' " class="flex items-center gap-2" >
+            <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">close</mat-icon>
+              Reject
+            </button>
+            <button (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">check</mat-icon>
+              Approve
+            </button>
+          </div>
+          <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state == 'DRAFT' " class="flex items-center gap-2" >
+            <button (click)="submitRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">upload</mat-icon>
+              Submit
+            </button>
+          </div>
         </div>
-        <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state == 'DRAFT' " class="flex items-center gap-2" >
-          <button (click)="submitRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
-            <mat-icon class="scale-90">upload</mat-icon>
-            Submit
-          </button>
-        </div>
-      </div>
+      </ng-container>
     </div>
   </div>
 
@@ -149,11 +151,20 @@
           </p>
         </div>
       </div>
-      <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-7 border-l-[6px] border-l-[#0042d1]">
+      <div *ngIf="!request.isClosed" class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-7 border-l-[6px] border-l-[#0042d1]">
         <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5">Current Workflow Step</h3>
         <p class="text-[14px] text-slate-600 leading-relaxed">
           This step (<strong class="text-slate-900 font-bold">{{ request.status }}</strong>) requires review from <strong class="text-slate-900 font-bold">{{ (request.responsibleRole ? formatRole(request.responsibleRole) : 'No Role Assigned') | titlecase }}</strong>.
           Please review the provided description and attachments before proceeding with the approval.
+        </p>
+      </div>
+      <div *ngIf="request.isClosed" class="bg-green-50/60 rounded-[20px] border border-green-200 shadow-sm p-7 border-l-[6px] border-l-green-500">
+        <div class="flex items-center gap-2 mb-5">
+          <mat-icon class="text-green-600">check_circle</mat-icon>
+          <h3 class="text-[11px] font-bold text-green-700 uppercase tracking-widest">Workflow Completed</h3>
+        </div>
+        <p class="text-[14px] text-slate-600 leading-relaxed">
+          This requisition has completed all workflow steps and has been <strong class="text-green-700 font-bold">approved</strong>.
         </p>
       </div>
     </div>

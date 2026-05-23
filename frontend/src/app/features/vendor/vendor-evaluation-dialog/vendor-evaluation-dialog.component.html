@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>Evaluate Vendor: {{ data.vendorName }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="flex flex-col gap-4 mt-2 min-w-[300px] sm:min-w-[400px]">
+
+    <div>
+      <p class="text-sm text-gray-500 mb-2">Rate the vendor on a scale of 0 to 10.</p>
+    </div>
+
+    <app-shared-rating-slider
+      [form]="form"
+      controlName="communicationScore"
+      label="Communication Score"
+      icon="forum">
+    </app-shared-rating-slider>
+
+    <app-shared-rating-slider
+      [form]="form"
+      controlName="deliveryScore"
+      label="Delivery Score"
+      icon="local_shipping">
+    </app-shared-rating-slider>
+
+    <app-shared-rating-slider
+      [form]="form"
+      controlName="qualityScore"
+      label="Quality Score"
+      icon="star_rate">
+    </app-shared-rating-slider>
+
+    <app-shared-form-field label="Notes">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>notes</mat-icon>
+        <textarea matInput formControlName="notes" placeholder="Any additional feedback..." rows="3"></textarea>
+      </mat-form-field>
+    </app-shared-form-field>
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" [disabled]="loading">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="form.invalid || loading">
+    <mat-spinner *ngIf="loading" diameter="20" class="mr-2 inline-block"></mat-spinner>
+    Submit Evaluation
+  </button>
+</mat-dialog-actions>

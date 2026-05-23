@@ -157,7 +157,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         Page<Request> requests = requestRepository.findFilteredRequests(
-                statusFilter, searchFilter, projectId, userIdFilter, teamIdFilter, departmentIdFilter, WorkflowComponent.END_EVENT, pageable);
+                statusFilter, searchFilter, projectId, userIdFilter, teamIdFilter, departmentIdFilter, pageable);
 
         return requests.map(requisitionMapper::toDto);
     }

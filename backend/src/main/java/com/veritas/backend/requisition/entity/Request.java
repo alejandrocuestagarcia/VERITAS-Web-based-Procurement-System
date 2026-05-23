@@ -4,6 +4,8 @@ import com.veritas.backend.user.entity.User;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.vendor.entity.Quote;
+import com.veritas.backend.vendor.entity.VendorEvaluation;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.requisition.entity.RequestStatus;
@@ -28,6 +30,12 @@ public class Request {
 
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Attachment> attachments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Quote> quotes = new ArrayList<>();
+
+    @OneToOne(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private VendorEvaluation vendorEvaluation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

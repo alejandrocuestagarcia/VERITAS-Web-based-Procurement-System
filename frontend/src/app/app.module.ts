@@ -57,6 +57,7 @@ import { SharedFormCardComponent } from './shared/components/creation/shared-for
 import { SharedFormFieldComponent } from './shared/components/creation/shared-form-field/shared-form-field.component';
 import { ConfirmationDialogComponent } from './shared/components/confirmation-dialog/confirmation-dialog.component';
 import { PriorityBadgeComponent } from './shared/components/priority-badge/priority-badge.component';
+import { SharedRatingSliderComponent } from './shared/components/rating-slider/shared-rating-slider.component';
 
 // Features
 import { UserCreateComponent } from './features/user/user-create/user-create.component';
@@ -71,6 +72,7 @@ import { ProjectEditComponent } from './features/project/project-edit/project-ed
 import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
 import { VendorCreateComponent } from './features/vendor/vendor-create/vendor-create.component';
 import { VendorEditComponent } from './features/vendor/vendor-edit/vendor-edit.component';
+import { VendorEvaluationDialogComponent } from './features/vendor/vendor-evaluation-dialog/vendor-evaluation-dialog.component';
 
 import { TeamListComponent } from './features/team/team-list/team-list.component';
 import { TeamCreateComponent } from './features/team/team-create/team-create.component';
@@ -121,6 +123,7 @@ import { RejectDialogComponent } from './shared/components/reject-dialog/reject-
     VendorListComponent,
     VendorCreateComponent,
     VendorEditComponent,
+    VendorEvaluationDialogComponent,
 
     // Team
     TeamListComponent,
@@ -156,6 +159,7 @@ import { RejectDialogComponent } from './shared/components/reject-dialog/reject-
     ConfirmationDialogComponent,
     PriorityBadgeComponent,
     RejectDialogComponent,
+    SharedRatingSliderComponent,
 
     // Directives & Pipes
     HasRoleDirective,
