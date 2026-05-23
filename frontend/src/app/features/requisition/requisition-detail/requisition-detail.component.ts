@@ -283,24 +283,23 @@ export class RequisitionDetailComponent implements OnInit {
 
   downloadAttachment(attachment: any): void {
     if (!attachment || !attachment.attachmentId) return;
-    this.requisitionService.downloadAttachment(attachment.attachmentId)
-      .subscribe({
-        next: (blob: Blob) => {
-          const downloadUrl = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = downloadUrl;
-          a.download = attachment.fileName || 'download';
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(downloadUrl);
-          document.body.removeChild(a);
-        },
-        error: (err) => {
-          console.error('Failed to download attachment', err);
-          alert('Failed to download attachment');
-        }
-      });
+    this.requisitionService.downloadAttachment(attachment.attachmentId).subscribe({
+      next: (blob) => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = attachment.fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+      },
+      error: (err) => {
+        console.error('Failed to download attachment', err);
+        alert('Failed to download attachment');
+      }
+    });
   }
 
   processPayment(): void {
@@ -312,9 +311,19 @@ export class RequisitionDetailComponent implements OnInit {
       (a: any) => a.fileType === 'application/pdf'
     );
 
-    if (invoicePdf) {
-      this.rawPdfUrl = `http://localhost:8080/api/v1/requisitions/attachments/${invoicePdf.attachmentId}`;
-      this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.rawPdfUrl);
+    if (invoicePdf && invoicePdf.attachmentId) {
+      this.requisitionService.downloadAttachment(invoicePdf.attachmentId).subscribe({
+        next: (blob) => {
+          const blobUrl = window.URL.createObjectURL(blob);
+          this.rawPdfUrl = blobUrl;
+          this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+        },
+        error: (err) => {
+          console.error('Failed to load PDF preview', err);
+          this.pdfUrl = null;
+          this.rawPdfUrl = '';
+        }
+      });
     } else {
       this.pdfUrl = null;
       this.rawPdfUrl = '';
@@ -324,6 +333,9 @@ export class RequisitionDetailComponent implements OnInit {
   closePaymentDrawer(): void {
     this.isDrawerOpen = false;
     this.isDrawerExpanded = false;
+    if (this.rawPdfUrl && this.rawPdfUrl.startsWith('blob:')) {
+      window.URL.revokeObjectURL(this.rawPdfUrl);
+    }
     this.pdfUrl = null;
     this.rawPdfUrl = '';
   }
