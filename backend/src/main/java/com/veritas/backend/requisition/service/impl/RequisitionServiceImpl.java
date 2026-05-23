@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition.service.impl;
 
+import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.InvoiceCreateDto;
@@ -36,6 +37,8 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import java.math.BigDecimal;
+
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
@@ -86,6 +89,9 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private final WorkflowEngineService workflowEngineService;
     private final AuditService auditService;
+
+    @Lazy
+    private final JiraSyncService jiraSyncService;
 
     private static final String UPLOAD_DIR = "uploads/requisitions";
 
@@ -200,6 +206,15 @@ public class RequisitionServiceImpl implements RequisitionService {
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
 
         storeAttachment(file, request, null);
+    }
+
+    @Override
+    @Transactional
+    public void saveAttachmentFromInputStream(Long requestId, String originalFilename, String contentType, long size, java.io.InputStream inputStream) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
+
+        storeFile(inputStream, originalFilename, contentType, size, request, null);
     }
 
     @Override
@@ -324,6 +339,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setUserID(newRequester);
         Request updatedRequest = requestRepository.save(request);
+        if (jiraSyncService != null) {
+            jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
+        }
+        
         return requisitionMapper.toDto(updatedRequest);
     }
 
@@ -620,12 +639,19 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private void storeAttachment(MultipartFile file, Request request, Invoice invoice) {
         try {
+            storeFile(file.getInputStream(), file.getOriginalFilename(), file.getContentType(), file.getSize(), request, invoice);
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not store file. Please try again!", ex);
+        }
+    }
+
+    private void storeFile(java.io.InputStream inputStream, String originalFilename, String contentType, long size, Request request, Invoice invoice) {
+        try {
             Path uploadPath = Paths.get(UPLOAD_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
@@ -633,14 +659,14 @@ public class RequisitionServiceImpl implements RequisitionService {
             String storedFilename = UUID.randomUUID().toString() + extension;
             Path targetLocation = uploadPath.resolve(storedFilename);
 
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
             Attachment attachment = new Attachment();
             attachment.setRequest(request);
             attachment.setInvoice(invoice);
             attachment.setFileName(originalFilename);
-            attachment.setFileType(file.getContentType());
-            attachment.setFileSize(file.getSize());
+            attachment.setFileType(contentType);
+            attachment.setFileSize(size);
             attachment.setStoragePath(targetLocation.toString());
             attachment.setUploadedAt(LocalDateTime.now());
             attachmentRepository.save(attachment);

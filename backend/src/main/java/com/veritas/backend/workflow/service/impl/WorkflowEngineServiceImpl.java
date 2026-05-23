@@ -14,23 +14,27 @@ import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.workflow.entity.TransitionRule;
+import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
+
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+
 import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -49,6 +53,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     private final QuoteRepository quoteRepository;
     private final AuditServiceImpl auditService;
     private final AuditLogRepository auditLogRepository;
+    
+    @Lazy
+    private final JiraSyncService jiraSyncService;
     private final UserRepository userRepository;
 
 
@@ -153,10 +160,15 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
                 if (componentType == WorkflowComponent.BRANCH) {
                     moveToNextStep(request, actor, nextAssigneeId);
+                    return;
                 }
 
                 if (componentType == WorkflowComponent.END_EVENT) {
                     request.setState(RequestStatus.FINISHED);
+                }
+
+                if (jiraSyncService != null) {
+                    jiraSyncService.handleVeritasWorkflowChange(request);
                 }
 
                 break;
@@ -224,6 +236,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 "Reverted from " + stepToRevertFrom.getName() + " to " + targetStep.getName() + ". Reason: " + reason
         );
 
+        if (jiraSyncService != null) {
+            jiraSyncService.handleVeritasWorkflowChange(request);
+        }
     }
 
     @Override

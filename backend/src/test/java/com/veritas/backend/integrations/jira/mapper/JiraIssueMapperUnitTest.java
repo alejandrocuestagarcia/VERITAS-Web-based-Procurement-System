@@ -41,6 +41,7 @@ public class JiraIssueMapperUnitTest {
             "2024-04-26T14:30:00.000+0000",
             "2024-04-26T15:30:00.000+0000",
             null,
+            null,
             null
         );
 

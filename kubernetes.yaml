@@ -80,6 +80,8 @@ spec:
               value: "password"
             - name: PASSWORD_RESET_LINK_BASE
               value: "https://veritas.apps.student.inso-w.at/reset-password"
+            - name: APP_FRONTEND_URL
+              value: "https://veritas.apps.student.inso-w.at"
           ports:
             - containerPort: 8080
           resources:

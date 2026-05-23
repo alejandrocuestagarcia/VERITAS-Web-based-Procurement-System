@@ -2,6 +2,7 @@ package com.veritas.backend.integrations.jira.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record JiraFieldsRecord(
@@ -11,6 +12,7 @@ public record JiraFieldsRecord(
     String created,
     String updated,
     JiraUserRecord reporter,
-    JiraProjectRecord project
+    JiraProjectRecord project,
+    List<JiraAttachmentRecord> attachment
 ) {
 }

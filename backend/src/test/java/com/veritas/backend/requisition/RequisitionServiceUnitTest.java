@@ -368,7 +368,6 @@ class RequisitionServiceUnitTest {
     void SaveAttachment_IoException_ThrowsRuntimeException() throws IOException {
         Request request = new Request();
         request.setRequestID(1L);
-        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         MockMultipartFile file = mock(MockMultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("broken.txt");

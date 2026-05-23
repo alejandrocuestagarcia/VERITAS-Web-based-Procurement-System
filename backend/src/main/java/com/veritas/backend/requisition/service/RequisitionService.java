@@ -19,6 +19,7 @@ import java.util.List;
 public interface RequisitionService {
     RequisitionDto createRequest(RequisitionCreateDto createDto, User user);
     void saveAttachment(Long requestId, MultipartFile file);
+    void saveAttachmentFromInputStream(Long requestId, String originalFilename, String contentType, long size, java.io.InputStream inputStream);
     Page<RequisitionDto> getRequests(String status, String search, Long projectId, User authUser, Pageable pageable);
     RequisitionDto getRequestById(Long id);
     ResponseEntity<Resource> downloadAttachment(Long attachmentId);
