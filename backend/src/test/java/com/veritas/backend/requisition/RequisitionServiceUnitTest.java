@@ -32,6 +32,7 @@ import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
@@ -49,6 +50,7 @@ import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -100,6 +102,8 @@ class RequisitionServiceUnitTest {
     ;
     @Mock
     private InternalBudgetRepository internalBudgetRepository;
+    @Mock
+    private InvoiceRepository invoiceRepository;
 
     @Mock
     private QuoteLineItemRepository quoteLineItemRepository;
@@ -117,6 +121,8 @@ class RequisitionServiceUnitTest {
     private ArgumentCaptor<RequestItem> itemCaptor;
     @Captor
     private ArgumentCaptor<Attachment> attachmentCaptor;
+    @Captor
+    private ArgumentCaptor<Invoice> invoiceCaptor;
 
     private User testUser;
     private Project testProject;
@@ -925,4 +931,108 @@ class RequisitionServiceUnitTest {
         verify(quoteLineItemRepository).deleteByQuoteRequestID(1L);
         verify(quoteRepository).deleteByRequestID(1L);
     }
+
+    @Test
+    void ProcessPayment_WithInvalidRequestId_ThrowsEntityNotFoundException() {
+
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.empty());
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> requisitionService.processPayment(100L));
+
+        assertTrue(ex.getMessage().contains("Request not found with id: 100"));
+        verify(requestRepository, never()).save(any());
+        verify(invoiceRepository, never()).save(any());
+
+
+    }
+
+  @Test
+    void ProcessPayment_WithValidRequestIdAndInvalidInvoice_ThrowsEntityNotFoundException() {
+
+
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> requisitionService.processPayment(1L));
+
+        assertTrue(ex.getMessage().contains("Invoice not found for request with id: 1"));
+        verify(requestRepository, never()).save(any());
+        verify(invoiceRepository, never()).save(any());
+
+
+    }
+    //AI-GENERATED
+    @Test
+    void ProcessPayment_WithValidRequestIdAndInvoice_SuccessfullyProcessesPayment() {
+        // Arrange
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        BigDecimal totalAmount = new BigDecimal("120.00");
+        BigDecimal committedSpend = new BigDecimal("200.00");
+        BigDecimal actualSpend = new BigDecimal("50.00");
+
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(committedSpend);
+        budget.setActualSpend(actualSpend);
+        request.setBudgetID(budget);
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(totalAmount);
+        invoice.setIsPaid(false);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        // Act
+        requisitionService.processPayment(1L);
+
+        // Assert
+        assertTrue(invoice.getIsPaid());
+        // actualSpend = actualSpend + totalAmount = 50.00 + 120.00 = 170.00
+        assertEquals(new BigDecimal("170.00"), budget.getActualSpend());
+        // committedSpend = committedSpend - oldCommittedSpend = 200.00 - 200.00 = 0.00
+        assertEquals(new BigDecimal("0.00"), budget.getCommittedSpend());
+
+        verify(invoiceRepository, times(1)).save(invoice);
+        verify(internalBudgetRepository, times(1)).save(budget);
+    }
+
+
+    @Test
+    void ProcessPayment_WithValidRequestIdAndInvalidInvoice_ThrowsIllegalStateException() {
+
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        BigDecimal committedSpend = new BigDecimal("200.00");
+        BigDecimal actualSpend = new BigDecimal("50.00");
+
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(committedSpend);
+        budget.setActualSpend(actualSpend);
+        request.setBudgetID(budget);
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(null);
+        invoice.setIsPaid(false);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> requisitionService.processPayment(1L));
+
+        assertTrue(ex.getMessage().contains("Invoice has no Total amount defined"));
+
+        assertFalse(invoice.getIsPaid());
+
+        verify(invoiceRepository, never()).save(invoice);
+        verify(internalBudgetRepository, never()).save(budget);
+    }
+
+
 }
