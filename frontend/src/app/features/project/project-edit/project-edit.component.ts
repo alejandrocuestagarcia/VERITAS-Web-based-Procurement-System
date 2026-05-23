@@ -37,7 +37,7 @@ export class ProjectEditComponent implements OnInit{
     this.projectForm = this.fb.group({
       name: ['', Validators.required],
       teamId: [null, Validators.required],
-      budget: [null, [Validators.required, Validators.min(0)]],
+      budget: [null, [Validators.required, Validators.min(1)]],
       startDate: [null, Validators.required],
       endDate: [null, Validators.required],
     });
@@ -57,7 +57,6 @@ export class ProjectEditComponent implements OnInit{
   private loadProject(): void {
     this.projectService.getProject(this.projectId).subscribe({
       next: (project) => {
-        console.log(project);
         this.projectForm.patchValue({
           name: project.name,
           teamId: project.teamId,

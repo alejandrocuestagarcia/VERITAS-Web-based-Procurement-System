@@ -67,7 +67,7 @@
             Budget assignment is required
           </mat-error>
           <mat-error *ngIf="projectForm.get('budget')?.hasError('min') && projectForm.get('budget')?.touched">
-            Budget cannot be negative
+            Budget must be greater than 0
           </mat-error>
         </mat-form-field>
       </app-shared-form-field>
