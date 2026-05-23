@@ -545,9 +545,10 @@ public class RequisitionServiceImpl implements RequisitionService {
                 () -> new EntityNotFoundException("Request not found with id: " + requestId)
         );
 
-        Invoice invoice = invoiceRepository.findByRequest(request).orElseThrow(
-                () -> new EntityNotFoundException("Invoice not found with id " + requestId)
-        );
+        Invoice invoice = request.getInvoice();
+        if (invoice == null) {
+            throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
+        }
 
         if (request.getBudgetID() != null) {
             addToBudgets(request.getBudgetID(), invoice);
