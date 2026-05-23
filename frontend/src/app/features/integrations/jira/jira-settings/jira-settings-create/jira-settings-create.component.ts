@@ -3,6 +3,10 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import { ToastService } from '../../../../../core/services/toast.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {JiraConfigControllerService} from '../../../../../core/api/api/jiraConfigController.service';
+import {UserModuleService} from '../../../../../core/api/api/userModule.service';
+import {ProjectModuleService} from '../../../../../core/api/api/projectModule.service';
+import {WorkflowModuleService} from '../../../../../core/api/api/workflowModule.service';
+import {UserDto, ProjectDto, WorkflowDto} from '../../../../../core/api/model/models';
 
 @Component({
   selector: 'app-jira-settings-create',
@@ -16,17 +20,25 @@ export class JiraSettingsCreateComponent implements OnInit {
   testingConnection = false;
   isTokenSet = false;
 
+  users: UserDto[] = [];
+  projects: ProjectDto[] = [];
+  workflows: WorkflowDto[] = [];
+
   constructor(
     private fb: FormBuilder,
     private jiraConfigService: JiraConfigControllerService,
     private toastService: ToastService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private userService: UserModuleService,
+    private projectService: ProjectModuleService,
+    private workflowService: WorkflowModuleService
   ) {
   }
 
   ngOnInit(): void {
     this.initForm();
+    this.loadDropdownData();
 
     // Check if editing
     this.route.paramMap.subscribe(params => {
@@ -39,6 +51,18 @@ export class JiraSettingsCreateComponent implements OnInit {
     });
   }
 
+  private loadDropdownData(): void {
+    this.userService.getAllUsers({ page: 0, size: 1000 }).subscribe(res => {
+      this.users = res.content || [];
+    });
+    this.projectService.getAllProjects().subscribe(res => {
+      this.projects = res || [];
+    });
+    this.workflowService.getAllWorkflows({ page: 0, size: 1000 }).subscribe(res => {
+      this.workflows = res.content || [];
+    });
+  }
+
   private initForm(): void {
     this.settingsForm = this.fb.group({
       name: ['', Validators.required],
@@ -47,7 +71,10 @@ export class JiraSettingsCreateComponent implements OnInit {
       apiToken: [''],
       jql: ['', Validators.required],
       syncIntervalMinutes: [60, [Validators.required, Validators.min(1)]],
-      customFieldId: ['', Validators.required]
+      customFieldId: ['', Validators.required],
+      fallbackUserId: [null, Validators.required],
+      fallbackProjectId: [null, Validators.required],
+      fallbackWorkflowId: [null, Validators.required]
     });
   }
 
@@ -63,7 +90,10 @@ export class JiraSettingsCreateComponent implements OnInit {
           apiToken: '', // Keep empty for security
           jql: config.jql,
           syncIntervalMinutes: config.syncIntervalMinutes,
-          customFieldId: config.customFieldId
+          customFieldId: config.customFieldId,
+          fallbackUserId: config.fallbackUserId,
+          fallbackProjectId: config.fallbackProjectId,
+          fallbackWorkflowId: config.fallbackWorkflowId
         });
         this.loading = false;
       },

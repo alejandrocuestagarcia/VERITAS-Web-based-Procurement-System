@@ -64,10 +64,10 @@ public class JiraConfigServiceUnitTest {
 
         configDto =
             new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", "token",
-                "project = TEST", 60, "field_123", null, null);
+                "jql", 60, "customfield_10015", null, null, null, null, null);
 
         responseDto = new JiraConfigResponseDto(1L, "Test Config", "https://test.atlassian.net", "user",
-            "project = TEST", 60, "field_123", null, null, true);
+            "jql", 60, "customfield_10015", null, null, null, null, null, null, null, null, true);
     }
 
     @Test

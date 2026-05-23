@@ -78,6 +78,38 @@
       </app-shared-form-field>
     </app-shared-form-card>
 
+    <app-shared-form-card icon="rule" title="Fallback Defaults">
+      <app-shared-form-field label="FALLBACK USER">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-select formControlName="fallbackUserId" placeholder="Select a fallback user">
+            <mat-option *ngFor="let u of users" [value]="u.id">{{u.name}} ({{u.email}})</mat-option>
+          </mat-select>
+          <mat-error *ngIf="settingsForm.get('fallbackUserId')?.hasError('required')">Fallback user is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="FALLBACK PROJECT">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>folder</mat-icon>
+          <mat-select formControlName="fallbackProjectId" placeholder="Select a fallback project">
+            <mat-option *ngFor="let p of projects" [value]="p.id">{{p.name}}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="settingsForm.get('fallbackProjectId')?.hasError('required')">Fallback project is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="USED WORKFLOW">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>account_tree</mat-icon>
+          <mat-select formControlName="fallbackWorkflowId" placeholder="Select a used workflow">
+            <mat-option *ngFor="let w of workflows" [value]="w.id">{{w.name}}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="settingsForm.get('fallbackWorkflowId')?.hasError('required')">Workflow is required</mat-error>
+        </mat-form-field>
+      </app-shared-form-field>
+    </app-shared-form-card>
+
         <ng-container infoPanel>
       <div class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
         <mat-icon class="text-blue-700 mt-0.5 flex-shrink-0">info</mat-icon>

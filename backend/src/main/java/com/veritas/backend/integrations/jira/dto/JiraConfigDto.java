@@ -31,6 +31,15 @@ public record JiraConfigDto(
     @NotBlank(message = "Custom Field ID is required")
     String customFieldId,
 
+    @NotNull(message = "Fallback user is required")
+    Long fallbackUserId,
+
+    @NotNull(message = "Fallback project is required")
+    Long fallbackProjectId,
+
+    @NotNull(message = "Used workflow is required")
+    Long fallbackWorkflowId,
+
     LocalDateTime lastSyncTime,
     LocalDateTime nextSyncTime
 ) {

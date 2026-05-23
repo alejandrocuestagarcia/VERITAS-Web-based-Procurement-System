@@ -19,6 +19,12 @@ public record JiraConfigResponseDto(
     Integer syncIntervalMinutes,
     @NotBlank
     String customFieldId,
+    Long fallbackUserId,
+    String fallbackUserName,
+    Long fallbackProjectId,
+    String fallbackProjectName,
+    Long fallbackWorkflowId,
+    String fallbackWorkflowName,
     LocalDateTime lastSyncTime,
     LocalDateTime nextSyncTime,
     boolean isTokenSet

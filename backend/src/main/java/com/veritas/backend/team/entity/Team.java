@@ -9,7 +9,9 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -37,6 +39,8 @@ public class Team {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id")
     @OnDelete(action = OnDeleteAction.SET_NULL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User leader;
 
     @Builder.Default
@@ -46,6 +50,8 @@ public class Team {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Department department;
 
     /*
