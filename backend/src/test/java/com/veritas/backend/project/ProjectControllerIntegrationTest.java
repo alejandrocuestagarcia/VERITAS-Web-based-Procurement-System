@@ -1,10 +1,14 @@
 package com.veritas.backend.project;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.core.MappingsSaver;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.project.dto.ProjectCreationDto;
+import com.veritas.backend.project.dto.ProjectEditDto;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
@@ -28,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -49,6 +54,9 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
     ProjectRepository projectRepository;
 
     @Autowired
+    DepartmentRepository departmentRepository;
+
+    @Autowired
     JwtService jwtService;
 
     @Autowired
@@ -57,22 +65,35 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
     Team testingTeam;
     Team developmentTeam;
     Project project;
+    Department departmentTesting;
+    Department departmentDev;
 
     @BeforeEach
     void setup() {
         projectRepository.deleteAll();
         userRepository.deleteAll();
         teamRepository.deleteAll();
+        departmentRepository.deleteAll();
+
+        departmentTesting = departmentRepository.save(Department.builder()
+                .name("Testing")
+                .build());
+
+        departmentDev = departmentRepository.save(Department.builder()
+                .name("Dev")
+                .build());
 
         testingTeam = teamRepository.save(Team.builder()
                 .name("Testing Team")
                 .description("Handles QA and testing work")
+                .department(departmentTesting)
                 .isActive(true)
                 .build());
 
         developmentTeam = teamRepository.save(Team.builder()
                 .name("Development Team")
                 .description("Builds product features")
+                .department(departmentDev)
                 .isActive(true)
                 .build());
 
@@ -142,5 +163,184 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
                 )
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Controller Project"));
+    }
+
+    @Test
+    void GetProjectById_RequesterFromSameTeam_ReturnsProject() throws Exception {
+
+        User requester = userRepository.save(User.builder()
+                .name("Team Requester")
+                .email("requester.team@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.REQUESTER)
+                .team(testingTeam)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(requester);
+
+        mockMvc.perform(get("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Super Secret Project"));
+    }
+
+    @Test
+    void GetProjectById_RequesterFromDifferentTeam_ReturnsNotFound() throws Exception {
+
+        User wrongTeamRequester = userRepository.save(User.builder()
+                .name("Wrong Team Requester")
+                .email("requester.wrong@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.REQUESTER)
+                .team(developmentTeam)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(wrongTeamRequester);
+
+        mockMvc.perform(get("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void GetProjectById_ProcurementOfficerFromSameDepartment_ReturnsProject() throws Exception {
+
+        User procurementOfficer = userRepository.save(User.builder()
+                .name("Dept Procurement")
+                .email("procurement.dept@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.PROCUREMENT_OFFICER)
+                .team(testingTeam)
+                .department(departmentTesting)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(procurementOfficer);
+
+        mockMvc.perform(get("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Super Secret Project"));
+    }
+
+    @Test
+    void GetProjectById_ProcurementOfficerFromDifferentDepartment_ReturnsNotFound() throws Exception {
+
+        User wrongDeptProcurement = userRepository.save(User.builder()
+                .name("Wrong Dept Procurement")
+                .email("procurement.wrong@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.PROCUREMENT_OFFICER)
+                .team(developmentTeam)
+                .department(departmentDev)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(wrongDeptProcurement);
+
+        mockMvc.perform(get("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void EditProject_FinanceOfficer_UpdatesAndReturnsProject() throws Exception {
+
+        User financeOfficer = userRepository.save(User.builder()
+                .name("Finance Edit Exec")
+                .email("finance.edit@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.FINANCE_OFFICER)
+                .team(testingTeam)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(financeOfficer);
+
+        ProjectEditDto editDto =
+                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),null,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
+
+
+        mockMvc.perform(patch("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(editDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Renamed Massive Project"))
+                .andExpect(jsonPath("$.budget").value(99999.99));
+    }
+    @Test
+    void EditProject_FinanceOfficerWrongStartDate_ReturnsBadRequest() throws Exception {
+
+        User financeOfficer = userRepository.save(User.builder()
+                .name("Finance Edit Exec")
+                .email("finance.edit@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.FINANCE_OFFICER)
+                .team(testingTeam)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(financeOfficer);
+
+        ProjectEditDto editDto =
+                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),null ,LocalDate.now().plusDays(-1),LocalDate.now().plusYears(1));
+
+
+        mockMvc.perform(patch("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(editDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void EditProject_FinanceOfficerWrongEndDate_ReturnsBadRequest() throws Exception {
+
+        User financeOfficer = userRepository.save(User.builder()
+                .name("Finance Edit Exec")
+                .email("finance.edit@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.FINANCE_OFFICER)
+                .team(testingTeam)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(financeOfficer);
+
+        ProjectEditDto editDto =
+                new ProjectEditDto("Renamed Massive Project", BigDecimal.valueOf(99999.99),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(-1));
+
+
+        mockMvc.perform(patch("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(editDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void EditProject_Requester_ReturnsForbidden() throws Exception {
+
+        User unauthorizedRequester = userRepository.save(User.builder()
+                .name("Sneaky Requester")
+                .email("sneaky@test.com")
+                .passwordHash(encoder.encode("password"))
+                .role(UserRole.REQUESTER)
+                .team(testingTeam)
+                .isActive(true)
+                .build());
+
+        String token = jwtService.generateAccessToken(unauthorizedRequester);
+        ProjectEditDto editDto =
+                new ProjectEditDto("Hack Attempt Name", BigDecimal.valueOf(0),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/projects/" + project.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(editDto)))
+                .andExpect(status().isForbidden());
     }
 }

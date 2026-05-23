@@ -66,6 +66,7 @@ import { UserDeletionDialogComponent } from './features/user/user-deletion-dialo
 
 import { ProjectListComponent } from './features/project/project-list/project-list.component';
 import { ProjectCreateComponent } from './features/project/project-create/project-create.component';
+import { ProjectEditComponent } from './features/project/project-edit/project-edit.component';
 
 import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.component";
 import { VendorCreateComponent } from './features/vendor/vendor-create/vendor-create.component';
@@ -114,6 +115,7 @@ import { RejectDialogComponent } from './shared/components/reject-dialog/reject-
     // Project
     ProjectListComponent,
     ProjectCreateComponent,
+    ProjectEditComponent,
 
     // Vendor
     VendorListComponent,
