@@ -1,6 +1,6 @@
 <div [formGroup]="userForm">
   <app-shared-form title="Edit User" subtitle="Update account details, team assignment and team leadership status."
-    routingSubtitle="USERS > EDIT USER" submitButtonLabel="Save Changes" submitButtonIcon="save" [loading]="loading"
+    routingSubtitle="<a href='/users' class='hover:text-blue-600 transition-colors'>USERS</a> &gt; EDIT USER" submitButtonLabel="Save Changes" submitButtonIcon="save" [loading]="loading"
     (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="manage_accounts" title="Account Details">

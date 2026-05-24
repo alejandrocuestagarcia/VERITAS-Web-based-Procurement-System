@@ -1,7 +1,7 @@
 <div [formGroup]="teamForm">
   <app-shared-form title="Add New Team"
     subtitle="Define a new operational unit, assign structural pillars, and establish foundational access protocols for collaborative governance."
-    routingSubtitle="ADMINISTRATION > TEAMS" [submitButtonLabel]="submitting ? 'Creating...' : 'Save Team'"
+    routingSubtitle="<a href='/teams' class='hover:text-blue-600 transition-colors'>TEAMS</a> &gt; CREATE NEW TEAM" [submitButtonLabel]="submitting ? 'Creating...' : 'Save Team'"
     submitButtonIcon="save" [loading]="submitting || loadingLeads" (submitted)="submit()" (cancelled)="cancel()">
 
     <app-shared-form-card icon="badge" title="Core Identification">

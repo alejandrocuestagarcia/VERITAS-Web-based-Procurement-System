@@ -35,22 +35,22 @@
     </ng-container>
 
     <ng-container matColumnDef="budget">
-      <th mat-header-cell *matHeaderCellDef>BUDGET</th>
-      <td mat-cell *matCellDef="let project" class="font-medium">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >BUDGET</th>
+      <td mat-cell *matCellDef="let project" class="font-medium !text-center">
         {{ project.budget | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="committed">
-      <th mat-header-cell *matHeaderCellDef>COMMITTED</th>
-      <td mat-cell *matCellDef="let project" class="font-medium">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >COMMITTED</th>
+      <td mat-cell *matCellDef="let project" class="font-medium !text-center">
         {{ project.committedSpend | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="actual">
-      <th mat-header-cell *matHeaderCellDef>ACTUAL</th>
-      <td mat-cell *matCellDef="let project" class="font-medium">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >ACTUAL</th>
+      <td mat-cell *matCellDef="let project" class="font-medium !text-center">
         {{ project.actualSpend | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
@@ -70,16 +70,14 @@
     </ng-container>
 
     <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
-      <td mat-cell *matCellDef="let project">
-        <div class="flex items-center gap-1">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >ACTIONS</th>
+      <td mat-cell *matCellDef="let project" class="!text-center">
           <button mat-icon-button matTooltip="Edit Project" (click)="editProject(project)" [disabled]="(!isFinanceOfficer && !isAdministrator)">
             <mat-icon>edit</mat-icon>
           </button>
           <button mat-icon-button color="warn" matTooltip="Delete Project" (click)="deleteProject(project)" [disabled]="(!isFinanceOfficer && !isAdministrator)">
             <mat-icon>delete</mat-icon>
           </button>
-        </div>
       </td>
     </ng-container>
   </ng-container>

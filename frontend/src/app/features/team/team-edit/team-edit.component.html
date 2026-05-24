@@ -3,7 +3,7 @@
 <div [formGroup]="teamForm">
   <app-shared-form title="Edit Team"
     subtitle="Modify core team settings, update membership, and manage leadership assignments."
-    routingSubtitle="TEAM MANAGEMENT > EDIT TEAM" [submitButtonLabel]="submitting ? 'Saving...' : 'Save Changes'"
+    routingSubtitle="<a href='/teams' class='hover:text-blue-600 transition-colors'>TEAMS</a> &gt; EDIT TEAM" [submitButtonLabel]="submitting ? 'Saving...' : 'Save Changes'"
     submitButtonIcon="save" [loading]="loading || submitting" (submitted)="submit()" (cancelled)="cancel()">
 
     <app-shared-form-card icon="badge" title="Team Information">

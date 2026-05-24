@@ -3,6 +3,9 @@
     [title]="isEditing ? 'Edit Configuration' : 'New Configuration'"
     [subtitle]="isEditing ? 'Update the details for this Jira sync configuration.' : 'Create a new dynamic polling configuration for Jira.'"
     routingSubtitle="INTEGRATIONS > JIRA CONFIGS"
+    [routingSubtitle]="isEditing
+      ? '<a href=\'/integrations\' class=\'hover:text-blue-600 transition-colors\'>INTEGRATIONS</a> &gt; EDIT INTEGRATION'
+      : '<a href=\'/integrations\' class=\'hover:text-blue-600 transition-colors\'>INTEGRATIONS</a> &gt; ADD INTEGRATION'"
     [submitButtonLabel]="isEditing ? 'Update Config' : 'Save Config'"
     submitButtonIcon="save"
     [loading]="loading"

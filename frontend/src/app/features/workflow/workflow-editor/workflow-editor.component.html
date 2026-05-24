@@ -2,33 +2,52 @@
 
   <header class="flex justify-between items-end mb-6 border-b border-slate-200 pb-4 mt-2">
     <div class="flex-1 w-full max-w-2xl">
+
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+        <a href="/workflows" class="hover:text-blue-600 transition-colors cursor-pointer">WORKFLOWS</a>
+        <span class="text-slate-300 font-normal">&gt;</span>
+        <span class="text-slate-600">
+          {{ mode === 'view' ? 'VIEW DETAILS' : (workflowVersion ? 'EDIT WORKFLOW' : 'ADD NEW WORKFLOW') }}
+        </span>
+      </div>
+
       <div class="flex items-center w-full">
 
-        <div *ngIf="isEditable" class="w-full flex gap-4">
-          <div class="flex-1 flex flex-col gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Workflow Title</label>
-            <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
-              <mat-icon matPrefix>badge</mat-icon>
-              <input matInput formControlName="title" placeholder="Workflow Title">
-              <mat-error *ngIf="workflowForm.get('title')?.hasError('required') && workflowForm.get('title')?.touched">
-                Workflow Title is required
-              </mat-error>
-            </mat-form-field>
+        <div *ngIf="isEditable" class="w-full flex flex-col gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">
+              {{ workflowVersion ? 'Edit Workflow' : 'Add New Workflow' }}
+            </h1>
+            <p class="text-sm text-slate-500 m-0">
+              Design the multi-level step chains, assign responsible user roles, and define document constraint rules for this workflow.
+            </p>
           </div>
 
-          <div class="w-64 flex flex-col gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Department</label>
-            <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
-              <mat-select formControlName="departmentId" placeholder="Global (All Departments)">
-                <mat-option [value]="null">Global (All Departments)</mat-option>
-                <mat-option *ngFor="let dep of departments" [value]="dep.id">
-                  {{ dep.name }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+          <div class="w-full flex gap-4 mt-2">
+            <div class="flex-1 flex flex-col gap-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Workflow Title</label>
+              <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
+                <mat-icon matPrefix>badge</mat-icon>
+                <input matInput formControlName="title" placeholder="Workflow Title">
+                <mat-error *ngIf="workflowForm.get('title')?.hasError('required') && workflowForm.get('title')?.touched">
+                  Workflow Title is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="w-64 flex flex-col gap-2">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Department</label>
+              <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
+                <mat-select formControlName="departmentId" placeholder="Global (All Departments)">
+                  <mat-option [value]="null">Global (All Departments)</mat-option>
+                  <mat-option *ngFor="let dep of departments" [value]="dep.id">
+                    {{ dep.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
           </div>
         </div>
-
         <div *ngIf="!isEditable">
           <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">
             {{ workflowForm.value.title || 'Untitled Workflow' }}

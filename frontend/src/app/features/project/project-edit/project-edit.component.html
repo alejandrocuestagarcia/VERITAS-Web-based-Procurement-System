@@ -1,6 +1,6 @@
 <div [formGroup]="projectForm">
   <app-shared-form title="Edit Project" subtitle="Update project scope properties including name, team assignment, timeline, and allocated budget."
-                   routingSubtitle="PROJECTS > EDIT PROJECT" submitButtonLabel="Save Changes" submitButtonIcon="save" [loading]="loading"
+                   routingSubtitle="<a href='/projects' class='hover:text-blue-600 transition-colors'>PROJECTS</a> &gt; EDIT PROJECT" submitButtonLabel="Save Changes" submitButtonIcon="save" [loading]="loading"
                    (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="assignment" title="Project Details">

@@ -1,7 +1,9 @@
 <div [formGroup]="departmentForm">
   <app-shared-form [title]="isEditMode ? 'Edit Department' : 'Add New Department'"
     subtitle="Configure organizational divisions, manage administrative boundaries, and structure governance entities."
-    routingSubtitle="ADMINISTRATION > DEPARTMENTS"
+    [routingSubtitle]="isEditMode
+      ? '<a href=\'/departments\' class=\'hover:text-blue-600 transition-colors\'>DEPARTMENTS</a> &gt; EDIT DEPARTMENT'
+      : '<a href=\'/departments\' class=\'hover:text-blue-600 transition-colors\'>DEPARTMENTS</a> &gt; ADD NEW DEPARTMENT'"
     [submitButtonLabel]="submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Save Department')"
     [submitButtonIcon]="isEditMode ? 'save' : 'save'" [loading]="submitting" (submitted)="submit()"
     (cancelled)="cancel()">
