@@ -31,8 +31,8 @@
     </ng-container>
 
     <ng-container matColumnDef="syncInterval">
-      <th mat-header-cell *matHeaderCellDef>INTERVAL</th>
-      <td mat-cell *matCellDef="let config">{{ config.syncIntervalMinutes }} min</td>
+      <th mat-header-cell *matHeaderCellDef class="!text-center">INTERVAL</th>
+      <td mat-cell *matCellDef="let config" class="!text-center">{{ config.syncIntervalMinutes }} min</td>
     </ng-container>
 
     <ng-container matColumnDef="status">
@@ -61,8 +61,7 @@
 
     <ng-container matColumnDef="actions">
       <th class = "!text-center" mat-header-cell *matHeaderCellDef>ACTIONS</th>
-      <td mat-cell *matCellDef="let config">
-        <div class="flex justify-center items-center gap-1">
+      <td mat-cell *matCellDef="let config" class="!text-center">
           <button mat-icon-button color="accent" (click)="triggerSync(config)" matTooltip="Sync Now">
             <mat-icon>sync</mat-icon>
           </button>
@@ -72,7 +71,6 @@
           <button mat-icon-button color="warn" (click)="deleteConfig(config)" matTooltip="Delete Config">
             <mat-icon>delete</mat-icon>
           </button>
-        </div>
       </td>
     </ng-container>
   </ng-container>

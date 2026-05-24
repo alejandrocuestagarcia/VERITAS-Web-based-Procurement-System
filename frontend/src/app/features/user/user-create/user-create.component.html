@@ -1,7 +1,7 @@
 <div [formGroup]="userForm">
   <app-shared-form title="Create New User"
     subtitle="Configure account access, departmental associations, and procurement authority levels for a new team member."
-    routingSubtitle="USERS > ADD NEW USER" submitButtonLabel="Save User" submitButtonIcon="save" [loading]="loading"
+    routingSubtitle="<a href='/users' class='hover:text-blue-600 transition-colors'>USERS</a> &gt; ADD NEW USER" submitButtonLabel="Save User" submitButtonIcon="save" [loading]="loading"
     (submitted)="onSubmit()" (cancelled)="onCancel()">
 
     <app-shared-form-card icon="manage_accounts" title="Account Details">

@@ -16,7 +16,7 @@
 
   <ng-container columns>
     <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef>DEPARTMENT NAME</th>
+      <th mat-header-cell *matHeaderCellDef >DEPARTMENT NAME</th>
       <td mat-cell *matCellDef="let row">
         <div class="flex items-center gap-3">
           <mat-icon class="text-veritas-brand opacity-80">business</mat-icon>
@@ -26,8 +26,8 @@
     </ng-container>
 
     <ng-container matColumnDef="teams">
-      <th mat-header-cell *matHeaderCellDef>ASSOCIATED TEAMS</th>
-      <td mat-cell *matCellDef="let row">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >ASSOCIATED TEAMS</th>
+      <td mat-cell *matCellDef="let row" class="!text-center" >
         <span
           class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
           {{ row.teamsCount }} {{ row.teamsCount === 1 ? 'Team' : 'Teams' }}
@@ -36,37 +36,35 @@
     </ng-container>
 
     <ng-container matColumnDef="budget">
-      <th mat-header-cell *matHeaderCellDef>BUDGET</th>
-      <td mat-cell *matCellDef="let row">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >BUDGET</th>
+      <td mat-cell *matCellDef="let row" class="!text-center" >
         {{ row.budget | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="committed">
-      <th mat-header-cell *matHeaderCellDef>COMMITTED</th>
-      <td mat-cell *matCellDef="let row">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >COMMITTED</th>
+      <td mat-cell *matCellDef="let row" class="!text-center" >
         {{ row.committedSpend | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="actual">
-      <th mat-header-cell *matHeaderCellDef>ACTUAL</th>
-      <td mat-cell *matCellDef="let row">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >ACTUAL</th>
+      <td mat-cell *matCellDef="let row" class="!text-center" >
         {{ row.actualSpend | currency:'EUR':'symbol':'1.0-0' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
-      <td mat-cell *matCellDef="let row">
-        <div class="flex items-center gap-1">
+      <th mat-header-cell *matHeaderCellDef class="!text-center" >ACTIONS</th>
+      <td mat-cell *matCellDef="let row" class="!text-center" >
           <button mat-icon-button matTooltip="Edit Department" (click)="navigateToEditDepartment(row.id)">
             <mat-icon>edit</mat-icon>
           </button>
           <button mat-icon-button matTooltip="Delete Department" color="warn" (click)="deleteDepartment(row)">
             <mat-icon>delete</mat-icon>
           </button>
-        </div>
       </td>
     </ng-container>
   </ng-container>

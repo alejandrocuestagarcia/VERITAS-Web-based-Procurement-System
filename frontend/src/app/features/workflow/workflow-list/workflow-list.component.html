@@ -63,8 +63,7 @@
 
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef class="!text-center ">ACTIONS</th>
-      <td mat-cell *matCellDef="let workflow">
-        <div class="flex items-center gap-1 justify-center">
+      <td mat-cell *matCellDef="let workflow" class="!text-center">
           <button mat-icon-button matTooltip="View Workflow" [routerLink]="['/workflows/view', workflow.id]">
             <mat-icon>visibility</mat-icon>
           </button>
@@ -74,7 +73,6 @@
           <button mat-icon-button matTooltip="Delete Workflow" color="warn" (click)="deleteWorkflow(workflow)" [disabled]="(!isFinanceOfficer && !isAdministrator) || !workflow.isActive">
             <mat-icon>delete</mat-icon>
           </button>
-        </div>
       </td>
     </ng-container>
   </ng-container>
