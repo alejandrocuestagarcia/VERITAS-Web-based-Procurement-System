@@ -120,6 +120,27 @@
 
       <div class="p-6 space-y-6 overflow-y-auto" [ngClass]="{'opacity-80': !isEditable}">
         <div class="space-y-4">
+
+          <div *ngIf="selectedFlowLeavesGateway">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Condition</label>
+            <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">
+              Define a rule to determine when the workflow should take this path based on the request's details. Leave empty to use as the default path.
+              <br>Examples: <code class="text-blue-500">budgetID.totalAmount &lt; 500</code> (Amount under 500), <code class="text-blue-500">priority == 'HIGH'</code> (High priority)
+            </p>
+            <div *ngIf="isEditable" class="mt-2">
+              <input type="text" class="w-full p-3 text-sm font-mono bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                [ngModelOptions]="{standalone: true}"
+                [ngModel]="currentRule.conditionExpression" (ngModelChange)="updateConditionExpression($event)"
+                placeholder="e.g. budgetID.totalAmount < 500">
+            </div>
+            <div *ngIf="!isEditable && currentRule.conditionExpression" class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <code class="text-xs text-amber-800 font-mono">{{ currentRule.conditionExpression }}</code>
+            </div>
+            <div *ngIf="!isEditable && !currentRule.conditionExpression" class="mt-2 p-3 bg-slate-50 border border-dashed border-[#e4e7ef] rounded-xl">
+              <span class="text-[10px] text-slate-400 uppercase tracking-tighter">Default path (no condition)</span>
+            </div>
+          </div>
+
           <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
             <div class="mt-2 space-y-2">

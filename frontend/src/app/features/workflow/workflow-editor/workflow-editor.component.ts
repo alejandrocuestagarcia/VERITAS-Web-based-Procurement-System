@@ -36,6 +36,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public showPropertiesPanelTransition = false;
   public showPropertiesPanelTask = false;
   public selectedElementId = '';
+  public selectedFlowLeavesGateway = false;
   public currentTask: any = {
     role: '',
     description: ''
@@ -47,7 +48,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     isImageRequired: false,
     minRequiredVendors: 0,
     optionalFailureMessage: '',
-    description: ''
+    description: '',
+    conditionExpression: ''
   };
 
   get isEditable(): boolean {
@@ -317,6 +319,20 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     const bo = element.businessObject;
     const doc = bo.get('documentation')?.[0]?.text || '';
+
+    // Check if this flow leaves a gateway (for showing the condition expression field)
+    const sourceRef = bo.sourceRef;
+    this.selectedFlowLeavesGateway = sourceRef?.$type === 'bpmn:ExclusiveGateway';
+
+    // Load existing conditionExpression
+    const condExpr = bo.conditionExpression;
+    let conditionText = '';
+    if (condExpr) {
+      const raw = condExpr.body || condExpr.text || '';
+      // Strip ${...} wrapper for display
+      conditionText = raw.replace(/^\$\{/, '').replace(/\}$/, '').trim();
+    }
+
     const extensions = bo.extensionElements;
     if (extensions?.values) {
       const rule = extensions.values.find((e: any) =>
@@ -329,7 +345,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           isImageRequired: String(rule.isImageRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
           optionalFailureMessage: rule.optionalFailureMessage || '',
-          description: doc
+          description: doc,
+          conditionExpression: conditionText
         };
         return;
       }
@@ -340,18 +357,21 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       isImageRequired: false,
       minRequiredVendors: 0,
       optionalFailureMessage: '',
-      description: doc
+      description: doc,
+      conditionExpression: conditionText
     };
   }
 
   private resetRule() {
+    this.selectedFlowLeavesGateway = false;
     this.currentRule = {
       isPdfRequired: false,
       isCsvRequired: false,
       isImageRequired: false,
       minRequiredVendors: 0,
       optionalFailureMessage: '',
-      description: ''
+      description: '',
+      conditionExpression: ''
     };
   }
 
@@ -460,6 +480,35 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       modeling.updateProperties(element, { extensionElements });
     }
     this.currentRule[key] = value;
+  }
+
+  updateConditionExpression(value: string) {
+    const directEditing = this.bpmnInstance.get('directEditing');
+    if (directEditing.isActive()) {
+      directEditing.complete();
+    }
+
+    const modeling = this.bpmnInstance.get('modeling');
+    const moddle = this.bpmnInstance.get('moddle');
+    const elementRegistry = this.bpmnInstance.get('elementRegistry');
+    const element = elementRegistry.get(this.selectedElementId);
+    if (!element) return;
+
+    const cleanValue = (value || '').trim();
+
+    if (cleanValue) {
+      // Create a proper BPMN conditionExpression with ${...} wrapping
+      const wrappedExpression = cleanValue.startsWith('${') ? cleanValue : `\${${cleanValue}}`;
+      const conditionExpression = moddle.create('bpmn:FormalExpression', {
+        body: wrappedExpression
+      });
+      modeling.updateProperties(element, { conditionExpression });
+    } else {
+      // Remove conditionExpression when cleared
+      modeling.updateProperties(element, { conditionExpression: undefined });
+    }
+
+    this.currentRule.conditionExpression = cleanValue;
   }
 
   private applyTransitionRuleCss() {
