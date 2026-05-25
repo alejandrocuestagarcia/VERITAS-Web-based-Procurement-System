@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 
 import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
+import static com.veritas.backend.common.model.AuditActionConstants.REQUISITION_EDITED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -118,5 +119,23 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction("SOME_OTHER_ACTION", PageRequest.of(0, 10), "");
 
         assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    void CreateRequisitionChangeLog_ValidInput_SavesLogToDatabase() {
+        String details = "Field 'requestName' changed from 'Old' to 'New'";
+
+        auditService.createRequisitionChangeLog(testActor, testRequest, details);
+
+        List<AuditLog> logs = auditLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+
+        AuditLog saved = logs.getFirst();
+        assertThat(saved.getAction()).isEqualTo(REQUISITION_EDITED);
+        assertThat(saved.getDescription()).isEqualTo(details);
+        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
+        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
+        assertThat(saved.getEntryHash()).isNotNull();
+        assertThat(saved.getTimestamp()).isNotNull();
     }
 }

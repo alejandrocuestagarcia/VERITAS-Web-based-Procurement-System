@@ -23,6 +23,8 @@ import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
+import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -82,6 +84,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private AttachmentRepository attachmentRepository;
     @Autowired
     private AuditLogRepository auditLogRepository;
+    @Autowired
+    private QuoteLineItemRepository quoteLineItemRepository;
+    @Autowired
+    private QuoteRepository quoteRepository;
+
 
     private String requesterToken;
     private String financeOfficerToken;
@@ -92,6 +99,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     void setUp() {
         auditLogRepository.deleteAllInBatch();
         attachmentRepository.deleteAllInBatch();
+        quoteLineItemRepository.deleteAllInBatch();
+        quoteRepository.deleteAllInBatch();
         requestItemRepository.deleteAllInBatch();
         requestRepository.deleteAllInBatch();
         workflowTransitionRepository.deleteAllInBatch();

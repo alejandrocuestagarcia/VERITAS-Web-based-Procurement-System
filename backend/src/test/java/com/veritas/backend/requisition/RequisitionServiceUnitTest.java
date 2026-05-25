@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
 
+import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.project.entity.Project;
@@ -103,6 +105,8 @@ class RequisitionServiceUnitTest {
     private QuoteLineItemRepository quoteLineItemRepository;
     @Mock
     private QuoteRepository quoteRepository;
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private RequisitionServiceImpl requisitionService;
@@ -669,6 +673,7 @@ class RequisitionServiceUnitTest {
         assertTrue(ex.getMessage().contains("New assigned user must be a requester from the same team"));
         verify(requestRepository, never()).save(any());
     }
+
     //AI-Generated
     @Test
     void UpdateRequest_ValidInput_SavesAndReturnsDto() {
@@ -743,5 +748,179 @@ class RequisitionServiceUnitTest {
         assertThrows(AccessDeniedException.class,
                 () -> requisitionService.updateRequest(1L, updates, anotherUser));
         verify(requestRepository, never()).save(any());
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_FieldsChanged_CreatesAuditLog() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+        request.setRequestName("Old Laptop");
+        request.setDescription("Need old laptop");
+        request.setPriority(Priority.LOW);
+
+        RequestItem currentItem = new RequestItem();
+        currentItem.setName("Old Item");
+        currentItem.setQuantity(5);
+        currentItem.setUnit("pcs");
+        currentItem.setDescription("old details");
+        request.setItems(new java.util.ArrayList<>(List.of(currentItem)));
+
+        Project newProject = new Project();
+        newProject.setId(2L);
+        newProject.setProjectKey("NEWPRJ");
+        newProject.setRequestCounter(5);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated Laptop", "Need an updated laptop", 2L, 1L, Priority.HIGH,
+                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, "pcs", "updated")));
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(projectRepository.findById(2L)).thenReturn(Optional.of(newProject));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.updateRequest(1L, updates, testUser);
+
+        ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).createRequisitionChangeLog(eq(testUser), eq(request), detailsCaptor.capture());
+
+        String details = detailsCaptor.getValue();
+        assertAll("Audit log details checks",
+                () -> assertTrue(details.contains("Field 'requestName' changed from 'Old Laptop' to 'Updated Laptop'")),
+                () -> assertTrue(details.contains("Field 'description' changed from 'Need old laptop' to 'Need an updated laptop'")),
+                () -> assertTrue(details.contains("Field 'priority' changed from 'LOW' to 'HIGH'")),
+                () -> assertTrue(details.contains("Field 'projectId' changed from '1' to '2'")),
+                () -> assertTrue(details.contains("Field 'items' changed"))
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_NoChanges_DoesNotCreateAuditLog() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+        request.setRequestName("Laptop");
+        request.setDescription("Need laptop");
+        request.setPriority(Priority.LOW);
+        request.setItems(new java.util.ArrayList<>());
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.updateRequest(1L, updates, testUser);
+
+        verify(auditService, never()).createRequisitionChangeLog(any(), any(), any());
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_ProjectNotFound_ThrowsIllegalArgumentException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 999L, 1L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(projectRepository.findById(999L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.updateRequest(1L, updates, testUser));
+        assertTrue(ex.getMessage().contains("Project not found with ID: 999"));
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_WorkflowNotFound_ThrowsIllegalArgumentException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 999L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(workflowDefinitionRepository.findById(999L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.updateRequest(1L, updates, testUser));
+        assertTrue(ex.getMessage().contains("Workflow not found with ID: 999"));
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_WorkflowMissingStartEvent_ThrowsIllegalStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+
+        WorkflowDefinition newWorkflow = new WorkflowDefinition();
+        newWorkflow.setId(2L);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 2L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(workflowDefinitionRepository.findById(2L)).thenReturn(Optional.of(newWorkflow));
+        when(workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT))
+                .thenReturn(Optional.empty());
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> requisitionService.updateRequest(1L, updates, testUser));
+        assertTrue(ex.getMessage().contains("Workflow has no START_EVENT step defined"));
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateRequest_EmptyItems_ClearsLineItems() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        request.setProjectID(testProject);
+        request.setWorkflowDefinitionID(testWorkflow);
+
+        RequestItem currentItem = new RequestItem();
+        currentItem.setName("Old Item");
+        currentItem.setQuantity(5);
+        currentItem.setUnit("pcs");
+        request.setItems(new java.util.ArrayList<>(List.of(currentItem)));
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.updateRequest(1L, updates, testUser);
+
+        assertTrue(request.getItems().isEmpty());
+        verify(requestItemRepository).deleteByRequestID(1L);
+        verify(quoteLineItemRepository).deleteByQuoteRequestID(1L);
+        verify(quoteRepository).deleteByRequestID(1L);
     }
 }

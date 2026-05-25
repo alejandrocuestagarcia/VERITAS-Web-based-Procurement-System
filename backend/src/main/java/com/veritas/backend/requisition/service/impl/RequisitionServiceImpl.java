@@ -43,6 +43,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.veritas.backend.audit.service.AuditService;
+import java.util.stream.Collectors;
 
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 import com.veritas.backend.common.exception.WorkflowStateException;
@@ -76,6 +78,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final QuoteRepository quoteRepository;
 
     private final WorkflowEngineService workflowEngineService;
+    private final AuditService auditService;
 
     private static final String UPLOAD_DIR = "uploads/requisitions";
 
@@ -348,6 +351,41 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new AccessDeniedException("You are not authorized to edit this request");
         }
 
+        List<String> changes = new ArrayList<>();
+        if (!Objects.equals(request.getRequestName(), updates.requestName())) {
+            changes.add("Field 'requestName' changed from '" + request.getRequestName() + "' to '" + updates.requestName() + "'");
+        }
+        if (!Objects.equals(request.getDescription(), updates.description())) {
+            changes.add("Field 'description' changed from '" + request.getDescription() + "' to '" + updates.description() + "'");
+        }
+        if (!Objects.equals(request.getPriority(), updates.priority())) {
+            changes.add("Field 'priority' changed from '" + request.getPriority() + "' to '" + updates.priority() + "'");
+        }
+        if (updates.projectId() != null && (request.getProjectID() == null || !request.getProjectID().getId().equals(updates.projectId()))) {
+            Long oldId = request.getProjectID() != null ? request.getProjectID().getId() : null;
+            changes.add("Field 'projectId' changed from '" + oldId + "' to '" + updates.projectId() + "'");
+        }
+        if (updates.workflowDefinitionId() != null && (request.getWorkflowDefinitionID() == null || !request.getWorkflowDefinitionID().getId().equals(updates.workflowDefinitionId()))) {
+            Long oldId = request.getWorkflowDefinitionID() != null ? request.getWorkflowDefinitionID().getId() : null;
+            changes.add("Field 'workflowDefinitionId' changed from '" + oldId + "' to '" + updates.workflowDefinitionId() + "'");
+        }
+
+        boolean itemsChanged = hasLineItemsChanged(request.getItems(), updates.items());
+        if (itemsChanged) {
+            String oldItemsStr = request.getItems() == null ? "" : request.getItems().stream()
+                    .map(item -> item.getName() + " (" + item.getQuantity() + " " + item.getUnit() + (item.getDescription() != null && !item.getDescription().isEmpty() ? " - " + item.getDescription() : "") + ")")
+                    .collect(Collectors.joining(", "));
+            String newItemsStr = updates.items() == null ? "" : updates.items().stream()
+                    .map(item -> item.name() + " (" + item.quantity() + " " + item.unit() + (item.description() != null && !item.description().isEmpty() ? " - " + item.description() : "") + ")")
+                    .collect(Collectors.joining(", "));
+            changes.add("Field 'items' changed from '" + oldItemsStr + "' to '" + newItemsStr + "'");
+        }
+
+        if (!changes.isEmpty()) {
+            String changeDetails = String.join("\n", changes);
+            auditService.createRequisitionChangeLog(actor, request, changeDetails);
+        }
+
         request.setRequestName(updates.requestName());
         request.setDescription(updates.description());
         request.setPriority(updates.priority());
@@ -384,8 +422,6 @@ public class RequisitionServiceImpl implements RequisitionService {
                     .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
             request.setCurrentStepID(startStep);
         }
-
-        boolean itemsChanged = hasLineItemsChanged(request.getItems(), updates.items());
 
         if (itemsChanged) {
             quoteLineItemRepository.deleteByQuoteRequestID(id);
