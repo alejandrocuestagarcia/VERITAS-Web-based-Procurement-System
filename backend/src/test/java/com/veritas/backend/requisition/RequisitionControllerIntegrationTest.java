@@ -39,6 +39,7 @@ import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
+import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
@@ -50,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -69,6 +71,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private ObjectMapper objectMapper;
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private UserRepository userRepository;
@@ -82,6 +86,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private WorkflowStepRepository workflowStepRepository;
     @Autowired
     private WorkflowTransitionRepository workflowTransitionRepository;
+    @Autowired
+    private TransitionRuleRepository transitionRuleRepository;
     @Autowired
     private RequestRepository requestRepository;
     @Autowired
@@ -109,6 +115,10 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.update("DELETE FROM invoices");
+        jdbcTemplate.update("DELETE FROM vendor_evaluations");
+        jdbcTemplate.update("DELETE FROM quote_line_items");
+        jdbcTemplate.update("DELETE FROM quotes");
         quoteLineItemRepository.deleteAllInBatch();
         quoteRepository.deleteAllInBatch();
         vendorRepository.deleteAllInBatch();
@@ -119,6 +129,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         quoteRepository.deleteAllInBatch();
         requestItemRepository.deleteAllInBatch();
         requestRepository.deleteAllInBatch();
+        transitionRuleRepository.deleteAllInBatch();
         workflowTransitionRepository.deleteAllInBatch();
         workflowStepRepository.deleteAllInBatch();
         workflowDefinitionRepository.deleteAllInBatch();
