@@ -11,5 +11,5 @@ import java.util.Optional;
 
 @Repository
 public interface WorkflowStepRepository extends JpaRepository<WorkflowStep, Long> {
-    Optional<WorkflowStep> findByWorkflowDefinitionAndWorkflowComponent(WorkflowDefinition workflowDefinition, WorkflowComponent workflowComponent);
+    Optional<WorkflowStep> findFirstByWorkflowDefinitionAndWorkflowComponent(WorkflowDefinition workflowDefinition, WorkflowComponent workflowComponent);
 }

@@ -159,7 +159,7 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
         when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(testWorkflow));
-        when(workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(
+        when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(
                 testWorkflow, WorkflowComponent.START_EVENT))
                 .thenReturn(Optional.of(testStartStep));
         when(requestRepository.save(any(Request.class)))
@@ -300,7 +300,7 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(any())).thenReturn(Optional.of(testUser));
         when(projectRepository.findById(any())).thenReturn(Optional.of(testProject));
         when(workflowDefinitionRepository.findById(any())).thenReturn(Optional.of(testWorkflow));
-        when(workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(any(), any()))
+        when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(any(), any()))
                 .thenReturn(Optional.empty());
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(

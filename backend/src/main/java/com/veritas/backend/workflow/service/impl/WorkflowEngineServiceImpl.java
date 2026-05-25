@@ -329,7 +329,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
 
         WorkflowStep startStep = workflowStepRepository
-                .findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
+                .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
                 .orElseThrow(() -> new RuntimeException("No start step configured in workflow"));
 
         auditService.createWorkflowTransitionLog(

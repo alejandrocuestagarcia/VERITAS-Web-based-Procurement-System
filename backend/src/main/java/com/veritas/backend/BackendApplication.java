@@ -435,7 +435,7 @@ public class BackendApplication {
 				var workflowDef = workflowDefinitionRepository.findAll().stream().findFirst().orElse(null);
 				if (workflowDef != null) {
 					request.setWorkflowDefinitionID(workflowDef);
-					WorkflowStep endStep = workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT).orElse(null);
+					WorkflowStep endStep = workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT).orElse(null);
 					request.setCurrentStepID(endStep);
 				}
 
