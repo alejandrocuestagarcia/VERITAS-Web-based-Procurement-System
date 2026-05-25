@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService } from '../../../../core/api';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
@@ -20,8 +21,18 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   dataSource = new MatTableDataSource<QuoteDto>();
   displayedColumns = ['vendor', 'currency', 'totalAmount', 'status', 'actions'];
 
+  isInvoiceDrawerOpen = false;
+  isUploadingInvoice = false;
+  invoiceFile: File | null = null;
+  invoiceForm!: FormGroup;
+  hasInvoice = false;
+
   get hasPreferredQuote(): string {
     return this.quotes.some(q => q.isSelected) ? 'Selected' : 'None';
+  }
+
+  get selectedQuote(): QuoteDto | null {
+    return this.quotes.find(q => q.isSelected) || null;
   }
 
   constructor(
@@ -30,7 +41,8 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     private quoteService: RequisitionQuotesModuleService,
     private requisitionService: RequisitionModuleService,
     private toastService: ToastService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private fb: FormBuilder
   ) {
     this.dataSource.filterPredicate = (data: QuoteDto, filter: string) => {
       const vendorName = data.vendor?.vendorName?.toLowerCase() || '';
@@ -44,6 +56,13 @@ export class RequisitionVendorQuotesComponent implements OnInit {
              totalAmount.includes(searchTerms) ||
              status.includes(searchTerms);
     };
+
+    this.invoiceForm = this.fb.group({
+      invoiceNumber: ['', Validators.required],
+      totalAmount: [null, [Validators.required, Validators.min(0.01)]],
+      dueDate: ['', Validators.required],
+      invoiceDate: ['']
+    });
   }
 
   ngOnInit(): void {
@@ -51,6 +70,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     if (this.requisitionId) {
       this.loadRequisition();
       this.loadQuotes();
+      this.checkInvoiceExists();
     } else {
       this.router.navigate(['/requisitions']);
     }
@@ -84,6 +104,17 @@ export class RequisitionVendorQuotesComponent implements OnInit {
         console.error('Failed to load quotes', err);
         this.toastService.showError('Failed to load vendor quotes');
         this.loading = false;
+      }
+    });
+  }
+
+  checkInvoiceExists(): void {
+    this.requisitionService.getInvoice(this.requisitionId).subscribe({
+      next: () => {
+        this.hasInvoice = true;
+      },
+      error: () => {
+        this.hasInvoice = false;
       }
     });
   }
@@ -128,6 +159,83 @@ export class RequisitionVendorQuotesComponent implements OnInit {
             this.loading = false;
           }
         });
+      }
+    });
+  }
+
+  openInvoiceDrawer(): void {
+    this.invoiceForm.reset();
+    this.invoiceFile = null;
+
+    if (this.selectedQuote?.totalAmount) {
+      this.invoiceForm.patchValue({ totalAmount: this.selectedQuote.totalAmount });
+    }
+
+    const defaultDue = new Date();
+    this.invoiceForm.patchValue({ dueDate: defaultDue.toISOString().split('T')[0] });
+
+    this.invoiceForm.patchValue({ invoiceDate: new Date().toISOString().split('T')[0] });
+
+    this.isInvoiceDrawerOpen = true;
+  }
+
+  closeInvoiceDrawer(): void {
+    this.isInvoiceDrawerOpen = false;
+    this.invoiceFile = null;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (file.type !== 'application/pdf') {
+        this.toastService.showError('Only PDF files are allowed');
+        return;
+      }
+      this.invoiceFile = file;
+    }
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      if (file.type !== 'application/pdf') {
+        this.toastService.showError('Only PDF files are allowed');
+        return;
+      }
+      this.invoiceFile = file;
+    }
+  }
+
+  submitInvoice(): void {
+    if (this.invoiceForm.invalid) return;
+
+    this.isUploadingInvoice = true;
+    const formValue = this.invoiceForm.value;
+
+    const invoiceData: InvoiceCreateDto = {
+      invoiceNumber: formValue.invoiceNumber,
+      totalAmount: formValue.totalAmount,
+      dueDate: formValue.dueDate,
+      invoiceDate: formValue.invoiceDate || undefined
+    };
+
+    this.requisitionService.createInvoice(
+      this.requisitionId,
+      invoiceData,
+      this.invoiceFile || undefined
+    ).subscribe({
+      next: () => {
+        this.isUploadingInvoice = false;
+        this.toastService.showSuccess('Invoice uploaded successfully');
+        this.closeInvoiceDrawer();
+        this.hasInvoice = true;
+      },
+      error: (err: any) => {
+        this.isUploadingInvoice = false;
+        const message = err?.error || 'Failed to upload invoice';
+        this.toastService.showError(message);
       }
     });
   }
