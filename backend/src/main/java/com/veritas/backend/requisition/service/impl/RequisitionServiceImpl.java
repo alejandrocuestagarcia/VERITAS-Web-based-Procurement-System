@@ -20,6 +20,7 @@ import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;

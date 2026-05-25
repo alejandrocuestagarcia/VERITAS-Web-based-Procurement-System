@@ -100,10 +100,6 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     private InternalBudgetRepository internalBudgetRepository;
     @Autowired
-    private QuoteRepository quoteRepository;
-    @Autowired
-    private QuoteLineItemRepository quoteLineItemRepository;
-    @Autowired
     private VendorRepository vendorRepository;
 
     private String requesterToken;
