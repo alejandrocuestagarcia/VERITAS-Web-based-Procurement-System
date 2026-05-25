@@ -2,6 +2,8 @@ package com.veritas.backend.requisition.service.impl;
 
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.dto.InvoiceCreateDto;
+import com.veritas.backend.requisition.dto.InvoiceDto;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
@@ -29,6 +31,7 @@ import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
@@ -79,6 +82,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final QuoteRepository quoteRepository;
     private final InvoiceRepository invoiceRepository;
 
+    private final com.veritas.backend.vendor.repository.QuoteRepository quoteRepository;
 
     private final WorkflowEngineService workflowEngineService;
     private final AuditService auditService;
@@ -269,6 +273,10 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " is in draft and must be submitted");
         }
 
+        if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+            throw new WorkflowStateException("Request " + id + " has already been paid and cannot be approved");
+        }
+
         workflowEngineService.moveToNextStep(request, actor);
 
         Request saved = requestRepository.save(request);
@@ -289,6 +297,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         if (request.getState() == RequestStatus.DRAFT) {
             throw new WorkflowStateException("Request " + id + " is in draft and cannot be rejected");
+        }
+
+        if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+            throw new WorkflowStateException("Request " + id + " has already been paid and cannot be rejected");
         }
 
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
@@ -492,6 +504,9 @@ public class RequisitionServiceImpl implements RequisitionService {
             invoice.setIsPaid(true);
             invoiceRepository.save(invoice);
         }
+
+        request.setState(RequestStatus.FINISHED);
+        requestRepository.save(request);
 
 
     }
