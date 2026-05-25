@@ -16,6 +16,10 @@
           <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           CLOSED
         </span>
+        <span *ngIf="request.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        PAID
+      </span>
         <span *ngIf="request.responsibleRole" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
           RESPONSIBLE: {{ formatRole(request.responsibleRole) }}
         </span>
@@ -38,16 +42,9 @@
           <mat-icon class="scale-90">request_quote</mat-icon>
           Vendor Quotes
         </button>
-        <button *ngIf="authService.hasRole('FINANCE_OFFICER') && !request?.isPaid && request?.responsibleRole === 'FINANCE_OFFICER'" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
-          <mat-icon class="scale-90">payment</mat-icon>
-          Pay Invoice
-        </button>
 
-        <span *ngIf="request?.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-        PAID
-      </span>
-        <div *ngIf= "request.responsibleRole === role || !request.responsibleRole && request.state != 'FINISHED'" class="flex items-center gap-2" >
+
+        <div *ngIf= "request.responsibleRole === role || !request.responsibleRole && request.state != 'FINISHED' " class="flex items-center gap-2" >
           <div *ngIf= "authService.hasRole('REQUESTER')">
             <button (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
               <mat-icon class="scale-90">edit</mat-icon>
@@ -59,9 +56,13 @@
               <mat-icon class="scale-90">close</mat-icon>
               Reject
             </button>
-            <button (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors">
+            <button *ngIf="request.responsibleRole !== role" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">check</mat-icon>
               Approve
+            </button>
+            <button *ngIf="authService.hasRole('FINANCE_OFFICER') && !request?.isPaid" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">payment</mat-icon>
+              Pay Invoice
             </button>
           </div>
           <div *ngIf= "(request.responsibleRole === role || !request.responsibleRole ) && request.state == 'DRAFT' " class="flex items-center gap-2" >
