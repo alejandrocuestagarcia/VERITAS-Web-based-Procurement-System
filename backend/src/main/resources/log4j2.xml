@@ -14,7 +14,8 @@
         <RollingFile name="File"
                      fileName="logs/veritas-backend.log"
                      filePattern="logs/veritas-backend-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout pattern="${LOG_PATTERN}" />
+            <!-- Disable ANSI for file output to avoid escape sequences in log files -->
+            <PatternLayout pattern="${LOG_PATTERN}" disableAnsi="true" />
             <Policies>
                 <SizeBasedTriggeringPolicy size="10MB" />
                 <TimeBasedTriggeringPolicy interval="1" />
