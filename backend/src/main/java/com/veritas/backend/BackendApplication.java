@@ -45,13 +45,13 @@ public class BackendApplication {
 
 	@Bean
 	ApplicationRunner seedData(UserRepository userRepo, PasswordEncoder encoder,
-							   DepartmentRepository departmentRepository, TeamRepository teamRepo,
-							   ProjectRepository projectRepo, WorkflowService workflowService,
-							   WorkflowDefinitionRepository workflowDefinitionRepository,
-							   VendorRepository vendorRepository,
-							   RequestRepository requestRepository,
-							   QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository,
-							   Environment env) {
+			DepartmentRepository departmentRepository, TeamRepository teamRepo,
+			ProjectRepository projectRepo, WorkflowService workflowService,
+			WorkflowDefinitionRepository workflowDefinitionRepository,
+			VendorRepository vendorRepository,
+			RequestRepository requestRepository,
+			QuoteRepository quoteRepository, WorkflowStepRepository workflowStepRepository,
+			Environment env) {
 		return args -> {
 			log.info("Starting seed data initialization...");
 
@@ -127,7 +127,8 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				userRepo.save(procurement);
-				log.info("Seeded user: {} (role={}, department={})", procurement.getEmail(), procurement.getRole(), department.getName());
+				log.info("Seeded user: {} (role={}, department={})", procurement.getEmail(), procurement.getRole(),
+						department.getName());
 			}
 			if (userRepo.findByEmail("requester@veritas.com").isEmpty()) {
 				User requester = User.builder()
@@ -140,7 +141,8 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				User savedRequester = userRepo.save(requester);
-				log.info("Seeded user: {} (role={}, team={})", requester.getEmail(), requester.getRole(), teamOne.getName());
+				log.info("Seeded user: {} (role={}, team={})", requester.getEmail(), requester.getRole(),
+						teamOne.getName());
 
 				// Set requester as team leader
 				teamOne.setLeader(savedRequester);
@@ -159,7 +161,8 @@ public class BackendApplication {
 						.requiresPasswordChange(false)
 						.build();
 				User savedHrRequester = userRepo.save(hrRequester);
-				log.info("Seeded user: {} (role={}, team={})", hrRequester.getEmail(), hrRequester.getRole(), teamTwo.getName());
+				log.info("Seeded user: {} (role={}, team={})", hrRequester.getEmail(), hrRequester.getRole(),
+						teamTwo.getName());
 
 				// Set requester as team leader
 				teamTwo.setLeader(savedHrRequester);
@@ -199,8 +202,15 @@ public class BackendApplication {
 
 			if (workflowDefinitionRepository.count() == 0) {
 				String xml = """
-						<?xml version="1.0" encoding="UTF-8"?>
-						<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+						<bpmn:definitions
+						id="Definitions_1"
+						targetNamespace="http://bpmn.io/schema/bpmn"
+						xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+						xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+						xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+						xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+						xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+						xmlns:veritas="http://veritas">
 						<bpmn:process id="PR_Tiered_Approval_001" name="Tiered Procurement Approval" isExecutable="false">
 						<bpmn:startEvent id="Event_1if1b7g" name="Start Procurement">
 						<bpmn:outgoing>Flow_1hlbu7w</bpmn:outgoing>
@@ -231,19 +241,13 @@ public class BackendApplication {
 						<bpmn:outgoing>Flow_0nupddp</bpmn:outgoing>
 						</bpmn:task>
 						<bpmn:sequenceFlow id="Flow_1kxm0s8" name="budget &gt; $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_05zq0ij">
-						    <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
-						        ${true}    \s
-						    </bpmn:conditionExpression>
+						<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${budgetID.totalAmount &gt; 10000}</bpmn:conditionExpression>
 						</bpmn:sequenceFlow>
 						<bpmn:sequenceFlow id="Flow_0z8w32s" name="$500 &gt; budget &gt; $10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i">
-							<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
-						        ${false}   \s
-						    </bpmn:conditionExpression>
+						<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${budgetID.totalAmount &gt;= 500 and budgetID.totalAmount &lt;= 10000}</bpmn:conditionExpression>
 						</bpmn:sequenceFlow>
 						<bpmn:sequenceFlow id="Flow_04ni0t0" name="budget &lt; $500" sourceRef="Gateway_0dumvhe" targetRef="Activity_0mib3l3">
-						<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
-						        ${false}  \s
-						    </bpmn:conditionExpression>
+						<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${budgetID.totalAmount &lt; 500}</bpmn:conditionExpression>
 						</bpmn:sequenceFlow>
 						<bpmn:exclusiveGateway id="Gateway_0jludpd">
 						<bpmn:incoming>Flow_1pumtq5</bpmn:incoming>
@@ -251,21 +255,23 @@ public class BackendApplication {
 						<bpmn:outgoing>Flow_1s24xzj</bpmn:outgoing>
 						<bpmn:outgoing>Flow_0m5sv3t</bpmn:outgoing>
 						</bpmn:exclusiveGateway>
-						<bpmn:sequenceFlow id="Flow_1pumtq5" name="accept / reject" sourceRef="Activity_124j12i" targetRef="Gateway_0jludpd"/>
-						<bpmn:sequenceFlow id="Flow_0nupddp" name="accept / reject" sourceRef="Activity_05zq0ij" targetRef="Gateway_0jludpd"/>
-						<bpmn:sequenceFlow id="Flow_1s24xzj" name="Request rejected" sourceRef="Gateway_0jludpd" targetRef="Activity_1u1p6ue">
-						    <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
-						        ${false}
-						    </bpmn:conditionExpression>
+						<bpmn:sequenceFlow id="Flow_1pumtq5" sourceRef="Activity_124j12i" targetRef="Gateway_0jludpd">
+						<bpmn:extensionElements>
+							<veritas:transitionRule isPdfRequired="true" />
+						</bpmn:extensionElements>
 						</bpmn:sequenceFlow>
+						<bpmn:sequenceFlow id="Flow_0nupddp" sourceRef="Activity_05zq0ij" targetRef="Gateway_0jludpd">
+						<bpmn:extensionElements>
+							<veritas:transitionRule minRequiredVendors="3" optionalFailureMessage="Please provide at least 3 vendor quotes in order for the request to advance!" />
+						</bpmn:extensionElements>
+						</bpmn:sequenceFlow>
+						<bpmn:sequenceFlow id="Flow_1s24xzj" name="Request rejected" sourceRef="Gateway_0jludpd" targetRef="Activity_1u1p6ue"/>
 						<bpmn:endEvent id="Event_0zjfdeg">
 						<bpmn:incoming>Flow_0m5sv3t</bpmn:incoming>
 						<bpmn:incoming>Flow_0vl4es9</bpmn:incoming>
 						</bpmn:endEvent>
 						<bpmn:sequenceFlow id="Flow_0m5sv3t" name="Request accepted" sourceRef="Gateway_0jludpd" targetRef="Event_0zjfdeg">
-						    <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
-						        ${true}
-						    </bpmn:conditionExpression>
+						<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${true}</bpmn:conditionExpression>
 						</bpmn:sequenceFlow>
 						<bpmn:sequenceFlow id="Flow_0vl4es9" name="auto-accept" sourceRef="Activity_0mib3l3" targetRef="Event_0zjfdeg"/>
 						</bpmn:process>
@@ -435,7 +441,9 @@ public class BackendApplication {
 				var workflowDef = workflowDefinitionRepository.findAll().stream().findFirst().orElse(null);
 				if (workflowDef != null) {
 					request.setWorkflowDefinitionID(workflowDef);
-					WorkflowStep endStep = workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT).orElse(null);
+					WorkflowStep endStep = workflowStepRepository
+							.findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT)
+							.orElse(null);
 					request.setCurrentStepID(endStep);
 				}
 
@@ -452,7 +460,9 @@ public class BackendApplication {
 				quote.setSelected(true);
 				quoteRepository.save(quote);
 
-				log.info("Successfully initialized additional mock evaluation seed data with finished requisition, selected quote and test vendor '{}'", vendor.getVendorName());
+				log.info(
+						"Successfully initialized additional mock evaluation seed data with finished requisition, selected quote and test vendor '{}'",
+						vendor.getVendorName());
 			}
 		};
 	}
