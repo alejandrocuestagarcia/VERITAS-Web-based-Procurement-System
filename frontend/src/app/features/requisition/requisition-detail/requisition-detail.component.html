@@ -16,6 +16,10 @@
           <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           CLOSED
         </span>
+        <span *ngIf="request.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        PAID
+      </span>
         <span *ngIf="request.responsibleRole" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
           RESPONSIBLE: {{ formatRole(request.responsibleRole) }}
         </span>
@@ -38,6 +42,7 @@
           <mat-icon class="scale-90">request_quote</mat-icon>
           Vendor Quotes
         </button>
+
         <div *ngIf="canAct || (request.state === 'DRAFT' && isRequester())" class="flex items-center gap-2" >
           <button *ngIf="request.state === 'DRAFT' && isRequester()" (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
             <mat-icon class="scale-90">edit</mat-icon>
@@ -48,9 +53,13 @@
               <mat-icon class="scale-90">close</mat-icon>
               Reject
             </button>
-            <button (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors">
+            <button *ngIf="request.responsibleRole === role && request.responsibleRole !== 'FINANCE_OFFICER'" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">check</mat-icon>
               Approve
+            </button>
+            <button *ngIf="authService.hasRole('FINANCE_OFFICER') && !request?.isPaid" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">payment</mat-icon>
+              Pay Invoice
             </button>
           </div>
           <div *ngIf= "request.state === 'DRAFT' && isRequester() " class="flex items-center gap-2" >
@@ -230,6 +239,215 @@
         <div *ngIf="!request.items || request.items.length === 0" class="px-7 py-8 text-center flex flex-col items-center">
           <mat-icon class="text-slate-300 mb-2 scale-110">inventory_2</mat-icon>
           <span class="text-[13px] text-slate-500 font-medium">No line items attached to this requisition.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fixed inset-0 z-[1000] overflow-hidden transition-all duration-300"
+       [class.pointer-events-none]="!isDrawerOpen"
+       [class.pointer-events-auto]="isDrawerOpen"
+       aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 overflow-hidden">
+      <div (click)="closePaymentDrawer()"
+           class="absolute inset-0 bg-gray-500 transition-all duration-500 ease-in-out"
+           [class.opacity-100]="isDrawerOpen"
+           [class.opacity-0]="!isDrawerOpen"
+           [class.bg-opacity-75]="isDrawerOpen"
+           [class.bg-opacity-0]="!isDrawerOpen"
+           [class.backdrop-blur-sm]="isDrawerOpen"
+           aria-hidden="true"></div>
+
+      <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 transition-all duration-500 ease-in-out transform"
+           [style.width]="isDrawerExpanded ? '85%' : '45%'"
+           [class.translate-x-0]="isDrawerOpen"
+           [class.translate-x-full]="!isDrawerOpen">
+
+        <div class="pointer-events-auto w-full max-w-full bg-white shadow-2xl flex flex-col h-full transform transition-all duration-500">
+
+          <ng-container *ngIf="isDrawerOpen">
+            <div class="flex items-center justify-between border-b border-gray-200 px-6 py-5 bg-gray-50">
+              <div class="flex flex-col">
+                <h2 class="text-xl font-bold text-gray-900" id="slide-over-title">
+                  Verify & Pay Requisition
+                </h2>
+                <p class="text-xs text-gray-500 mt-1 font-medium">
+                  ID: #{{ request?.id }} | State: {{ request?.state }}
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <a *ngIf="rawPdfUrl" [href]="rawPdfUrl" target="_blank"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <mat-icon style="font-size: 16px; width:16px; height:16px;">open_in_new</mat-icon>
+                  New Tab
+                </a>
+
+                <button (click)="toggleDrawerExpand()"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <mat-icon style="font-size: 16px; width:16px; height:16px;">
+                    {{ isDrawerExpanded ? 'fullscreen_exit' : 'fullscreen' }}
+                  </mat-icon>
+                  {{ isDrawerExpanded ? 'Collapse' : 'Expand' }}
+                </button>
+
+                <button (click)="closePaymentDrawer()" class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none p-1.5">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex flex-1 overflow-hidden h-full">
+
+              <div class="w-[40%] min-w-[320px] p-6 overflow-y-auto border-r border-gray-200 flex flex-col gap-6">
+
+                <div class="bg-gray-50 rounded-xl p-5 border border-gray-150">
+                  <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Requisition Details</h3>
+                  <div class="space-y-4 text-sm text-gray-600">
+                    <div>
+                      <span class="block text-xs font-semibold text-gray-400 uppercase">Request Name</span>
+                      <span class="font-bold text-gray-900 text-base">{{ request?.requestName }}</span>
+                    </div>
+                    <div>
+                      <span class="block text-xs font-semibold text-gray-400 uppercase">Project</span>
+                      <span class="font-medium text-gray-900">{{ request?.projectName }}</span>
+                    </div>
+                    <div>
+                      <span class="block text-xs font-semibold text-gray-400 uppercase">Requester</span>
+                      <span class="font-medium text-gray-900">{{ request?.requesterName }}</span>
+                    </div>
+                    <div *ngIf="request?.description">
+                      <span class="block text-xs font-semibold text-gray-400 uppercase">Description</span>
+                      <p class="mt-1 text-gray-700 bg-white p-3 rounded-lg border border-gray-200 text-xs">
+                        {{ request?.description }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Quoted Line Items</h4>
+                  </div>
+                  <div class="divide-y divide-gray-150 max-h-[220px] overflow-y-auto">
+                    <div *ngFor="let item of selectedQuote?.items" class="p-3 text-xs flex justify-between items-center">
+                      <div>
+                        <p class="font-bold text-gray-900">{{ item.productDescription }}</p>
+                        <p class="text-gray-500">Qty: {{ item.quantity }} × {{ item.unitPrice | currency }}</p>
+                      </div>
+                      <span class="font-bold text-blue-600">{{ item.subtotal | currency }}</span>
+                    </div>
+                    <div *ngIf="!selectedQuote?.items || selectedQuote?.items?.length === 0" class="p-4 text-center text-xs text-gray-500">
+                      No priced items found.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mt-auto flex flex-col gap-4">
+                  <div>
+                    <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-3">Financial Summary</h4>
+
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-blue-600/90">Shipping Cost</span>
+                        <span class="font-semibold text-blue-900">
+                          {{ (selectedQuote?.shippingCosts || 0) | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-blue-600/90">Quote Total</span>
+                        <span class="font-bold text-blue-900">
+                          {{ selectedQuote?.totalAmount | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div class="border-t border-blue-200/50 my-1"></div>
+
+                      <div *ngIf="invoice" class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-gray-600">Invoice #{{ invoice.invoiceNumber }}</span>
+                        <span class="font-bold text-gray-900">
+                          {{ invoice.totalAmount | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div *ngIf="invoice && invoiceToQuoteDiff !== null && invoiceToQuoteDiff !== 0"
+                           class="flex items-center justify-between text-xs">
+                        <span class="font-semibold" [class.text-red-600]="invoiceToQuoteDiff! > 0" [class.text-green-600]="invoiceToQuoteDiff! < 0">
+                          Difference
+                        </span>
+                        <span class="inline-flex items-center gap-1 py-1 rounded-full text-[11px] font-extrabold"
+                              [class.bg-red-50]="invoiceToQuoteDiff! > 0" [class.text-red-700]="invoiceToQuoteDiff! > 0" [class.border-red-200]="invoiceToQuoteDiff! > 0"
+                              [class.bg-green-50]="invoiceToQuoteDiff! < 0" [class.text-green-700]="invoiceToQuoteDiff! < 0" [class.border-green-200]="invoiceToQuoteDiff! < 0">
+                          <mat-icon style="font-size: 14px; width:14px; height:14px;">
+                            {{ invoiceToQuoteDiff! > 0 ? 'trending_up' : 'trending_down' }}
+                          </mat-icon>
+                          {{ invoiceToQuoteDiff! > 0 ? '+' : '' }}{{ invoiceToQuoteDiff | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div *ngIf="invoice && invoiceToQuoteDiff === 0"
+                           class="flex items-center justify-between text-xs">
+                        <span class="font-semibold text-green-600">Difference</span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-green-50 text-green-700 border border-green-200">
+                          <mat-icon style="font-size: 14px; width:14px; height:14px;">check_circle</mat-icon>
+                          Matches
+                        </span>
+                      </div>
+
+                      <div class="border-t border-blue-200/50 my-1"></div>
+
+                      <div class="flex items-baseline justify-between">
+                        <span class="text-sm font-bold text-blue-800">Payment Amount</span>
+                        <span class="text-3xl font-black text-blue-900 tracking-tight">
+                          {{ (invoice?.totalAmount || selectedQuote?.totalAmount) | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="invoice && invoiceToQuoteDiff !== null && invoiceToQuoteDiff! > 0"
+                       class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <mat-icon class="text-amber-600 flex-shrink-0" style="font-size: 18px; width:18px; height:18px; line-height: 18px;">warning</mat-icon>
+                    <span>The invoice total exceeds the quoted amount by {{ invoiceToQuoteDiff | currency:selectedQuote?.currency }}. Please verify before approving.</span>
+                  </div>
+
+                  <div *ngIf="!pdfUrl" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <mat-icon class="text-amber-600 flex-shrink-0" style="font-size: 18px; width:18px; height:18px; line-height: 18px;">warning</mat-icon>
+                    <span>Warning: There is no PDF invoice attached to this request. Payment cannot be visually verified!</span>
+                  </div>
+
+                  <button (click)="confirmPayment()" [disabled]="isProcessingPayment"
+                          class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
+                    <mat-icon *ngIf="!isProcessingPayment" style="font-size: 20px; width:20px; height:20px; line-height: 20px;">check_circle</mat-icon>
+                    <span class="text-sm font-semibold">{{ isProcessingPayment ? 'Processing Payment...' : 'Approve Final Payment' }}</span>
+                  </button>
+                </div>
+
+              </div>
+
+              <div class="w-[60%] bg-gray-50 h-full flex flex-col relative">
+                <div *ngIf="pdfUrl" class="w-full h-full p-4">
+                  <object [data]="pdfUrl" type="application/pdf" class="w-full h-full rounded-xl border border-gray-300 shadow-md">
+                    <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
+                      <mat-icon class="text-gray-400 scale-150 mb-3" style="font-size: 36px; width:36px; height:36px; line-height: 36px;">picture_as_pdf</mat-icon>
+                      <p class="text-sm font-bold text-gray-700 mb-2">Browser PDF View is Not Supported</p>
+                      <a [href]="rawPdfUrl" download class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <mat-icon style="font-size: 16px; width:16px; height:16px;">download</mat-icon>
+                        Download Invoice PDF
+                      </a>
+                    </div>
+                  </object>
+                </div>
+
+                <div *ngIf="!pdfUrl" class="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <mat-icon class="text-gray-300 scale-150 mb-3" style="font-size: 48px; width:48px; height:48px; line-height: 48px;">receipt_long</mat-icon>
+                  <p class="text-sm font-bold text-gray-600">No Document Preview Available</p>
+                  <p class="text-xs text-gray-400 max-w-xs mt-1">This requisition has no associated PDF invoice attachment.</p>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
         </div>
       </div>
     </div>

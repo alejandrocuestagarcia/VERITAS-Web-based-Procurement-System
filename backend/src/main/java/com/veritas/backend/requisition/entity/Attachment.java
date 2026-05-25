@@ -17,6 +17,10 @@ public class Attachment {
     @JoinColumn(name = "request_id")
     private Request request;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invoice_id")
+    private Invoice invoice;
+
     private String fileName;
     private String fileType;
     private Long fileSize;

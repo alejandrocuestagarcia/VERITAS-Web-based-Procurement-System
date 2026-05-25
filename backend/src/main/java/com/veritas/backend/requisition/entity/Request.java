@@ -55,6 +55,9 @@ public class Request {
     @Column(name = "request_name", nullable = false)
     private String requestName;
 
+    @OneToOne(mappedBy = "request", fetch = FetchType.LAZY)
+    private Invoice invoice;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflow_definition_id")
     private WorkflowDefinition workflowDefinitionID;
