@@ -3,6 +3,7 @@ package com.veritas.backend.requisition.service;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
+import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
 import com.veritas.backend.user.entity.User;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -20,4 +21,5 @@ public interface RequisitionService {
     RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData);
     RequisitionDto submitRequest(Long id, User actor);
     RequisitionDto changeRequester(Long id, Long newRequesterId);
+    RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor);
 }

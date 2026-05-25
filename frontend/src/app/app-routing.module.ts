@@ -180,6 +180,12 @@ const routes: Routes = [
     data: { roles: ['REQUESTER'] }
   },
   {
+    path: 'requisitions/edit/:id',
+    component: RequisitionCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['REQUESTER'] }
+  },
+  {
     path: 'requisitions/:id/vendor-quotes',
     component: RequisitionVendorQuotesComponent,
     canActivate: [authGuard, roleGuard],

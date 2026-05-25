@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
+import static com.veritas.backend.common.model.AuditActionConstants.REQUISITION_EDITED;
 
 @Service
 @RequiredArgsConstructor
@@ -83,6 +84,23 @@ public class AuditServiceImpl implements AuditService {
                 .previousStep(fromStep)
                 .newStep(toStep)
                 .transition(transition)
+                .entryHash(mockHash)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    @Transactional
+    public void createRequisitionChangeLog(User actor, Request request, String details) {
+        String mockHash = UUID.randomUUID().toString();
+
+        AuditLog log = AuditLog.builder()
+                .request(request)
+                .actor(actor)
+                .action(REQUISITION_EDITED)
+                .description(details)
                 .entryHash(mockHash)
                 .timestamp(LocalDateTime.now())
                 .build();

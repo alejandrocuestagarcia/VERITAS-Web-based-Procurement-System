@@ -6,4 +6,5 @@ public class AuditActionConstants {
     public static final String PASSWORD_CHANGED_BY_USER = "PASSWORD_CHANGED_BY_USER";
     public static final String ADMIN_PASSWORD_RESET = "ADMIN_PASSWORD_RESET";
     public static final String PASSWORD_RESET_EMAIL = "PASSWORD_RESET_EMAIL";
+    public static final String REQUISITION_EDITED = "REQUISITION_EDITED";
 }
