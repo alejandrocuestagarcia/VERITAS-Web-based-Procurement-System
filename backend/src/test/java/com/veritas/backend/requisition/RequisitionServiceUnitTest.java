@@ -889,7 +889,7 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(workflowDefinitionRepository.findById(2L)).thenReturn(Optional.of(newWorkflow));
-        when(workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT))
+        when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT))
                 .thenReturn(Optional.empty());
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,

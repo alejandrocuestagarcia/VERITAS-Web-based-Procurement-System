@@ -658,36 +658,6 @@ class BpmnValidatorUnitTest {
                 assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("without conditions"));
         }
 
-        @Test
-        void Validate_XorSingleOutgoing_Warning() {
-                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
-                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
-                                +
-                                "  <bpmn:process id=\"Process_1\" name=\"XOR Single Out\" isExecutable=\"true\">\n" +
-                                "    <bpmn:documentation>XOR with single outgoing</bpmn:documentation>\n" +
-                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                                "    <bpmn:task id=\"Task_1\" name=\"Review\" />\n" +
-                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Pointless XOR\" />\n" +
-                                "    <bpmn:task id=\"Task_2\" name=\"Continue\" />\n" +
-                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
-                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
-                                +
-                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
-                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\" />\n" +
-                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n"
-                                +
-                                "  </bpmn:process>\n" +
-                                "</bpmn:definitions>";
-                BpmnModelInstance model = parse(xml);
-
-                BpmnValidationResult result = validator.validate(xml, model);
-
-                assertThat(result.hasErrors()).isFalse();
-                assertThat(result.getWarnings())
-                                .anyMatch(w -> w.contains("Pointless XOR") && w.contains("only 1 outgoing transition"));
-        }
-
         // ========================================================================
         // Task tests
         // ========================================================================

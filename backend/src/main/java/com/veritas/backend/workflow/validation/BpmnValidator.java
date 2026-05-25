@@ -533,18 +533,6 @@ public class BpmnValidator {
                             + " outgoing transitions without conditions. At most one default (unconditional) transition is allowed");
                 }
             }
-
-            // XOR split with only 1 outgoing
-            if (outgoing.size() == 1 && incoming.size() <= 1) {
-                result.addWarning("XOR Gateway '" + gatewayLabel
-                        + "' has only 1 outgoing transition and is not a merge — it serves no purpose");
-            }
-
-            // XOR merge with only 1 incoming
-            if (incoming.size() == 1 && outgoing.size() <= 1) {
-                result.addWarning("XOR Gateway '" + gatewayLabel
-                        + "' has only 1 incoming transition and is not a split — it serves no purpose");
-            }
         }
     }
 

@@ -469,7 +469,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
             request.setWorkflowDefinitionID(newWorkflow);
             WorkflowStep startStep = workflowStepRepository
-                    .findByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
+                    .findFirstByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
                     .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
             request.setCurrentStepID(startStep);
         }
