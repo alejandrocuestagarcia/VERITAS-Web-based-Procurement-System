@@ -17,9 +17,9 @@ export class ToastService {
     });
   }
 
-  showError(message: string): void {
+  showError(message: string, duration: number = 5000): void {
     this.snackBar.open(message, 'Close', {
-      duration: 5000,
+      duration: duration,
       panelClass: ['error-snackbar'],
       horizontalPosition: 'right',
       verticalPosition: 'top'
