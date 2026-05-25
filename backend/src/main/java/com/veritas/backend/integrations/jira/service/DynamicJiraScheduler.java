@@ -40,6 +40,18 @@ public class DynamicJiraScheduler {
         for (JiraConfig config : configs) {
             scheduleConfig(config);
         }
+
+        taskScheduler.scheduleWithFixedDelay(
+            () -> {
+                try {
+                    syncService.processQueue();
+                } catch (Exception e) {
+                    log.error("Error processing Jira sync queue", e);
+                }
+            },
+            Instant.now().plus(java.time.Duration.ofSeconds(15)),
+            Duration.ofSeconds(15)
+        );
     }
 
     public void scheduleConfig(JiraConfig config) {

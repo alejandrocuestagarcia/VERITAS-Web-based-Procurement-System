@@ -1,13 +1,9 @@
 package com.veritas.backend.integrations.jira.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.veritas.backend.project.entity.Project;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.workflow.entity.WorkflowDefinition;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import com.veritas.backend.config.JpaEncryptionConverter;
+
+import static jakarta.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name = "jira_configs", uniqueConstraints = {
@@ -52,6 +50,18 @@ public class JiraConfig {
 
     @Column(name = "custom_field_id", nullable = false)
     private String customFieldId;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "fallback_user_id")
+    private User fallbackUser;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "fallback_project_id")
+    private Project fallbackProject;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "fallback_workflow_id")
+    private WorkflowDefinition fallbackWorkflow;
 
     @Column(name = "last_sync_time")
     private java.time.LocalDateTime lastSyncTime;

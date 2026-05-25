@@ -368,10 +368,9 @@ class RequisitionServiceUnitTest {
     void SaveAttachment_IoException_ThrowsRuntimeException() throws IOException {
         Request request = new Request();
         request.setRequestID(1L);
-        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.findById(1L)).thenReturn(java.util.Optional.of(request));
 
         MockMultipartFile file = mock(MockMultipartFile.class);
-        when(file.getOriginalFilename()).thenReturn("broken.txt");
         when(file.getInputStream()).thenThrow(new IOException("Disk full"));
 
         RuntimeException ex = assertThrows(RuntimeException.class,

@@ -81,7 +81,7 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void CreateConfig_InvalidData_ShouldReturnBadRequest() throws Exception {
-        JiraConfigDto invalidDto = new JiraConfigDto(null, "", "", "", "", "", 0, "", null, null);
+        JiraConfigDto invalidDto = new JiraConfigDto(null, "", "", "", "", "", 0, "", null, null, null, null, null);
 
         mockMvc.perform(post("/api/v1/jira-configs")
                 .contentType(MediaType.APPLICATION_JSON)
