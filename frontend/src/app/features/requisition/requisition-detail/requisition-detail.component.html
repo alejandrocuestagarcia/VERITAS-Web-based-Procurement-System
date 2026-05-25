@@ -53,7 +53,7 @@
               <mat-icon class="scale-90">close</mat-icon>
               Reject
             </button>
-            <button *ngIf="request.responsibleRole !== role" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+            <button *ngIf="request.responsibleRole === role && request.responsibleRole !== 'FINANCE_OFFICER'" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">check</mat-icon>
               Approve
             </button>
@@ -326,7 +326,7 @@
 
                 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Line Items</h4>
+                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Quoted Line Items</h4>
                   </div>
                   <div class="divide-y divide-gray-150 max-h-[220px] overflow-y-auto">
                     <div *ngFor="let item of selectedQuote?.items" class="p-3 text-xs flex justify-between items-center">
@@ -344,8 +344,9 @@
 
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mt-auto flex flex-col gap-4">
                   <div>
-                    <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider">Verification Amount</h4>
-                    <div class="space-y-3 mt-3">
+                    <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-3">Financial Summary</h4>
+
+                    <div class="space-y-3">
                       <div class="flex items-center justify-between text-xs">
                         <span class="font-medium text-blue-600/90">Shipping Cost</span>
                         <span class="font-semibold text-blue-900">
@@ -353,15 +354,61 @@
                         </span>
                       </div>
 
-                      <div class="border-t border-blue-200/50 my-1"></div>
-
-                      <div class="flex items-baseline justify-between">
-                        <span class="text-sm font-bold text-blue-800">Invoice Total</span>
-                        <span class="text-3xl font-black text-blue-900 tracking-tight">
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-blue-600/90">Quote Total</span>
+                        <span class="font-bold text-blue-900">
                           {{ selectedQuote?.totalAmount | currency:selectedQuote?.currency }}
                         </span>
                       </div>
+
+                      <div class="border-t border-blue-200/50 my-1"></div>
+
+                      <div *ngIf="invoice" class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-gray-600">Invoice #{{ invoice.invoiceNumber }}</span>
+                        <span class="font-bold text-gray-900">
+                          {{ invoice.totalAmount | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div *ngIf="invoice && invoiceToQuoteDiff !== null && invoiceToQuoteDiff !== 0"
+                           class="flex items-center justify-between text-xs">
+                        <span class="font-semibold" [class.text-red-600]="invoiceToQuoteDiff! > 0" [class.text-green-600]="invoiceToQuoteDiff! < 0">
+                          Difference
+                        </span>
+                        <span class="inline-flex items-center gap-1 py-1 rounded-full text-[11px] font-extrabold"
+                              [class.bg-red-50]="invoiceToQuoteDiff! > 0" [class.text-red-700]="invoiceToQuoteDiff! > 0" [class.border-red-200]="invoiceToQuoteDiff! > 0"
+                              [class.bg-green-50]="invoiceToQuoteDiff! < 0" [class.text-green-700]="invoiceToQuoteDiff! < 0" [class.border-green-200]="invoiceToQuoteDiff! < 0">
+                          <mat-icon style="font-size: 14px; width:14px; height:14px;">
+                            {{ invoiceToQuoteDiff! > 0 ? 'trending_up' : 'trending_down' }}
+                          </mat-icon>
+                          {{ invoiceToQuoteDiff! > 0 ? '+' : '' }}{{ invoiceToQuoteDiff | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
+
+                      <div *ngIf="invoice && invoiceToQuoteDiff === 0"
+                           class="flex items-center justify-between text-xs">
+                        <span class="font-semibold text-green-600">Difference</span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-green-50 text-green-700 border border-green-200">
+                          <mat-icon style="font-size: 14px; width:14px; height:14px;">check_circle</mat-icon>
+                          Matches
+                        </span>
+                      </div>
+
+                      <div class="border-t border-blue-200/50 my-1"></div>
+
+                      <div class="flex items-baseline justify-between">
+                        <span class="text-sm font-bold text-blue-800">Payment Amount</span>
+                        <span class="text-3xl font-black text-blue-900 tracking-tight">
+                          {{ (invoice?.totalAmount || selectedQuote?.totalAmount) | currency:selectedQuote?.currency }}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+
+                  <div *ngIf="invoice && invoiceToQuoteDiff !== null && invoiceToQuoteDiff! > 0"
+                       class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <mat-icon class="text-amber-600 flex-shrink-0" style="font-size: 18px; width:18px; height:18px; line-height: 18px;">warning</mat-icon>
+                    <span>The invoice total exceeds the quoted amount by {{ invoiceToQuoteDiff | currency:selectedQuote?.currency }}. Please verify before approving.</span>
                   </div>
 
                   <div *ngIf="!pdfUrl" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
