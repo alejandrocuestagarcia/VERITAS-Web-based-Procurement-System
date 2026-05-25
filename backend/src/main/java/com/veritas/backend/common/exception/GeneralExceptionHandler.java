@@ -1,5 +1,6 @@
 package com.veritas.backend.common.exception;
 
+import com.veritas.backend.workflow.validation.BpmnValidationException;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.HashMap;
@@ -91,6 +92,15 @@ public class GeneralExceptionHandler {
   public ResponseEntity<String> handleWorkflowState(final WorkflowStateException exception) {
     log.warn("Workflow state violation: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+  }
+
+  @ExceptionHandler(BpmnValidationException.class)
+  public ResponseEntity<Object> handleBpmnValidation(final BpmnValidationException exception) {
+    log.warn("BPMN validation failed with {} error(s): {}", exception.getErrors().size(), exception.getMessage());
+    Map<String, Object> body = new HashMap<>();
+    body.put("errors", exception.getErrors());
+    body.put("warnings", exception.getWarnings());
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
   }
 
 }

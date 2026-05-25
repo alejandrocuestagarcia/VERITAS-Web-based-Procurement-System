@@ -64,6 +64,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
         jdbcTemplate.update("DELETE FROM audit_logs");
         jdbcTemplate.update("DELETE FROM requests");
 
+        jdbcTemplate.update("DELETE FROM transition_rules");
         workflowTransitionRepository.deleteAll();
         workflowStepRepository.deleteAll();
         jdbcTemplate.update("UPDATE workflow_definitions SET previous_version_id = NULL");

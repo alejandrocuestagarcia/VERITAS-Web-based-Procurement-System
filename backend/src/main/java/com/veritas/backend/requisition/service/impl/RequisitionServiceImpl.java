@@ -111,7 +111,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setPriority(createDto.priority());
 
         // Set initial workflow step
-        WorkflowStep startStep = workflowStepRepository.findByWorkflowDefinitionAndWorkflowComponent(workflow, WorkflowComponent.START_EVENT)
+        WorkflowStep startStep = workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(workflow, WorkflowComponent.START_EVENT)
                 .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
         request.setCurrentStepID(startStep);
 
@@ -469,7 +469,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
             request.setWorkflowDefinitionID(newWorkflow);
             WorkflowStep startStep = workflowStepRepository
-                    .findByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
+                    .findFirstByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
                     .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
             request.setCurrentStepID(startStep);
         }

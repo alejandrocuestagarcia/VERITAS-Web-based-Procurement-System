@@ -43,6 +43,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
+    /**
+     * Maximum number of consecutive gateway hops the engine will traverse
+     * in a single moveToNextStep call chain. Prevents StackOverflowError
+     * if a gateway-only cycle somehow passes validation.
+     */
+    private static final int MAX_GATEWAY_RECURSION_DEPTH = 50;
+
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
     private final TransitionRuleRepository transitionRuleRepository;
@@ -51,10 +58,19 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
 
-
     @Override
     @Transactional
     public void moveToNextStep(Request request, User actor, Long nextAssigneeId) {
+        moveToNextStep(request, actor, 0, nextAssigneeId);
+    }
+
+    private void moveToNextStep(Request request, User actor, int gatewayDepth, Long nextAssigneeId) {
+        if (gatewayDepth > MAX_GATEWAY_RECURSION_DEPTH) {
+            throw new WorkflowStateException(
+                    "Workflow execution exceeded maximum gateway traversal depth (" + MAX_GATEWAY_RECURSION_DEPTH
+                            + "). This likely indicates a cycle in the workflow definition.");
+        }
+
         WorkflowStep currentStep = request.getCurrentStepID();
 
         checkAuthorization(request, actor, currentStep);
@@ -62,7 +78,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
 
         for (WorkflowTransition transition : transitions) {
-            if (checkCondition(request,transition)) {
+            if (checkCondition(request, transition)) {
                 assertBudgetWithinSafetyBuffer(request.getBudgetID());
 
                 WorkflowStep toStep = transition.getToStep();
@@ -74,9 +90,11 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         request.setAssignee(request.getUserID());
                     } else if (nextAssigneeId != null) {
                         User nextAssignee = userRepository.findById(nextAssigneeId)
-                                .orElseThrow(() -> new IllegalArgumentException("Assignee not found with ID: " + nextAssigneeId));
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                        "Assignee not found with ID: " + nextAssigneeId));
                         if (toStep.getRole() != null && !nextAssignee.getRole().equals(toStep.getRole())) {
-                            throw new IllegalArgumentException("User " + nextAssignee.getName() + " does not have the required role: " + toStep.getRole());
+                            throw new IllegalArgumentException("User " + nextAssignee.getName()
+                                    + " does not have the required role: " + toStep.getRole());
                         }
                         request.setAssignee(nextAssignee);
                     } else {
@@ -96,15 +114,15 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     if (rule.getMinRequiredVendors() != null && rule.getMinRequiredVendors() > 0) {
                         Long requestId = request.getRequestID();
                         List<Quote> quotes = requestId != null
-                            ? quoteRepository.findByRequestRequestID(requestId)
-                            : List.of();
+                                ? quoteRepository.findByRequestRequestID(requestId)
+                                : List.of();
                         long distinctVendors = quotes.stream()
-                            .map(Quote::getVendorID)
-                            .filter(Objects::nonNull)
-                            .map(Vendor::getId)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .count();
+                                .map(Quote::getVendorID)
+                                .filter(Objects::nonNull)
+                                .map(Vendor::getId)
+                                .filter(Objects::nonNull)
+                                .distinct()
+                                .count();
                         if (distinctVendors < rule.getMinRequiredVendors()) {
                             validationErrors.add("Not enough vendors");
                         }
@@ -113,17 +131,21 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     if (rule.getIsPdfRequired() != null && rule.getIsPdfRequired()) {
                         boolean hasPdf = request.getAttachments().stream()
                                 .anyMatch(a -> "application/pdf".equalsIgnoreCase(a.getFileType()));
-                        if (!hasPdf) missingAttachments.add("PDF");
+                        if (!hasPdf)
+                            missingAttachments.add("PDF");
                     }
                     if (rule.getIsCsvRequired() != null && rule.getIsCsvRequired()) {
                         boolean hasCsv = request.getAttachments().stream()
                                 .anyMatch(a -> "text/csv".equalsIgnoreCase(a.getFileType()));
-                        if (!hasCsv) missingAttachments.add("CSV");
+                        if (!hasCsv)
+                            missingAttachments.add("CSV");
                     }
                     if (rule.getIsImageRequired() != null && rule.getIsImageRequired()) {
                         boolean hasImage = request.getAttachments().stream()
-                                .anyMatch(a -> a.getFileType() != null && a.getFileType().toLowerCase().startsWith("image/"));
-                        if (!hasImage) missingAttachments.add("Image");
+                                .anyMatch(a -> a.getFileType() != null
+                                        && a.getFileType().toLowerCase().startsWith("image/"));
+                        if (!hasImage)
+                            missingAttachments.add("Image");
                     }
 
                     if (missingAttachments.size() == 1) {
@@ -135,8 +157,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     if (!validationErrors.isEmpty()) {
                         boolean forceDetails = missingAttachments.size() > 1 || validationErrors.size() > 1;
                         throw new WorkflowStateException(
-                                buildRuleFailureMessage(rule.getOptionalFailureMessage(), validationErrors, forceDetails)
-                        );
+                                buildRuleFailureMessage(rule.getOptionalFailureMessage(), validationErrors,
+                                        forceDetails));
                     }
                 }
 
@@ -147,12 +169,12 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         request,
                         transition,
                         "APPROVE",
-                        "Transitioned from " + transition.getFromStep().getName() + " to " + transition.getToStep().getName()
-                );
+                        "Transitioned from " + transition.getFromStep().getName() + " to "
+                                + transition.getToStep().getName());
 
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
                 if (componentType == WorkflowComponent.BRANCH) {
-                    moveToNextStep(request, actor, nextAssigneeId);
+                    moveToNextStep(request, actor, gatewayDepth + 1, nextAssigneeId);
                 }
 
                 if (componentType == WorkflowComponent.END_EVENT) {
@@ -182,7 +204,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
             while (targetStep != null &&
                     (targetStep.getWorkflowComponent() == WorkflowComponent.BRANCH ||
-                    targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT)) {
+                            targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT)) {
 
                 if (targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
                     break;
@@ -197,7 +219,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
 
         if (targetStep == null) {
-            throw new WorkflowStateException("No valid step found in history to revert to from: " + stepToRevertFrom.getName());
+            throw new WorkflowStateException(
+                    "No valid step found in history to revert to from: " + stepToRevertFrom.getName());
         }
 
         if (targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
@@ -221,8 +244,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 request,
                 null,
                 "REVERT",
-                "Reverted from " + stepToRevertFrom.getName() + " to " + targetStep.getName() + ". Reason: " + reason
-        );
+                "Reverted from " + stepToRevertFrom.getName() + " to " + targetStep.getName() + ". Reason: " + reason);
 
     }
 
@@ -241,10 +263,12 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             }
             if (currentStep.getRole() == UserRole.PROCUREMENT_OFFICER) {
                 Long reqDept = null;
-                if (request.getUserID() != null && request.getUserID().getTeam() != null && request.getUserID().getTeam().getDepartment() != null) {
+                if (request.getUserID() != null && request.getUserID().getTeam() != null
+                        && request.getUserID().getTeam().getDepartment() != null) {
                     reqDept = request.getUserID().getTeam().getDepartment().getDepartmentId();
                 }
-                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId() : null;
+                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
+                        : null;
                 if (reqDept != null && !reqDept.equals(actorDept)) {
                     throw new AccessDeniedException("You are not in the same department as the request.");
                 }
@@ -266,10 +290,12 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             }
             if (attachedActor.getRole() == UserRole.PROCUREMENT_OFFICER) {
                 Long reqDept = null;
-                if (request.getUserID() != null && request.getUserID().getTeam() != null && request.getUserID().getTeam().getDepartment() != null) {
+                if (request.getUserID() != null && request.getUserID().getTeam() != null
+                        && request.getUserID().getTeam().getDepartment() != null) {
                     reqDept = request.getUserID().getTeam().getDepartment().getDepartmentId();
                 }
-                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId() : null;
+                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
+                        : null;
                 if (reqDept != null && !reqDept.equals(actorDept)) {
                     throw new AccessDeniedException("You must be in the same department to act on unassigned steps.");
                 }
@@ -277,7 +303,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
     }
 
-    private Boolean checkCondition(Request requisition, WorkflowTransition transition){
+    private Boolean checkCondition(Request requisition, WorkflowTransition transition) {
         if (transition.getConditionExpression() == null || transition.getConditionExpression().isEmpty()) {
             return true;
         }
@@ -292,7 +318,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
     }
 
-    private String buildRuleFailureMessage(String optionalFailureMessage, List<String> validationErrors, boolean forceDetails) {
+    private String buildRuleFailureMessage(String optionalFailureMessage, List<String> validationErrors,
+            boolean forceDetails) {
         String details = String.join(" ", validationErrors);
         if (optionalFailureMessage == null || optionalFailureMessage.isBlank()) {
             return details;
@@ -306,10 +333,14 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     private void assertBudgetWithinSafetyBuffer(InternalBudget budget) {
         InternalBudget currentBudget = budget;
         while (currentBudget != null) {
-            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend() : BigDecimal.ZERO;
-            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend() : BigDecimal.ZERO;
-            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount() : BigDecimal.ZERO;
-            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer() != null ? currentBudget.getSafetyBuffer() : BigDecimal.ZERO;
+            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend()
+                    : BigDecimal.ZERO;
+            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend()
+                    : BigDecimal.ZERO;
+            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount()
+                    : BigDecimal.ZERO;
+            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer() != null ? currentBudget.getSafetyBuffer()
+                    : BigDecimal.ZERO;
 
             BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
             BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
@@ -329,7 +360,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
 
         WorkflowStep startStep = workflowStepRepository
-                .findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
+                .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
                 .orElseThrow(() -> new RuntimeException("No start step configured in workflow"));
 
         auditService.createWorkflowTransitionLog(
@@ -337,8 +368,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 request,
                 null,
                 "SUBMIT",
-                "Request submitted and entered workflow at: " + startStep.getName()
-        );
+                "Request submitted and entered workflow at: " + startStep.getName());
 
         this.moveToNextStep(request, actor, nextAssigneeId);
     }
@@ -349,7 +379,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         if (request.getState() == RequestStatus.DRAFT) {
             WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
             currentStep = workflowStepRepository
-                    .findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
+                    .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
                     .orElse(null);
         }
         if (currentStep == null) {

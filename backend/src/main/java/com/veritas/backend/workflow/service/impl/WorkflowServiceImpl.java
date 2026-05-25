@@ -19,6 +19,7 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
+import com.veritas.backend.workflow.validation.BpmnValidator;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.model.bpmn.Bpmn;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -48,6 +50,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final WorkflowMapper workflowMapper;
+    private final BpmnValidator bpmnValidator;
 
     @Override
     @Transactional
@@ -103,23 +106,20 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         BpmnModelInstance modelInstance;
         try {
-            modelInstance = Bpmn.readModelFromStream(
-                    new ByteArrayInputStream(xml.getBytes())
-            );
+                modelInstance = Bpmn.readModelFromStream(
+                    new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))
+                );
             Bpmn.validateModel(modelInstance);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error while parsing input xml");
+            log.warn("Failed to parse BPMN XML", e);
+            throw new IllegalArgumentException("Error while parsing input XML", e);
         }
-        Optional<Process> process = modelInstance.getModelElementsByType(Process.class)
-                .stream().findFirst();
-        if (process.isEmpty()) {
-            throw new IllegalArgumentException("BPMN XML document contains no Process class");
-        }
-        String workflowName = process.get().getName();
 
-        if (workflowName.isBlank()) {
-            throw new IllegalArgumentException("Workflow name must not be blank");
-        }
+        // Run custom structural, semantic, and security validations
+        bpmnValidator.validate(xml, modelInstance);
+        Process process = modelInstance.getModelElementsByType(Process.class)
+            .iterator().next();
+        String workflowName = process.getName();
 
         Optional<Documentation> documentation = modelInstance.getModelElementsByType(Documentation.class)
                 .stream().findFirst();
@@ -143,11 +143,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         if (text != null && !text.isBlank()) {
                             if (text.startsWith(ASSIGNEE_PREFIX)) {
                                 String roleName = text.substring(ASSIGNEE_PREFIX.length());
-                                try {
-                                    step.setRole(UserRole.valueOf(roleName));
-                                } catch (IllegalArgumentException e) {
-                                    throw new IllegalArgumentException("Invalid role assigned in BPMN: " + roleName);
-                                }
+                                step.setRole(UserRole.valueOf(roleName));
                             } else {
                                 step.setDescription(text);
                             }
@@ -155,8 +151,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                     });
                 }
                 default ->
-                        throw new IllegalArgumentException("The BPMN element '" + node.getElementType().getTypeName() +
-                                "' is not supported in our procurement system");
+                        throw new IllegalStateException("Unsupported BPMN element encountered after validation: '"
+                                + node.getElementType().getTypeName() + "'");
             }
 
             stepsMap.put(node.getId(), step);

@@ -24,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -62,6 +63,9 @@ class WorkflowServiceUnitTest {
 
     @Mock
     private com.veritas.backend.user.repository.UserRepository userRepository;
+
+    @Spy
+    private com.veritas.backend.workflow.validation.BpmnValidator bpmnValidator;
 
     @Captor
     private ArgumentCaptor<WorkflowDefinition> workflowCaptor;

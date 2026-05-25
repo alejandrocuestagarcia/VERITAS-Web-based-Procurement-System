@@ -82,6 +82,10 @@ $v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
   --mdc-snackbar-container-color: #B00020;
   --mdc-snackbar-supporting-text-color: white;
 
+  .mdc-snackbar__surface {
+    white-space: pre-wrap;
+  }
+
   .mat-mdc-snack-bar-action {
     color: white !important;
   }
@@ -91,6 +95,10 @@ $v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
   --mdc-snackbar-container-color: #388e3c;
   --mdc-snackbar-supporting-text-color: white;
 
+  .mdc-snackbar__surface {
+    white-space: pre-wrap;
+  }
+
   .mat-mdc-snack-bar-action {
     color: white !important;
   }
@@ -99,6 +107,10 @@ $v-theme: mat.define-light-theme((color: (primary: $v-primary-palette,
 .info-snackbar {
   --mdc-snackbar-container-color: #1976d2;
   --mdc-snackbar-supporting-text-color: white;
+
+  .mdc-snackbar__surface {
+    white-space: pre-wrap;
+  }
 
   .mat-mdc-snack-bar-action {
     color: white !important;
