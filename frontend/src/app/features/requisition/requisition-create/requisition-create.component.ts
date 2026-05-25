@@ -25,6 +25,7 @@ import {
 } from '../../../core/api';
 import { MatDialog } from '@angular/material/dialog';
 import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
+import { AssigneeSelectDialogComponent } from '../../../shared/components/assignee-select-dialog/assignee-select-dialog.component';
 
 @Component({
   selector: 'app-requisition-create',
@@ -359,15 +360,52 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   }
   private finalizeNavigation(requestId: number, successMessage: string, submitAfterSave: boolean): void {
     if (submitAfterSave && requestId) {
-      this.requisitionService.submitRequest(requestId).subscribe({
-        next: () => {
-          this.loading = false;
-          this.toastService.showSuccess(`${successMessage} & submitted successfully`);
-          this.router.navigate(['/requisitions', requestId]);
+      this.loading = true;
+      this.requisitionService.getNextStepRole(requestId).subscribe({
+        next: (role) => {
+          if (role) {
+            if (role === 'REQUESTER') {
+              this.executeSubmission(requestId, null, successMessage);
+              return;
+            }
+
+            this.requisitionService.getEligibleAssignees(requestId, role).subscribe({
+              next: (users) => {
+                this.loading = false;
+                const activeUsers = users.filter(u => u.active !== false);
+
+                const dialogRef = this.dialog.open(AssigneeSelectDialogComponent, {
+                  width: '80vw',
+                  maxWidth: '550px',
+                  disableClose: true,
+                  data: {
+                    role: role,
+                    users: activeUsers
+                  }
+                });
+
+                dialogRef.afterClosed().subscribe((assigneeId: number | null | undefined) => {
+                  if (assigneeId === undefined) {
+                    this.toastService.showSuccess(`${successMessage} (saved as draft, submission cancelled)`);
+                    this.router.navigate(['/requisitions', requestId]);
+                    return;
+                  }
+                  this.executeSubmission(requestId, assigneeId, successMessage);
+                });
+              },
+              error: (err) => {
+                this.loading = false;
+                this.toastService.showError('Failed to fetch assignees for role ' + role);
+                this.router.navigate(['/requisitions', requestId]);
+              }
+            });
+          } else {
+            this.executeSubmission(requestId, null, successMessage);
+          }
         },
         error: (err) => {
           this.loading = false;
-          this.toastService.showError('Request was saved, but failed to submit: ' + (err.error?.message || 'Unknown error'));
+          this.toastService.showError('Failed to determine next step role');
           this.router.navigate(['/requisitions', requestId]);
         }
       });
@@ -376,6 +414,23 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       this.toastService.showSuccess(successMessage);
       this.router.navigate(['/requisitions', requestId]);
     }
+  }
+
+  private executeSubmission(requestId: number, assigneeId: number | null, successMessage: string): void {
+    this.loading = true;
+    const nextAssigneeId = assigneeId !== null ? assigneeId : undefined;
+    this.requisitionService.submitRequest(requestId, nextAssigneeId).subscribe({
+      next: () => {
+        this.loading = false;
+        this.toastService.showSuccess(`${successMessage} & submitted successfully`);
+        this.router.navigate(['/requisitions', requestId]);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.toastService.showError('Request was saved, but failed to submit: ' + (err.error?.message || 'Unknown error'));
+        this.router.navigate(['/requisitions', requestId]);
+      }
+    });
   }
 
   onCancel(): void {

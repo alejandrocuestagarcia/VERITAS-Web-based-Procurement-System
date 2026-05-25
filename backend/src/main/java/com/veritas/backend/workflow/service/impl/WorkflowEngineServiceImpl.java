@@ -1,85 +1,90 @@
 package com.veritas.backend.workflow.service.impl;
 
+import com.veritas.backend.audit.entity.AuditLog;
+import com.veritas.backend.audit.repository.AuditLogRepository;
+import com.veritas.backend.audit.service.impl.AuditServiceImpl;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.user.repository.UserRepository;
+import com.veritas.backend.vendor.entity.Quote;
+import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.repository.QuoteRepository;
+import com.veritas.backend.workflow.entity.TransitionRule;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
-import com.veritas.backend.workflow.entity.TransitionRule;
-
-import com.veritas.backend.user.entity.User;
-
-import com.veritas.backend.audit.entity.AuditLog;
-import com.veritas.backend.audit.repository.AuditLogRepository;
-import com.veritas.backend.audit.service.impl.AuditServiceImpl;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
-
-import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
-import com.veritas.backend.workflow.repository.TransitionRuleRepository;
-import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 
-
-import com.veritas.backend.vendor.entity.Quote;
-import com.veritas.backend.vendor.entity.Vendor;
-import com.veritas.backend.vendor.repository.QuoteRepository;
-import com.veritas.backend.budget.entity.InternalBudget;
-import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.entity.RequestStatus;
-
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.security.access.AccessDeniedException;
-import com.veritas.backend.common.exception.WorkflowStateException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-
 @Service
 @RequiredArgsConstructor
 public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
-    private final WorkflowDefinitionRepository workflowDefinitionRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
     private final TransitionRuleRepository transitionRuleRepository;
     private final QuoteRepository quoteRepository;
-    private final WorkflowMapper workflowMapper;
     private final AuditServiceImpl auditService;
     private final AuditLogRepository auditLogRepository;
+    private final UserRepository userRepository;
 
 
     @Override
     @Transactional
-    public void moveToNextStep(Request request, User actor) {
+    public void moveToNextStep(Request request, User actor, Long nextAssigneeId) {
         WorkflowStep currentStep = request.getCurrentStepID();
 
-        if (currentStep.getRole() != null) {
-            if (!actor.getRole().equals(currentStep.getRole())) {
-                throw new AccessDeniedException("User with role " + actor.getRole() +
-                        " is not authorized to approve this step. Required: " + currentStep.getRole());
-            }
-        }
+        checkAuthorization(request, actor, currentStep);
 
         List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
 
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request,transition)) {
-                
                 assertBudgetWithinSafetyBuffer(request.getBudgetID());
+
+                WorkflowStep toStep = transition.getToStep();
+                request.setCurrentStepID(toStep);
+
+                if (toStep.getWorkflowComponent() != WorkflowComponent.END_EVENT &&
+                        toStep.getWorkflowComponent() != WorkflowComponent.BRANCH) {
+                    if (toStep.getRole() == UserRole.REQUESTER) {
+                        request.setAssignee(request.getUserID());
+                    } else if (nextAssigneeId != null) {
+                        User nextAssignee = userRepository.findById(nextAssigneeId)
+                                .orElseThrow(() -> new IllegalArgumentException("Assignee not found with ID: " + nextAssigneeId));
+                        if (toStep.getRole() != null && !nextAssignee.getRole().equals(toStep.getRole())) {
+                            throw new IllegalArgumentException("User " + nextAssignee.getName() + " does not have the required role: " + toStep.getRole());
+                        }
+                        request.setAssignee(nextAssignee);
+                    } else {
+                        request.setAssignee(null);
+                    }
+                } else {
+                    request.setAssignee(null);
+                }
 
                 Optional<TransitionRule> optRule = transitionRuleRepository.findByTransition(transition);
                 if (optRule.isPresent()) {
@@ -145,9 +150,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         "Transitioned from " + transition.getFromStep().getName() + " to " + transition.getToStep().getName()
                 );
 
-                WorkflowComponent componentType = transition.getToStep().getWorkflowComponent();
+                WorkflowComponent componentType = toStep.getWorkflowComponent();
                 if (componentType == WorkflowComponent.BRANCH) {
-                    moveToNextStep(request, actor);
+                    moveToNextStep(request, actor, nextAssigneeId);
                 }
 
                 if (componentType == WorkflowComponent.END_EVENT) {
@@ -165,12 +170,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         WorkflowStep stepToRevertFrom = request.getCurrentStepID();
 
-        if (stepToRevertFrom.getRole() != null) {
-            if (!actor.getRole().equals(stepToRevertFrom.getRole())) {
-                throw new AccessDeniedException("User with role " + actor.getRole() +
-                        " is not authorized to reject this step. Required: " + stepToRevertFrom.getRole());
-            }
-        }
+        checkAuthorization(request, actor, stepToRevertFrom);
 
         WorkflowStep targetStep = null;
 
@@ -202,6 +202,15 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         if (targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
             request.setState(RequestStatus.DRAFT);
+            request.setAssignee(null);
+        } else {
+            Optional<AuditLog> targetDepartureLog = auditLogRepository
+                    .findFirstByRequestAndPreviousStepAndActionOrderByTimestampDesc(request, targetStep, "APPROVE");
+            if (targetDepartureLog.isPresent()) {
+                request.setAssignee(targetDepartureLog.get().getActor());
+            } else {
+                request.setAssignee(null);
+            }
         }
 
         request.setRejectionReason(reason);
@@ -215,6 +224,57 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 "Reverted from " + stepToRevertFrom.getName() + " to " + targetStep.getName() + ". Reason: " + reason
         );
 
+    }
+
+    @Override
+    public void checkAuthorization(Request request, User actor, WorkflowStep currentStep) {
+        if (request.getAssignee() != null && !request.getAssignee().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("Only the assigned user can act on this step.");
+        }
+
+        User attachedActor = userRepository.findById(actor.getId()).orElse(actor);
+
+        if (currentStep.getRole() != null) {
+            if (!attachedActor.getRole().equals(currentStep.getRole())) {
+                throw new AccessDeniedException("User with role " + attachedActor.getRole() +
+                        " is not authorized for this step. Required: " + currentStep.getRole());
+            }
+            if (currentStep.getRole() == UserRole.PROCUREMENT_OFFICER) {
+                Long reqDept = null;
+                if (request.getUserID() != null && request.getUserID().getTeam() != null && request.getUserID().getTeam().getDepartment() != null) {
+                    reqDept = request.getUserID().getTeam().getDepartment().getDepartmentId();
+                }
+                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId() : null;
+                if (reqDept != null && !reqDept.equals(actorDept)) {
+                    throw new AccessDeniedException("You are not in the same department as the request.");
+                }
+            }
+        } else {
+            if (currentStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
+                if (request.getUserID() != null && !request.getUserID().getId().equals(attachedActor.getId())) {
+                    throw new AccessDeniedException("Only the creator of the request can submit it.");
+                }
+                return;
+            }
+
+            if (currentStep.getWorkflowComponent() == WorkflowComponent.BRANCH) {
+                return;
+            }
+
+            if (attachedActor.getRole() == UserRole.REQUESTER) {
+                throw new AccessDeniedException("Requesters are not authorized to act on unassigned steps.");
+            }
+            if (attachedActor.getRole() == UserRole.PROCUREMENT_OFFICER) {
+                Long reqDept = null;
+                if (request.getUserID() != null && request.getUserID().getTeam() != null && request.getUserID().getTeam().getDepartment() != null) {
+                    reqDept = request.getUserID().getTeam().getDepartment().getDepartmentId();
+                }
+                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId() : null;
+                if (reqDept != null && !reqDept.equals(actorDept)) {
+                    throw new AccessDeniedException("You must be in the same department to act on unassigned steps.");
+                }
+            }
+        }
     }
 
     private Boolean checkCondition(Request requisition, WorkflowTransition transition){
@@ -262,7 +322,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
     }
 
-    public void startWorkflow(Request request, User actor) {
+    @Override
+    @Transactional
+    public void startWorkflow(Request request, User actor, Long nextAssigneeId) {
 
         WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
 
@@ -278,7 +340,35 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 "Request submitted and entered workflow at: " + startStep.getName()
         );
 
-        this.moveToNextStep(request, actor);
+        this.moveToNextStep(request, actor, nextAssigneeId);
     }
 
+    @Override
+    public WorkflowStep getNextStep(Request request) {
+        WorkflowStep currentStep = request.getCurrentStepID();
+        if (request.getState() == RequestStatus.DRAFT) {
+            WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
+            currentStep = workflowStepRepository
+                    .findByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
+                    .orElse(null);
+        }
+        if (currentStep == null) {
+            return null;
+        }
+        return resolveNextStep(request, currentStep);
+    }
+
+    private WorkflowStep resolveNextStep(Request request, WorkflowStep currentStep) {
+        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
+        for (WorkflowTransition transition : transitions) {
+            if (checkCondition(request, transition)) {
+                WorkflowStep toStep = transition.getToStep();
+                if (toStep.getWorkflowComponent() == WorkflowComponent.BRANCH) {
+                    return resolveNextStep(request, toStep);
+                }
+                return toStep;
+            }
+        }
+        return null;
+    }
 }

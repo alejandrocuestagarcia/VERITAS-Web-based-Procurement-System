@@ -36,7 +36,8 @@ public class GeneralExceptionHandler {
   @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
   public ResponseEntity<String> handleAccessDenied(Exception exception) {
     log.warn("Access denied: {}", exception.getMessage());
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access Denied");
+    String message = exception.getMessage();
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(message != null ? message : "Access Denied");
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

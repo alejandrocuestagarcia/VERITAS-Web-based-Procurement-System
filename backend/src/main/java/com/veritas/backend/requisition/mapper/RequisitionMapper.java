@@ -35,6 +35,10 @@ public interface RequisitionMapper {
     @Mapping(target = "vendorId", expression = "java(resolveSelectedVendorId(request))")
     @Mapping(target = "vendorName", expression = "java(resolveSelectedVendorName(request))")
     @Mapping(target = "isEvaluated", expression = "java(request.getVendorEvaluation() != null)")
+    @Mapping(target = "assigneeId", source = "assignee.id")
+    @Mapping(target = "assigneeName", source = "assignee.name")
+    @Mapping(target = "assigneeEmail", source = "assignee.email")
+    @Mapping(target = "workflowDefinitionId", source = "workflowDefinitionID.id")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);

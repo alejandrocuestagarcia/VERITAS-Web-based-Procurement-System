@@ -33,5 +33,9 @@ public record RequisitionDto(
     List<RequisitionItemDto> items,
     List<AttachmentDto> attachments,
     String state,
-    String rejectionReason
+    String rejectionReason,
+    Long assigneeId,
+    String assigneeName,
+    String assigneeEmail,
+    Long workflowDefinitionId
 ) {}

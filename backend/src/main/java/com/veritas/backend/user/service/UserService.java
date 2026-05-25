@@ -29,4 +29,6 @@ public interface UserService {
   void deleteUser(Long id, Long fallbackUserId);
 
   Page<UserDto> getAllRequesters(Pageable pageable);
+
+  List<UserDto> getUsersByRole(UserRole role);
 }

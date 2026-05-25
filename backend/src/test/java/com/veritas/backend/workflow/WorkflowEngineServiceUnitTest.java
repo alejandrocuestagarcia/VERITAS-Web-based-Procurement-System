@@ -9,6 +9,7 @@ import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.workflow.entity.TransitionRule;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
@@ -33,6 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.department.entity.Department;
+import org.springframework.security.access.AccessDeniedException;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -56,6 +61,8 @@ class WorkflowEngineServiceUnitTest {
     private AuditServiceImpl auditService;
     @Mock
     private AuditLogRepository auditLogRepository;
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private WorkflowEngineServiceImpl workflowEngineService;
@@ -95,7 +102,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.empty());
 
-        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor));
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
     }
 
@@ -111,7 +118,7 @@ class WorkflowEngineServiceUnitTest {
         testRequest.setBudgetID(budget);
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
-                () -> workflowEngineService.moveToNextStep(testRequest, testActor));
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
         assertEquals("Budget exhausted including safety buffer.", ex.getMessage());
     }
@@ -128,7 +135,7 @@ class WorkflowEngineServiceUnitTest {
         budget.setCommittedSpend(new BigDecimal("50")); // Total 850 <= 900
         testRequest.setBudgetID(budget);
 
-        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor));
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }
 
     @Test
@@ -141,7 +148,7 @@ class WorkflowEngineServiceUnitTest {
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
-                () -> workflowEngineService.moveToNextStep(testRequest, testActor));
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertEquals("Must provide PDF", ex.getMessage());
     }
 
@@ -157,7 +164,7 @@ class WorkflowEngineServiceUnitTest {
         pdf.setFileType("application/pdf");
         testRequest.getAttachments().add(pdf);
 
-        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor));
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }
 
     @Test
@@ -169,7 +176,7 @@ class WorkflowEngineServiceUnitTest {
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
-                () -> workflowEngineService.moveToNextStep(testRequest, testActor));
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertEquals("CSV attachment required", ex.getMessage());
     }
 
@@ -186,7 +193,7 @@ class WorkflowEngineServiceUnitTest {
         testRequest.getAttachments().add(pdf); // Provide pdf instead of image
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
-                () -> workflowEngineService.moveToNextStep(testRequest, testActor));
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertEquals("Image attachment required", ex.getMessage());
     }
 
@@ -209,7 +216,7 @@ class WorkflowEngineServiceUnitTest {
             .thenReturn(List.of(quote));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
-                () -> workflowEngineService.moveToNextStep(testRequest, testActor));
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertEquals("Not enough vendors", ex.getMessage());
     }
 
@@ -235,6 +242,161 @@ class WorkflowEngineServiceUnitTest {
         when(quoteRepository.findByRequestRequestID(testRequest.getRequestID()))
             .thenReturn(List.of(quote1, quote2));
 
-        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor));
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_UnassignedStepRequesterActor_ThrowsAccessDeniedException() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        testActor.setId(99L);
+        testActor.setRole(UserRole.REQUESTER);
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        AccessDeniedException ex = assertThrows(
+                AccessDeniedException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertEquals("Requesters are not authorized to act on unassigned steps.", ex.getMessage());
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_UnassignedStepProcurementOfficerDifferentDepartment_ThrowsAccessDeniedException() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        
+        // Requisition requester
+        User reqUser = new User();
+        Team reqTeam = new Team();
+        Department reqDept = new Department();
+        reqDept.setDepartmentId(1L);
+        reqTeam.setDepartment(reqDept);
+        reqUser.setTeam(reqTeam);
+        testRequest.setUserID(reqUser);
+
+        // Actor: Procurement Officer in Department 2
+        testActor.setId(99L);
+        testActor.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department actorDept = new Department();
+        actorDept.setDepartmentId(2L);
+        testActor.setDepartment(actorDept);
+
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        AccessDeniedException ex = assertThrows(
+                AccessDeniedException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertEquals("You must be in the same department to act on unassigned steps.", ex.getMessage());
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_UnassignedStepProcurementOfficerSameDepartment_Success() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.empty());
+
+        // Requisition requester
+        User reqUser = new User();
+        Team reqTeam = new Team();
+        Department reqDept = new Department();
+        reqDept.setDepartmentId(1L);
+        reqTeam.setDepartment(reqDept);
+        reqUser.setTeam(reqTeam);
+        testRequest.setUserID(reqUser);
+
+        // Actor: Procurement Officer in Department 1
+        testActor.setId(99L);
+        testActor.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department actorDept = new Department();
+        actorDept.setDepartmentId(1L);
+        testActor.setDepartment(actorDept);
+
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_UnassignedStepFinanceOfficer_Success() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.empty());
+
+        // Actor: Finance Officer from anywhere
+        testActor.setId(99L);
+        testActor.setRole(UserRole.FINANCE_OFFICER);
+
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_StartEventCreatorActor_Success() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.START_EVENT);
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.empty());
+
+        // Requisition requester (creator)
+        User reqUser = new User();
+        reqUser.setId(99L);
+        testRequest.setUserID(reqUser);
+
+        // Actor: same creator
+        testActor.setId(99L);
+        testActor.setRole(UserRole.REQUESTER);
+
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_StartEventNonCreatorActor_ThrowsAccessDeniedException() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.START_EVENT);
+
+        // Requisition requester (creator)
+        User reqUser = new User();
+        reqUser.setId(99L);
+        testRequest.setUserID(reqUser);
+
+        // Actor: different requester
+        testActor.setId(100L);
+        testActor.setRole(UserRole.REQUESTER);
+
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        AccessDeniedException ex = assertThrows(
+                AccessDeniedException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertEquals("Only the creator of the request can submit it.", ex.getMessage());
+    }
+
+    //AI-GENERATED
+    @Test
+    void checkAuthorization_BranchStepRequesterActor_Success() {
+        currentStep.setRole(null);
+        currentStep.setWorkflowComponent(WorkflowComponent.BRANCH);
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.empty());
+
+        testActor.setId(99L);
+        testActor.setRole(UserRole.REQUESTER);
+
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }
 }

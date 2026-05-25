@@ -1,27 +1,30 @@
 package com.veritas.backend.requisition.controller;
- 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.requisition.dto.*;
 import com.veritas.backend.requisition.service.RequisitionService;
+import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.entity.User;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -78,16 +81,16 @@ public class RequisitionController {
     @Operation(summary = "Submit request", description = "Finalizes a draft and moves it into the workflow engine.")
     @IsRequester
     @PostMapping("/{id}/submit")
-    public ResponseEntity<RequisitionDto> submitRequest(@PathVariable Long id, @AuthenticationPrincipal User actor) {
-        RequisitionDto submittedRequest = requisitionService.submitRequest(id, actor);
+    public ResponseEntity<RequisitionDto> submitRequest(@PathVariable Long id, @AuthenticationPrincipal User actor, @RequestParam(required = false) Long nextAssigneeId) {
+        RequisitionDto submittedRequest = requisitionService.submitRequest(id, actor, nextAssigneeId);
         return ResponseEntity.ok(submittedRequest);
     }
 
     @Operation(summary = "Approve request", description = "Moves the request to the next workflow step.")
     @IsRequester
     @PostMapping("/{id}/approve")
-    public ResponseEntity<RequisitionDto> approveRequest(@PathVariable Long id, @AuthenticationPrincipal User actor) {
-        return ResponseEntity.ok(requisitionService.approveRequest(id, actor));
+    public ResponseEntity<RequisitionDto> approveRequest(@PathVariable Long id, @AuthenticationPrincipal User actor, @RequestParam(required = false) Long nextAssigneeId) {
+        return ResponseEntity.ok(requisitionService.approveRequest(id, actor, nextAssigneeId));
     }
 
     @Operation(summary = "Reject request", description = "Rejects the request. Requires a reason in the body.")
@@ -96,6 +99,28 @@ public class RequisitionController {
     public ResponseEntity<RequisitionDto> rejectRequest(@PathVariable Long id, @AuthenticationPrincipal User actor, @RequestBody RequisitionRejectDto rejectionData) {
         RequisitionDto updatedRequest = requisitionService.rejectRequest(id, actor, rejectionData);
         return ResponseEntity.ok(updatedRequest);
+    }
+
+    @Operation(summary = "Get next step role", description = "Determines the role required for the next workflow step.")
+    @IsRequester
+    @GetMapping("/{id}/next-step-role")
+    public ResponseEntity<String> getNextStepRole(@PathVariable Long id) {
+        String role = requisitionService.getNextStepRole(id);
+        return ResponseEntity.ok(role != null ? "\"" + role + "\"" : "\"\"");
+    }
+
+    @Operation(summary = "Get eligible assignees", description = "Fetches eligible users for the given role and request's department.")
+    @IsRequester
+    @GetMapping("/{id}/eligible-assignees")
+    public ResponseEntity<List<UserDto>> getEligibleAssignees(@PathVariable Long id, @RequestParam String role) {
+        return ResponseEntity.ok(requisitionService.getEligibleAssignees(id, role));
+    }
+
+    @Operation(summary = "Check if user can act", description = "Checks if the logged-in user can approve or reject the request.")
+    @IsRequester
+    @GetMapping("/{id}/can-act")
+    public ResponseEntity<Boolean> canAct(@PathVariable Long id, @AuthenticationPrincipal User actor) {
+        return ResponseEntity.ok(requisitionService.canAct(id, actor));
     }
 
     @Operation(summary = "Bulk upload quotes", description = "Uploads a CSV file containing multiple vendor quotes for a specific request.")

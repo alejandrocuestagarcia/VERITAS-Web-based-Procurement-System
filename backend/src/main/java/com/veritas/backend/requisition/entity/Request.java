@@ -63,6 +63,10 @@ public class Request {
     @JoinColumn(name = "current_step_id")
     private WorkflowStep currentStepID;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignee_id")
+    private User assignee;
+
     @Column(name = "total_quantity")
     private Integer totalQuantity;
 
