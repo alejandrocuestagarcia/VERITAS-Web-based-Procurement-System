@@ -1,6 +1,7 @@
 package com.veritas.backend.requisition.controller;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
+import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.requisition.dto.*;
 import com.veritas.backend.requisition.service.RequisitionService;
@@ -153,5 +154,24 @@ public class RequisitionController {
         this.requisitionService.processPayment(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Upload invoice", description = "Creates an invoice for a requisition. Requires a PDF file and invoice metadata. The vendor is auto-resolved from the selected quote.")
+    @IsProcurementOfficer
+    @PostMapping(value = "/{id}/invoice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<InvoiceDto> createInvoice(
+            @PathVariable Long id,
+            @Valid @RequestPart("invoice") InvoiceCreateDto invoiceData,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        InvoiceDto invoice = requisitionService.createInvoice(id, invoiceData, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(invoice);
+    }
+
+    @Operation(summary = "Get invoice", description = "Returns the invoice details for a requisition.")
+    @IsRequester
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<InvoiceDto> getInvoice(@PathVariable Long id) {
+        InvoiceDto invoice = requisitionService.getInvoice(id);
+        return ResponseEntity.ok(invoice);
     }
 }

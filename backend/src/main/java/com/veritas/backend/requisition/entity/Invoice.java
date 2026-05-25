@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,21 @@ public class Invoice {
     @JoinColumn(name = "vendor_id")
     private Vendor vendor;
 
+    @Column(name = "invoice_number")
+    private String invoiceNumber;
+
+    @Column(name = "invoice_date")
+    private LocalDate invoiceDate;
+
     private BigDecimal totalAmount;
     private LocalDate dueDate;
     private Boolean isPaid = false;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

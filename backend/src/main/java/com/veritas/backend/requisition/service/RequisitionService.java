@@ -1,5 +1,7 @@
 package com.veritas.backend.requisition.service;
 
+import com.veritas.backend.requisition.dto.InvoiceCreateDto;
+import com.veritas.backend.requisition.dto.InvoiceDto;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
@@ -30,4 +32,8 @@ public interface RequisitionService {
     RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor);
 
     void processPayment(Long requestId);
+
+    InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file);
+
+    InvoiceDto getInvoice(Long requestId);
 }

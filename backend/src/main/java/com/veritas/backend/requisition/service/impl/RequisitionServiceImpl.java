@@ -13,6 +13,7 @@ import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.mapper.InvoiceMapper;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.InvoiceRepository;
@@ -77,6 +78,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final AttachmentRepository attachmentRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final RequisitionMapper requisitionMapper;
+    private final InvoiceMapper invoiceMapper;
     private final InternalBudgetRepository internalBudgetRepository;
     private final UserMapper userMapper;
     private final QuoteLineItemRepository quoteLineItemRepository;
@@ -199,34 +201,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
 
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String storedFilename = UUID.randomUUID().toString() + extension;
-            Path targetLocation = uploadPath.resolve(storedFilename);
-
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            Attachment attachment = new Attachment();
-            attachment.setRequest(request);
-            attachment.setFileName(originalFilename);
-            attachment.setFileType(file.getContentType());
-            attachment.setFileSize(file.getSize());
-            attachment.setStoragePath(targetLocation.toString());
-            attachment.setUploadedAt(LocalDateTime.now());
-
-            attachmentRepository.save(attachment);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not store file " + file.getOriginalFilename() + ". Please try again!", ex);
-        }
+        storeAttachment(file, request, null);
     }
 
     @Override
@@ -598,4 +573,81 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     }
 
+    @Override
+    @Transactional
+    public InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        if (request.getInvoice() != null) {
+            throw new EntityExistsException("Invoice already exists for request with id: " + requestId);
+        }
+
+        var selectedQuote = request.getQuotes().stream()
+                .filter(com.veritas.backend.vendor.entity.Quote::isSelected)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No vendor quote has been selected for this request. Please select a quote first."));
+
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setVendor(selectedQuote.getVendorID());
+        invoice.setInvoiceNumber(createDto.getInvoiceNumber());
+        invoice.setInvoiceDate(createDto.getInvoiceDate());
+        invoice.setTotalAmount(createDto.getTotalAmount());
+        invoice.setDueDate(createDto.getDueDate());
+        invoice.setIsPaid(false);
+
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        if (file != null && !file.isEmpty()) {
+            storeAttachment(file, request, savedInvoice);
+        }
+
+        return invoiceMapper.toDto(savedInvoice);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceDto getInvoice(Long requestId) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        Invoice invoice = request.getInvoice();
+        if (invoice == null) {
+            throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
+        }
+
+        return invoiceMapper.toDto(invoice);
+    }
+
+    private void storeAttachment(MultipartFile file, Request request, Invoice invoice) {
+        try {
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String storedFilename = UUID.randomUUID().toString() + extension;
+            Path targetLocation = uploadPath.resolve(storedFilename);
+
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+            Attachment attachment = new Attachment();
+            attachment.setRequest(request);
+            attachment.setInvoice(invoice);
+            attachment.setFileName(originalFilename);
+            attachment.setFileType(file.getContentType());
+            attachment.setFileSize(file.getSize());
+            attachment.setStoragePath(targetLocation.toString());
+            attachment.setUploadedAt(LocalDateTime.now());
+            attachmentRepository.save(attachment);
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not store file. Please try again!", ex);
+        }
+    }
 }
