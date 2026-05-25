@@ -253,12 +253,20 @@ public class BackendApplication {
 						</bpmn:exclusiveGateway>
 						<bpmn:sequenceFlow id="Flow_1pumtq5" name="accept / reject" sourceRef="Activity_124j12i" targetRef="Gateway_0jludpd"/>
 						<bpmn:sequenceFlow id="Flow_0nupddp" name="accept / reject" sourceRef="Activity_05zq0ij" targetRef="Gateway_0jludpd"/>
-						<bpmn:sequenceFlow id="Flow_1s24xzj" name="Request rejected" sourceRef="Gateway_0jludpd" targetRef="Activity_1u1p6ue"/>
+						<bpmn:sequenceFlow id="Flow_1s24xzj" name="Request rejected" sourceRef="Gateway_0jludpd" targetRef="Activity_1u1p6ue">
+						    <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
+						        ${false}
+						    </bpmn:conditionExpression>
+						</bpmn:sequenceFlow>
 						<bpmn:endEvent id="Event_0zjfdeg">
 						<bpmn:incoming>Flow_0m5sv3t</bpmn:incoming>
 						<bpmn:incoming>Flow_0vl4es9</bpmn:incoming>
 						</bpmn:endEvent>
-						<bpmn:sequenceFlow id="Flow_0m5sv3t" name="Request accepted" sourceRef="Gateway_0jludpd" targetRef="Event_0zjfdeg"/>
+						<bpmn:sequenceFlow id="Flow_0m5sv3t" name="Request accepted" sourceRef="Gateway_0jludpd" targetRef="Event_0zjfdeg">
+						    <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
+						        ${true}
+						    </bpmn:conditionExpression>
+						</bpmn:sequenceFlow>
 						<bpmn:sequenceFlow id="Flow_0vl4es9" name="auto-accept" sourceRef="Activity_0mib3l3" targetRef="Event_0zjfdeg"/>
 						</bpmn:process>
 						<bpmndi:BPMNDiagram id="BPMNDiagram_1">

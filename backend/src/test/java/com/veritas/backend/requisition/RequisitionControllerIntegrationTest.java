@@ -434,7 +434,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
         // 3. Reverting from Step 1 back to the START_EVENT
         mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
-                        .header("Authorization", "Bearer " + requesterToken)
+                        .header("Authorization", "Bearer " + financeOfficerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rejectDto)))
                 .andExpect(status().isOk());

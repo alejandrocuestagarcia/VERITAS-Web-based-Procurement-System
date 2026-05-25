@@ -96,6 +96,7 @@ import { RequisitionVendorQuoteCreateComponent } from './features/requisition/re
 import { RequisitionVendorQuoteViewComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component';
 import { RequisitionChangeRequesterDialogComponent } from './features/requisition/requisition-change-requester-dialog/requisition-change-requester-dialog.component';
 import { RejectDialogComponent } from './shared/components/reject-dialog/reject-dialog.component';
+import { AssigneeSelectDialogComponent } from './shared/components/assignee-select-dialog/assignee-select-dialog.component';
 
 @NgModule({
   declarations: [
@@ -160,6 +161,7 @@ import { RejectDialogComponent } from './shared/components/reject-dialog/reject-
     PriorityBadgeComponent,
     RejectDialogComponent,
     SharedRatingSliderComponent,
+    AssigneeSelectDialogComponent,
 
     // Directives & Pipes
     HasRoleDirective,

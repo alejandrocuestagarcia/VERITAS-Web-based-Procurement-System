@@ -1,0 +1,29 @@
+<h2 mat-dialog-title class="font-manrope font-bold text-slate-800 m-0 pb-4 border-b border-slate-100 flex items-center gap-2">
+  <mat-icon class="text-blue-600">person_add</mat-icon> Assign Next Responsible Person
+</h2>
+<mat-dialog-content class="pt-6">
+  <p class="text-[14px] text-slate-600 mb-6 leading-relaxed">
+    The next step of the workflow requires a <strong>{{ formatRole(data.role) }}</strong>. Please select the specific person who should be responsible for this step.
+  </p>
+
+  <div class="flex flex-col gap-2 w-full mt-2">
+    <label class="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Responsible Person</label>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-icon matPrefix>assignment_ind</mat-icon>
+      <mat-select [(ngModel)]="selectedAssigneeId" placeholder="Select responsible user">
+        <mat-option [value]="-1">Leave Unassigned (Global Pool)</mat-option>
+        <mat-option *ngFor="let user of data.users" [value]="user.id">
+          {{ user.name }} ({{ user.email }})
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="gap-3 pt-4 pb-2 pr-6 border-t border-slate-100">
+  <button mat-flat-button (click)="onCancel()">
+    Cancel
+  </button>
+  <button mat-flat-button color="primary" (click)="onConfirm()">
+    Confirm & Continue
+  </button>
+</mat-dialog-actions>

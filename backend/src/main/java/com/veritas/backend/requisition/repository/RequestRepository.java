@@ -22,12 +22,14 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "LEFT JOIN r.projectID p " +
             "LEFT JOIN r.currentStepID s " +
             "LEFT JOIN r.userID u " +
+            "LEFT JOIN r.assignee a " +
             "LEFT JOIN r.teamID t " +
             "LEFT JOIN t.department d " +
             "WHERE (:status IS NULL OR " +
             "      (:status = 'OPEN' AND r.state <> 'FINISHED') OR " +
             "      (:status = 'CLOSED' AND r.state = 'FINISHED')) " +
             "AND (:userId IS NULL OR u.id = :userId) " +
+            "AND (:assigneeId IS NULL OR a IS NULL OR a.id = :assigneeId) " +
             "AND (:teamId IS NULL OR t.teamId = :teamId) " +
             "AND (:departmentId IS NULL OR d.departmentId = :departmentId) " +
             "AND (:projectId IS NULL OR p.id = :projectId) " +
@@ -38,6 +40,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                      @Param("search") String search,
                                      @Param("projectId") Long projectId,
                                      @Param("userId") Long userId,
+                                     @Param("assigneeId") Long assigneeId,
                                      @Param("teamId") Long teamId,
                                      @Param("departmentId") Long departmentId,
                                      Pageable pageable);

@@ -228,7 +228,10 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         workflowTransitionRepository.saveAll(workflowTransitions);
 
-        transitionRulesMap.forEach((transition, rule) -> rule.setTransition(transition));
+        transitionRulesMap.forEach((transition, rule) -> {
+            rule.setTransition(transition);
+            transition.setRule(rule);
+        });
         transitionRuleRepository.saveAll(transitionRulesMap.values());
 
         return workflowDefinition;

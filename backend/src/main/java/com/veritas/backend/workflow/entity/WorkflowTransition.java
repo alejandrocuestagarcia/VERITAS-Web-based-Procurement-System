@@ -2,6 +2,8 @@ package com.veritas.backend.workflow.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "workflow_transitions")
@@ -25,4 +27,9 @@ public class WorkflowTransition {
 
     @Column(name = "condition_expression")
     private String conditionExpression;
+
+    @OneToOne(mappedBy = "transition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private TransitionRule rule;
 }

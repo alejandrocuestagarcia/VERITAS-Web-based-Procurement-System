@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
+import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, UserModuleService } from 'src/app/core/api';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { RejectDialogComponent} from "../../../shared/components/reject-dialog/reject-dialog.component";
+import { AssigneeSelectDialogComponent } from '../../../shared/components/assignee-select-dialog/assignee-select-dialog.component';
 import {MatDialog} from "@angular/material/dialog";
 import {ToastService} from "../../../core/services/toast.service";
 import { Location } from '@angular/common';
@@ -16,6 +17,7 @@ export class RequisitionDetailComponent implements OnInit {
   selectedQuote: QuoteDto | null = null;
   loading = false;
   role: string = this.authService.getRole() ?? '';
+  canAct = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -43,10 +45,23 @@ export class RequisitionDetailComponent implements OnInit {
       next: (req) => {
         this.request = req;
         this.loadSelectedQuote(id);
+        this.checkCanAct(id);
       },
       error: (err) => {
         console.error('Failed to load request details', err);
         this.loading = false;
+      }
+    });
+  }
+
+  checkCanAct(id: number): void {
+    this.requisitionService.canAct(id).subscribe({
+      next: (res) => {
+        this.canAct = res;
+      },
+      error: (err) => {
+        console.error('Failed to check canAct', err);
+        this.canAct = false;
       }
     });
   }
@@ -71,6 +86,10 @@ export class RequisitionDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  isRequester(): boolean {
+    return this.request !== null && this.request.requesterId === this.authService.getUserId();
   }
 
   modifyRequest(): void {
@@ -108,15 +127,65 @@ export class RequisitionDetailComponent implements OnInit {
 
   approveRequest(): void {
     if (!this.request || !this.request.id) return;
+
     this.loading = true;
-    this.requisitionService.approveRequest(this.request.id).subscribe({
+    this.requisitionService.getNextStepRole(this.request.id).subscribe({
+      next: (role) => {
+        if (role) {
+          if (role === 'REQUESTER') {
+            this.executeApproval(null);
+            return;
+          }
+
+          this.requisitionService.getEligibleAssignees(this.request!.id!, role).subscribe({
+            next: (users) => {
+              this.loading = false;
+              const activeUsers = users.filter(u => u.active !== false);
+
+              const dialogRef = this.dialog.open(AssigneeSelectDialogComponent, {
+                width: '80vw',
+                maxWidth: '550px',
+                disableClose: true,
+                data: {
+                  role: role,
+                  users: activeUsers
+                }
+              });
+
+              dialogRef.afterClosed().subscribe((assigneeId: number | null | undefined) => {
+                if (assigneeId === undefined) {
+                  return;
+                }
+                this.executeApproval(assigneeId);
+              });
+            },
+            error: (err) => {
+              this.loading = false;
+              this.toastService.showError('Failed to fetch assignees for role ' + role);
+            }
+          });
+        } else {
+          this.executeApproval(null);
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        this.toastService.showError('Failed to determine next step role');
+      }
+    });
+  }
+
+  private executeApproval(assigneeId: number | null): void {
+    this.loading = true;
+    const nextAssigneeId = assigneeId !== null ? assigneeId : undefined;
+    this.requisitionService.approveRequest(this.request!.id!, nextAssigneeId).subscribe({
       next: () => {
         this.loading = false;
         this.toastService.showInfo("Requisition approved successfully!");
         this.goBack();
       },
       error: (err) => {
-        this.toastService.showError(err.error);
+        this.toastService.showError(err.error?.message || err.error || "Approval failed");
         this.loading = false;
       }
     });
@@ -126,19 +195,66 @@ export class RequisitionDetailComponent implements OnInit {
     if (!this.request || !this.request.id) return;
 
     this.loading = true;
+    this.requisitionService.getNextStepRole(this.request.id).subscribe({
+      next: (role) => {
+        if (role) {
+          if (role === 'REQUESTER') {
+            this.executeSubmission(null);
+            return;
+          }
 
-    this.requisitionService.submitRequest(this.request.id).subscribe({
+          this.requisitionService.getEligibleAssignees(this.request?.id!, role).subscribe({
+            next: (users) => {
+              this.loading = false;
+              const activeUsers = users.filter(u => u.active !== false);
+
+              const dialogRef = this.dialog.open(AssigneeSelectDialogComponent, {
+                width: '80vw',
+                maxWidth: '550px',
+                disableClose: true,
+                data: {
+                  role: role,
+                  users: activeUsers
+                }
+              });
+
+              dialogRef.afterClosed().subscribe((assigneeId: number | null | undefined) => {
+                if (assigneeId === undefined) {
+                  return;
+                }
+                this.executeSubmission(assigneeId);
+              });
+            },
+            error: (err) => {
+              this.loading = false;
+              this.toastService.showError('Failed to fetch assignees for role ' + role);
+            }
+          });
+        } else {
+          this.executeSubmission(null);
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        this.toastService.showError('Failed to determine next step role');
+      }
+    });
+  }
+
+  private executeSubmission(assigneeId: number | null): void {
+    this.loading = true;
+    const nextAssigneeId = assigneeId !== null ? assigneeId : undefined;
+    this.requisitionService.submitRequest(this.request!.id!, nextAssigneeId).subscribe({
       next: () => {
         this.loading = false;
         this.toastService.showInfo("Requisition submitted successfully!");
         this.goBack();
       },
       error: (err) => {
-        this.toastService.showError(err.error);
+        this.toastService.showError(err.error?.message || err.error || "Submission failed");
         this.loading = false;
       }
     });
-
   }
 
   formatRole(role: string | undefined): string {
@@ -156,32 +272,23 @@ export class RequisitionDetailComponent implements OnInit {
 
   downloadAttachment(attachment: any): void {
     if (!attachment || !attachment.attachmentId) return;
-    const url = `http://localhost:8080/api/v1/requisitions/attachments/${attachment.attachmentId}`;
-    const token = this.authService.getToken();
-    const headers: any = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    fetch(url, { headers })
-      .then(response => {
-        if (!response.ok) throw new Error('Download failed');
-        return response.blob();
-      })
-      .then(blob => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = downloadUrl;
-        a.download = attachment.fileName || 'download';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        document.body.removeChild(a);
-      })
-      .catch(err => {
-        console.error('Failed to download attachment', err);
-        alert('Failed to download attachment');
+    this.requisitionService.downloadAttachment(attachment.attachmentId)
+      .subscribe({
+        next: (blob: Blob) => {
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = downloadUrl;
+          a.download = attachment.fileName || 'download';
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(downloadUrl);
+          document.body.removeChild(a);
+        },
+        error: (err) => {
+          console.error('Failed to download attachment', err);
+          alert('Failed to download attachment');
+        }
       });
   }
 }
