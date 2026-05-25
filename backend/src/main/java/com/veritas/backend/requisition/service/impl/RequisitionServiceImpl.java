@@ -9,10 +9,7 @@ import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
 import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
-import com.veritas.backend.requisition.entity.Attachment;
-import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.entity.RequestItem;
-import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.entity.*;
 import com.veritas.backend.requisition.mapper.InvoiceMapper;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
@@ -584,7 +581,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         var selectedQuote = request.getQuotes().stream()
-                .filter(com.veritas.backend.vendor.entity.Quote::isSelected)
+                .filter(Quote::isSelected)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No vendor quote has been selected for this request. Please select a quote first."));
 
