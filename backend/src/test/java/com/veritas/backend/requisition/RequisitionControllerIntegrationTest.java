@@ -41,6 +41,9 @@ import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
+import com.veritas.backend.vendor.repository.QuoteRepository;
+import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
+import com.veritas.backend.vendor.repository.VendorRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -96,6 +99,12 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private InvoiceRepository invoiceRepository;
     @Autowired
     private InternalBudgetRepository internalBudgetRepository;
+    @Autowired
+    private QuoteRepository quoteRepository;
+    @Autowired
+    private QuoteLineItemRepository quoteLineItemRepository;
+    @Autowired
+    private VendorRepository vendorRepository;
 
     private String requesterToken;
     private String financeOfficerToken;
@@ -104,6 +113,9 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        quoteLineItemRepository.deleteAllInBatch();
+        quoteRepository.deleteAllInBatch();
+        vendorRepository.deleteAllInBatch();
         invoiceRepository.deleteAllInBatch();
         auditLogRepository.deleteAllInBatch();
         attachmentRepository.deleteAllInBatch();
@@ -623,4 +635,90 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void ProcessPayment_TransitionRequestToFinished() throws Exception {
+        // Arrange
+        Project project = projectRepository.findAll().get(0);
+        Long budgetId = project.getInternalBudget().getId();
+        InternalBudget budget = internalBudgetRepository.findById(budgetId).orElseThrow();
+        budget.setCommittedSpend(new BigDecimal("500.00"));
+        budget.setActualSpend(new BigDecimal("1000.00"));
+        budget = internalBudgetRepository.save(budget);
+
+        Request request = new Request();
+        request.setRequestName("Office Supplies Finished");
+        request.setState(RequestStatus.ACTIVE);
+        request.setProjectID(project);
+        request.setBudgetID(budget);
+        request = requestRepository.save(request);
+
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setTotalAmount(new BigDecimal("200.00"));
+        invoice.setIsPaid(false);
+        invoice = invoiceRepository.save(invoice);
+
+        // Act
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/pay")
+                        .header("Authorization", "Bearer " + financeOfficerToken))
+                .andExpect(status().isNoContent());
+
+        // Assert Request state is FINISHED
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertEquals(RequestStatus.FINISHED, updatedRequest.getState());
+    }
+
+    @Test
+    void RejectRequest_AlreadyPaid_ReturnsConflictStatus() throws Exception {
+        // Arrange
+        Project project = projectRepository.findAll().get(0);
+        Request request = new Request();
+        request.setRequestName("Reject Paid Request");
+        request.setState(RequestStatus.ACTIVE);
+        request.setProjectID(project);
+        request = requestRepository.save(request);
+
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setTotalAmount(new BigDecimal("100.00"));
+        invoice.setIsPaid(true); // Manually seed as already paid
+        invoice = invoiceRepository.save(invoice);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Rejecting paid order");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be rejected")));
+    }
+
+    @Test
+    void ApproveRequest_AlreadyPaid_ReturnsConflictStatus() throws Exception {
+        // Arrange
+        Project project = projectRepository.findAll().get(0);
+        Request request = new Request();
+        request.setRequestName("Approve Paid Request");
+        request.setState(RequestStatus.ACTIVE);
+        request.setProjectID(project);
+        request = requestRepository.save(request);
+
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setTotalAmount(new BigDecimal("100.00"));
+        invoice.setIsPaid(true); // Manually seed as already paid
+        invoice = invoiceRepository.save(invoice);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/approve")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be approved")));
+    }
+
 }
+
