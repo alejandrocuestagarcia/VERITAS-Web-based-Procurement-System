@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
+import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, InvoiceDto } from 'src/app/core/api';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { RejectDialogComponent} from "../../../shared/components/reject-dialog/reject-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
@@ -23,6 +23,12 @@ export class RequisitionDetailComponent implements OnInit {
   pdfUrl: SafeResourceUrl | null = null;
   rawPdfUrl = '';
   isProcessingPayment = false;
+  invoice: InvoiceDto | null = null;
+
+  get invoiceToQuoteDiff(): number | null {
+    if (this.invoice?.totalAmount == null || this.selectedQuote?.totalAmount == null) return null;
+    return this.invoice.totalAmount - this.selectedQuote.totalAmount;
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -190,6 +196,12 @@ export class RequisitionDetailComponent implements OnInit {
     if (!this.request) return;
     this.isDrawerOpen = true;
     this.isDrawerExpanded = false;
+    this.invoice = null;
+
+    this.requisitionService.getInvoice(this.requestId).subscribe({
+      next: (inv) => this.invoice = inv,
+      error: () => this.invoice = null
+    });
 
     const invoicePdf = this.request.attachments?.find(
       (a: any) => a.fileType === 'application/pdf'
