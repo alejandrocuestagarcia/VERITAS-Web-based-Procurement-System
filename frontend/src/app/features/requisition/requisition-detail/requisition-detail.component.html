@@ -167,8 +167,8 @@
       <div *ngIf="!request.isClosed" class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-7 border-l-[6px] border-l-[#0042d1]">
         <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5">Current Workflow Step</h3>
         <p class="text-[14px] text-slate-600 leading-relaxed">
-          This step (<strong class="text-slate-900 font-bold">{{ request.status }}</strong>) requires review from <strong class="text-slate-900 font-bold">{{ (request.responsibleRole ? formatRole(request.responsibleRole) : 'No Role Assigned') | titlecase }}</strong>.
-          Please review the provided description and attachments before proceeding with the approval.
+          This step (<strong class="text-slate-900 font-bold">{{ request.status }}</strong>) requires review from <strong class="text-slate-900 font-bold">{{ (request.responsibleRole ? formatRole(request.responsibleRole) : 'No Role Assigned') | titlecase }}</strong>:
+          {{ request.workflowStepDescription }}
         </p>
       </div>
       <div *ngIf="request.isClosed" class="bg-green-50/60 rounded-[20px] border border-green-200 shadow-sm p-7 border-l-[6px] border-l-green-500">
