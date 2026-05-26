@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.integrations.jira.dto.*;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import com.veritas.backend.integrations.jira.entity.JiraSyncQueueItem;
@@ -22,11 +24,10 @@ import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.RequisitionService;
-import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
-import com.veritas.backend.workflow.entity.WorkflowStep;
-import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
+
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,8 +81,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     private final RequestItemRepository requestItemRepository;
     private final AttachmentRepository attachmentRepository;
     private final JiraSyncQueueItemRepository queueItemRepository;
-    private final WorkflowDefinitionRepository workflowDefinitionRepository;
     private final WorkflowStepRepository workflowStepRepository;
+    private final InternalBudgetRepository internalBudgetRepository;
 
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
@@ -261,6 +262,16 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         if (request.getUserID() == null && config.getFallbackUser() != null) {
             request.setUserID(config.getFallbackUser());
             request.setTeamID(config.getFallbackUser().getTeam());
+        }
+
+        if (request.getBudgetID() == null) {
+            InternalBudget budget = new InternalBudget();
+            budget.setBudgetName("Request: " + request.getRequestName());
+            budget.setTotalAmount(BigDecimal.ZERO);
+            budget.setParentBudget(request.getProjectID().getInternalBudget());
+            internalBudgetRepository.save(budget);
+
+            request.setBudgetID(budget);
         }
 
         request = requestRepository.saveAndFlush(request);

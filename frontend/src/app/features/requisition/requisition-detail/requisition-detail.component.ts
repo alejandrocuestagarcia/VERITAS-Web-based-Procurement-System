@@ -374,7 +374,7 @@ export class RequisitionDetailComponent implements OnInit {
         this.isProcessingPayment = false;
         this.toastService.showSuccess('Payment processed successfully');
         this.closePaymentDrawer();
-        this.loadRequest(this.requestId);
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.isProcessingPayment = false;

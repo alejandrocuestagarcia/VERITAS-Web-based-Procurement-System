@@ -303,7 +303,7 @@
                   Verify & Pay Requisition
                 </h2>
                 <p class="text-xs text-gray-500 mt-1 font-medium">
-                  ID: #{{ request?.id }} | State: {{ request?.state }}
+                  ID: #{{ request.id }} | State: {{ request.state }}
                 </p>
               </div>
 
@@ -337,20 +337,20 @@
                   <div class="space-y-4 text-sm text-gray-600">
                     <div>
                       <span class="block text-xs font-semibold text-gray-400 uppercase">Request Name</span>
-                      <span class="font-bold text-gray-900 text-base">{{ request?.requestName }}</span>
+                      <span class="font-bold text-gray-900 text-base">{{ request.requestName }}</span>
                     </div>
                     <div>
                       <span class="block text-xs font-semibold text-gray-400 uppercase">Project</span>
-                      <span class="font-medium text-gray-900">{{ request?.projectName }}</span>
+                      <span class="font-medium text-gray-900">{{ request.projectName }}</span>
                     </div>
                     <div>
                       <span class="block text-xs font-semibold text-gray-400 uppercase">Requester</span>
-                      <span class="font-medium text-gray-900">{{ request?.requesterName }}</span>
+                      <span class="font-medium text-gray-900">{{ request.requesterName }}</span>
                     </div>
-                    <div *ngIf="request?.description">
+                    <div *ngIf="request.description">
                       <span class="block text-xs font-semibold text-gray-400 uppercase">Description</span>
                       <p class="mt-1 text-gray-700 bg-white p-3 rounded-lg border border-gray-200 text-xs">
-                        {{ request?.description }}
+                        {{ request.description }}
                       </p>
                     </div>
                   </div>
@@ -364,9 +364,9 @@
                     <div *ngFor="let item of selectedQuote?.items" class="p-3 text-xs flex justify-between items-center">
                       <div>
                         <p class="font-bold text-gray-900">{{ item.productDescription }}</p>
-                        <p class="text-gray-500">Qty: {{ item.quantity }} × {{ item.unitPrice | currency }}</p>
+                        <p class="text-gray-500">Qty: {{ item.quantity }} × {{ item.unitPrice | currency:selectedQuote?.currency }}</p>
                       </div>
-                      <span class="font-bold text-blue-600">{{ item.subtotal | currency }}</span>
+                      <span class="font-bold text-blue-600">{{ item.subtotal | currency:selectedQuote?.currency }}</span>
                     </div>
                     <div *ngIf="!selectedQuote?.items || selectedQuote?.items?.length === 0" class="p-4 text-center text-xs text-gray-500">
                       No priced items found.
