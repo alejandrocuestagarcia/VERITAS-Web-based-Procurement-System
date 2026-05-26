@@ -419,7 +419,7 @@ class WorkflowEngineServiceUnitTest {
                 .newStep(currentStep)
                 .timestamp(entryTime)
                 .build();
-        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampDesc(testRequest, currentStep))
+        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampAsc(testRequest, currentStep))
                 .thenReturn(Optional.of(entryLog));
 
         Attachment oldPdf = new Attachment();
@@ -450,7 +450,7 @@ class WorkflowEngineServiceUnitTest {
                 .newStep(currentStep)
                 .timestamp(entryTime)
                 .build();
-        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampDesc(testRequest, currentStep))
+        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampAsc(testRequest, currentStep))
                 .thenReturn(Optional.of(entryLog));
 
         Attachment newPdf = new Attachment();

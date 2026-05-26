@@ -139,7 +139,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     LocalDateTime entryTime = null;
                     if (currentStep.getWorkflowComponent() != WorkflowComponent.START_EVENT) {
                         entryTime = auditLogRepository
-                                .findFirstByRequestAndNewStepOrderByTimestampDesc(request, currentStep)
+                                .findFirstByRequestAndNewStepOrderByTimestampAsc(request, currentStep)
                                 .map(AuditLog::getTimestamp)
                                 .orElse(request.getCreatedAt() != null ? request.getCreatedAt()
                                         : java.time.LocalDateTime.MIN);
