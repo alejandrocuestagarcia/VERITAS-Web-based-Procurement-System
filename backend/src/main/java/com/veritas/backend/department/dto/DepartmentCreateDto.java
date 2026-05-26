@@ -10,5 +10,5 @@ import java.math.BigDecimal;
 public record DepartmentCreateDto(
         @NotBlank(message = "Department name is required") @Size(max = 120, message = "Department name must be at most 120 characters") String name,
 
-        @NotNull @Positive BigDecimal budget) {
+        @NotNull(message = "Budget is required") @Positive(message = "Budget must be a positive amount") BigDecimal budget) {
 }
