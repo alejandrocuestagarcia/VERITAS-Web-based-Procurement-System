@@ -46,7 +46,8 @@ public class BpmnValidator {
             "requestID", "requestName", "description", "priority",
             "state", "totalQuantity", "createdAt", "updatedAt",
             "budgetID", "teamID", "projectID", "userID",
-            "requestKey", "jiraIssueKey", "jiraStatus"
+            "requestKey", "jiraIssueKey", "jiraStatus",
+            "selectedQuoteTotalAmount"
     );
 
     private final SpelExpressionParser spelParser = new SpelExpressionParser();

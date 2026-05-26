@@ -13,6 +13,7 @@ export const dummyBpmnXml = `
 					<bpmn:outgoing>Flow_1hlbu7w</bpmn:outgoing>
 					</bpmn:startEvent>
 					<bpmn:task id="Activity_1u1p6ue" name="Fill in Details and Upload Vendor Quotes">
+					<bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>
 					<bpmn:incoming>Flow_1hlbu7w</bpmn:incoming>
 					<bpmn:incoming>Flow_1s24xzj</bpmn:incoming>
 					<bpmn:outgoing>Flow_0vsq5o5</bpmn:outgoing>
@@ -26,25 +27,28 @@ export const dummyBpmnXml = `
 					</bpmn:exclusiveGateway>
 					<bpmn:sequenceFlow id="Flow_0vsq5o5" sourceRef="Activity_1u1p6ue" targetRef="Gateway_0dumvhe"/>
 					<bpmn:task id="Activity_0mib3l3" name="Automatic Validation">
+					<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>
 					<bpmn:incoming>Flow_04ni0t0</bpmn:incoming>
 					<bpmn:outgoing>Flow_0vl4es9</bpmn:outgoing>
 					</bpmn:task>
 					<bpmn:task id="Activity_124j12i" name="Normal Finance Review">
+					<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>
 					<bpmn:incoming>Flow_0z8w32s</bpmn:incoming>
 					<bpmn:outgoing>Flow_1pumtq5</bpmn:outgoing>
 					</bpmn:task>
 					<bpmn:task id="Activity_05zq0ij" name="Detailed Finance Review">
+					<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>
 					<bpmn:incoming>Flow_1kxm0s8</bpmn:incoming>
 					<bpmn:outgoing>Flow_0nupddp</bpmn:outgoing>
 					</bpmn:task>
 					<bpmn:sequenceFlow id="Flow_1kxm0s8" name="budget &gt; \$10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_05zq0ij">
-					<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">\${budgetID.totalAmount &gt; 10000}</bpmn:conditionExpression>
+					<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">\${selectedQuoteTotalAmount != null and selectedQuoteTotalAmount &gt; 10000}</bpmn:conditionExpression>
 					</bpmn:sequenceFlow>
 					<bpmn:sequenceFlow id="Flow_0z8w32s" name="\$500 &gt; budget &gt; \$10.000" sourceRef="Gateway_0dumvhe" targetRef="Activity_124j12i">
-					<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">\${budgetID.totalAmount &gt;= 500 and budgetID.totalAmount &lt;= 10000}</bpmn:conditionExpression>
+					<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">\${selectedQuoteTotalAmount != null and selectedQuoteTotalAmount &gt;= 500 and selectedQuoteTotalAmount &lt;= 10000}</bpmn:conditionExpression>
 					</bpmn:sequenceFlow>
 					<bpmn:sequenceFlow id="Flow_04ni0t0" name="budget &lt; \$500" sourceRef="Gateway_0dumvhe" targetRef="Activity_0mib3l3">
-					<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">\${budgetID.totalAmount &lt; 500}</bpmn:conditionExpression>
+					<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">\${selectedQuoteTotalAmount != null and selectedQuoteTotalAmount &lt; 500}</bpmn:conditionExpression>
 					</bpmn:sequenceFlow>
 					<bpmn:exclusiveGateway id="Gateway_0jludpd">
 					<bpmn:incoming>Flow_1pumtq5</bpmn:incoming>
