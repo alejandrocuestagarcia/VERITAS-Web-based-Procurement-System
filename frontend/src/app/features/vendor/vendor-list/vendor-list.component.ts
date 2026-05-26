@@ -6,6 +6,7 @@ import { SharedTableComponent } from "../../../shared/components/table/shared-ta
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { Router } from '@angular/router';
+import {AuthService} from "../../../core/services/auth.service";
 
 @Component({
   selector: 'app-vendor-list',
@@ -29,6 +30,7 @@ export class VendorListComponent implements OnInit {
 
   constructor(
     private readonly vendorService: VendorModuleService,
+    private authService: AuthService,
     private dialog: MatDialog,
     private readonly router: Router
   ) { }
@@ -112,5 +114,9 @@ export class VendorListComponent implements OnInit {
       }
     })
 
+  }
+
+  get isProcurementOfficer(): boolean {
+    return this.authService.hasRole('PROCUREMENT_OFFICER');
   }
 }

@@ -147,7 +147,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String fieldId = config.getCustomFieldId();
         String jqlField = fieldId.startsWith("customfield_")
             ? "cf[" + fieldId.substring("customfield_".length()) + "]"
-            : fieldId;
+            : "cf[" + fieldId + "]";
 
         String appendedJql = String.format("%s AND %s IS EMPTY", config.getJql(), jqlField);
 

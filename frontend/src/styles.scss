@@ -205,6 +205,12 @@ body {
 
   tbody tr,
   .mat-mdc-row {
+    transition: background-color 0.2s ease;
+
+    &:nth-child(even) {
+      background-color: var(--v-surface) !important;
+    }
+
     &:hover {
       background-color: var(--v-surface-low) !important;
     }
