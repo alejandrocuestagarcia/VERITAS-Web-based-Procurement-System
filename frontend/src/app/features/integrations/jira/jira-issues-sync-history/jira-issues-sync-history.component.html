@@ -27,8 +27,8 @@
     </ng-container>
 
     <ng-container matColumnDef="requestKey">
-      <th *matHeaderCellDef mat-header-cell>JIRA ISSUES</th>
-      <td *matCellDef="let row" mat-cell>
+      <th *matHeaderCellDef mat-header-cell class="!text-center">JIRA ISSUES</th>
+      <td *matCellDef="let row" mat-cell class="!text-center">
         <a *ngIf="row.jiraIssueUrl; else plainKey"
            [href]="row.jiraIssueUrl"
            class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-blue-600 border border-blue-400 rounded hover:bg-blue-50 transition-colors"
@@ -44,9 +44,9 @@
     </ng-container>
 
     <ng-container matColumnDef="user">
-      <th *matHeaderCellDef mat-header-cell>ACTOR</th>
+      <th *matHeaderCellDef mat-header-cell class="!text-center">ACTOR</th>
       <td *matCellDef="let log" mat-cell>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-center gap-2">
           <mat-icon class="text-[14px] w-[14px] h-[14px] text-slate-400 pt-1.5">
             {{ log.user === 'System' ? 'schedule' : 'person' }}
           </mat-icon>
@@ -56,15 +56,15 @@
     </ng-container>
 
     <ng-container matColumnDef="timestamp">
-      <th *matHeaderCellDef mat-header-cell>TIMESTAMP</th>
-      <td *matCellDef="let log" class="text-slate-500" mat-cell>
+      <th *matHeaderCellDef mat-header-cell class="!text-center">TIMESTAMP</th>
+      <td *matCellDef="let log" class="text-slate-500 !text-center" mat-cell>
         {{ log.timestamp | date:'medium' }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="action">
-      <th *matHeaderCellDef mat-header-cell>ACTION</th>
-      <td *matCellDef="let log" mat-cell>
+      <th *matHeaderCellDef mat-header-cell class="!text-center">ACTION</th>
+      <td *matCellDef="let log" mat-cell class="!text-center">
           <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                        bg-green-100 text-green-800">
             {{ log.action }}

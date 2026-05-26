@@ -8,13 +8,17 @@
       </h1>
 
       <div class="flex items-center gap-3 mb-4 mt-1">
-        <span *ngIf="!request?.isClosed" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-green-50 text-green-700 border border-green-100 shadow-sm">
+        <span *ngIf="!request?.isClosed && request.state !== 'DRAFT'" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-green-50 text-green-700 border border-green-100 shadow-sm">
           <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
           OPEN
         </span>
         <span *ngIf="request?.isClosed" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-100 shadow-sm">
           <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
           CLOSED
+        </span>
+        <span *ngIf="request.state === 'DRAFT'" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 border border-gray-100 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+          DRAFT
         </span>
         <span *ngIf="request.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
