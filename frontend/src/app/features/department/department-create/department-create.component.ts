@@ -31,7 +31,7 @@ export class DepartmentCreateComponent implements OnInit {
   ngOnInit(): void {
     this.departmentForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
-      budget: [null, [Validators.min(0)]]
+      budget: [null, [Validators.required, Validators.min(0.01)]]
     });
 
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -72,6 +72,7 @@ export class DepartmentCreateComponent implements OnInit {
         error: (err) => {
           this.submitting = false;
           this.error = this.extractErrorMessage(err, 'Failed to update department.');
+          this.toastService.showError(this.error);
         }
       });
     } else {
@@ -84,6 +85,7 @@ export class DepartmentCreateComponent implements OnInit {
         error: (err) => {
           this.submitting = false;
           this.error = this.extractErrorMessage(err, 'Failed to create department.');
+          this.toastService.showError(this.error);
         }
       });
     }

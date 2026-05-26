@@ -92,8 +92,9 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
             this.toastService.showSuccess('Department deleted successfully.');
             this.loadData();
           },
-          error: () => {
-            this.toastService.showError('Failed to delete department. Ensure it is not assigned to any team.');
+          error: (err) => {
+            const errorMsg = err.error?.message || err.error;
+            this.toastService.showError(errorMsg);
           }
         });
       }

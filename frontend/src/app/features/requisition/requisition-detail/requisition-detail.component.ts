@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, UserModuleService, InvoiceDto } from 'src/app/core/api';
@@ -424,6 +425,11 @@ export class RequisitionDetailComponent implements OnInit {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (file.size > environment.maxFileSize) {
+        const maxMb = Math.round(environment.maxFileSize / (1024 * 1024));
+        this.toastService.showError(`File ${file.name} exceeds the ${maxMb}MB limit.`);
+        continue;
+      }
       uploadTasks.push(
         this.requisitionService.uploadQuotes(this.request.id, file as any).pipe(
           catchError((err) => {
@@ -432,6 +438,11 @@ export class RequisitionDetailComponent implements OnInit {
           })
         )
       );
+    }
+
+    if (uploadTasks.length === 0) {
+      this.isUploadingAttachment = false;
+      return;
     }
 
     forkJoin(uploadTasks).subscribe({

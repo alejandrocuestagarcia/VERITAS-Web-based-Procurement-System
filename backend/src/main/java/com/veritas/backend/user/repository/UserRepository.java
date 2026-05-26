@@ -33,4 +33,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Page<User> findAllByRoleAndIsActiveTrue(UserRole role, Pageable pageable);
 
   List<User> findAllByRoleAndIsActiveTrue(UserRole role);
+
+  boolean existsByDepartmentDepartmentId(Long departmentId);
 }

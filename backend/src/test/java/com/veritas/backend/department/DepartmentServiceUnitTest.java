@@ -6,6 +6,7 @@ import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.mapper.DepartmentMapper;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.department.service.impl.DepartmentServiceImpl;
+import com.veritas.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -32,6 +33,9 @@ class DepartmentServiceUnitTest {
 
     @Mock
     private DepartmentMapper departmentMapper;
+
+    @Mock
+    private UserRepository userRepository;
     
     @Mock
     private TeamRepository teamRepository;
@@ -183,6 +187,7 @@ class DepartmentServiceUnitTest {
     void DeleteDepartment_ValidId_Deletes() {
         when(departmentRepository.existsById(1L)).thenReturn(true);
         when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(false);
+        when(userRepository.existsByDepartmentDepartmentId(1L)).thenReturn(false);
 
         departmentService.deleteDepartment(1L);
 

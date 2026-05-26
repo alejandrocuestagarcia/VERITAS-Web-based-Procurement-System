@@ -1,6 +1,7 @@
 import {Component, OnInit, ViewChild, ElementRef, OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+import { environment } from 'src/environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 import {
   debounceTime,
@@ -235,7 +236,13 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   private addFiles(files: FileList | null | undefined): void {
     if (files) {
       for (let i = 0; i < files.length; i++) {
-        this.uploadedFiles.push(files[i]);
+        const file = files[i];
+        if (file.size > environment.maxFileSize) {
+          const maxMb = Math.round(environment.maxFileSize / (1024 * 1024));
+          this.toastService.showError(`File ${file.name} exceeds the ${maxMb}MB limit.`);
+          continue;
+        }
+        this.uploadedFiles.push(file);
       }
     }
   }

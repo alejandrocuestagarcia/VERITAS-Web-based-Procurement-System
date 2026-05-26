@@ -22,7 +22,8 @@
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>payments</mat-icon>
           <input matInput type="number" formControlName="budget" placeholder="e.g. 50000">
-          <mat-error *ngIf="departmentForm.get('budget')?.hasError('min') && departmentForm.get('budget')?.touched">Budget must be positive.</mat-error>
+          <mat-error *ngIf="departmentForm.get('budget')?.hasError('required') && departmentForm.get('budget')?.touched">Budget is required.</mat-error>
+          <mat-error *ngIf="departmentForm.get('budget')?.hasError('min') && departmentForm.get('budget')?.touched">Budget must be a positive amount.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
     </app-shared-form-card>

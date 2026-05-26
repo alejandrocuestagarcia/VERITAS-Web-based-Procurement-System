@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { environment } from 'src/environments/environment';
 import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -58,7 +59,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     };
 
     this.invoiceForm = this.fb.group({
-      invoiceNumber: ['', Validators.required],
+      invoiceNumber: ['', [Validators.required, Validators.pattern(/.*\S.*/)]],
       totalAmount: [null, [Validators.required, Validators.min(0.01)]],
       dueDate: ['', Validators.required],
       invoiceDate: ['']
@@ -192,6 +193,11 @@ export class RequisitionVendorQuotesComponent implements OnInit {
         this.toastService.showError('Only PDF files are allowed');
         return;
       }
+      if (file.size > environment.maxFileSize) {
+        const maxMb = Math.round(environment.maxFileSize / (1024 * 1024));
+        this.toastService.showError(`File ${file.name} exceeds the ${maxMb}MB limit.`);
+        return;
+      }
       this.invoiceFile = file;
     }
   }
@@ -204,12 +210,20 @@ export class RequisitionVendorQuotesComponent implements OnInit {
         this.toastService.showError('Only PDF files are allowed');
         return;
       }
+      if (file.size > environment.maxFileSize) {
+        const maxMb = Math.round(environment.maxFileSize / (1024 * 1024));
+        this.toastService.showError(`File ${file.name} exceeds the ${maxMb}MB limit.`);
+        return;
+      }
       this.invoiceFile = file;
     }
   }
 
   submitInvoice(): void {
-    if (this.invoiceForm.invalid) return;
+    if (this.invoiceForm.invalid) {
+      this.invoiceForm.markAllAsTouched();
+      return;
+    }
 
     this.isUploadingInvoice = true;
     const formValue = this.invoiceForm.value;

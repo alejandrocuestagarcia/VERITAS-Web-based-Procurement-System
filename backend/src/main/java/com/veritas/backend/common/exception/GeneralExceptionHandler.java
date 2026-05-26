@@ -103,5 +103,10 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
   }
 
+  @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+  public ResponseEntity<String> handleMaxUploadSizeExceeded(org.springframework.web.multipart.MaxUploadSizeExceededException exception) {
+    log.warn("Max upload size exceeded: {}", exception.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Maximum upload size exceeded. Please keep files under 10MB.");
+  }
 }
 
