@@ -268,7 +268,9 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             InternalBudget budget = new InternalBudget();
             budget.setBudgetName("Request: " + request.getRequestName());
             budget.setTotalAmount(BigDecimal.ZERO);
-            budget.setParentBudget(request.getProjectID().getInternalBudget());
+            if (request.getProjectID() != null) {
+                budget.setParentBudget(request.getProjectID().getInternalBudget());
+            }
             internalBudgetRepository.save(budget);
 
             request.setBudgetID(budget);

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.integrations.jira.dto.*;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import com.veritas.backend.integrations.jira.entity.JiraSyncQueueItem;
@@ -72,6 +73,8 @@ public class JiraSyncServiceUnitTest {
     private com.veritas.backend.requisition.service.RequisitionService requisitionService;
     @Mock
     private com.veritas.backend.requisition.repository.AttachmentRepository attachmentRepository;
+    @Mock
+    private InternalBudgetRepository internalBudgetRepository;
 
     @InjectMocks
     private JiraSyncServiceImpl service;
@@ -127,6 +130,7 @@ public class JiraSyncServiceUnitTest {
         request.setRequestID(101L);
         when(issueMapper.toRequest(any())).thenReturn(request);
         when(requestRepository.saveAndFlush(any())).thenReturn(request);
+        when(internalBudgetRepository.save(any())).thenReturn(null);
 
         // Mocking the update Jira call
         when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class),
@@ -156,6 +160,7 @@ public class JiraSyncServiceUnitTest {
         request.setRequestID(101L);
         when(issueMapper.toRequest(any())).thenReturn(request);
         when(requestRepository.saveAndFlush(any())).thenReturn(request);
+        when(internalBudgetRepository.save(any())).thenReturn(null);
 
         User mockUser = new User();
         mockUser.setId(42L);
