@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+//AI-REFACTORED
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "app.seeding.enabled", havingValue = "true", matchIfMissing = true)
@@ -141,6 +142,7 @@ public class DatabaseSeeder implements ApplicationRunner {
             log.info("Seeded basic finished request");
         }
 
+        // AI-GENERATED
         // 8. Seed Dynamic Rich Test Data (Faker)
         if (userRepo.count() <= 5) {
             log.info("Initializing rich dynamic mock data seeding with Faker...");
