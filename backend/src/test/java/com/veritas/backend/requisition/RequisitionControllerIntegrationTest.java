@@ -42,8 +42,6 @@ import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
-import com.veritas.backend.vendor.repository.QuoteRepository;
-import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -293,7 +291,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .file(file)
                         .header("Authorization", "Bearer " + requesterToken))
                 .andExpect(status().isOk())
-                .andExpect(content().string("File quote.pdf uploaded for request " + requestId));
+                .andExpect(content().string("\"File quote.pdf uploaded for request " + requestId + "\""));
     }
 
     // ──────────────────────────────────────────────────────────────

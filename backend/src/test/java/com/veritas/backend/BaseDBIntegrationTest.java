@@ -3,6 +3,7 @@ package com.veritas.backend;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
@@ -18,6 +19,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * test isolation.
  */
 @SpringBootTest
+@TestPropertySource(properties = "app.seeding.enabled=false")
 public abstract class BaseDBIntegrationTest {
 
     static final PostgreSQLContainer<?> POSTGRES;

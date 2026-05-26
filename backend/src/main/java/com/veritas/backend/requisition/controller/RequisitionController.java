@@ -129,7 +129,7 @@ public class RequisitionController {
     @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadQuotes(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         requisitionService.saveAttachment(id, file);
-        return ResponseEntity.ok("File " + file.getOriginalFilename() + " uploaded for request " + id);
+        return ResponseEntity.ok("\"File " + file.getOriginalFilename() + " uploaded for request " + id + "\"");
     }
 
     @Operation(summary = "Download attachment", description = "Downloads a specific attachment by its ID.")

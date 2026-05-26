@@ -194,7 +194,11 @@
               </div>
 
               <div class="flex items-center justify-between gap-3">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border"
+                <span *ngIf="requisition.isClosed && !requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-700 border-amber-100">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-amber-500"></span>
+                  <span>Awaiting Payment</span>
+                </span>
+                <span *ngIf="!(requisition.isClosed && !requisition.isPaid)" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border"
                       [ngClass]="(requisition.rejectionReason) ? 'bg-red-50 text-red-700 border-red-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
                   <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0" [ngClass]="(requisition.rejectionReason) ? 'bg-red-500' : 'bg-blue-500'"></span>
                   <span class="truncate" [title]="formatStatus(requisition.status)">{{ formatStatus(requisition.status) }}</span>
@@ -298,7 +302,11 @@
               </div>
 
               <div class="flex items-center justify-between gap-3">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border"
+                <span *ngIf="requisition.isClosed && !requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-700 border-amber-100">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-amber-500"></span>
+                  <span>Awaiting Payment</span>
+                </span>
+                <span *ngIf="!(requisition.isClosed && !requisition.isPaid)" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border"
                       [ngClass]="(requisition.rejectionReason) ? 'bg-red-50 text-red-700 border-red-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
                   <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0" [ngClass]="(requisition.rejectionReason) ? 'bg-red-500' : 'bg-blue-500'"></span>
                   <span class="truncate" [title]="formatStatus(requisition.status)">{{ formatStatus(requisition.status) }}</span>

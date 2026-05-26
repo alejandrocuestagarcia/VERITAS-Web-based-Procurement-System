@@ -1,4 +1,8 @@
-export const dummyBpmnXml = `
+package com.veritas.backend.seeding;
+
+public class DatabaseSeederConstants {
+    public static final String STANDARD_WORKFLOW =
+"""
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:veritas="http://veritas" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="PR_Tiered_Approval_001" name="Standard Procurement Workflow" isExecutable="false">
@@ -67,10 +71,13 @@ export const dummyBpmnXml = `
       </bpmn:extensionElements>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_1mwl7n2" sourceRef="Gateway_1h5ftka" targetRef="Activity_1u5crin">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${selectedQuoteTotalAmount &gt;= 500 and selectedQuoteTotalAmount &lt; 2000}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_0qseui0" sourceRef="Gateway_1h5ftka" targetRef="Activity_05z59cy">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${selectedQuoteTotalAmount &lt; 500}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_1nasara" sourceRef="Gateway_1h5ftka" targetRef="Activity_0nk1tm3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${selectedQuoteTotalAmount &gt;= 2000}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_0b0h3fp" sourceRef="Activity_0sel549" targetRef="Gateway_1h5ftka" />
     <bpmn:sequenceFlow id="Flow_040ezjb" sourceRef="Activity_0wyenbf" targetRef="Activity_0sel549">
@@ -185,4 +192,5 @@ export const dummyBpmnXml = `
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
-`;
+""";
+}

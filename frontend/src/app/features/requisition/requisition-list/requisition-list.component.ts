@@ -36,6 +36,7 @@ export class RequisitionListComponent implements OnInit {
 
   readonly statuses = [
     { value: 'OPEN', label: 'Open' },
+    { value: 'AWAITING_PAYMENT', label: 'Awaiting Payment' },
     { value: 'CLOSED', label: 'Closed' },
   ];
 
@@ -65,15 +66,29 @@ export class RequisitionListComponent implements OnInit {
 
   loadRequests(): void {
     this.loading = true;
+
+    let backendStatus: string | undefined = undefined;
+    if (this.status === 'OPEN') {
+      backendStatus = 'OPEN';
+    } else if (this.status === 'AWAITING_PAYMENT' || this.status === 'CLOSED') {
+      backendStatus = 'CLOSED';
+    }
+
     this.requisitionService.getRequests(
-      this.status || undefined,
+      backendStatus,
       this.search || undefined,
       this.selectedProjectId !== '' ? this.selectedProjectId : undefined,
       this.page,
       this.size
     ).subscribe({
       next: (response) => {
-        this.requests.data = response.content || [];
+        let list = response.content || [];
+        if (this.status === 'AWAITING_PAYMENT') {
+          list = list.filter(req => req.isClosed && !req.isPaid);
+        } else if (this.status === 'CLOSED') {
+          list = list.filter(req => req.isClosed && req.isPaid);
+        }
+        this.requests.data = list;
         this.totalElements = response.totalElements || 0;
         this.loading = false;
       },

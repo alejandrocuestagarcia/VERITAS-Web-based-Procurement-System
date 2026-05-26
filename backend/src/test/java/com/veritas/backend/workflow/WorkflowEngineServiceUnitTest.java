@@ -1,5 +1,6 @@
 package com.veritas.backend.workflow;
 
+import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.budget.entity.InternalBudget;
@@ -30,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -395,7 +397,66 @@ class WorkflowEngineServiceUnitTest {
         testActor.setId(99L);
         testActor.setRole(UserRole.REQUESTER);
 
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    //AI-GENERATED
+    @Test
+    void moveToNextStep_StepWithPdfRequired_OnlyOldPdfExists_ThrowsException() {
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        currentStep.setRole(UserRole.REQUESTER);
         when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        TransitionRule rule = new TransitionRule();
+        rule.setIsPdfRequired(true);
+        rule.setOptionalFailureMessage("Must provide new PDF");
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        java.time.LocalDateTime entryTime = java.time.LocalDateTime.of(2026, 5, 26, 14, 0, 0);
+        com.veritas.backend.audit.entity.AuditLog entryLog = com.veritas.backend.audit.entity.AuditLog.builder()
+                .newStep(currentStep)
+                .timestamp(entryTime)
+                .build();
+        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampAsc(testRequest, currentStep))
+                .thenReturn(Optional.of(entryLog));
+
+        Attachment oldPdf = new Attachment();
+        oldPdf.setFileType("application/pdf");
+        oldPdf.setUploadedAt(java.time.LocalDateTime.of(2026, 5, 26, 13, 59, 0));
+        testRequest.getAttachments().add(oldPdf);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertEquals("Must provide new PDF", ex.getMessage());
+    }
+
+    //AI-GENERATED
+    @Test
+    void moveToNextStep_StepWithPdfRequired_NewPdfExists_Success() {
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        currentStep.setRole(UserRole.REQUESTER);
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        TransitionRule rule = new TransitionRule();
+        rule.setIsPdfRequired(true);
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
+        AuditLog entryLog = AuditLog.builder()
+                .newStep(currentStep)
+                .timestamp(entryTime)
+                .build();
+        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampAsc(testRequest, currentStep))
+                .thenReturn(Optional.of(entryLog));
+
+        Attachment newPdf = new Attachment();
+        newPdf.setFileType("application/pdf");
+        newPdf.setUploadedAt(LocalDateTime.of(2026, 5, 26, 14, 1, 0));
+        testRequest.getAttachments().add(newPdf);
 
         assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }

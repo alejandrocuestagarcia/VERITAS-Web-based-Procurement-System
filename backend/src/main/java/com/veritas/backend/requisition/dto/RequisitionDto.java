@@ -34,6 +34,7 @@ public record RequisitionDto(
     List<AttachmentDto> attachments,
     String state,
     String rejectionReason,
+    String workflowStepDescription,
     Long assigneeId,
     String assigneeName,
     String assigneeEmail,

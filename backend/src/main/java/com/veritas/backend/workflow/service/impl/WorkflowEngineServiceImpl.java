@@ -38,6 +38,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -135,22 +136,38 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         }
                     }
 
+                    LocalDateTime entryTime = null;
+                    if (currentStep.getWorkflowComponent() != WorkflowComponent.START_EVENT) {
+                        entryTime = auditLogRepository
+                                .findFirstByRequestAndNewStepOrderByTimestampAsc(request, currentStep)
+                                .map(AuditLog::getTimestamp)
+                                .orElse(request.getCreatedAt() != null ? request.getCreatedAt()
+                                        : java.time.LocalDateTime.MIN);
+                    }
+                    final LocalDateTime finalEntryTime = entryTime;
+
                     if (rule.getIsPdfRequired() != null && rule.getIsPdfRequired()) {
                         boolean hasPdf = request.getAttachments().stream()
-                                .anyMatch(a -> "application/pdf".equalsIgnoreCase(a.getFileType()));
+                                .anyMatch(a -> "application/pdf".equalsIgnoreCase(a.getFileType())
+                                        && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
+                                                || a.getUploadedAt().isEqual(finalEntryTime)));
                         if (!hasPdf)
                             missingAttachments.add("PDF");
                     }
                     if (rule.getIsCsvRequired() != null && rule.getIsCsvRequired()) {
                         boolean hasCsv = request.getAttachments().stream()
-                                .anyMatch(a -> "text/csv".equalsIgnoreCase(a.getFileType()));
+                                .anyMatch(a -> "text/csv".equalsIgnoreCase(a.getFileType())
+                                        && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
+                                                || a.getUploadedAt().isEqual(finalEntryTime)));
                         if (!hasCsv)
                             missingAttachments.add("CSV");
                     }
                     if (rule.getIsImageRequired() != null && rule.getIsImageRequired()) {
                         boolean hasImage = request.getAttachments().stream()
                                 .anyMatch(a -> a.getFileType() != null
-                                        && a.getFileType().toLowerCase().startsWith("image/"));
+                                        && a.getFileType().toLowerCase().startsWith("image/")
+                                        && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
+                                                || a.getUploadedAt().isEqual(finalEntryTime)));
                         if (!hasImage)
                             missingAttachments.add("Image");
                     }
