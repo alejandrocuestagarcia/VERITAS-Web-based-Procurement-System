@@ -195,7 +195,9 @@
           <p class="text-[13px] font-semibold text-slate-500">No files uploaded yet.</p>
         </div>
 
-        <div *ngIf="request.attachments && request.attachments.length > 0" class="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+        <div *ngIf="request.attachments && request.attachments.length > 0"
+             [ngClass]="canUploadAttachments ? 'max-h-[250px]' : 'max-h-[550px]'"
+             class="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
           <div *ngFor="let attachment of request.attachments" (click)="downloadAttachment(attachment)" class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/50 transition-colors group cursor-pointer">
             <div class="flex items-center gap-3 overflow-hidden">
               <div class="w-10 h-10 rounded-lg bg-blue-100/50 text-blue-600 flex items-center justify-center shrink-0">

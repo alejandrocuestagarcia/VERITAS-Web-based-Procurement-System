@@ -39,7 +39,7 @@ export class RequisitionDetailComponent implements OnInit {
   }
 
   get canUploadAttachments(): boolean {
-    return this.canAct && this.request?.state !== 'DRAFT';
+    return this.canAct && this.request?.state !== 'DRAFT' && this.request?.state !== 'FINISHED';
   }
 
   constructor(
