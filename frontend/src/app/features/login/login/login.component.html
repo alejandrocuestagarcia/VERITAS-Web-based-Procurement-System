@@ -14,7 +14,7 @@
 
     <!-- Login card -->
     <mat-card class="w-full px-10 pt-10 pb-14 rounded-lg shadow-md">
-      <form class="flex flex-col gap-6 w-full" (ngSubmit)="onLogin()">
+      <form class="flex flex-col gap-6 w-full" #loginForm="ngForm" (ngSubmit)="onLogin(loginForm)">
 
         <!-- Email -->
         <div class="flex flex-col gap-2">
@@ -22,7 +22,10 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-icon matPrefix>email</mat-icon>
             <input matInput type="email" name="email" [(ngModel)]="loginRequest.email" placeholder="name@company.com"
-              required>
+              required #emailInput="ngModel">
+            <mat-error *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)">
+              Email is required.
+            </mat-error>
           </mat-form-field>
         </div>
 
@@ -35,10 +38,13 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-icon matPrefix>lock</mat-icon>
             <input matInput [type]="hidePassword ? 'password' : 'text'" name="password"
-              [(ngModel)]="loginRequest.password" placeholder="••••••••" required>
+              [(ngModel)]="loginRequest.password" placeholder="••••••••" required #passwordInput="ngModel">
             <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
               <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
+            <mat-error *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)">
+              Password is required.
+            </mat-error>
           </mat-form-field>
         </div>
 

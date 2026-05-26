@@ -31,7 +31,7 @@ public class AuthController {
 
     @Operation(summary = "Login", description = "Login as a user and receive token.")
     @PostMapping(path = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto loginRequest) {
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequest) {
         log.info("POST /auth/login – email: {}", loginRequest.email());
         return ResponseEntity.ok(authService.login(loginRequest));
     }

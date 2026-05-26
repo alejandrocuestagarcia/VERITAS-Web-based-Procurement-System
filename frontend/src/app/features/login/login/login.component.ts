@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {NgForm} from '@angular/forms';
 import {AuthResponseDto, LoginRequestDto} from "../../../core/api";
 import {Router} from "@angular/router";
 import {ToastService} from "../../../core/services/toast.service";
@@ -23,7 +24,15 @@ export class LoginComponent {
   ) {
   }
 
-  onLogin() {
+  onLogin(form: NgForm) {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      return;
+    }
+    if (!this.loginRequest.email?.trim() || !this.loginRequest.password?.trim()) {
+      this.showError('Email and password must not be empty.');
+      return;
+    }
     this.authService.login(this.loginRequest).subscribe({
       next: (res: AuthResponseDto) => {
         if (res.requiresPasswordChange) {
