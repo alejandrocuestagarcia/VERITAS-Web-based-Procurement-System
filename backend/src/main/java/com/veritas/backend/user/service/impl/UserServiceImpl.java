@@ -262,6 +262,10 @@ public class UserServiceImpl implements UserService {
 
       }
 
+      if (actualUser.getDepartment() != null) {
+        actualUser.setDepartment(null);
+      }
+
       refreshTokenRepository.deleteByUserId(actualUser.getId());
 
       userRepository.save(actualUser);
