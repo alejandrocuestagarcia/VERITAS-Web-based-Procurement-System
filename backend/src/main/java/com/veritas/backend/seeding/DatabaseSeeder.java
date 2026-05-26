@@ -32,6 +32,7 @@ import net.datafaker.Faker;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,7 @@ import java.util.Random;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "app.seeding.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class DatabaseSeeder implements ApplicationRunner {
 
@@ -60,7 +62,7 @@ public class DatabaseSeeder implements ApplicationRunner {
 
     @Override
     @Transactional
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         log.info("Starting seed data initialization...");
 
         // 1. Seed Essential Departments
@@ -226,7 +228,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                             .filter(u -> u.getRole() == UserRole.REQUESTER)
                             .toList();
                     if (!teamMembers.isEmpty()) {
-                        User leader = teamMembers.get(0);
+                        User leader = teamMembers.getFirst();
                         currentTeam.setLeader(leader);
                         teamRepo.save(currentTeam);
                         log.info("Assigned team leader: {} to team {}", leader.getEmail(), currentTeam.getName());
