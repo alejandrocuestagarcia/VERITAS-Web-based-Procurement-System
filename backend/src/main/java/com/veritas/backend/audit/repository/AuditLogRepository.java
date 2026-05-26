@@ -37,6 +37,11 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             String action
     );
 
+    Optional<AuditLog> findFirstByRequestAndNewStepOrderByTimestampDesc(
+            Request request,
+            WorkflowStep newStep
+    );
+
     Optional<AuditLog> findFirstByRequestAndPreviousStepAndActionOrderByTimestampDesc(
             Request request,
             WorkflowStep previousStep,
