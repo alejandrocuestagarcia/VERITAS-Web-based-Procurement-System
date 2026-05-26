@@ -86,8 +86,8 @@ export class DashboardComponent implements OnInit {
 
       const recentRequisitions = data.requisitions?.content || [];
 
-      const openRequisitions = recentRequisitions.filter(requisition => !requisition.isClosed);
-      const closedRequisitions = recentRequisitions.filter(requisition => requisition.isClosed);
+      const openRequisitions = recentRequisitions.filter(requisition => !requisition.isClosed || !requisition.isPaid);
+      const closedRequisitions = recentRequisitions.filter(requisition => requisition.isClosed && requisition.isPaid);
 
       this.stats.openRequisitions = openRequisitions.length;
       this.stats.finishedRequisitions = closedRequisitions.length;
@@ -98,6 +98,9 @@ export class DashboardComponent implements OnInit {
       } else {
         const currentUserId = this.authService.getUserId();
         this.pendingRequisitions = openRequisitions.filter(requisition => {
+          if (requisition.isClosed && !requisition.isPaid) {
+            return this.authService.hasRole('FINANCE_OFFICER');
+          }
           const isRoleMatch = requisition.responsibleRole === this.userRole || 
                              (!requisition.responsibleRole && requisition.state !== 'DRAFT');
           if (!isRoleMatch) return false;

@@ -57,10 +57,6 @@
               <mat-icon class="scale-90">check</mat-icon>
               Approve
             </button>
-            <button *ngIf="authService.hasRole('FINANCE_OFFICER') && !request?.isPaid" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
-              <mat-icon class="scale-90">payment</mat-icon>
-              Pay Invoice
-            </button>
           </div>
           <div *ngIf= "request.state === 'DRAFT' && isRequester() " class="flex items-center gap-2" >
             <button (click)="submitRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
@@ -70,6 +66,11 @@
           </div>
         </div>
       </ng-container>
+
+      <button *ngIf="request?.isClosed && !request?.isPaid && authService.hasRole('FINANCE_OFFICER')" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+        <mat-icon class="scale-90">payment</mat-icon>
+        Pay Invoice
+      </button>
     </div>
   </div>
 
