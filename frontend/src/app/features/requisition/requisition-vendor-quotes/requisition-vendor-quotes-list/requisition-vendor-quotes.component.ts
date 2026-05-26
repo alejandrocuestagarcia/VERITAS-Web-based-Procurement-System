@@ -59,7 +59,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     };
 
     this.invoiceForm = this.fb.group({
-      invoiceNumber: ['', Validators.required],
+      invoiceNumber: ['', [Validators.required, Validators.pattern(/.*\S.*/)]],
       totalAmount: [null, [Validators.required, Validators.min(0.01)]],
       dueDate: ['', Validators.required],
       invoiceDate: ['']
