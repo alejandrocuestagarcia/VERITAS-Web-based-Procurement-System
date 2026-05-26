@@ -435,7 +435,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
-  updateRuleProperty(key: 'description' | 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'optionalFailureMessage', value: any) {
+  updateRuleProperty(key: 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -446,39 +446,34 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const element = elementRegistry.get(this.selectedElementId);
     if (!element) return;
 
-    if (key === 'description') {
-      const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
-      const documentation = bpmnFactory.create('bpmn:Documentation', { text: value });
-      modeling.updateProperties(element, { documentation: [documentation] });
-    } else if (key === 'minRequiredVendors' || key === 'isPdfRequired' || key === 'isCsvRequired' || key === 'isImageRequired' || key === 'optionalFailureMessage') {
-      const moddle = this.bpmnInstance.get('moddle');
-      let extensionElements = element.businessObject.extensionElements;
-      if (!extensionElements) {
-        extensionElements = moddle.create('bpmn:ExtensionElements', { values: [] });
-      }
-
-      let rule = extensionElements.values?.find((e: any) =>
-        e.$type === 'veritas:transitionRule' || e.type === 'veritas:transitionRule'
-      );
-
-      if (!rule) {
-        try {
-          rule = moddle.create('veritas:transitionRule');
-        } catch (e) {
-          rule = moddle.createAny('veritas:transitionRule', 'http://veritas', {
-            $type: 'veritas:transitionRule',
-            type: 'veritas:transitionRule'
-          });
-        }
-        if (!extensionElements.values) {
-          extensionElements.values = [];
-        }
-        extensionElements.values.push(rule);
-      }
-
-      rule[key] = value;
-      modeling.updateProperties(element, { extensionElements });
+    const moddle = this.bpmnInstance.get('moddle');
+    let extensionElements = element.businessObject.extensionElements;
+    if (!extensionElements) {
+      extensionElements = moddle.create('bpmn:ExtensionElements', { values: [] });
     }
+
+    let rule = extensionElements.values?.find((e: any) =>
+      e.$type === 'veritas:transitionRule' || e.type === 'veritas:transitionRule'
+    );
+
+    if (!rule) {
+      try {
+        rule = moddle.create('veritas:transitionRule');
+      } catch (e) {
+        rule = moddle.createAny('veritas:transitionRule', 'http://veritas', {
+          $type: 'veritas:transitionRule',
+          type: 'veritas:transitionRule'
+        });
+      }
+      if (!extensionElements.values) {
+        extensionElements.values = [];
+      }
+      extensionElements.values.push(rule);
+    }
+
+    rule[key] = value;
+    modeling.updateProperties(element, { extensionElements });
+
     this.currentRule[key] = value;
   }
 

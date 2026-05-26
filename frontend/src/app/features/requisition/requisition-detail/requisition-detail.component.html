@@ -53,7 +53,7 @@
               <mat-icon class="scale-90">close</mat-icon>
               Reject
             </button>
-            <button *ngIf="request.responsibleRole === role && request.responsibleRole !== 'FINANCE_OFFICER'" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+            <button *ngIf="request.responsibleRole === role" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">check</mat-icon>
               Approve
             </button>
@@ -190,7 +190,7 @@
           <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">{{ request.attachments?.length || 0 }} Files</span>
         </div>
 
-        <div *ngIf="!request.attachments || request.attachments.length === 0" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 h-[calc(100%-60px)] flex flex-col items-center justify-center">
+        <div *ngIf="(request.attachments?.length ?? 0) === 0 && !canUploadAttachments" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 h-[calc(100%-60px)] flex flex-col items-center justify-center">
           <mat-icon class="text-slate-300 mb-3 scale-125">upload_file</mat-icon>
           <p class="text-[13px] font-semibold text-slate-500">No files uploaded yet.</p>
         </div>
@@ -207,6 +207,35 @@
               </div>
             </div>
             <mat-icon class="text-slate-300 group-hover:text-blue-500 scale-90 transition-colors shrink-0">download</mat-icon>
+          </div>
+        </div>
+
+        <div *ngIf="canUploadAttachments"
+             (click)="triggerFileInput()"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)"
+             [ngClass]="{
+               'bg-blue-50/30': isDragging,
+               'border-blue-500': isDragging,
+               'bg-slate-50/40': !isDragging,
+               'mt-4': (request.attachments?.length ?? 0) > 0
+             }"
+             class="border-2 border-dashed border-slate-200 rounded-xl p-6 hover:bg-blue-50/20 hover:border-blue-400 hover:shadow-inner transition-all duration-300 cursor-pointer text-center group relative overflow-hidden">
+
+          <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" multiple>
+
+          <div class="flex flex-col items-center justify-center py-2" *ngIf="!isUploadingAttachment">
+            <div class="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 text-slate-500 flex items-center justify-center mb-3 transition-colors duration-300">
+              <mat-icon class="scale-90 transition-transform duration-300 group-hover:-translate-y-0.5">cloud_upload</mat-icon>
+            </div>
+            <p class="text-[13px] text-slate-700 font-bold group-hover:text-blue-600 transition-colors duration-300">Drag files here or click to upload</p>
+            <p class="text-[11px] text-slate-400 mt-1 font-semibold">PDF, Images or CSV (max. 10MB)</p>
+          </div>
+
+          <div class="flex flex-col items-center justify-center py-2" *ngIf="isUploadingAttachment">
+            <mat-spinner diameter="24" class="mb-3"></mat-spinner>
+            <p class="text-[13px] text-blue-600 font-bold animate-pulse">Uploading file(s)...</p>
           </div>
         </div>
       </div>

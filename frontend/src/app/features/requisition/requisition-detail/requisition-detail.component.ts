@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, UserModuleService, InvoiceDto } from 'src/app/core/api';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { RejectDialogComponent} from "../../../shared/components/reject-dialog/reject-dialog.component";
@@ -20,6 +22,10 @@ export class RequisitionDetailComponent implements OnInit {
   role: string = this.authService.getRole() ?? '';
   canAct = false;
 
+  isDragging = false;
+  isUploadingAttachment = false;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   isDrawerOpen = false;
   isDrawerExpanded = false;
   pdfUrl: SafeResourceUrl | null = null;
@@ -30,6 +36,10 @@ export class RequisitionDetailComponent implements OnInit {
   get invoiceToQuoteDiff(): number | null {
     if (this.invoice?.totalAmount == null || this.selectedQuote?.totalAmount == null) return null;
     return this.invoice.totalAmount - this.selectedQuote.totalAmount;
+  }
+
+  get canUploadAttachments(): boolean {
+    return this.canAct && this.request?.state !== 'DRAFT';
   }
 
   constructor(
@@ -369,6 +379,73 @@ export class RequisitionDetailComponent implements OnInit {
       error: (err) => {
         this.isProcessingPayment = false;
         this.toastService.showError('Failed to process payment');
+      }
+    });
+  }
+
+  triggerFileInput(): void {
+    this.fileInput.nativeElement.click();
+  }
+
+  onFileSelected(event: any): void {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      this.uploadFiles(files);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.uploadFiles(files);
+    }
+  }
+
+  private uploadFiles(files: FileList): void {
+    if (!this.request || !this.request.id) return;
+
+    this.isUploadingAttachment = true;
+    const uploadTasks: Observable<any>[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      uploadTasks.push(
+        this.requisitionService.uploadQuotes(this.request.id, file as any).pipe(
+          catchError((err) => {
+            this.toastService.showError(`Failed to upload ${file.name}: ` + (err.error?.message || err.error || 'Unknown error'));
+            return of(null);
+          })
+        )
+      );
+    }
+
+    forkJoin(uploadTasks).subscribe({
+      next: (results) => {
+        this.isUploadingAttachment = false;
+        const successfulCount = results.filter(res => res !== null).length;
+        if (successfulCount > 0) {
+          this.toastService.showSuccess(`${successfulCount} file(s) uploaded successfully`);
+          this.loadRequest(this.requestId);
+        }
+      },
+      error: (err) => {
+        this.isUploadingAttachment = false;
+        this.toastService.showError('Upload failed');
       }
     });
   }
