@@ -161,7 +161,13 @@
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice Number *</label>
                 <input formControlName="invoiceNumber" type="text" placeholder="e.g. INV-2026-00482"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                       class="w-full px-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+                       [class.border-red-500]="invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid"
+                       [class.border-gray-300]="!(invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid)"
+                       [class.focus:ring-red-500]="invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid"
+                       [class.focus:border-red-500]="invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid"
+                       [class.focus:ring-blue-500]="!(invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid)"
+                       [class.focus:border-blue-500]="!(invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid)" />
                 <p *ngIf="invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid"
                    class="mt-1 text-xs text-red-500 font-medium">Invoice number is required.</p>
               </div>
@@ -171,7 +177,13 @@
                 <div class="relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">€</span>
                   <input formControlName="totalAmount" type="number" step="0.01" min="0"
-                         class="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                         class="w-full pl-8 pr-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+                         [class.border-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
+                         [class.border-gray-300]="!(invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid)"
+                         [class.focus:ring-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
+                         [class.focus:border-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
+                         [class.focus:ring-blue-500]="!(invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid)"
+                         [class.focus:border-blue-500]="!(invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid)" />
                 </div>
                 <p *ngIf="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
                    class="mt-1 text-xs text-red-500 font-medium">A positive total amount is required.</p>
@@ -180,7 +192,13 @@
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Due Date *</label>
                 <input formControlName="dueDate" type="date"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                       class="w-full px-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+                       [class.border-red-500]="invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid"
+                       [class.border-gray-300]="!(invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid)"
+                       [class.focus:ring-red-500]="invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid"
+                       [class.focus:border-red-500]="invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid"
+                       [class.focus:ring-blue-500]="!(invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid)"
+                       [class.focus:border-blue-500]="!(invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid)" />
                 <p *ngIf="invoiceForm.get('dueDate')?.touched && invoiceForm.get('dueDate')?.invalid"
                    class="mt-1 text-xs text-red-500 font-medium">Due date is required.</p>
               </div>
@@ -188,7 +206,7 @@
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice Date</label>
                 <input formControlName="invoiceDate" type="date"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               </div>
 
               <div>
@@ -217,7 +235,7 @@
               Cancel
             </button>
             <button mat-flat-button class="v-btn-brand"
-                    [disabled]="invoiceForm.invalid || isUploadingInvoice"
+                    [disabled]="isUploadingInvoice"
                     (click)="submitInvoice()">
               <mat-icon class="scale-90 mr-1" *ngIf="!isUploadingInvoice">upload</mat-icon>
               <mat-spinner *ngIf="isUploadingInvoice" diameter="18" class="mr-2"></mat-spinner>

@@ -220,7 +220,10 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   }
 
   submitInvoice(): void {
-    if (this.invoiceForm.invalid) return;
+    if (this.invoiceForm.invalid) {
+      this.invoiceForm.markAllAsTouched();
+      return;
+    }
 
     this.isUploadingInvoice = true;
     const formValue = this.invoiceForm.value;
