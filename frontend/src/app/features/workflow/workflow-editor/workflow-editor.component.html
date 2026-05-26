@@ -141,7 +141,7 @@
             </div>
           </div>
 
-          <div>
+          <div *ngIf="!selectedFlowLeavesGateway">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
             <div class="mt-2 space-y-2">
               <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
@@ -167,7 +167,7 @@
             </div>
           </div>
 
-          <div>
+          <div *ngIf="!selectedFlowLeavesGateway">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minimum Vendors</label>
             <div *ngIf="isEditable" class="mt-2">
               <input type="number" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
