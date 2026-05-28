@@ -44,6 +44,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class WorkflowServiceImpl implements WorkflowService {
     private static final String ASSIGNEE_PREFIX = "[ASSIGNEE]";
+    private static final String AUTO_APPROVE_PREFIX = "[AUTO_APPROVE]";
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
@@ -145,6 +146,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                             if (text.startsWith(ASSIGNEE_PREFIX)) {
                                 String roleName = text.substring(ASSIGNEE_PREFIX.length());
                                 step.setRole(UserRole.valueOf(roleName));
+                            } else if (text.startsWith(AUTO_APPROVE_PREFIX)) {
+                                String autoApproveVal = text.substring(AUTO_APPROVE_PREFIX.length());
+                                step.setIsAutomatedApproval(Boolean.parseBoolean(autoApproveVal));
                             } else {
                                 step.setDescription(text);
                             }

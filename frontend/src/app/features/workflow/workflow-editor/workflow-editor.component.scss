@@ -7,3 +7,8 @@
 .edit-mode ::ng-deep .djs-palette {
   left: 20px;
 }
+
+
+::ng-deep .bg-disabled-field .mat-mdc-text-field-wrapper {
+  background-color: #f1f5f9 !important;
+}

@@ -187,7 +187,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     }
                 }
 
-                request.setCurrentStepID(transition.getToStep());
+                WorkflowStep nextStep = transition.getToStep();
+
+                request.setCurrentStepID(nextStep);
                 request.setRejectionReason(null);
                 String toStepName = transition.getToStep().getName() == null ? "Finished" : transition.getToStep().getName();
                 auditService.createWorkflowTransitionLog(
@@ -198,6 +200,12 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         "Transitioned from " + transition.getFromStep().getName() + " to " + toStepName);
 
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
+
+                //Automated Approval
+                if (componentType == WorkflowComponent.STEP && Boolean.TRUE.equals(nextStep.getIsAutomatedApproval())) {
+                    moveToNextStep(request, null, gatewayDepth + 1, null);
+                }
+
                 if (componentType == WorkflowComponent.BRANCH) {
                     moveToNextStep(request, actor, gatewayDepth + 1, nextAssigneeId);
                 }
@@ -282,6 +290,10 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
     @Override
     public void checkAuthorization(Request request, User actor, WorkflowStep currentStep) {
+        if (Boolean.TRUE.equals(currentStep.getIsAutomatedApproval())) {
+            return;
+        }
+
         if (request.getAssignee() != null && !request.getAssignee().getId().equals(actor.getId())) {
             throw new AccessDeniedException("Only the assigned user can act on this step.");
         }
