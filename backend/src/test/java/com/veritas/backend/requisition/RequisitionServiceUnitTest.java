@@ -1029,5 +1029,46 @@ class RequisitionServiceUnitTest {
         verify(internalBudgetRepository, never()).save(budget);
     }
 
+    @Test
+    void DeleteAttachment_ExistingAttachment_DeletesFileAndEntity() throws IOException {
+        Path tempFile = Files.createTempFile("delete-attachment", ".pdf");
 
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setFileName("invoice.pdf");
+        attachment.setStoragePath(tempFile.toString());
+
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+
+        requisitionService.deleteAttachment(1L);
+
+        verify(attachmentRepository).delete(attachment);
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_AttachmentNotFound_ThrowsEntityNotFoundException() {
+        when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+                () -> requisitionService.deleteAttachment(999L));
+
+        assertTrue(ex.getMessage().contains("Attachment not found with id: 999"));
+        verify(attachmentRepository, never()).delete(any());
+    }
+
+    @Test
+    void DeleteAttachment_FileDeletionFails_ThrowsRuntimeException() {
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setFileName("broken.pdf");
+        attachment.setStoragePath("\0invalid-path");
+
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+
+        assertThrows(RuntimeException.class,
+                () -> requisitionService.deleteAttachment(1L));
+
+        verify(attachmentRepository, never()).delete(any());
+    }
 }

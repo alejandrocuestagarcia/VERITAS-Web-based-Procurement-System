@@ -1,7 +1,8 @@
 package com.veritas.backend.requisition;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,10 +19,7 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
-import com.veritas.backend.requisition.entity.Priority;
-import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.entity.Invoice;
-import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.entity.*;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
@@ -44,13 +42,14 @@ import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -723,6 +722,49 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be approved")));
+    }
+
+    @Test
+    void DeleteAttachment_ExistingAttachment_ReturnsNoContentAndDeletesAttachment() throws Exception {
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+
+        Path tempFile = Files.createTempFile("attachment-test", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("quote.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + requesterToken))
+                .andExpect(status().isNoContent());
+
+        assertEquals(0, attachmentRepository.count());
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_NonExistingAttachment_ReturnsNotFound() throws Exception {
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/99999")
+                        .header("Authorization", "Bearer " + requesterToken))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "Attachment not found with id: 99999")));
+    }
+
+    @Test
+    void DeleteAttachment_Unauthenticated_ReturnsForbidden() throws Exception {
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/1"))
+                .andExpect(status().isForbidden());
     }
 
 }
