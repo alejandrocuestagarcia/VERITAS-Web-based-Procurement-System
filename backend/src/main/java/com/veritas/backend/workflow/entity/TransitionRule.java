@@ -23,5 +23,4 @@ public class TransitionRule {
     private Boolean isPdfRequired = false;
     private Boolean isCsvRequired = false;
     private Boolean isImageRequired = false;
-    private String optionalFailureMessage;
 }

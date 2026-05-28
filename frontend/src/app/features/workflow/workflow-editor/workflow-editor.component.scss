@@ -3,3 +3,7 @@
 ::ng-deep .bg-white-field .mat-mdc-text-field-wrapper {
   background-color: white;
 }
+
+.edit-mode ::ng-deep .djs-palette {
+  left: 20px;
+}

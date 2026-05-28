@@ -15,8 +15,6 @@ public class WorkflowTransition {
 
     private String name;
 
-    private String description;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_step_id")
     private WorkflowStep fromStep;
