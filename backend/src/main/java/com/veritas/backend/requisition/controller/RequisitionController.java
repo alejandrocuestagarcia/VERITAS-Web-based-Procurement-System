@@ -124,10 +124,10 @@ public class RequisitionController {
         return ResponseEntity.ok(requisitionService.canAct(id, actor));
     }
 
-    @Operation(summary = "Bulk upload quotes", description = "Uploads a CSV file containing multiple vendor quotes for a specific request.")
+    @Operation(summary = "Upload an attachment", description = "Uploads an attachment")
     @IsRequester
     @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadQuotes(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadAttachment(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         requisitionService.saveAttachment(id, file);
         return ResponseEntity.ok("\"File " + file.getOriginalFilename() + " uploaded for request " + id + "\"");
     }

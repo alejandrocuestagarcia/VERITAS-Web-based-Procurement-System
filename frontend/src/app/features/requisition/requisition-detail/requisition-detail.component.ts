@@ -459,7 +459,7 @@ export class RequisitionDetailComponent implements OnInit {
         continue;
       }
       uploadTasks.push(
-        this.requisitionService.uploadQuotes(this.request.id, file as any).pipe(
+        this.requisitionService.uploadAttachment(this.request.id, file as any).pipe(
           catchError((err) => {
             this.toastService.showError(`Failed to upload ${file.name}: ` + (err.error?.message || err.error || 'Unknown error'));
             return of(null);

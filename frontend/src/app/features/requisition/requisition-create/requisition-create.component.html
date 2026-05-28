@@ -150,41 +150,71 @@
       </div>
     </mat-step>
 
-    <!-- Step 2: Vendor Quotes -->
+    <!-- Step 2: Attachments -->
     <mat-step>
-      <ng-template matStepLabel>Vendor Quotes (optional)</ng-template>
+      <ng-template matStepLabel>Attachments (optional)</ng-template>
       <div class="py-10">
         <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)" multiple>
 
         <div (click)="triggerFileInput()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
-          (drop)="onDrop($event)" [class.bg-blue-50]="isDragging" [class.border-blue-500]="isDragging"
-          [class.bg-slate-50]="!isDragging"
-          class="max-w-2xl mx-auto border-2 border-dashed border-slate-300 rounded-2xl p-12 hover:bg-slate-100 hover:border-blue-400 transition-all cursor-pointer text-center group">
+             (drop)="onDrop($event)" [class.bg-blue-50]="isDragging" [class.border-blue-500]="isDragging"
+             [class.bg-slate-50]="!isDragging"
+             class="max-w-2xl mx-auto border-2 border-dashed border-slate-300 rounded-2xl p-12 hover:bg-slate-100 hover:border-blue-400 transition-all cursor-pointer text-center group">
           <mat-icon class="text-6xl text-slate-400 mb-4 h-16 w-16 group-hover:text-blue-500 transition-colors"
-            [class.text-blue-500]="isDragging" style="font-size: 64px;">cloud_upload</mat-icon>
+                    [class.text-blue-500]="isDragging" style="font-size: 64px;">cloud_upload</mat-icon>
           <p class="text-xl text-slate-700 font-bold">Click to upload or drag and drop</p>
           <p class="text-slate-500 mt-2">Support for PDF, JPG, PNG or CSV (max. 10MB per file)</p>
         </div>
 
-        <!-- Uploaded Files List -->
+        <div *ngIf="isEditMode && existingAttachments.length > 0" class="max-w-2xl mx-auto mt-8 space-y-3">
+          <h3 class="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+            <mat-icon class="text-base h-4 w-4">cloud_done</mat-icon> Existing Attachments ({{ existingAttachments.length }})
+          </h3>
+          <div *ngFor="let file of existingAttachments; let i = index"
+               class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-sm hover:border-slate-300 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-200/60 text-slate-600">
+                <mat-icon>{{ file.fileType?.includes('pdf') || file.fileName?.endsWith('.pdf') ? 'picture_as_pdf' : file.fileType?.includes('image') ? 'image' : 'insert_drive_file' }}</mat-icon>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-slate-800 truncate max-w-[300px]">{{ file.fileName }}</span>
+                <span class="text-xs text-slate-500" *ngIf="file.fileSize">{{ (file.fileSize / 1024).toFixed(1) }} KB</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button mat-icon-button color="primary" matTooltip="Download Attachment" (click)="$event.stopPropagation(); downloadExistingFile(file)">
+                <mat-icon>file_download</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" matTooltip="Delete Attachment" (click)="$event.stopPropagation(); removeExistingFile(i)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div *ngIf="uploadedFiles.length > 0" class="max-w-2xl mx-auto mt-8 space-y-3">
-          <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Uploaded Documents ({{
-            uploadedFiles.length }})</h3>
+          <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+            <mat-icon class="text-base h-4 w-4">add_to_photos</mat-icon> Newly Added Attachments ({{ uploadedFiles.length }})
+          </h3>
           <div *ngFor="let file of uploadedFiles; let i = index"
-            class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-200 transition-all">
+               class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-200 transition-all">
             <div class="flex items-center gap-4">
               <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                <mat-icon>{{ file.type.includes('pdf') ? 'picture_as_pdf' : file.type.includes('image') ? 'image' :
-                  'insert_drive_file' }}</mat-icon>
+                <mat-icon>{{ file.type.includes('pdf') ? 'picture_as_pdf' : file.type.includes('image') ? 'image' : 'insert_drive_file' }}</mat-icon>
               </div>
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-slate-800 truncate max-w-[300px]">{{ file.name }}</span>
                 <span class="text-xs text-slate-500">{{ (file.size / 1024).toFixed(1) }} KB</span>
               </div>
             </div>
-            <button mat-icon-button color="warn" (click)="$event.stopPropagation(); removeFile(i)">
-              <mat-icon>delete_outline</mat-icon>
-            </button>
+            <div class="flex items-center gap-1">
+              <button mat-icon-button color="primary" matTooltip="Download Attachment" (click)="$event.stopPropagation(); downloadLocalFile(file)">
+                <mat-icon>file_download</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" matTooltip="Remove Attachment" (click)="$event.stopPropagation(); removeFile(i)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -306,7 +336,7 @@
                 </div>
               </div>
               <div>
-                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Uploaded Quotes ({{ uploadedFiles.length }})</div>
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Uploaded Files ({{ uploadedFiles.length }})</div>
                 <div class="space-y-1 mt-1">
                   <div *ngFor="let file of uploadedFiles" class="text-xs text-slate-600 flex items-center gap-1">
                     <mat-icon class="text-sm h-3.5 w-3.5 leading-3.5">attachment</mat-icon>
