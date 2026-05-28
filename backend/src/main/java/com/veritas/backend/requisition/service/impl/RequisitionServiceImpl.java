@@ -249,6 +249,21 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
+    public void deleteAttachment(Long attachmentId) {
+        Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow(() -> new EntityNotFoundException("Attachment not found with id: " + attachmentId));
+
+        try {
+            Path filePath = Paths.get(attachment.getStoragePath());
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not delete file: " + attachment.getFileName(), e);
+        }
+
+        attachmentRepository.delete(attachment);
+    }
+
+    @Override
+    @Transactional
     public RequisitionDto approveRequest(Long id, User actor, Long nextAssigneeId) {
 
         Request request = requestRepository.findById(id)

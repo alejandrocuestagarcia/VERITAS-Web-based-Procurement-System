@@ -203,8 +203,9 @@
         <div *ngIf="request.attachments && request.attachments.length > 0"
              [ngClass]="canUploadAttachments ? 'max-h-[250px]' : 'max-h-[550px]'"
              class="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-          <div *ngFor="let attachment of request.attachments" (click)="downloadAttachment(attachment)" class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/50 transition-colors group cursor-pointer">
-            <div class="flex items-center gap-3 overflow-hidden">
+          <div *ngFor="let attachment of request.attachments"
+               class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/50 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 overflow-hidden" (click)="downloadAttachment(attachment)">
               <div class="w-10 h-10 rounded-lg bg-blue-100/50 text-blue-600 flex items-center justify-center shrink-0">
                 <mat-icon class="scale-[0.85]">insert_drive_file</mat-icon>
               </div>
@@ -213,7 +214,10 @@
                 <span class="text-[11px] font-semibold text-slate-400">{{ ((attachment.fileSize || 0) / 1024) | number:'1.0-0' }} KB • {{ attachment.uploadedAt | date:'MMM d, yyyy' }}</span>
               </div>
             </div>
-            <mat-icon class="text-slate-300 group-hover:text-blue-500 scale-90 transition-colors shrink-0">download</mat-icon>
+            <div class="flex items-center gap-1 shrink-0">
+              <mat-icon (click)="downloadAttachment(attachment)" class="text-slate-300 hover:text-blue-500 scale-90 transition-colors cursor-pointer">download</mat-icon>
+              <mat-icon *ngIf="canUploadAttachments" (click)="deleteAttachment(attachment); $event.stopPropagation()" class="text-slate-300 hover:text-red-500 scale-90 transition-colors cursor-pointer">delete</mat-icon>
+            </div>
           </div>
         </div>
 

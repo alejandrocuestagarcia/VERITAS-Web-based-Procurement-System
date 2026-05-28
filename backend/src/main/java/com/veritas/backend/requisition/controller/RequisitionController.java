@@ -139,6 +139,14 @@ public class RequisitionController {
         return requisitionService.downloadAttachment(attachmentId);
     }
 
+    @Operation(summary = "Delete attachment", description = "Deletes a specific attachment by its ID.")
+    @IsRequester
+    @DeleteMapping("/attachments/{attachmentId}")
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId) {
+        requisitionService.deleteAttachment(attachmentId);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Get quote comparison", description = "Returns a side-by-side comparison of quotes, including external market price data.")
     @IsRequester
     @GetMapping("/{id}/comparison")
