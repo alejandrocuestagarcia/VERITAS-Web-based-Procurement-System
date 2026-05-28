@@ -39,7 +39,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public selectedFlowLeavesGateway = false;
   public currentTask: any = {
     role: '',
-    description: ''
+    description: '',
+    automatedApproval: false
   };
   public roles = Object.values(UserDtoRoleEnum);
   public currentRule: any = {
@@ -397,20 +398,24 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const assigneeDoc = docs.find((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
     const assignee = assigneeDoc ? assigneeDoc.text.substring(10) : '';
 
-    const descDoc = docs.find((d: any) => !d.text || !d.text.startsWith('[ASSIGNEE]'));
+    const autoApproveDoc = docs.find((d: any) => d.text && d.text.startsWith('[AUTO_APPROVE]'));
+    const autoApprove = autoApproveDoc ? autoApproveDoc.text.substring(14) === 'true' : false;
+
+    const descDoc = docs.find((d: any) => !d.text || (!d.text.startsWith('[ASSIGNEE]') && !d.text.startsWith('[AUTO_APPROVE]')));
     const description = descDoc ? descDoc.text : '';
 
     this.currentTask = {
       role: assignee,
-      description: description
+      description: description,
+      automatedApproval: autoApprove
     };
   }
 
   private resetTask() {
-    this.currentTask = { role: '', description: '' };
+    this.currentTask = { role: '', description: '', automatedApproval: false };
   }
 
-  updateTaskProperty(key: 'role' | 'description', value: string) {
+  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -431,8 +436,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: `[ASSIGNEE]${value}` });
         docs.push(doc);
       }
+    } else if (key === 'automatedApproval') {
+      docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[AUTO_APPROVE]'));
+      if (value) {
+        const doc = bpmnFactory.create('bpmn:Documentation', { text: `[AUTO_APPROVE]true` });
+        docs.push(doc);
+      }
     } else if (key === 'description') {
-      docs = docs.filter((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
+      docs = docs.filter((d: any) => d.text && (d.text.startsWith('[ASSIGNEE]') || d.text.startsWith('[AUTO_APPROVE]')));
       if (value) {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: value });
         docs.push(doc);

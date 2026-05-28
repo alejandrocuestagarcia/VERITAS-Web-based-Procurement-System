@@ -383,7 +383,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
         WorkflowStep nextStep = workflowEngineService.getNextStep(request);
-        if (nextStep != null && nextStep.getRole() != null) {
+        if (nextStep != null && nextStep.getRole() != null && !nextStep.getIsAutomatedApproval()) {
             return nextStep.getRole().name();
         }
         return null;
