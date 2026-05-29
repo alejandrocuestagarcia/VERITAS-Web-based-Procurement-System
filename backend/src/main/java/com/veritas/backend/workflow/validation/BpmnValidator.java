@@ -10,6 +10,7 @@ import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.ast.CompoundExpression;
 import org.springframework.expression.spel.ast.PropertyOrFieldReference;
 import org.springframework.expression.spel.SpelNode;
+import org.springframework.expression.ParseException;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -603,7 +604,7 @@ public class BpmnValidator {
             SpelExpression parsedExpression;
             try {
                 parsedExpression = (SpelExpression) spelParser.parseExpression(cleanCondition);
-            } catch (Exception e) {
+            } catch (ParseException e) {
                 result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
                         + "' has invalid syntax: " + e.getMessage());
                 log.warn("Failed to parse SpEL condition on transition from {}: {}", getNodeName(flow.getSource()), e.getMessage());

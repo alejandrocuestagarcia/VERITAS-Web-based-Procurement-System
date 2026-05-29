@@ -6,6 +6,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
@@ -35,7 +36,7 @@ public class GeneralExceptionHandler {
   }
 
   @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
-  public ResponseEntity<String> handleAccessDenied(Exception exception) {
+  public ResponseEntity<String> handleAccessDenied(RuntimeException exception) {
     log.warn("Access denied: {}", exception.getMessage());
     String message = exception.getMessage();
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(message != null ? message : "Access Denied");
@@ -52,25 +53,25 @@ public class GeneralExceptionHandler {
     return ResponseEntity.badRequest().body(errors);
   }
   @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<String> handleIllegalArgumentError(Exception exception) {
+  public ResponseEntity<String> handleIllegalArgumentError(IllegalArgumentException exception) {
     log.warn("Illegal argument: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
   }
 
   @ExceptionHandler(EntityNotFoundException.class)
-  public ResponseEntity<String> handleNotFound(Exception ex) {
+  public ResponseEntity<String> handleNotFound(EntityNotFoundException ex) {
     log.warn("Entity not found: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
   }
 
   @ExceptionHandler(EntityExistsException.class)
-  public ResponseEntity<String> handleConflict(Exception ex) {
+  public ResponseEntity<String> handleConflict(EntityExistsException ex) {
     log.warn("Entity conflict: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
   @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-  public ResponseEntity<String> handleDataIntegrityViolation(Exception ex) {
+  public ResponseEntity<String> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
     log.warn("Data integrity violation: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
@@ -85,7 +86,7 @@ public class GeneralExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleGeneralError(Exception exception) {
     log.error("Unhandled exception: {}", exception.getMessage(), exception);
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected internal server error occurred. Please contact support.");
   }
 
   @ExceptionHandler(WorkflowStateException.class)

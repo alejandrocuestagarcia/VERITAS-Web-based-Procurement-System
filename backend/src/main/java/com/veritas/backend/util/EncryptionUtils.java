@@ -36,7 +36,7 @@ public class EncryptionUtils {
         }
         try {
             return encryptor.decrypt(encryptedText);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new IllegalStateException("Unable to decrypt credential. " +
                     "Check encryption configuration.", e);
         }

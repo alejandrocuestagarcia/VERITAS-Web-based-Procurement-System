@@ -44,6 +44,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -233,7 +234,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                 MediaType mediaType;
                 try {
                     mediaType = MediaType.parseMediaType(attachment.getFileType());
-                } catch (Exception e) {
+                } catch (InvalidMediaTypeException e) {
                     mediaType = MediaType.APPLICATION_OCTET_STREAM;
                 }
 

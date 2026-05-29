@@ -45,7 +45,7 @@ public class DynamicJiraScheduler {
             () -> {
                 try {
                     syncService.processQueue();
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     log.error("Error processing Jira sync queue", e);
                 }
             },
