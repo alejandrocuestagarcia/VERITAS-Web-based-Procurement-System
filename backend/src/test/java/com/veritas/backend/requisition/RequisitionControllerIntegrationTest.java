@@ -1,7 +1,8 @@
 package com.veritas.backend.requisition;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -13,15 +14,14 @@ import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
-import com.veritas.backend.requisition.entity.Priority;
-import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.entity.Invoice;
-import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.entity.*;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
@@ -44,13 +44,14 @@ import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -98,6 +99,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private QuoteLineItemRepository quoteLineItemRepository;
     @Autowired
     private QuoteRepository quoteRepository;
+    @Autowired
+    private DepartmentRepository departmentRepository;
 
     @Autowired
     private InvoiceRepository invoiceRepository;
@@ -108,6 +111,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     private String requesterToken;
     private String financeOfficerToken;
+    private String procurementOfficerToken;
     private Long projectId;
     private Long workflowId;
 
@@ -135,9 +139,18 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         userRepository.deleteAllInBatch();
         teamRepository.deleteAllInBatch();
 
+        jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
+        internalBudgetRepository.deleteAllInBatch();
+        departmentRepository.deleteAllInBatch();
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("R&D")
+                .build());
+
         Team team = teamRepository.save(Team.builder()
                 .name("Engineering")
                 .description("Engineering Team")
+                .department(department)
                 .isActive(true)
                 .build());
 
@@ -158,10 +171,20 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         financeOfficer.setRole(UserRole.FINANCE_OFFICER);
         financeOfficer.setIsActive(true);
         financeOfficer.setRequiresPasswordChange(false);
-        financeOfficer.setTeam(team);
         financeOfficer = userRepository.save(financeOfficer);
 
+        User procurementOfficer = new User();
+        procurementOfficer.setEmail("procurement-integration@veritas.com");
+        procurementOfficer.setName("Integration Procurement Officer");
+        procurementOfficer.setPasswordHash("hashed");
+        procurementOfficer.setRole(UserRole.PROCUREMENT_OFFICER);
+        procurementOfficer.setIsActive(true);
+        procurementOfficer.setRequiresPasswordChange(false);
+        procurementOfficer.setDepartment(department);
+        procurementOfficer = userRepository.save(procurementOfficer);
+
         financeOfficerToken = jwtService.generateAccessToken(financeOfficer);
+        procurementOfficerToken = jwtService.generateAccessToken(procurementOfficer);
         requesterToken = jwtService.generateAccessToken(requester);
 
         financeOfficerToken = jwtService.generateAccessToken(financeOfficer);
@@ -723,6 +746,187 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be approved")));
+    }
+
+    @Test
+    void DeleteAttachment_ExistingAttachment_ReturnsNoContentAndDeletesAttachment() throws Exception {
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+
+        Path tempFile = Files.createTempFile("attachment-test", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("quote.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + requesterToken))
+                .andExpect(status().isNoContent());
+
+        assertEquals(0, attachmentRepository.count());
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_NonExistingAttachment_ReturnsNotFound() throws Exception {
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/99999")
+                        .header("Authorization", "Bearer " + requesterToken))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "Attachment not found with id: 99999")));
+    }
+
+    @Test
+    void DeleteAttachment_Unauthenticated_ReturnsForbidden() throws Exception {
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void DeleteAttachment_AsRequester_OnOwnRequest_ReturnsNoContent() throws Exception {
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+        Path tempFile = Files.createTempFile("attachment-own-request", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("own-request.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + requesterToken))
+                .andExpect(status().isNoContent());
+
+        assertEquals(0, attachmentRepository.count());
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_AsRequester_OnAnotherRequestersRequest_ReturnsForbidden() throws Exception {
+        User otherRequester = new User();
+        otherRequester.setEmail("other-req@veritas.com");
+        otherRequester.setName("Other Requester");
+        otherRequester.setPasswordHash("hashed");
+        otherRequester.setRole(UserRole.REQUESTER);
+        otherRequester.setIsActive(true);
+        otherRequester.setRequiresPasswordChange(false);
+        otherRequester.setTeam(userRepository.findAll().getFirst().getTeam());
+        otherRequester = userRepository.save(otherRequester);
+        String otherRequesterToken = jwtService.generateAccessToken(otherRequester);
+
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+        Path tempFile = Files.createTempFile("attachment-other-request", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("other-request.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + otherRequesterToken))
+                .andExpect(status().isForbidden());
+
+        assertEquals(1, attachmentRepository.count());
+        assertTrue(Files.exists(tempFile));
+
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    void DeleteAttachment_AsProcurementOfficer_SameDepartment_ReturnsNoContent() throws Exception {
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+        Path tempFile = Files.createTempFile("proc-same-dept", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("proc-same-dept.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + procurementOfficerToken))
+                .andExpect(status().isNoContent());
+
+        assertEquals(0, attachmentRepository.count());
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_AsProcurementOfficer_DifferentDepartment_ReturnsForbidden() throws Exception {
+        Department department = departmentRepository.save(Department.builder()
+                .name("Marketing")
+                .build());
+
+        User otherProcurementOfficer = new User();
+        otherProcurementOfficer.setEmail("other-procurement@veritas.com");
+        otherProcurementOfficer.setName("Integration Procurement Officer");
+        otherProcurementOfficer.setPasswordHash("hashed");
+        otherProcurementOfficer.setRole(UserRole.PROCUREMENT_OFFICER);
+        otherProcurementOfficer.setIsActive(true);
+        otherProcurementOfficer.setRequiresPasswordChange(false);
+        otherProcurementOfficer.setDepartment(department);
+        otherProcurementOfficer = userRepository.save(otherProcurementOfficer);
+        String otherProcurementOfficerToken = jwtService.generateAccessToken(otherProcurementOfficer);
+
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+        Path tempFile = Files.createTempFile("proc-diff-dept", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("proc-diff-dept.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + otherProcurementOfficerToken))
+                .andExpect(status().isForbidden());
+
+        assertEquals(1, attachmentRepository.count());
+        assertTrue(Files.exists(tempFile));
+
+        Files.deleteIfExists(tempFile);
     }
 
 }

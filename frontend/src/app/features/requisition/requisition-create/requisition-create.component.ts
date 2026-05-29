@@ -21,8 +21,7 @@ import {
   WorkflowModuleService,
   ProjectDto,
   WorkflowDto,
-  RequisitionCreateDto,
-  RequisitionCreateDtoPriorityEnum
+  RequisitionCreateDtoPriorityEnum, AttachmentDto
 } from '../../../core/api';
 import { MatDialog } from '@angular/material/dialog';
 import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
@@ -45,7 +44,11 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   workflows: WorkflowDto[] = [];
   workflowSearch: string = '';
   priorities = Object.values(RequisitionCreateDtoPriorityEnum)
+
   uploadedFiles: File[] = [];
+  existingAttachments: AttachmentDto[] = [];
+  existingAttachmentsToDelete: number[] = [];
+
   isDragging = false;
 
   @ViewChild('projectSearchInput') projectSearchInput!: ElementRef<HTMLInputElement>;
@@ -112,6 +115,9 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
                 }
                 this.loading = false;
                 this.requestState = req.state;
+
+                this.existingAttachments = req.attachments || [];
+
                 this.patchFormWithRequest(req);
               },
               error: () => {
@@ -184,7 +190,6 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
     return workflow?.name || 'Not selected';
   }
 
-
   onOpenedChange(opened: boolean): void {
     if (!opened) {
       this.projectSearch = '';
@@ -196,6 +201,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       }, 100);
     }
   }
+
   viewWorkflow(id: number | undefined): void {
     if (id) {
       this.dialog.open(WorkflowEditorComponent, {
@@ -247,8 +253,49 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
     }
   }
 
+  downloadLocalFile(file: File): void {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  downloadExistingFile(file: any): void {
+    if (!file || !file.attachmentId) return;
+    this.requisitionService.downloadAttachment(file.attachmentId).subscribe({
+      next: (blob) => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = file.fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+      },
+      error: (err) => {
+        console.error('Failed to download attachment', err);
+        this.toastService.showError('Failed to download attachment')
+      }
+    });
+  }
+
   removeFile(index: number): void {
     this.uploadedFiles.splice(index, 1);
+  }
+
+  removeExistingFile(index: number): void {
+    const file = this.existingAttachments[index];
+    if (file && file.attachmentId) {
+      this.existingAttachmentsToDelete.push(file.attachmentId);
+    }
+
+    this.existingAttachments.splice(index, 1);
   }
 
   triggerFileInput(): void {
@@ -325,7 +372,20 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       if (this.isEditMode && this.requestId) {
         this.requisitionService.updateRequest(this.requestId, request).subscribe({
           next: (updatedRequest) => {
-            this.handleUploadAndNavigate(updatedRequest, 'Procurement request updated successfully', submitAfterSave);
+            if (this.existingAttachmentsToDelete.length > 0) {
+              const deleteTasks = this.existingAttachmentsToDelete.map(id =>
+                this.requisitionService.deleteAttachment(id).pipe(catchError(() => of(null)))
+              );
+
+              forkJoin(deleteTasks).subscribe({
+                next: () => {
+                  this.existingAttachmentsToDelete = [];
+                  this.handleUploadAndNavigate(updatedRequest, 'Procurement request updated and attachments cleaned up.', submitAfterSave);
+                }
+              });
+            } else {
+              this.handleUploadAndNavigate(updatedRequest, 'Procurement request updated successfully', submitAfterSave);
+            }
           },
           error: (err) => {
             this.loading = false;
@@ -349,10 +409,11 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       this.lineItemsForm.markAllAsTouched();
     }
   }
+
   private handleUploadAndNavigate(req: any, successMessage: string, submitAfterSave: boolean): void {
     if (this.uploadedFiles.length > 0 && req.id) {
       const uploadTasks: Observable<any>[] = this.uploadedFiles.map(file => {
-        return this.requisitionService.uploadQuotes(req.id!, file as any).pipe(
+        return this.requisitionService.uploadAttachment(req.id!, file as any).pipe(
           catchError(() => of(null)) // Prevent a single bad upload from blocking everything
         );
       });
@@ -365,6 +426,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       this.finalizeNavigation(req.id, successMessage, submitAfterSave);
     }
   }
+
   private finalizeNavigation(requestId: number, successMessage: string, submitAfterSave: boolean): void {
     if (submitAfterSave && requestId) {
       this.loading = true;

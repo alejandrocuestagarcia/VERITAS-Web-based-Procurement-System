@@ -124,10 +124,10 @@ public class RequisitionController {
         return ResponseEntity.ok(requisitionService.canAct(id, actor));
     }
 
-    @Operation(summary = "Bulk upload quotes", description = "Uploads a CSV file containing multiple vendor quotes for a specific request.")
+    @Operation(summary = "Upload an attachment", description = "Uploads an attachment")
     @IsRequester
     @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadQuotes(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadAttachment(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         requisitionService.saveAttachment(id, file);
         return ResponseEntity.ok("\"File " + file.getOriginalFilename() + " uploaded for request " + id + "\"");
     }
@@ -137,6 +137,14 @@ public class RequisitionController {
     @GetMapping("/attachments/{attachmentId}")
     public ResponseEntity<Resource> downloadAttachment(@PathVariable Long attachmentId) {
         return requisitionService.downloadAttachment(attachmentId);
+    }
+
+    @Operation(summary = "Delete attachment", description = "Deletes a specific attachment by its ID.")
+    @IsRequester
+    @DeleteMapping("/attachments/{attachmentId}")
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId) {
+        requisitionService.deleteAttachment(attachmentId);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get quote comparison", description = "Returns a side-by-side comparison of quotes, including external market price data.")

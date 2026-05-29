@@ -11,6 +11,9 @@ import {MatDialog} from "@angular/material/dialog";
 import {ToastService} from "../../../core/services/toast.service";
 import { Location } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import {
+  ConfirmationDialogComponent
+} from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
 
 @Component({
   selector: 'app-requisition-detail',
@@ -113,7 +116,11 @@ export class RequisitionDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/dashboard']);
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
   }
 
   isRequester(): boolean {
@@ -314,7 +321,28 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to download attachment', err);
-        alert('Failed to download attachment');
+        this.toastService.showError('Failed to download attachment')
+      }
+    });
+  }
+
+  deleteAttachment(attachment: any): void {
+    const ref = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Delete attachment',
+        message: `Are you sure you want to delete attachment "${attachment.fileName}"?`
+      }
+    });
+
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.requisitionService.deleteAttachment(attachment.attachmentId).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Attachment deleted');
+            this.loadRequest(this.requestId);
+          },
+          error: () => this.toastService.showError('Failed to delete attachment')
+        });
       }
     });
   }
@@ -431,7 +459,7 @@ export class RequisitionDetailComponent implements OnInit {
         continue;
       }
       uploadTasks.push(
-        this.requisitionService.uploadQuotes(this.request.id, file as any).pipe(
+        this.requisitionService.uploadAttachment(this.request.id, file as any).pipe(
           catchError((err) => {
             this.toastService.showError(`Failed to upload ${file.name}: ` + (err.error?.message || err.error || 'Unknown error'));
             return of(null);

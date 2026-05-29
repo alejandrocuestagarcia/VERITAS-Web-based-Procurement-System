@@ -23,6 +23,7 @@ public interface RequisitionService {
     Page<RequisitionDto> getRequests(String status, String search, Long projectId, User authUser, Pageable pageable);
     RequisitionDto getRequestById(Long id);
     ResponseEntity<Resource> downloadAttachment(Long attachmentId);
+    void deleteAttachment(Long attachmentId);
     RequisitionDto approveRequest(Long id, User actor, Long nextAssigneeId);
     RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData);
     RequisitionDto submitRequest(Long id, User actor, Long nextAssigneeId);
@@ -31,10 +32,7 @@ public interface RequisitionService {
     List<UserDto> getEligibleAssignees(Long id, String roleName);
     boolean canAct(Long id, User actor);
     RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor);
-
     void processPayment(Long requestId);
-
     InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file);
-
     InvoiceDto getInvoice(Long requestId);
 }

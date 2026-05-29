@@ -25,6 +25,7 @@ import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
 import com.veritas.backend.requisition.entity.*;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.security.access.AccessDeniedException;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
@@ -73,6 +74,9 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 
 import com.veritas.backend.common.exception.WorkflowStateException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class RequisitionServiceUnitTest {
@@ -151,6 +155,11 @@ class RequisitionServiceUnitTest {
         testStartStep.setName("Start");
         testStartStep.setWorkflowComponent(WorkflowComponent.START_EVENT);
         testStartStep.setWorkflowDefinition(testWorkflow);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     // createRequest tests
@@ -1029,5 +1038,89 @@ class RequisitionServiceUnitTest {
         verify(internalBudgetRepository, never()).save(budget);
     }
 
+    @Test
+    void DeleteAttachment_ExistingAttachment_DeletesFileAndEntity() throws IOException {
+        Path tempFile = Files.createTempFile("delete-attachment", ".pdf");
 
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setFileName("invoice.pdf");
+        attachment.setStoragePath(tempFile.toString());
+
+        User mockUser = new User();
+        mockUser.setId(99L);
+        mockUser.setRole(UserRole.FINANCE_OFFICER);
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(mockUser);
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+
+        requisitionService.deleteAttachment(1L);
+
+        verify(attachmentRepository).delete(attachment);
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_AsRequester_OnAnotherUsersAttachment_ThrowsAccessDenied() {
+        User owner = new User();
+        owner.setId(1L);
+        owner.setRole(UserRole.REQUESTER);
+
+        User caller = new User();
+        caller.setId(2L);
+        caller.setRole(UserRole.REQUESTER);
+
+        Request request = new Request();
+        request.setUserID(owner);
+
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(10L);
+        attachment.setFileName("secret.pdf");
+        attachment.setStoragePath("/tmp/secret.pdf");
+        attachment.setRequest(request);
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(caller);
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(attachmentRepository.findById(10L)).thenReturn(Optional.of(attachment));
+
+        assertThrows(AccessDeniedException.class, () -> requisitionService.deleteAttachment(10L));
+        verify(attachmentRepository, never()).delete(any());
+    }
+
+    @Test
+    void DeleteAttachment_AttachmentNotFound_ThrowsEntityNotFoundException() {
+        when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+                () -> requisitionService.deleteAttachment(999L));
+
+        assertTrue(ex.getMessage().contains("Attachment not found with id: 999"));
+        verify(attachmentRepository, never()).delete(any());
+    }
+
+    @Test
+    void DeleteAttachment_FileDeletionFails_ThrowsRuntimeException() {
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setFileName("broken.pdf");
+        attachment.setStoragePath("\0invalid-path");
+
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+
+        assertThrows(RuntimeException.class,
+                () -> requisitionService.deleteAttachment(1L));
+
+        verify(attachmentRepository, never()).delete(any());
+    }
 }
