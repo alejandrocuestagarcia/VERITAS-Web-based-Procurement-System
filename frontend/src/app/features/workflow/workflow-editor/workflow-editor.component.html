@@ -121,9 +121,8 @@
     </div>
   </div>
 
-  <div class="flex flex-1 overflow-hidden bg-white rounded-2xl border-2 border-[#e4e7ef] shadow-sm">
-
-    <main class="relative flex-1 min-w-0 h-full overflow-hidden">
+  <div class="flex flex-1 overflow-hidden bg-white rounded-2xl border-2 border-[#e4e7ef] shadow-sm min-h-[400px]">
+    <main class="relative flex-1 min-w-0 h-full overflow-hidden" [class.edit-mode]="isEditable">
       <div #canvas class="w-full h-full"></div>
     </main>
 

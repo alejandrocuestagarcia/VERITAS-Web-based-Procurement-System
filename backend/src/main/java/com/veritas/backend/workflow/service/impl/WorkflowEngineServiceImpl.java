@@ -173,16 +173,13 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     }
 
                     if (missingAttachments.size() == 1) {
-                        validationErrors.add(missingAttachments.get(0) + " attachment required");
+                        validationErrors.add(missingAttachments.getFirst() + " attachment required");
                     } else if (!missingAttachments.isEmpty()) {
                         validationErrors.add("Missing required attachments: " + String.join(", ", missingAttachments));
                     }
 
                     if (!validationErrors.isEmpty()) {
-                        boolean forceDetails = missingAttachments.size() > 1 || validationErrors.size() > 1;
-                        throw new WorkflowStateException(
-                                buildRuleFailureMessage(rule.getOptionalFailureMessage(), validationErrors,
-                                        forceDetails));
+                        throw new WorkflowStateException(buildRuleFailureMessage(validationErrors));
                     }
                 }
 
@@ -349,16 +346,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
     }
 
-    private String buildRuleFailureMessage(String optionalFailureMessage, List<String> validationErrors,
-            boolean forceDetails) {
-        String details = String.join(" ", validationErrors);
-        if (optionalFailureMessage == null || optionalFailureMessage.isBlank()) {
-            return details;
-        }
-        if (!forceDetails) {
-            return optionalFailureMessage;
-        }
-        return optionalFailureMessage + " " + details;
+    private String buildRuleFailureMessage(List<String> validationErrors) {
+        return String.join(", ", validationErrors);
     }
 
     private void assertBudgetWithinSafetyBuffer(InternalBudget budget) {

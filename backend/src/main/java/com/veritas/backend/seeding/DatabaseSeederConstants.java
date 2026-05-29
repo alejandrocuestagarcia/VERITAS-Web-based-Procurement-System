@@ -67,7 +67,7 @@ public class DatabaseSeederConstants {
     <bpmn:sequenceFlow id="Flow_06jwacm" sourceRef="Activity_05z59cy" targetRef="Event_0kd5jps" />
     <bpmn:sequenceFlow id="Flow_0boq7g8" sourceRef="Activity_0nk1tm3" targetRef="Activity_17y825l">
       <bpmn:extensionElements>
-        <veritas:transitionRule type="veritas:transitionRule" isPdfRequired="true" />
+        <veritas:transitionRule isPdfRequired="true" />
       </bpmn:extensionElements>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_1mwl7n2" sourceRef="Gateway_1h5ftka" targetRef="Activity_1u5crin">
@@ -82,13 +82,12 @@ public class DatabaseSeederConstants {
     <bpmn:sequenceFlow id="Flow_0b0h3fp" sourceRef="Activity_0sel549" targetRef="Gateway_1h5ftka" />
     <bpmn:sequenceFlow id="Flow_040ezjb" sourceRef="Activity_0wyenbf" targetRef="Activity_0sel549">
       <bpmn:extensionElements>
-        <veritas:transitionRule type="veritas:transitionRule" minRequiredVendors="3" />
+        <veritas:transitionRule minRequiredVendors="3" />
       </bpmn:extensionElements>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_1pkf6u1" sourceRef="Activity_05zsl9d" targetRef="Activity_0wyenbf">
-      <bpmn:documentation />
       <bpmn:extensionElements>
-        <veritas:transitionRule type="veritas:transitionRule" isPdfRequired="true" />
+        <veritas:transitionRule isPdfRequired="true" />
       </bpmn:extensionElements>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_1fuqcx7" sourceRef="Event_08nghaf" targetRef="Activity_05zsl9d" />

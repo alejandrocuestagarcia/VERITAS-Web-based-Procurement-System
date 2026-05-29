@@ -179,9 +179,6 @@ public class WorkflowServiceImpl implements WorkflowService {
             } else {
                 log.debug("No condition found for flow {}", sequenceFlow.getId());
             }
-            sequenceFlow.getDocumentations().stream()
-                    .findFirst()
-                    .ifPresent(doc -> transition.setDescription(doc.getTextContent()));
 
             ExtensionElements extensionElements = sequenceFlow.getExtensionElements();
             if (extensionElements != null) {
@@ -204,10 +201,6 @@ public class WorkflowServiceImpl implements WorkflowService {
                         String imageRequired = child.getAttribute("isImageRequired");
                         if (imageRequired != null) {
                             rule.setIsImageRequired(Boolean.parseBoolean(imageRequired));
-                        }
-                        String optionalFailureMessage = child.getAttribute("optionalFailureMessage");
-                        if (optionalFailureMessage != null && !optionalFailureMessage.isBlank()) {
-                            rule.setOptionalFailureMessage(optionalFailureMessage);
                         }
                         transitionRulesMap.put(transition, rule);
                     }

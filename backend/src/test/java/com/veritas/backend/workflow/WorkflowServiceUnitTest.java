@@ -1,9 +1,11 @@
 package com.veritas.backend.workflow;
 
 import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -17,6 +19,7 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.impl.WorkflowServiceImpl;
+import com.veritas.backend.workflow.validation.BpmnValidator;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,13 +62,13 @@ class WorkflowServiceUnitTest {
     private WorkflowMapper workflowMapper;
 
     @Mock
-    private com.veritas.backend.department.repository.DepartmentRepository departmentRepository;
+    private DepartmentRepository departmentRepository;
 
     @Mock
-    private com.veritas.backend.user.repository.UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Spy
-    private com.veritas.backend.workflow.validation.BpmnValidator bpmnValidator;
+    private BpmnValidator bpmnValidator;
 
     @Captor
     private ArgumentCaptor<WorkflowDefinition> workflowCaptor;
@@ -226,29 +229,6 @@ class WorkflowServiceUnitTest {
     }
 
     @Test
-    void CreateWorkflow_WithTransitionDescription_SetsTransitionDescription() {
-        String xml = VALID_BPMN_XML.replace("<bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />",
-                "<bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
-                "  <bpmn:documentation>Transition Description Text</bpmn:documentation>\n" +
-                "</bpmn:sequenceFlow>");
-        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
-
-        workflowService.createWorkflow(saveDto);
-
-        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
-        verify(workflowTransitionRepository).saveAll(transitionsCaptor.capture());
-        Iterable<WorkflowTransition> savedTransitions = transitionsCaptor.getValue();
-        
-        java.util.List<WorkflowTransition> transitionsList = new java.util.ArrayList<>();
-        savedTransitions.forEach(transitionsList::add);
-        
-        assertThat(transitionsList).hasSize(2);
-        assertThat(transitionsList.stream().filter(t -> t.getDescription() != null).findFirst().get().getDescription())
-                .isEqualTo("Transition Description Text");
-    }
-
-    @Test
     void CreateWorkflow_WithMultipleTransitionRules_PersistsAllRules() {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
@@ -260,7 +240,7 @@ class WorkflowServiceUnitTest {
                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
                 "      <bpmn:extensionElements>\n" +
-                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"false\" optionalFailureMessage=\"Need everything!\" />\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"false\" />\n" +
                 "      </bpmn:extensionElements>\n" +
                 "    </bpmn:sequenceFlow>\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
@@ -282,7 +262,6 @@ class WorkflowServiceUnitTest {
         assertThat(rulesList.getFirst().getIsPdfRequired()).isTrue();
         assertThat(rulesList.getFirst().getIsCsvRequired()).isTrue();
         assertThat(rulesList.getFirst().getIsImageRequired()).isFalse();
-        assertThat(rulesList.getFirst().getOptionalFailureMessage()).isEqualTo("Need everything!");
     }
 
     @Test

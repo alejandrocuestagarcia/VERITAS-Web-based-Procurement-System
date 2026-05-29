@@ -168,24 +168,32 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private async loadXml(xml: string): Promise<void> {
     try {
+      this.canvas.nativeElement.style.visibility = 'hidden';
       await this.bpmnInstance.importXML(xml);
-      const canvas = this.bpmnInstance.get('canvas');
-
-      canvas.zoom('fit-viewport', 'auto');
       setTimeout(() => {
-        canvas.resized();
-        canvas.zoom('fit-viewport', 'auto');
+        this.fitDiagram();
+        this.canvas.nativeElement.style.visibility = 'visible';
       }, 1);
-
       this.applyTransitionRuleCss();
     } catch (err) {
       console.error('Failed to render workflow', err);
     }
   }
 
+  private fitDiagram(): void {
+    const canvas = this.bpmnInstance.get('canvas');
+    canvas.resized();
+    canvas.zoom('fit-viewport', { padding: 40 });
+
+    if (this.isEditable) {
+      const currentZoom = canvas.zoom();
+      canvas.zoom(currentZoom * 0.75);
+    }
+  }
+
   zoomIn() { this.bpmnInstance.get('zoomScroll').stepZoom(1); }
   zoomOut() { this.bpmnInstance.get('zoomScroll').stepZoom(-1); }
-  resetZoom() { this.bpmnInstance.get('canvas').zoom('fit-viewport', 'auto'); }
+  resetZoom() { this.fitDiagram(); }
 
   private async getUpdatedBpmnXml(): Promise<string> {
     const modeling = this.bpmnInstance.get('modeling');

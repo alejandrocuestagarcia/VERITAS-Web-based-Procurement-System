@@ -146,12 +146,11 @@ class WorkflowEngineServiceUnitTest {
 
         TransitionRule rule = new TransitionRule();
         rule.setIsPdfRequired(true);
-        rule.setOptionalFailureMessage("Must provide PDF");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
-        assertEquals("Must provide PDF", ex.getMessage());
+        assertEquals("PDF attachment required", ex.getMessage());
     }
 
     @Test
@@ -411,7 +410,6 @@ class WorkflowEngineServiceUnitTest {
 
         TransitionRule rule = new TransitionRule();
         rule.setIsPdfRequired(true);
-        rule.setOptionalFailureMessage("Must provide new PDF");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         java.time.LocalDateTime entryTime = java.time.LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -429,7 +427,7 @@ class WorkflowEngineServiceUnitTest {
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
-        assertEquals("Must provide new PDF", ex.getMessage());
+        assertEquals("PDF attachment required", ex.getMessage());
     }
 
     //AI-GENERATED
