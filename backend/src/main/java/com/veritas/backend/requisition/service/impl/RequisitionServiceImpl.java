@@ -261,6 +261,10 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
+        if (user.getRole() == UserRole.PROCUREMENT_OFFICER && !attachment.getRequest().getTeamID().getDepartment().getDepartmentId().equals(user.getDepartment().getDepartmentId())) {
+            throw new AccessDeniedException("Not allowed to access this request");
+        }
+
         try {
             Path filePath = Paths.get(attachment.getStoragePath());
             Files.deleteIfExists(filePath);
