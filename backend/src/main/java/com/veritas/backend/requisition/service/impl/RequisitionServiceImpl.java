@@ -46,6 +46,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -251,6 +253,13 @@ public class RequisitionServiceImpl implements RequisitionService {
     @Transactional
     public void deleteAttachment(Long attachmentId) {
         Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow(() -> new EntityNotFoundException("Attachment not found with id: " + attachmentId));
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) auth.getPrincipal();
+
+        if (user.getRole() == UserRole.REQUESTER && !attachment.getRequest().getUserID().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Not allowed to access this request");
+        }
 
         try {
             Path filePath = Paths.get(attachment.getStoragePath());

@@ -767,5 +767,72 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void DeleteAttachment_AsRequester_OnOwnRequest_ReturnsNoContent() throws Exception {
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+        Path tempFile = Files.createTempFile("attachment-own-request", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("own-request.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + requesterToken))
+                .andExpect(status().isNoContent());
+
+        assertEquals(0, attachmentRepository.count());
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteAttachment_AsRequester_OnAnotherRequestersRequest_ReturnsForbidden() throws Exception {
+        User otherRequester = new User();
+        otherRequester.setEmail("other-req@veritas.com");
+        otherRequester.setName("Other Requester");
+        otherRequester.setPasswordHash("hashed");
+        otherRequester.setRole(UserRole.REQUESTER);
+        otherRequester.setIsActive(true);
+        otherRequester.setRequiresPasswordChange(false);
+        otherRequester.setTeam(userRepository.findAll().getFirst().getTeam());
+        otherRequester = userRepository.save(otherRequester);
+        String otherRequesterToken = jwtService.generateAccessToken(otherRequester);
+
+        mockMvc.perform(post("/api/v1/requisitions")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validCreateDto())))
+                .andExpect(status().isCreated());
+
+        Long requestId = requestRepository.findAll().getFirst().getRequestID();
+        Path tempFile = Files.createTempFile("attachment-other-request", ".pdf");
+
+        Attachment attachment = new Attachment();
+        attachment.setRequest(requestRepository.findById(requestId).orElseThrow());
+        attachment.setFileName("other-request.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment = attachmentRepository.save(attachment);
+
+        mockMvc.perform(delete("/api/v1/requisitions/attachments/" + attachment.getAttachmentId())
+                        .header("Authorization", "Bearer " + otherRequesterToken))
+                .andExpect(status().isForbidden());
+
+        assertEquals(1, attachmentRepository.count());
+        assertTrue(Files.exists(tempFile));
+
+        Files.deleteIfExists(tempFile);
+    }
+
 }
 
