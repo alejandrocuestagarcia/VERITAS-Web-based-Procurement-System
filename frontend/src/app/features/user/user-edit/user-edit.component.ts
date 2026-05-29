@@ -136,9 +136,6 @@ export class UserEditComponent implements OnInit {
           this.userForm.get('teamId')?.disable();
         }
 
-        if (user.role === 'ADMINISTRATOR') {
-          this.userForm.get('role')?.disable();
-        }
 
         this.handleRoleChange(user.role as unknown as UserDtoRoleEnum);
         this.updateLeaderToggleState();

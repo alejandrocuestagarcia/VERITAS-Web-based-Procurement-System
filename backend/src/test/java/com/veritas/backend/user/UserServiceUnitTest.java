@@ -15,6 +15,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
@@ -54,6 +55,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceUnitTest {
@@ -63,6 +66,9 @@ class UserServiceUnitTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RoleHierarchy roleHierarchy;
 
     @Mock
     private TeamRepository teamRepository;
@@ -170,7 +176,7 @@ class UserServiceUnitTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        userService.deleteUser(1L, null);
+        userService.deleteUser(1L, null, null);
 
         verify(userRepository).save(userCaptor.capture());
 
@@ -195,7 +201,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.findById(2L)).thenReturn(Optional.of(testFallBackUser));
 
-        userService.deleteUser(1L, 2L);
+        userService.deleteUser(1L, 2L, null);
 
 
         verify(userRepository).save(userCaptor.capture());
@@ -224,7 +230,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.findById(2L)).thenReturn(Optional.of(testFallBackUser));
 
-        userService.deleteUser(1L, 2L);
+        userService.deleteUser(1L, 2L, null);
 
 
         verify(userRepository).save(userCaptor.capture());
@@ -256,7 +262,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> {
-            userService.deleteUser(1L, 999L);
+            userService.deleteUser(1L, 999L, null);
         });
 
         verify(requestRepository, never()).save(any(Request.class));
@@ -271,7 +277,7 @@ class UserServiceUnitTest {
 
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        userService.deleteUser(999L, null);
+        userService.deleteUser(999L, null, null);
 
 
         verify(userRepository).findById(999L);
@@ -467,6 +473,10 @@ class UserServiceUnitTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
+        doReturn(List.of(
+            new SimpleGrantedAuthority("ROLE_ADMINISTRATOR"),
+            new SimpleGrantedAuthority("ROLE_REQUESTER")
+        )).when(roleHierarchy).getReachableGrantedAuthorities(any());
 
         userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null));
 

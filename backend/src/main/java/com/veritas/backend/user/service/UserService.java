@@ -5,6 +5,7 @@ import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.dto.UserStatsDto;
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +27,7 @@ public interface UserService {
 
   List<RequisitionDto> getPendingRequisitionsForUser(Long userId);
 
-  void deleteUser(Long id, Long fallbackUserId);
+  void deleteUser(Long id, Long fallbackUserId, User currentUser);
 
   Page<UserDto> getAllRequesters(Pageable pageable);
 

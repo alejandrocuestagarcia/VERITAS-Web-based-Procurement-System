@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,7 @@ public class UserServiceImpl implements UserService {
   private final UserMapper userMapper;
   private final RequestRepository requestRepository;
   private final RequisitionMapper requisitionMapper;
+  private final RoleHierarchy roleHierarchy;
 
   @Override
   @Transactional
@@ -122,8 +125,14 @@ public class UserServiceImpl implements UserService {
     if (edits.name() != null)
       user.setName(edits.name());
 
-    if (edits.role() != null)
+    if (edits.role() != null && edits.role() != user.getRole()) {
+      if (hasPermissionLoss(user.getRole(), edits.role())) {
+        log.info("User {} changed role from {} to {} resulting in permission loss. Invalidating refresh tokens.",
+            user.getEmail(), user.getRole(), edits.role());
+        refreshTokenRepository.deleteByUserId(user.getId());
+      }
       user.setRole(edits.role());
+    }
 
     UserRole currentRole = user.getRole();
     boolean isGlobal = currentRole == UserRole.FINANCE_OFFICER || currentRole == UserRole.ADMINISTRATOR;
@@ -227,7 +236,12 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public void deleteUser(Long id, Long fallbackUserId) {
+  public void deleteUser(Long id, Long fallbackUserId, User currentUser) {
+    if (currentUser != null && currentUser.getId().equals(id)) {
+      log.warn("User {} attempted to delete their own account", currentUser.getEmail());
+      throw new IllegalArgumentException("You cannot delete your own account");
+    }
+
     Optional<User> user = userRepository.findById(id);
 
     if (user.isPresent()) {
@@ -289,4 +303,18 @@ public class UserServiceImpl implements UserService {
         .map(userMapper::toUserDto)
         .toList();
   }
+
+  private boolean hasPermissionLoss(UserRole oldRole, UserRole newRole) {
+    if (oldRole == newRole) {
+      return false;
+    }
+
+    var newAuthorities = List.of(new SimpleGrantedAuthority("ROLE_" + newRole.name()));
+    var reachableFromNew = roleHierarchy.getReachableGrantedAuthorities(newAuthorities);
+
+    boolean newRoleImpliesOldRole = reachableFromNew.contains(new SimpleGrantedAuthority("ROLE_" + oldRole.name()));
+
+    return !newRoleImpliesOldRole;
+  }
+
 }
