@@ -128,8 +128,8 @@ class UserServiceUnitTest {
         testRequest = new Request();
         testRequest.setRequestID(1L);
         testRequest.setRequestName("Test Request");
-        testRequest.setUserID(testUser);
-        testRequest.setTeamID(testTeam);
+        testRequest.setUser(testUser);
+        testRequest.setTeam(testTeam);
     }
 
     @Test

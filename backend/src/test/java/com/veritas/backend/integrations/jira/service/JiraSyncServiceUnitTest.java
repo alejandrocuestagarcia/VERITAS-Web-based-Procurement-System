@@ -244,7 +244,7 @@ public class JiraSyncServiceUnitTest {
         service.runManualSync(1L);
 
         verify(projectRepository).findByProjectKey("SCRUM");
-        assertEquals(mockProject, request.getProjectID());
+        assertEquals(mockProject, request.getProject());
         assertEquals("SCRUM-1", request.getRequestKey());
     }
 
@@ -259,7 +259,7 @@ public class JiraSyncServiceUnitTest {
 
         WorkflowStep step = new WorkflowStep();
         step.setName("Technical Review");
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
 
         JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
                 .id(1L)

@@ -16,15 +16,15 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     Optional<Request> findByJiraIssueKey(String jiraIssueKey);
     List<Request> findByJiraConfigId(Long jiraConfigId);
 
-    @Query("SELECT r FROM Request r WHERE r.userID.id = :userId AND r.state <> 'FINISHED'")
+    @Query("SELECT r FROM Request r WHERE r.user.id = :userId AND r.state <> 'FINISHED'")
     List<Request> findActiveRequestsByUserId(@Param("userId") Long userId);
 
     @Query("SELECT r FROM Request r " +
-            "LEFT JOIN r.projectID p " +
-            "LEFT JOIN r.currentStepID s " +
-            "LEFT JOIN r.userID u " +
+            "LEFT JOIN r.project p " +
+            "LEFT JOIN r.currentStep s " +
+            "LEFT JOIN r.user u " +
             "LEFT JOIN r.assignee a " +
-            "LEFT JOIN r.teamID t " +
+            "LEFT JOIN r.team t " +
             "LEFT JOIN t.department d " +
             "WHERE (:status IS NULL OR " +
             "      (:status = 'OPEN' AND r.state <> 'FINISHED') OR " +

@@ -215,14 +215,14 @@
                 <td class="p-2.5 text-slate-600">Sum of all item quantities in the request.</td>
               </tr>
               <tr>
-                <td class="p-2.5 font-mono font-semibold text-blue-600">projectID</td>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">project</td>
                 <td class="p-2.5 text-slate-500">Project Entity</td>
-                <td class="p-2.5 text-slate-600">The associated Project. You can traverse nested properties, e.g., <code>projectID.name</code>, <code>projectID.projectKey</code>, or <code>projectID.id</code>.</td>
+                <td class="p-2.5 text-slate-600">The associated Project. You can traverse nested properties, e.g., <code>project.name</code>, <code>project.projectKey</code>, or <code>project.id</code>.</td>
               </tr>
               <tr>
-                <td class="p-2.5 font-mono font-semibold text-blue-600">teamID</td>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">team</td>
                 <td class="p-2.5 text-slate-500">Team Entity</td>
-                <td class="p-2.5 text-slate-600">The Team that created the request. You can traverse nested properties, e.g., <code>teamID.name</code> or <code>teamID.department.name</code> to route by department.</td>
+                <td class="p-2.5 text-slate-600">The Team that created the request. You can traverse nested properties, e.g., <code>team.name</code> or <code>team.department.name</code> to route by department.</td>
               </tr>
             </tbody>
           </table>
@@ -266,7 +266,7 @@
 
           <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Department-Specific Routing (Nested Traversal)</span>
-            <div class="help-code-block">teamID != null and teamID.department != null and teamID.department.name == 'IT'</div>
+            <div class="help-code-block">team.department.name == 'IT'</div>
           </div>
         </div>
       </div>

@@ -14,17 +14,17 @@ import java.util.Objects;
 public interface RequisitionMapper {
 
     @Mapping(target = "id", source = "requestID")
-    @Mapping(target = "projectName", source = "projectID.name")
-    @Mapping(target = "projectKey", source = "projectID.projectKey")
-    @Mapping(target = "workflowName", expression = "java(request.getWorkflowDefinitionID() != null ? request.getWorkflowDefinitionID().getName() : \"N/A\")")
-    @Mapping(target = "teamName", source = "teamID.name")
-    @Mapping(target = "requesterName", source = "userID.name")
-    @Mapping(target = "requesterId", source = "userID.id")
-    @Mapping(target = "requesterTeamId", source = "userID.team.teamId")
+    @Mapping(target = "projectName", source = "project.name")
+    @Mapping(target = "projectKey", source = "project.projectKey")
+    @Mapping(target = "workflowName", expression = "java(request.getWorkflowDefinition() != null ? request.getWorkflowDefinition().getName() : \"N/A\")")
+    @Mapping(target = "teamName", source = "team.name")
+    @Mapping(target = "requesterName", source = "user.name")
+    @Mapping(target = "requesterId", source = "user.id")
+    @Mapping(target = "requesterTeamId", source = "user.team.teamId")
     @Mapping(target = "state", source = "state")
-    @Mapping(target = "status", expression = "java(request.getCurrentStepID() != null ? request.getCurrentStepID().getName() : (request.getJiraIssueKey() != null ? \"Jira Synced\" : \"DRAFT\"))")
+    @Mapping(target = "status", expression = "java(request.getCurrentStep() != null ? request.getCurrentStep().getName() : (request.getJiraIssueKey() != null ? \"Jira Synced\" : \"DRAFT\"))")
     @Mapping(target = "isClosed", expression = "java(request.getState() == com.veritas.backend.requisition.entity.RequestStatus.FINISHED)")
-    @Mapping(target = "responsibleRole", expression = "java(request.getCurrentStepID() != null && request.getCurrentStepID().getRole() != null ? request.getCurrentStepID().getRole().name() : (request.getJiraIssueKey() != null && request.getCurrentStepID() == null ? \"REQUESTER\" : null))")
+    @Mapping(target = "responsibleRole", expression = "java(request.getCurrentStep() != null && request.getCurrentStep().getRole() != null ? request.getCurrentStep().getRole().name() : (request.getJiraIssueKey() != null && request.getCurrentStep() == null ? \"REQUESTER\" : null))")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "jiraIssueKey", source = "jiraIssueKey")
     @Mapping(target = "jiraIssueUrl", source = "jiraIssueUrl")
@@ -38,9 +38,9 @@ public interface RequisitionMapper {
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "assigneeName", source = "assignee.name")
     @Mapping(target = "assigneeEmail", source = "assignee.email")
-    @Mapping(target = "workflowDefinitionId", source = "workflowDefinitionID.id")
+    @Mapping(target = "workflowDefinitionId", source = "workflowDefinition.id")
     @Mapping(target = "isPaid", expression = "java(request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid()))")
-    @Mapping(target = "workflowStepDescription", expression = "java(request.getCurrentStepID() != null && request.getCurrentStepID().getDescription() != null ? request.getCurrentStepID().getDescription() : null)")
+    @Mapping(target = "workflowStepDescription", expression = "java(request.getCurrentStep() != null && request.getCurrentStep().getDescription() != null ? request.getCurrentStep().getDescription() : null)")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);

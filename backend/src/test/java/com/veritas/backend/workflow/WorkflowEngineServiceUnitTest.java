@@ -90,7 +90,7 @@ class WorkflowEngineServiceUnitTest {
         nextStep.setName("End");
 
         testRequest = new Request();
-        testRequest.setCurrentStepID(currentStep);
+        testRequest.setCurrentStep(currentStep);
         testRequest.setRequestID(1L);
         testRequest.setAttachments(new ArrayList<>());
 
@@ -117,7 +117,7 @@ class WorkflowEngineServiceUnitTest {
         budget.setSafetyBuffer(new BigDecimal("10")); // 10% safety buffer meaning 900 limit
         budget.setActualSpend(new BigDecimal("800"));
         budget.setCommittedSpend(new BigDecimal("150")); // Total 950 > 900
-        testRequest.setBudgetID(budget);
+        testRequest.setBudget(budget);
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
@@ -135,7 +135,7 @@ class WorkflowEngineServiceUnitTest {
         budget.setSafetyBuffer(new BigDecimal("10")); // 10% safety buffer -> 900 limit
         budget.setActualSpend(new BigDecimal("800"));
         budget.setCommittedSpend(new BigDecimal("50")); // Total 850 <= 900
-        testRequest.setBudgetID(budget);
+        testRequest.setBudget(budget);
 
         assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }
@@ -275,7 +275,7 @@ class WorkflowEngineServiceUnitTest {
         reqDept.setDepartmentId(1L);
         reqTeam.setDepartment(reqDept);
         reqUser.setTeam(reqTeam);
-        testRequest.setUserID(reqUser);
+        testRequest.setUser(reqUser);
 
         // Actor: Procurement Officer in Department 2
         testActor.setId(99L);
@@ -308,7 +308,7 @@ class WorkflowEngineServiceUnitTest {
         reqDept.setDepartmentId(1L);
         reqTeam.setDepartment(reqDept);
         reqUser.setTeam(reqTeam);
-        testRequest.setUserID(reqUser);
+        testRequest.setUser(reqUser);
 
         // Actor: Procurement Officer in Department 1
         testActor.setId(99L);
@@ -350,7 +350,7 @@ class WorkflowEngineServiceUnitTest {
         // Requisition requester (creator)
         User reqUser = new User();
         reqUser.setId(99L);
-        testRequest.setUserID(reqUser);
+        testRequest.setUser(reqUser);
 
         // Actor: same creator
         testActor.setId(99L);
@@ -370,7 +370,7 @@ class WorkflowEngineServiceUnitTest {
         // Requisition requester (creator)
         User reqUser = new User();
         reqUser.setId(99L);
-        testRequest.setUserID(reqUser);
+        testRequest.setUser(reqUser);
 
         // Actor: different requester
         testActor.setId(100L);
