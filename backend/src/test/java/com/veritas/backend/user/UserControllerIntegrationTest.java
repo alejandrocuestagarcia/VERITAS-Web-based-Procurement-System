@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -459,5 +460,56 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .andExpect(jsonPath("$.name").value("Test Requester"))
             .andExpect(jsonPath("$.teamId").value(testTeam.getTeamId()))
             .andExpect(jsonPath("$.isTeamLeader").value(false));
+  }
+
+  //AI-GENERATED
+
+  @Test
+  void DeleteUser_AttemptsToDeleteSelf_ReturnsBadRequest() throws Exception {
+    User admin = User.builder()
+            .name("Admin Self")
+            .email("adminself@test.com")
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.ADMINISTRATOR)
+            .build();
+    userRepository.save(admin);
+
+    mockMvc.perform(
+            delete("/api/v1/users/" + admin.getId())
+                    .with(user(admin))
+    ).andExpect(status().isBadRequest());
+
+    User afterOperation = userRepository.findById(admin.getId()).orElseThrow();
+    assertTrue(afterOperation.getIsActive());
+  }
+
+  @Test
+  void DeleteUser_DeletesOtherUser_ReturnsNoContent() throws Exception {
+    User admin = User.builder()
+            .name("Admin User")
+            .email("adminuser@test.com")
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.ADMINISTRATOR)
+            .build();
+
+    User requester = User.builder()
+            .name("Requester User")
+            .email("requesteruser@test.com")
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+
+    userRepository.saveAll(java.util.List.of(admin, requester));
+
+    mockMvc.perform(
+            delete("/api/v1/users/" + requester.getId())
+                    .with(user(admin))
+    ).andExpect(status().isNoContent());
+
+    User afterOperation = userRepository.findById(requester.getId()).orElseThrow();
+    assertFalse(afterOperation.getIsActive());
   }
 }
