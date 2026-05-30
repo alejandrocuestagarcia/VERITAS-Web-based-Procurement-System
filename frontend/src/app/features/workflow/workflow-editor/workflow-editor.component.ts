@@ -8,7 +8,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
 import { AuthService } from "../../../core/services/auth.service";
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { WorkflowHelpDialogComponent } from '../workflow-help-dialog/workflow-help-dialog.component';
 
 export type WorkflowMode = 'create' | 'edit' | 'view';
 
@@ -75,6 +76,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private toastService: ToastService,
     private fb: FormBuilder,
+    private dialog: MatDialog,
     @Optional() @Inject(MAT_DIALOG_DATA) public data: any,
     @Optional() public dialogRef: MatDialogRef<WorkflowEditorComponent>
   ) {
@@ -318,6 +320,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     } else {
       this.router.navigate(['/workflows']);
     }
+  }
+
+  openHelpDialog(tab: string = 'structure') {
+    this.dialog.open(WorkflowHelpDialogComponent, {
+      width: '650px',
+      maxHeight: '90vh',
+      data: { tab }
+    });
   }
 
   ngOnDestroy() { this.bpmnInstance?.destroy(); }

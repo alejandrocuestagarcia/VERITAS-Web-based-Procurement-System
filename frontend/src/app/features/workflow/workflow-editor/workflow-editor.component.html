@@ -104,6 +104,10 @@
         <mat-icon>center_focus_strong</mat-icon>
         <span>Reset View</span>
       </button>
+      <button (click)="openHelpDialog('structure')" mat-flat-button class="v-btn-secondary">
+        <mat-icon>help_outline</mat-icon>
+        <span>Documentation</span>
+      </button>
     </div>
 
     <div class="flex gap-2">
@@ -130,7 +134,14 @@
       class="w-80 border-l border-[#e4e7ef] bg-slate-50/50 flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-300">
 
       <div class="p-6 border-b border-[#e4e7ef] flex justify-between items-center bg-white">
-        <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Transition Logic</h3>
+        <div class="flex items-center gap-1.5">
+          <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Transition Logic</h3>
+          <button type="button" (click)="openHelpDialog(selectedFlowLeavesGateway ? 'routing' : 'transitions')"
+            class="text-slate-400 hover:text-blue-600 transition-colors p-0.5 rounded-full hover:bg-slate-50 flex items-center justify-center"
+            title="Open Help Documentation">
+            <mat-icon class="text-sm w-4 h-4 flex items-center justify-center">help_outline</mat-icon>
+          </button>
+        </div>
         <button (click)="showPropertiesPanelTransition = false" class="text-slate-400 hover:text-slate-600">
           <mat-icon>close</mat-icon>
         </button>
@@ -148,10 +159,6 @@
 
           <div *ngIf="selectedFlowLeavesGateway">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Condition</label>
-            <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">
-              Define a rule to determine when the workflow should take this path based on the request's details. Leave empty to use as the default path.
-              <br>Examples: <code class="text-blue-500">selectedQuoteTotalAmount &lt; 500</code> (Amount under 500), <code class="text-blue-500">priority == 'HIGH'</code> (High priority)
-            </p>
             <div *ngIf="isEditable" class="mt-2">
               <input type="text" class="w-full p-3 text-sm font-mono bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                 [ngModelOptions]="{standalone: true}"
@@ -213,7 +220,14 @@
       class="w-80 border-l border-[#e4e7ef] bg-slate-50/50 flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-300">
 
       <div class="p-6 border-b border-[#e4e7ef] flex justify-between items-center bg-white">
-        <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Task Details</h3>
+        <div class="flex items-center gap-1.5">
+          <h3 class="font-manrope font-bold text-slate-700 uppercase text-xs tracking-widest">Task Details</h3>
+          <button type="button" (click)="openHelpDialog('steps')"
+            class="text-slate-400 hover:text-blue-600 transition-colors p-0.5 rounded-full hover:bg-slate-50 flex items-center justify-center"
+            title="Open Help Documentation">
+            <mat-icon class="text-sm w-4 h-4 flex items-center justify-center">help_outline</mat-icon>
+          </button>
+        </div>
         <button (click)="showPropertiesPanelTask = false" class="text-slate-400 hover:text-slate-600">
           <mat-icon>close</mat-icon>
         </button>
