@@ -37,6 +37,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public showPropertiesPanelTask = false;
   public selectedElementId = '';
   public selectedFlowLeavesGateway = false;
+  public selectedFlowLeavesStartEvent = false;
+  public selectedFlowEntersEndEvent = false;
   public currentTask: any = {
     role: '',
     description: '',
@@ -336,7 +338,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     // Check if this flow leaves a gateway (for showing the condition expression field)
     const sourceRef = bo.sourceRef;
+    const targetRef = bo.targetRef;
     this.selectedFlowLeavesGateway = sourceRef?.$type === 'bpmn:ExclusiveGateway';
+    this.selectedFlowLeavesStartEvent = sourceRef?.$type === 'bpmn:StartEvent';
+    this.selectedFlowEntersEndEvent = targetRef?.$type === 'bpmn:EndEvent';
 
     // Load existing conditionExpression
     const condExpr = bo.conditionExpression;
@@ -378,6 +383,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private resetRule() {
     this.selectedFlowLeavesGateway = false;
+    this.selectedFlowLeavesStartEvent = false;
+    this.selectedFlowEntersEndEvent = false;
     this.currentRule = {
       isPdfRequired: false,
       isCsvRequired: false,
