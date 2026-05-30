@@ -7,7 +7,7 @@ import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
-import {AuthService} from "../../../core/services/auth.service";
+import { AuthService } from "../../../core/services/auth.service";
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 export type WorkflowMode = 'create' | 'edit' | 'view';
@@ -496,9 +496,26 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
 
     rule[key] = value;
-    modeling.updateProperties(element, { extensionElements });
+
+    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0);
+
+    if (isRuleEmpty) {
+      if (extensionElements.values) {
+        extensionElements.values = extensionElements.values.filter((e: any) =>
+          e.$type !== 'veritas:transitionRule' && e.type !== 'veritas:transitionRule'
+        );
+      }
+      if (!extensionElements.values || extensionElements.values.length === 0) {
+        modeling.updateProperties(element, { extensionElements: undefined });
+      } else {
+        modeling.updateProperties(element, { extensionElements });
+      }
+    } else {
+      modeling.updateProperties(element, { extensionElements });
+    }
 
     this.currentRule[key] = value;
+    this.applyTransitionRuleCss();
   }
 
   updateConditionExpression(value: string) {
@@ -516,18 +533,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const cleanValue = (value || '').trim();
 
     if (cleanValue) {
-      // Create a proper BPMN conditionExpression with ${...} wrapping
       const wrappedExpression = cleanValue.startsWith('${') ? cleanValue : `\${${cleanValue}}`;
       const conditionExpression = moddle.create('bpmn:FormalExpression', {
         body: wrappedExpression
       });
       modeling.updateProperties(element, { conditionExpression });
     } else {
-      // Remove conditionExpression when cleared
       modeling.updateProperties(element, { conditionExpression: undefined });
     }
 
     this.currentRule.conditionExpression = cleanValue;
+    this.applyTransitionRuleCss();
   }
 
   private applyTransitionRuleCss() {
@@ -540,8 +556,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         const hasConstraint = extensions?.values?.some((val: any) =>
           [val.$type, val.type].includes('veritas:transitionRule')
         );
-        if (hasConstraint) {
+        const hasCondition = !!element.businessObject.conditionExpression;
+
+        if (hasConstraint || hasCondition) {
           canvas.addMarker(element.id, 'highlight');
+        } else {
+          canvas.removeMarker(element.id, 'highlight');
         }
       }
     });
