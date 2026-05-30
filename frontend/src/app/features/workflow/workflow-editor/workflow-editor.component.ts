@@ -197,6 +197,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   resetZoom() { this.fitDiagram(); }
 
   private async getUpdatedBpmnXml(): Promise<string> {
+    if (!this.isEditable) {
+      const { xml } = await this.bpmnInstance.saveXML({ format: true });
+      return xml;
+    }
+
     const modeling = this.bpmnInstance.get('modeling');
     const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
     const rootElement = this.bpmnInstance.get('canvas').getRootElement();
