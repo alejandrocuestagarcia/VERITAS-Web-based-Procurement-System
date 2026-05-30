@@ -100,7 +100,7 @@
 
       <div class="space-y-4">
         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Available User Roles</h3>
-        
+
         <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
@@ -183,7 +183,7 @@
       <div>
         <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Gateway Routing (XOR)</h3>
         <p class="text-xs text-slate-600 leading-relaxed m-0">
-          When multiple paths exit an <strong>Exclusive Gateway (XOR)</strong>, the system evaluates <strong>Spring Expression Language (SpEL)</strong> conditions to decide which path the request should take. 
+          When multiple paths exit an <strong>Exclusive Gateway (XOR)</strong>, the system evaluates <strong>Spring Expression Language (SpEL)</strong> conditions to decide which path the request should take.
         </p>
       </div>
 
@@ -216,13 +216,13 @@
               </tr>
               <tr>
                 <td class="p-2.5 font-mono font-semibold text-blue-600">projectID</td>
-                <td class="p-2.5 text-slate-500">Number</td>
-                <td class="p-2.5 text-slate-600">ID of the associated Project.</td>
+                <td class="p-2.5 text-slate-500">Project Entity</td>
+                <td class="p-2.5 text-slate-600">The associated Project. You can traverse nested properties, e.g., <code>projectID.name</code>, <code>projectID.projectKey</code>, or <code>projectID.id</code>.</td>
               </tr>
               <tr>
                 <td class="p-2.5 font-mono font-semibold text-blue-600">teamID</td>
-                <td class="p-2.5 text-slate-500">Number</td>
-                <td class="p-2.5 text-slate-600">ID of the team that created the request.</td>
+                <td class="p-2.5 text-slate-500">Team Entity</td>
+                <td class="p-2.5 text-slate-600">The Team that created the request. You can traverse nested properties, e.g., <code>teamID.name</code> or <code>teamID.department.name</code> to route by department.</td>
               </tr>
             </tbody>
           </table>
@@ -230,13 +230,30 @@
       </div>
 
       <div class="space-y-3">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Allowed Operators & Grouping</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Logical Operations (Words Only)</span>
+            <div class="text-xs text-slate-600 space-y-1.5">
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">and</code>: Logical AND (e.g. <code>A and B</code>)</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">or</code>: Logical OR (e.g. <code>A or B</code>)</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">not</code>: Logical NOT (e.g. <code>not A</code>)</div>
+            </div>
+          </div>
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comparison & Grouping</span>
+            <div class="text-xs text-slate-600 space-y-1.5">
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">==</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">!=</code>: Equal, Not Equal</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&lt;</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&gt;</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&lt;=</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&gt;=</code>: Comparators</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">( )</code>: Grouping expressions (e.g. <code>(A or B) and C</code>)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Example Expressions</h4>
         <div class="space-y-2">
-          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
-            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Amount Threshold</span>
-            <div class="help-code-block">selectedQuoteTotalAmount &lt; 1500</div>
-          </div>
-
           <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">High Priority Check</span>
             <div class="help-code-block">priority == 'HIGH'</div>
@@ -244,7 +261,12 @@
 
           <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
             <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Compound Logic (Amount and Priority)</span>
-            <div class="help-code-block">selectedQuoteTotalAmount >= 5000 and priority == 'HIGH'</div>
+            <div class="help-code-block">selectedQuoteTotalAmount >= 5000 and (priority == 'HIGH' or priority == 'CRITICAL')</div>
+          </div>
+
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Department-Specific Routing (Nested Traversal)</span>
+            <div class="help-code-block">teamID != null and teamID.department != null and teamID.department.name == 'IT'</div>
           </div>
         </div>
       </div>

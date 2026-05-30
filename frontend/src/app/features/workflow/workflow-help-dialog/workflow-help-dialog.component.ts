@@ -6,18 +6,7 @@ export type HelpTab = 'structure' | 'steps' | 'transitions' | 'routing';
 
 @Component({
   selector: 'app-workflow-help-dialog',
-  templateUrl: './workflow-help-dialog.component.html',
-  styles: [`
-    .help-code-block {
-      background-color: #0f172a;
-      color: #e2e8f0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.8125rem;
-      overflow-x: auto;
-    }
-  `]
+  templateUrl: './workflow-help-dialog.component.html'
 })
 export class WorkflowHelpDialogComponent implements OnInit {
   activeTab: HelpTab = 'structure';
