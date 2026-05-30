@@ -562,17 +562,30 @@ public class BpmnValidator {
 
     private void validateAssigneeRoles(Collection<Task> tasks, BpmnValidationResult result) {
         for (Task task : tasks) {
-            task.getDocumentations().forEach(doc -> {
+            List<String> assignees = new ArrayList<>();
+            for (Documentation doc : task.getDocumentations()) {
                 String text = doc.getTextContent();
-                if (text != null && !text.isBlank() && text.startsWith(ASSIGNEE_PREFIX)) {
-                    String roleName = text.substring(ASSIGNEE_PREFIX.length());
+                if (text != null && text.startsWith(ASSIGNEE_PREFIX)) {
+                    assignees.add(text.substring(ASSIGNEE_PREFIX.length()).trim());
+                }
+            }
+
+            if (assignees.isEmpty()) {
+                result.addError("Step '" + getNodeName(task) + "' must have a responsible role selected");
+            } else if (assignees.size() > 1) {
+                result.addError("Step '" + getNodeName(task) + "' has multiple assignees defined. Exactly one required");
+            } else {
+                String roleName = assignees.getFirst();
+                if (roleName.isBlank()) {
+                    result.addError("Step '" + getNodeName(task) + "' must have a responsible role selected");
+                } else {
                     try {
                         UserRole.valueOf(roleName);
                     } catch (IllegalArgumentException e) {
                         result.addError("Invalid role assigned in BPMN: " + roleName);
                     }
                 }
-            });
+            }
         }
     }
 
