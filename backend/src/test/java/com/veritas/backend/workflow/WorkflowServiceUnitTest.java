@@ -354,4 +354,29 @@ class WorkflowServiceUnitTest {
         assertThat(result.getContent().get(0).name()).isEqualTo("Department Workflow");
         verify(workflowDefinitionRepository).findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable));
     }
+
+    //AI-GENERATED
+
+    @Test
+    void CreateWorkflow_WithAutomatedApproval_SetsIsAutomatedApproval() {
+        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
+                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                "  <bpmn:documentation>[AUTO_APPROVE]true</bpmn:documentation>\n" +
+                "</bpmn:task>");
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
+        verify(workflowStepRepository).saveAll(stepsCaptor.capture());
+        Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
+        
+        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
+        savedSteps.forEach(stepsList::add);
+        
+        assertThat(stepsList).hasSize(3);
+        WorkflowStep step = stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get();
+        assertTrue(step.getIsAutomatedApproval());
+    }
 }
