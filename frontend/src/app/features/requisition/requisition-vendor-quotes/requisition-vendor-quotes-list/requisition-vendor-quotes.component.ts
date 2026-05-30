@@ -29,7 +29,8 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   hasInvoice = false;
 
   get hasPreferredQuote(): string {
-    return this.quotes.some(q => q.isSelected) ? 'Selected' : 'None';
+    const selected = this.quotes.find(q => q.isSelected);
+    return selected?.vendor?.vendorName || 'None';
   }
 
   get selectedQuote(): QuoteDto | null {
