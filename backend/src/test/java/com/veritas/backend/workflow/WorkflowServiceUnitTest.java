@@ -359,10 +359,10 @@ class WorkflowServiceUnitTest {
 
     @Test
     void CreateWorkflow_WithAutomatedApproval_SetsIsAutomatedApproval() {
-        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
-                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
-                "  <bpmn:documentation>[AUTO_APPROVE]true</bpmn:documentation>\n" +
-                "</bpmn:task>");
+        String xml = VALID_BPMN_XML.replace(
+                "<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>",
+                "<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "      <bpmn:documentation>[AUTO_APPROVE]true</bpmn:documentation>");
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
