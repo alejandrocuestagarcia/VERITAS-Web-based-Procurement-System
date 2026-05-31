@@ -235,7 +235,9 @@ class WorkflowServiceUnitTest {
                 "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
                 "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
                 "    <bpmn:task id=\"Task_2\" name=\"Approval Step B\">\n" +
                 "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
                 "    </bpmn:task>\n" +
