@@ -66,9 +66,9 @@
                 <mat-icon>edit</mat-icon>
               </button>
           </span>
-          <span *ngIf="authService.hasRole('ADMINISTRATOR')" [matTooltip]="user.role === 'ADMINISTRATOR' ? 'Administrators cannot be deleted' : 'Delete user'">
+          <span *ngIf="authService.hasRole('ADMINISTRATOR')" [matTooltip]="user.id === this.authService.getUserId() ? 'Cannot delete yourself' : 'Delete user'">
             <button mat-icon-button color="warn" (click)="deleteUser(user)"
-                    [disabled]="user.role === UserDtoRoleEnum.Administrator">
+                    [disabled]="user.id === this.authService.getUserId()">
               <mat-icon>delete</mat-icon>
             </button>
           </span>

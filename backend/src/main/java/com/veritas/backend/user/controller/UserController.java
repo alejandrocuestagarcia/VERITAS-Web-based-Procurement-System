@@ -7,6 +7,7 @@ import com.veritas.backend.user.dto.UserCreationRequestDto;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.dto.UserEditDto;
 import com.veritas.backend.user.dto.UserStatsDto;
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -101,9 +103,9 @@ public class UserController {
     @IsAdministrator
     @DeleteMapping(path = "/{id}")
     public ResponseEntity<Object> deleteByUserId(@PathVariable Long id,
-            @RequestParam(required = false) Long fallbackUserId) {
+            @RequestParam(required = false) Long fallbackUserId, @AuthenticationPrincipal User currentUser) {
         log.info("DELETE /users/{} with fallbackUserId: {}", id, fallbackUserId);
-        userService.deleteUser(id, fallbackUserId);
+        userService.deleteUser(id, fallbackUserId, currentUser);
         return ResponseEntity.noContent().build();
     }
 
