@@ -46,7 +46,7 @@ public class BpmnValidator {
     private static final Set<String> KNOWN_REQUEST_PROPERTIES = Set.of(
             "requestID", "requestName", "description", "priority",
             "state", "totalQuantity", "createdAt", "updatedAt",
-            "budgetID", "teamID", "projectID", "userID",
+            "budget", "team", "project", "user",
             "requestKey", "jiraIssueKey", "jiraStatus",
             "selectedQuoteTotalAmount"
     );

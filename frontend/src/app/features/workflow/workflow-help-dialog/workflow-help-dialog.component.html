@@ -217,12 +217,22 @@
               <tr>
                 <td class="p-2.5 font-mono font-semibold text-blue-600">project</td>
                 <td class="p-2.5 text-slate-500">Project Entity</td>
-                <td class="p-2.5 text-slate-600">The associated Project. You can traverse nested properties, e.g., <code>project.name</code>, <code>project.projectKey</code>, or <code>project.id</code>.</td>
+                <td class="p-2.5 text-slate-600">The associated Project. Available nested fields: <code>project.id</code>, <code>project.name</code>, <code>project.projectKey</code>, <code>project.startDate</code>, <code>project.endDate</code>, and <code>project.requestCounter</code>.</td>
               </tr>
               <tr>
                 <td class="p-2.5 font-mono font-semibold text-blue-600">team</td>
                 <td class="p-2.5 text-slate-500">Team Entity</td>
-                <td class="p-2.5 text-slate-600">The Team that created the request. You can traverse nested properties, e.g., <code>team.name</code> or <code>team.department.name</code> to route by department.</td>
+                <td class="p-2.5 text-slate-600">The Team that created the request. Available nested fields: <code>team.teamId</code>, <code>team.name</code>, <code>team.description</code>, <code>team.isActive</code>, <code>team.createdAt</code>, and nested department fields like <code>team.department.departmentId</code> or <code>team.department.name</code>.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">user</td>
+                <td class="p-2.5 text-slate-500">User Entity</td>
+                <td class="p-2.5 text-slate-600">The User (creator) who submitted the request. Available nested fields: <code>user.id</code>, <code>user.name</code>, <code>user.email</code>, <code>user.isActive</code>, and <code>user.role</code> (values: <code>'REQUESTER'</code>, <code>'PROCUREMENT_OFFICER'</code>, <code>'FINANCE_OFFICER'</code>, <code>'ADMINISTRATOR'</code>).</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">budget</td>
+                <td class="p-2.5 text-slate-500">Budget Entity</td>
+                <td class="p-2.5 text-slate-600">The associated Internal Budget. Available nested fields: <code>budget.id</code>, <code>budget.budgetName</code>, <code>budget.totalAmount</code>, <code>budget.committedSpend</code>, <code>budget.actualSpend</code>, and <code>budget.safetyBuffer</code>.</td>
               </tr>
             </tbody>
           </table>
@@ -265,8 +275,8 @@
           </div>
 
           <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
-            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Department-Specific Routing (Nested Traversal)</span>
-            <div class="help-code-block">team.department.name == 'IT'</div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Team Leader Self-Submission Check (Nested Traversal)</span>
+            <div class="help-code-block">user.id == team.leader.id</div>
           </div>
         </div>
       </div>
