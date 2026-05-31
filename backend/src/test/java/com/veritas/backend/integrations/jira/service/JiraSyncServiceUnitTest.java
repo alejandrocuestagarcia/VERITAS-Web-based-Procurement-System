@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
@@ -21,7 +22,6 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
-import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
@@ -278,12 +278,16 @@ public class JiraSyncServiceUnitTest {
         JsonNode transNode = null;
         try {
             transNode = mapper.readTree(transitionsJson);
-        } catch (Exception e) {}
+        } catch (JsonProcessingException e) {}
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
                 .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
 
         // Mock POST to execute transition
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        // Mock POST comment
+        when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
         service.processQueue();

@@ -27,6 +27,7 @@ import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,6 +63,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -111,7 +113,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             syncConfig(config);
             config.setLastSyncTime(LocalDateTime.now());
             configRepository.save(config);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Error during manual sync for config ID {}", configId, e);
         }
     }
@@ -137,7 +139,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             ResponseEntity<JsonNode> response =
                 restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
             return response.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.warn("Test connection failed for Jira config", e);
             return false;
         }
@@ -166,7 +168,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         try {
             response = restTemplate.exchange(searchUrl, HttpMethod.GET, entity,
                 JiraSearchResponseRecord.class);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Failed to query Jira API with JQL: {}", appendedJql, e);
             return;
         }
@@ -340,7 +342,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                         );
                     }
                 }
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 log.warn("Failed to download attachment {} from Jira issue {}", attachment.filename(), issueRecord.key(), e);
             }
         }
@@ -425,7 +427,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 } else if (rowContent.size() >= 3) {
                     try {
                         item.setQuantity(Integer.parseInt(col2.replaceAll("[^\\d]", "")));
-                    } catch (Exception e) {
+                    } catch (NumberFormatException e) {
                         item.setQuantity(1);
                     }
                     item.setUnit(col3.isBlank() ? "pcs" : col3);
@@ -485,7 +487,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 } else {
                     item.setQuantity(1);
                 }
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 item.setQuantity(1);
             }
             item.setUnit("pcs");
@@ -545,7 +547,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             ResponseEntity<String> response =
                 restTemplate.exchange(updateUrl, HttpMethod.PUT, entity, String.class);
             return response.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Error updating Jira issue {} with local ID {}", issueKey, localId, e);
             return false;
         }
@@ -573,7 +575,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 syncConfig(config);
                 config.setLastSyncTime(LocalDateTime.now());
                 configRepository.save(config);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 log.error("Error during global sync for config ID {}", config.getId(), e);
             }
         }
@@ -664,7 +666,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                     item.setStatus("PENDING");
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Error processing queue item {}", item.getId(), e);
             if (item.getRetries() >= 5) {
                 item.setStatus("FAILED");
@@ -680,7 +682,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         boolean transitioned = transitionJiraIssue(config, issueKey, "Delegated Waiting", true);
         try {
             postJiraComment(config, issueKey, "This requisition has been imported to Veritas and is locked in Jira. Please proceed with all approvals and edits in Veritas.");
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.warn("Failed to add locking comment to Jira for issue {}", issueKey, e);
         }
         createJiraRemoteLink(config, issueKey, request);
@@ -700,7 +702,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         
         try {
             restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.warn("Failed to create remote link in Jira for issue {}", issueKey, e);
         }
     }
@@ -723,7 +725,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             HttpEntity<String> entity = new HttpEntity<>(updatePayload.toString(), headers);
             ResponseEntity<String> response = restTemplate.exchange(updateUrl, HttpMethod.PUT, entity, String.class);
             updateDescriptionSuccess = response.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Failed to update Jira description/table for issue {}", key, e);
         }
 
@@ -753,7 +755,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String requestName = request.getRequestName() != null && !request.getRequestName().isBlank() ? request.getRequestName() : request.getRequestKey();
         try {
             postStatusChangeComment(config, key, requestName, stepNameForComment);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.warn("Failed to post status comment to Jira for {}", key, e);
         }
 
@@ -770,7 +772,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         ResponseEntity<JsonNode> response;
         try {
             response = restTemplate.exchange(issueUrl, HttpMethod.GET, entity, JsonNode.class);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.warn("Failed to fetch Jira issue attachments for issue {}", issueKey, e);
             return;
         }
@@ -834,7 +836,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             restTemplate.exchange(uploadUrl, HttpMethod.POST, requestEntity, String.class);
             log.info("Uploaded attachment {} to Jira issue {}", attachment.getFileName(), issueKey);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Failed to upload attachment {} to Jira issue {}", attachment.getFileName(), issueKey, e);
         }
     }
@@ -847,7 +849,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         try {
             restTemplate.exchange(deleteUrl, HttpMethod.DELETE, entity, Void.class);
             log.info("Deleted attachment {} from Jira", attachmentId);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Failed to delete attachment {} from Jira", attachmentId, e);
         }
     }
@@ -860,7 +862,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         ResponseEntity<JsonNode> response;
         try {
             response = restTemplate.exchange(transitionsUrl, HttpMethod.GET, entity, JsonNode.class);
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.warn("Failed to fetch available transitions for Jira issue {}", issueKey, e);
             return false;
         }
@@ -905,10 +907,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         if (transitionId == null) {
             log.warn("No matching transition found in Jira for issue {} and target matching '{}'", issueKey, targetName);
-            if (isLock) {
-                return true; 
-            }
-            return false;
+            return isLock;
         }
 
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -918,7 +917,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         try {
             ResponseEntity<String> transitionResponse = restTemplate.exchange(transitionsUrl, HttpMethod.POST, transitionEntity, String.class);
             return transitionResponse.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Failed to execute transition ID {} on Jira issue {}", transitionId, issueKey, e);
             return false;
         }
@@ -929,10 +928,10 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         HttpHeaders headers = createHeaders(config.getUsername(), config.getApiToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String cleanComment = commentText.replace("\\", "\\\\")
-                                         .replace("\"", "\\\"")
-                                         .replace("\n", "\\n")
-                                         .replace("\r", "");
+        String cleanComment = commentText != null ? commentText.replace("\\", "\\\\")
+                                                               .replace("\"", "\\\"")
+                                                               .replace("\n", "\\n")
+                                                               .replace("\r", "") : "";
         String jsonPayload = String.format(
             "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"%s\"}]}]}}",
             cleanComment
@@ -947,8 +946,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         HttpHeaders headers = createHeaders(config.getUsername(), config.getApiToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String cleanReqName = requestName.replace("\"", "\\\"");
-        String cleanStepName = stepName.replace("\"", "\\\"");
+        String cleanReqName = requestName != null ? requestName.replace("\"", "\\\"") : "";
+        String cleanStepName = stepName != null ? stepName.replace("\"", "\\\"") : "";
         
         String jsonPayload = String.format(
             "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [" +

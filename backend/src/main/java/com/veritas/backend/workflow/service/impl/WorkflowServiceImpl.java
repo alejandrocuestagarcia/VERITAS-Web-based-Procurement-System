@@ -24,6 +24,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.xml.ModelException;
 import org.camunda.bpm.model.bpmn.instance.*;
 import org.camunda.bpm.model.xml.instance.DomElement;
 import org.camunda.bpm.model.bpmn.instance.Process;
@@ -110,7 +111,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                     new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))
                 );
             Bpmn.validateModel(modelInstance);
-        } catch (Exception e) {
+        } catch (ModelException e) {
             log.warn("Failed to parse BPMN XML", e);
             throw new IllegalArgumentException("Error while parsing input XML", e);
         }

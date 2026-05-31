@@ -31,6 +31,7 @@ import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 
 import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.ExpressionException;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
@@ -341,7 +342,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             return parser.parseExpression(transition.getConditionExpression())
                     .getValue(context, requisition, Boolean.class);
-        } catch (Exception e) {
+        } catch (ExpressionException e) {
             return false;
         }
     }
