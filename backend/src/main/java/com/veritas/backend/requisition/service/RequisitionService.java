@@ -32,7 +32,7 @@ public interface RequisitionService {
     List<UserDto> getEligibleAssignees(Long id, String roleName);
     boolean canAct(Long id, User actor);
     RequisitionDto updateRequest(Long id, RequisitionUpdateDto updates, User actor);
-    void processPayment(Long requestId);
+    void processPayment(Long requestId, User actor);
     InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file);
     InvoiceDto getInvoice(Long requestId);
 }

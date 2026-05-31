@@ -3,6 +3,7 @@ package com.veritas.backend.team;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
@@ -54,6 +55,9 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         ProjectRepository projectRepository;
 
         @Autowired
+        InternalBudgetRepository internalBudgetRepository;
+
+        @Autowired
         UserRepository userRepository;
 
         @Autowired
@@ -85,6 +89,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 userRepository.deleteAll();
                 teamRepository.deleteAll();
                 departmentRepository.deleteAll();
+                internalBudgetRepository.deleteAll();
 
                 departmentIT = departmentRepository.save(Department.builder().name("IT").build());
                 departmentHR = departmentRepository.save(Department.builder().name("HR").build());

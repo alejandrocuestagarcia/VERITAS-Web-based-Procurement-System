@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.veritas.backend.audit.entity.AuditLog;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
@@ -67,6 +69,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import static com.veritas.backend.common.model.AuditActionConstants.*;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -85,6 +89,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     private final JiraSyncQueueItemRepository queueItemRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final InternalBudgetRepository internalBudgetRepository;
+    private final AuditLogRepository auditLogRepository;
 
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
@@ -744,19 +749,49 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
         
         String stepNameForComment;
+        String extraContext = null;
         if (RequestStatus.FINISHED.equals(request.getState())) {
-            stepNameForComment = "Finished";
+            if (request.getInvoice() != null) {
+                if (Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                    stepNameForComment = "Paid";
+                } else {
+                    stepNameForComment = "Finished and Awaiting Payment";
+                }
+                if (request.getInvoice().getTotalAmount() != null) {
+                    extraContext = "Invoice Total: EUR " + request.getInvoice().getTotalAmount().toPlainString();
+                }
+            } else {
+                stepNameForComment = "Finished";
+            }
         } else if (request.getCurrentStepID() != null && request.getCurrentStepID().getName() != null) {
             stepNameForComment = request.getCurrentStepID().getName();
         } else {
             stepNameForComment = "Unknown";
         }
 
+        String actor = null;
+        if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+            Optional<AuditLog> paymentLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, PAID);
+            if (paymentLog.isPresent()) {
+                actor = paymentLog.get().getActor().getName();
+            }
+        } else if (request.getRejectionReason() != null && !request.getRejectionReason().isBlank()) {
+            Optional<AuditLog> rejectionLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT);
+            if (rejectionLog.isPresent()) {
+                actor = rejectionLog.get().getActor().getName();
+            }
+        } else {
+            Optional<AuditLog> approvalLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, APPROVE);
+            if (approvalLog.isPresent()) {
+                actor = approvalLog.get().getActor().getName();
+            }
+        }
+
         String requestName = request.getRequestName() != null && !request.getRequestName().isBlank() ? request.getRequestName() : request.getRequestKey();
         try {
-            postStatusChangeComment(config, key, requestName, stepNameForComment);
+            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actor);
         } catch (RestClientException e) {
-            log.warn("Failed to post status comment to Jira for {}", key, e);
+            log.warn("Failed to post status or rejection comment to Jira for {}", key, e);
         }
 
         syncAttachmentsToJira(config, key, request);
@@ -941,23 +976,68 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
     }
 
-    private void postStatusChangeComment(JiraConfig config, String issueKey, String requestName, String stepName) {
+    private void postTransitionComment(JiraConfig config, String issueKey, String requestName, String stepName, String rejectionReason, String extraContext, String actor) {
         String url = config.getJiraUrl().replaceAll("/+$", "") + "/rest/api/3/issue/" + issueKey + "/comment";
         HttpHeaders headers = createHeaders(config.getUsername(), config.getApiToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         String cleanReqName = requestName != null ? requestName.replace("\"", "\\\"") : "";
         String cleanStepName = stepName != null ? stepName.replace("\"", "\\\"") : "";
-        
-        String jsonPayload = String.format(
-            "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [" +
-            "{\"type\": \"text\", \"text\": \"Request \"}, " +
-            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
-            "{\"type\": \"text\", \"text\": \" moved to state \"}, " +
-            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}" +
-            "]}]}}",
-            cleanReqName, cleanStepName
-        );
+        String cleanActor = actor != null ? actor.replace("\"", "\\\"") : "";
+
+        String jsonPayload;
+        if (rejectionReason != null && !rejectionReason.isBlank()) {
+            String cleanReason = rejectionReason.replace("\"", "\\\"").replace("\r", "");
+            String reasonWithBreaks = cleanReason.replace("\n", "\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"");
+
+            String actorNode = !cleanActor.isBlank()
+                    ? ",{\"type\": \"hardBreak\"}," +
+                    "{\"type\": \"text\", \"text\": \"Rejected by " + cleanActor + "\", \"marks\": [{\"type\": \"em\"}]}"
+                    : "";
+
+            jsonPayload = String.format(
+                    "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [" +
+                            "{\"type\": \"paragraph\", \"content\": [" +
+                            "{\"type\": \"text\", \"text\": \"Request \"}, " +
+                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
+                            "{\"type\": \"text\", \"text\": \" was rejected with reason:\"}," +
+                            "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                            "{\"type\": \"text\", \"text\": \"%s\"}," +
+                            "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                            "{\"type\": \"text\", \"text\": \"and moved back to step \"}, " +
+                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}," +
+                            "{\"type\": \"text\", \"text\": \".\"}" +
+                            "%s" +
+                            "]}" +
+                            "]}}",
+                    cleanReqName, reasonWithBreaks, cleanStepName, actorNode
+            );
+        } else {
+            String extraContextNodes = "";
+            if (extraContext != null && !extraContext.isBlank()) {
+                String cleanExtra = extraContext.replace("\"", "\\\"");
+                extraContextNodes =
+                        ",{\"type\": \"hardBreak\"}," +
+                                "{\"type\": \"text\", \"text\": \"" + cleanExtra + "\", \"marks\": [{\"type\": \"em\"}]}";
+            }
+
+            String actorNode = !cleanActor.isBlank()
+                    ? ",{\"type\": \"hardBreak\"}," +
+                    "{\"type\": \"text\", \"text\": \"Approved by " + cleanActor + "\", \"marks\": [{\"type\": \"em\"}]}"
+                    : "";
+
+            jsonPayload = String.format(
+                    "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [" +
+                            "{\"type\": \"text\", \"text\": \"Request \"}, " +
+                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
+                            "{\"type\": \"text\", \"text\": \" moved to state \"}, " +
+                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}" +
+                            "%s" +
+                            "%s" +
+                            "]}]}}",
+                    cleanReqName, cleanStepName, extraContextNodes, actorNode
+            );
+        }
 
         HttpEntity<String> entity = new HttpEntity<>(jsonPayload, headers);
         restTemplate.exchange(url, HttpMethod.POST, entity, String.class);

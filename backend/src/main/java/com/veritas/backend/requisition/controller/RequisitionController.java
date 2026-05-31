@@ -157,10 +157,8 @@ public class RequisitionController {
     @Operation(summary = "Process final payment", description = "Finalizes a request, marks it as paid, and transitions funds from 'committed' to 'actual' in the budget.")
     @IsFinanceOfficer
     @PostMapping("/{id}/pay")
-    public ResponseEntity<Void> processPayment(@PathVariable Long id) {
-
-        this.requisitionService.processPayment(id);
-
+    public ResponseEntity<Void> processPayment(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        this.requisitionService.processPayment(id, user);
         return ResponseEntity.noContent().build();
     }
 

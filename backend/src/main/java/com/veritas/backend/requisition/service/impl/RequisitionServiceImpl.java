@@ -70,6 +70,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.veritas.backend.common.model.AuditActionConstants.PAID;
+
 @Service
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {
@@ -572,7 +574,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public void processPayment(Long requestId) {
+    public void processPayment(Long requestId, User actor) {
 
         Request request = requestRepository.findById(requestId).orElseThrow(
                 () -> new EntityNotFoundException("Request not found with id: " + requestId)
@@ -590,9 +592,18 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         request.setState(RequestStatus.FINISHED);
-        requestRepository.save(request);
+        Request saved = requestRepository.save(request);
 
+        auditService.createWorkflowTransitionLog(
+                actor,
+                request,
+                null,
+                PAID,
+                "Transitioned was paid by " + actor.getName());
 
+        if (saved.getJiraIssueKey() != null && !saved.getJiraIssueKey().isBlank()) {
+            jiraSyncService.handleVeritasWorkflowChange(saved);
+        }
     }
 
     private void addToBudgets(InternalBudget budget, Invoice invoice) {
