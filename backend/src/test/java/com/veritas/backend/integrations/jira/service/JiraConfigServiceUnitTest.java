@@ -25,8 +25,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.anyString;
-import org.springframework.data.jpa.domain.Specification;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -64,10 +62,10 @@ public class JiraConfigServiceUnitTest {
 
         configDto =
             new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", null, null, null, null, null);
+                "jql", 60, "customfield_10015", null, null, null, null, null, true);
 
         responseDto = new JiraConfigResponseDto(1L, "Test Config", "https://test.atlassian.net", "user",
-            "jql", 60, "customfield_10015", null, null, null, null, null, null, null, null, true);
+            "jql", 60, "customfield_10015", null, null, null, null, null, null, null, null, true, true);
     }
 
     @Test
@@ -163,5 +161,19 @@ public class JiraConfigServiceUnitTest {
 
         assertEquals(true,result.isEmpty());
         assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    void DeleteConfig_ExistingConfig_DeactivatesAndCancels() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(repository.save(any(JiraConfig.class))).thenReturn(config);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.deleteConfigById(1L);
+
+        assertNotNull(result);
+        assertEquals(false, config.isActive());
+        verify(repository).save(config);
+        verify(scheduler).cancelConfig(1L);
     }
 }

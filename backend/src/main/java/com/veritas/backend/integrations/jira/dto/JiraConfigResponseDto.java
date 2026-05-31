@@ -27,6 +27,7 @@ public record JiraConfigResponseDto(
     String fallbackWorkflowName,
     LocalDateTime lastSyncTime,
     LocalDateTime nextSyncTime,
-    boolean isTokenSet
+    boolean isTokenSet,
+    boolean isActive
 ) {
 }

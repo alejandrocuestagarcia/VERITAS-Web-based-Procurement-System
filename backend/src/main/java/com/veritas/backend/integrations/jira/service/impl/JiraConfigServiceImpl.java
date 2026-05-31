@@ -10,9 +10,11 @@ import com.veritas.backend.integrations.jira.service.JiraConfigService;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
@@ -49,15 +51,34 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     @Transactional
     public JiraConfigResponseDto createConfig(JiraConfigDto dto) {
         if (repository.existsByJiraUrlAndJql(dto.jiraUrl(), dto.jql())) {
-            throw new RuntimeException("A configuration with this Jira URL and JQL already exists.");
+            throw new EntityExistsException("A configuration with this Jira URL and JQL already exists.");
         }
         if (dto.apiToken() == null || dto.apiToken().isBlank()) {
-            throw new RuntimeException("API Token is required for new configurations.");
+            throw new IllegalArgumentException("API Token is required for new configurations.");
         }
         JiraConfig entity = mapper.toEntity(dto);
         resolveFallbackEntities(dto, entity);
+        
+        if (dto.isActive() != null) {
+            entity.setActive(dto.isActive());
+        } else {
+            entity.setActive(true);
+        }
+
         JiraConfig saved = repository.save(entity);
         scheduler.scheduleConfig(saved);
+        return mapper.toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public JiraConfigResponseDto deleteConfigById(Long id) {
+        JiraConfig entity = repository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Config not found"));
+
+        entity.setActive(false);
+        JiraConfig saved = repository.save(entity);
+        scheduler.cancelConfig(id);
         return mapper.toDto(saved);
     }
 
@@ -66,12 +87,12 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     public JiraConfigResponseDto updateConfig(Long id, JiraConfigDto dto) {
         repository.findByJiraUrlAndJql(dto.jiraUrl(), dto.jql()).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
-                throw new RuntimeException("Another configuration already uses this Jira URL and JQL.");
+                throw new EntityExistsException("Another configuration already uses this Jira URL and JQL.");
             }
         });
 
         JiraConfig entity = repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Config not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Config not found"));
 
         String existingToken = entity.getApiToken();
         mapper.updateEntityFromDto(dto, entity);
@@ -82,6 +103,10 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         }
         resolveFallbackEntities(dto, entity);
 
+        if (dto.isActive() != null) {
+            entity.setActive(dto.isActive());
+        }
+
         JiraConfig updated = repository.save(entity);
         scheduler.scheduleConfig(updated);
         return mapper.toDto(updated);
@@ -90,21 +115,21 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     private void resolveFallbackEntities(JiraConfigDto dto, JiraConfig entity) {
         if (dto.fallbackUserId() != null) {
             entity.setFallbackUser(userRepository.findById(dto.fallbackUserId())
-                .orElseThrow(() -> new RuntimeException("Fallback user not found")));
+                .orElseThrow(() -> new DataIntegrityViolationException("Fallback user not found")));
         } else {
             entity.setFallbackUser(null);
         }
         
         if (dto.fallbackProjectId() != null) {
             entity.setFallbackProject(projectRepository.findById(dto.fallbackProjectId())
-                .orElseThrow(() -> new RuntimeException("Fallback project not found")));
+                .orElseThrow(() -> new DataIntegrityViolationException("Fallback project not found")));
         } else {
             entity.setFallbackProject(null);
         }
         
         if (dto.fallbackWorkflowId() != null) {
             entity.setFallbackWorkflow(workflowDefinitionRepository.findById(dto.fallbackWorkflowId())
-                .orElseThrow(() -> new RuntimeException("Fallback workflow not found")));
+                .orElseThrow(() -> new DataIntegrityViolationException("Fallback workflow not found")));
         } else {
             entity.setFallbackWorkflow(null);
         }

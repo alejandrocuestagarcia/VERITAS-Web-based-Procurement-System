@@ -101,7 +101,7 @@ public class JiraSyncServiceUnitTest {
     void TestConnection_SuccessfulResponse_ReturnsTrue() {
         JiraConfigDto dto =
             new JiraConfigDto(1L, "Test", "https://test.atlassian.net", "user", "token", "jql", 60,
-                "field", null, null, null, null, null);
+                "field", null, null, null, null, null, true);
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),
             eq(JsonNode.class)))
             .thenReturn(new ResponseEntity<>(HttpStatus.OK));

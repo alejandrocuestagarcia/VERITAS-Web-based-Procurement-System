@@ -7,7 +7,6 @@ import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
 import com.veritas.backend.integrations.jira.dto.JiraConfigResponseDto;
 import com.veritas.backend.integrations.jira.service.JiraConfigService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
-import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
@@ -59,7 +58,8 @@ public class JiraConfigController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteConfig(@PathVariable Long id) {
-        return null;
+        service.deleteConfigById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/sync")

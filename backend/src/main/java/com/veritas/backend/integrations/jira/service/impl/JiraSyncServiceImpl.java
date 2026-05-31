@@ -567,8 +567,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     @Override
     @Transactional
     public void runAllSyncs() {
-        log.info("Starting global sync for all Jira configurations");
-        List<JiraConfig> allConfigs = configRepository.findAll();
+        log.info("Starting global sync for all active Jira configurations");
+        List<JiraConfig> allConfigs = configRepository.findAllByIsActiveTrue();
 
         for (JiraConfig config : allConfigs) {
             try {
@@ -576,10 +576,10 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 config.setLastSyncTime(LocalDateTime.now());
                 configRepository.save(config);
             } catch (RuntimeException e) {
-                log.error("Error during global sync for config ID {}", config.getId(), e);
+                log.error("Error during global sync for active config ID {}", config.getId(), e);
             }
         }
-        log.info("Completed global sync for {} configurations", allConfigs.size());
+        log.info("Completed global sync for {} active configurations", allConfigs.size());
     }
 
     @Override
