@@ -26,6 +26,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -110,7 +111,13 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         SecurityContextHolder.clearContext();
     }
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private void cleanAllData() {
+        jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
+        jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
+
         quoteLineItemRepository.deleteAll();
         quoteRepository.deleteAll();
         requestRepository.deleteAll();

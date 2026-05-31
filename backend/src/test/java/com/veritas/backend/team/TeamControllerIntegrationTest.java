@@ -79,6 +79,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 // deletes.
                 jdbcTemplate.update("UPDATE users SET team_id = NULL");
                 jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
+                jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
+                jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
                 userRepository.deleteAll();
                 teamRepository.deleteAll();

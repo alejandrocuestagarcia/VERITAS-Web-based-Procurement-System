@@ -90,7 +90,9 @@ class WorkflowServiceUnitTest {
             "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
             "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
             "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-            "    <bpmn:task id=\"Task_1\" name=\"Approval Step\" />\n" +
+            "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+            "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+            "    </bpmn:task>\n" +
             "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
             "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
             "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
@@ -185,10 +187,8 @@ class WorkflowServiceUnitTest {
 
     @Test
     void CreateWorkflow_WithAssignee_SetsAssignedPerson() {
-        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
-                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
-                "  <bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>\n" +
-                "</bpmn:task>");
+        String xml = VALID_BPMN_XML.replace("<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>",
+                "<bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>");
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
@@ -208,10 +208,9 @@ class WorkflowServiceUnitTest {
 
     @Test
     void CreateWorkflow_WithTaskDescription_SetsDescription() {
-        String xml = VALID_BPMN_XML.replace("<bpmn:task id=\"Task_1\" name=\"Approval Step\" />",
-                "<bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
-                "  <bpmn:documentation>Task Description Text</bpmn:documentation>\n" +
-                "</bpmn:task>");
+        String xml = VALID_BPMN_XML.replace("<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>",
+                "<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "  <bpmn:documentation>Task Description Text</bpmn:documentation>");
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
         when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
@@ -236,7 +235,9 @@ class WorkflowServiceUnitTest {
                 "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
                 "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                "    <bpmn:task id=\"Task_1\" name=\"Approval Step\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
                 "      <bpmn:extensionElements>\n" +

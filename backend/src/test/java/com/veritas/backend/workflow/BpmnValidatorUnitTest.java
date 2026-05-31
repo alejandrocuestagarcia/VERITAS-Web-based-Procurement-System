@@ -36,7 +36,9 @@ class BpmnValidatorUnitTest {
                         "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
                         "    <bpmn:documentation>A simple test workflow</bpmn:documentation>\n" +
                         "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                        "    <bpmn:task id=\"Task_1\" name=\"Approval Step\" />\n" +
+                        "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                        "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                        "    </bpmn:task>\n" +
                         "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                         "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
                         "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
@@ -50,10 +52,16 @@ class BpmnValidatorUnitTest {
                         "  <bpmn:process id=\"Process_1\" name=\"XOR Workflow\" isExecutable=\"true\">\n" +
                         "    <bpmn:documentation>Workflow with XOR gateway</bpmn:documentation>\n" +
                         "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                        "    <bpmn:task id=\"Task_1\" name=\"Initial Review\" />\n" +
+                        "    <bpmn:task id=\"Task_1\" name=\"Initial Review\">\n" +
+                        "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                        "    </bpmn:task>\n" +
                         "    <bpmn:exclusiveGateway id=\"XOR_Split\" name=\"Decision\" />\n" +
-                        "    <bpmn:task id=\"Task_2\" name=\"Approve\" />\n" +
-                        "    <bpmn:task id=\"Task_3\" name=\"Reject\" />\n" +
+                        "    <bpmn:task id=\"Task_2\" name=\"Approve\">\n" +
+                        "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                        "    </bpmn:task>\n" +
+                        "    <bpmn:task id=\"Task_3\" name=\"Reject\">\n" +
+                        "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                        "    </bpmn:task>\n" +
                         "    <bpmn:exclusiveGateway id=\"XOR_Merge\" name=\"Merge\" />\n" +
                         "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                         "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
@@ -428,8 +436,12 @@ class BpmnValidatorUnitTest {
                                 +
                                 "  <bpmn:process id=\"Process_1\" name=\"Rework Loop\" isExecutable=\"true\">\n" +
                                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                                "    <bpmn:task id=\"Task_A\" name=\"Submit Details\" />\n" +
-                                "    <bpmn:task id=\"Task_B\" name=\"Finance Review\" />\n" +
+                                "    <bpmn:task id=\"Task_A\" name=\"Submit Details\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]REQUESTER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_B\" name=\"Finance Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
                                 "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Outcome\" />\n" +
                                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
                                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_A\" />\n"
@@ -444,7 +456,7 @@ class BpmnValidatorUnitTest {
                                 "  </bpmn:process>\n" +
                                 "</bpmn:definitions>";
                 BpmnModelInstance model = parse(xml);
-
+ 
                 // Should NOT throw — cycles through tasks are allowed
                 BpmnValidationResult result = validator.validate(xml, model);
                 assertThat(result.hasErrors()).isFalse();
@@ -499,9 +511,13 @@ class BpmnValidatorUnitTest {
                                 "  <bpmn:process id=\"Process_1\" name=\"Procurement Workflow\" isExecutable=\"true\">\n"
                                 +
                                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                                "    <bpmn:task id=\"Task_Fill\" name=\"Fill in Details\" />\n" +
+                                "    <bpmn:task id=\"Task_Fill\" name=\"Fill in Details\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]REQUESTER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
                                 "    <bpmn:exclusiveGateway id=\"XOR_Budget\" name=\"Budget Check\" />\n" +
-                                "    <bpmn:task id=\"Task_Review\" name=\"Finance Review\" />\n" +
+                                "    <bpmn:task id=\"Task_Review\" name=\"Finance Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
                                 "    <bpmn:exclusiveGateway id=\"XOR_Outcome\" name=\"Review Outcome\" />\n" +
                                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"Approved\" />\n" +
                                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_Fill\" />\n"
@@ -737,6 +753,85 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(e -> e.contains("Invalid role assigned in BPMN"));
+        }
+
+        //AI-GENERATED
+
+        @Test
+        void Validate_MissingAssigneeRole_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Missing Assignee\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review Step\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must have a responsible role selected"));
+        }
+
+        @Test
+        void Validate_EmptyAssigneeRole_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Empty Assignee\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review Step\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]  </bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must have a responsible role selected"));
+        }
+
+        @Test
+        void Validate_MultipleAssigneeRoles_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Multiple Assignees\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review Step\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("has multiple assignees defined"));
         }
 
         // ========================================================================
