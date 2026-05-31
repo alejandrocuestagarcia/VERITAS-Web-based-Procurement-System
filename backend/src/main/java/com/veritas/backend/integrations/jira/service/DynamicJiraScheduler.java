@@ -36,7 +36,7 @@ public class DynamicJiraScheduler {
     @PostConstruct
     public void init() {
         log.info("Initializing dynamic Jira sync schedules...");
-        List<JiraConfig> configs = repository.findAll();
+        List<JiraConfig> configs = repository.findAllByIsActiveTrue();
         for (JiraConfig config : configs) {
             scheduleConfig(config);
         }
@@ -56,7 +56,7 @@ public class DynamicJiraScheduler {
 
     public void scheduleConfig(JiraConfig config) {
         cancelConfig(config.getId());
-        if (config.getSyncIntervalMinutes() != null && config.getSyncIntervalMinutes() > 0) {
+        if (config.isActive() && config.getSyncIntervalMinutes() != null && config.getSyncIntervalMinutes() > 0) {
             Runnable task = () -> {
                 log.info("Running scheduled sync for config: {}", config.getName());
                 syncService.runManualSync(config.getId());
@@ -73,7 +73,7 @@ public class DynamicJiraScheduler {
         }
     }
 
-    private void cancelConfig(Long id) {
+    public void cancelConfig(Long id) {
         ScheduledFuture<?> future = scheduledTasks.remove(id);
         if (future != null) {
             future.cancel(false);

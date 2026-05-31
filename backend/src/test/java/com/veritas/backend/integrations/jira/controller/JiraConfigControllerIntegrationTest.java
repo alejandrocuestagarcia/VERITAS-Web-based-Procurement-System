@@ -81,7 +81,7 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void CreateConfig_InvalidData_ShouldReturnBadRequest() throws Exception {
-        JiraConfigDto invalidDto = new JiraConfigDto(null, "", "", "", "", "", 0, "", null, null, null, null, null);
+        JiraConfigDto invalidDto = new JiraConfigDto(null, "", "", "", "", "", 0, "", null, null, null, null, null, true);
 
         mockMvc.perform(post("/api/v1/jira-configs")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -135,5 +135,24 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").exists());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void DeleteConfig_AsAdmin_ShouldDeactivateAndReturnNoContent() throws Exception {
+        JiraConfig existing = repository.findAll().get(0);
+        Long id = existing.getId();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/jira-configs/" + id))
+                .andExpect(status().isNoContent());
+
+        JiraConfig updated = repository.findById(id).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertFalse(updated.isActive());
+
+        mockMvc.perform(get("/api/v1/jira-configs")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.id == " + id + ")]").doesNotExist());
     }
 }

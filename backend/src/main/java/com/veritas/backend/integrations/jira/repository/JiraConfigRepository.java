@@ -8,17 +8,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface JiraConfigRepository extends JpaRepository<JiraConfig, Long> {
     boolean existsByJiraUrlAndJql(String jiraUrl, String jql);
     Optional<JiraConfig> findByJiraUrlAndJql(String jiraUrl, String jql);
+    List<JiraConfig> findAllByIsActiveTrue();
 
-    @Query("SELECT j FROM JiraConfig j WHERE " +
+    @Query("SELECT j FROM JiraConfig j WHERE j.isActive = true AND " +
             "(:search IS NULL OR (" +
             "LOWER(j.name) LIKE :search OR " +
             "LOWER(j.jiraUrl) LIKE :search OR " +
-            "LOWER(j.jql) LIKE:search))")
+            "LOWER(j.jql) LIKE :search))")
     Page<JiraConfig> findAllFiltered(@Param("search") String search, Pageable pageable);
 }
