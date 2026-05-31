@@ -581,7 +581,14 @@ public class BpmnValidator {
                     result.addError("Step '" + getNodeName(task) + "' must have a responsible role selected");
                 } else {
                     try {
-                        UserRole.valueOf(roleName);
+                        UserRole r = UserRole.valueOf(roleName);
+                        boolean hasTeamLeaderDoc = task.getDocumentations().stream()
+                                .map(Documentation::getTextContent)
+                                .filter(Objects::nonNull)
+                                .anyMatch(text -> text.startsWith("[TEAM_LEADER]") && text.substring(13).trim().equalsIgnoreCase("true"));
+                        if (hasTeamLeaderDoc && r != UserRole.REQUESTER) {
+                            result.addError("Step '" + getNodeName(task) + "' cannot have Team Leader option enabled for non-REQUESTER roles.");
+                        }
                     } catch (IllegalArgumentException e) {
                         result.addError("Invalid role assigned in BPMN: " + roleName);
                     }

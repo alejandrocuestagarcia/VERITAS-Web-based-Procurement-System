@@ -148,7 +148,7 @@
       </div>
 
       <div class="p-6 space-y-6 overflow-y-auto">
-        <div class="space-y-4">
+        <div class="space-y-6">
 
           <!-- Start/End Event Transition Info Message -->
           <div *ngIf="selectedFlowLeavesStartEvent || selectedFlowEntersEndEvent" class="p-4 bg-slate-100 border border-slate-200 rounded-xl">
@@ -157,24 +157,24 @@
             </p>
           </div>
 
-          <div *ngIf="selectedFlowLeavesGateway" class="space-y-3">
+          <div *ngIf="selectedFlowLeavesGateway" class="space-y-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Condition</label>
 
             <div *ngIf="isEditable">
-              <textarea rows="3" class="help-code-block shadow-sm"
+              <textarea rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
                 [ngModelOptions]="{standalone: true}"
                 [ngModel]="currentRule.conditionExpression" (ngModelChange)="updateConditionExpression($event)"
                 placeholder="e.g. selectedQuoteTotalAmount >= 5000&#10;and priority == 'HIGH'"></textarea>
             </div>
-            <div *ngIf="!isEditable && currentRule.conditionExpression" class="help-code-block">{{ currentRule.conditionExpression }}</div>
+            <div *ngIf="!isEditable && currentRule.conditionExpression" class="p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm font-mono whitespace-pre-wrap break-all">{{ currentRule.conditionExpression }}</div>
             <div *ngIf="!isEditable && !currentRule.conditionExpression" class="p-3 bg-slate-50 border border-dashed border-[#e4e7ef] rounded-xl">
               <span class="text-[10px] text-slate-400 uppercase tracking-tighter">Default path (no condition)</span>
             </div>
           </div>
 
-          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent">
+          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
-            <div class="mt-2 space-y-2">
+            <div class="space-y-2">
               <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
                 <input type="checkbox" [checked]="currentRule.isPdfRequired" [disabled]="!isEditable"
                    (change)="updateRuleProperty('isPdfRequired', !currentRule.isPdfRequired)"
@@ -198,17 +198,17 @@
             </div>
           </div>
 
-          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent">
+          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minimum Vendors</label>
-            <div *ngIf="isEditable" class="mt-2">
+            <div *ngIf="isEditable">
               <input type="number" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 [ngModelOptions]="{standalone: true}"
                 [ngModel]="currentRule.minRequiredVendors" (ngModelChange)="updateRuleProperty('minRequiredVendors', $event)"
                 min="0" placeholder="0">
             </div>
-            <div *ngIf="!isEditable" class="mt-2 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+            <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">
               <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minRequiredVendors }}</span>
-              <span class="ml-2 text-xs text-slate-500 uppercase">Vendors</span>
+              <span class="text-xs text-slate-500 uppercase font-semibold">Vendors</span>
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@
             </div>
 
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Responsible Role <span class="text-red-500 font-bold">*</span></label>
-            <div *ngIf="isEditable" class="mt-2 mb-6">
+            <div *ngIf="isEditable">
               <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
                 <mat-select [ngModelOptions]="{standalone: true}" [ngModel]="currentTask.role" (ngModelChange)="updateTaskProperty('role', $event)" placeholder="Select Role">
                   <mat-option *ngFor="let role of roles" [value]="role">
@@ -271,6 +271,14 @@
                 No manual approval required since automated approval is enabled
               </div>
             </div>
+
+            <div *ngIf="isEditable && currentTask.role === 'REQUESTER'" class="animate-in fade-in duration-200">
+              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+                <input id="isTeamLeaderCheckbox" type="checkbox" [checked]="currentTask.isTeamLeader"
+                   (change)="updateTaskProperty('isTeamLeader', !currentTask.isTeamLeader)"
+                   class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
+                <label for="isTeamLeaderCheckbox" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">Assign to Team Leader</label>
+              </div>
             <div *ngIf="!isEditable" class="flex flex-col gap-1.5 mt-2 mb-6">
               <div class="flex items-center gap-3 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
                 <span class="text-sm font-semibold text-slate-700">{{ currentTask.role || 'Unassigned' }}</span>
@@ -280,17 +288,23 @@
               </div>
             </div>
 
+            <div *ngIf="!isEditable" class="flex items-center gap-3 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <span class="text-sm font-semibold text-slate-700">
+                {{ currentTask.role }}{{ currentTask.role === 'REQUESTER' && currentTask.isTeamLeader ? ' (Team Leader)' : '' }}
+              </span>
+            </div>
+          </div>
 
-
+          <div class="space-y-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description / Custom Instructions</label>
-            <div *ngIf="isEditable" class="mt-2">
-              <textarea class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+            <div *ngIf="isEditable">
+              <textarea class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-y"
                 [ngModelOptions]="{standalone: true}"
                 [ngModel]="currentTask.description" (ngModelChange)="updateTaskProperty('description', $event)"
                 placeholder="Enter custom instructions for this task..."></textarea>
             </div>
-            <div *ngIf="!isEditable" class="mt-2 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
-              <p class="text-xs text-blue-800 italic leading-relaxed whitespace-pre-wrap">{{ currentTask.description || 'No instructions provided' }}</p>
+            <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{ currentTask.description || 'No instructions provided' }}</p>
             </div>
           </div>
         </div>

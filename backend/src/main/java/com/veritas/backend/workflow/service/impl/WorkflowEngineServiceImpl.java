@@ -99,7 +99,14 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 if (toStep.getWorkflowComponent() != WorkflowComponent.END_EVENT &&
                         toStep.getWorkflowComponent() != WorkflowComponent.BRANCH) {
                     if (toStep.getRole() == UserRole.REQUESTER) {
-                        request.setAssignee(request.getUser());
+                        if (Boolean.TRUE.equals(toStep.getIsTeamLeader())) {
+                            if (request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null) {
+                                throw new WorkflowStateException("The requester's team leader could not be resolved because the requester does not belong to a team or the team has no team leader assigned.");
+                            }
+                            request.setAssignee(request.getUser().getTeam().getLeader());
+                        } else {
+                            request.setAssignee(request.getUser());
+                        }
                     } else if (nextAssigneeId != null) {
                         User nextAssignee = userRepository.findById(nextAssigneeId)
                                 .orElseThrow(() -> new IllegalArgumentException(
@@ -299,7 +306,12 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         User attachedActor = userRepository.findById(actor.getId()).orElse(actor);
 
         if (currentStep.getRole() != null) {
-            if (!attachedActor.getRole().equals(currentStep.getRole())) {
+            if (Boolean.TRUE.equals(currentStep.getIsTeamLeader())) {
+                if (request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null 
+                        || !request.getUser().getTeam().getLeader().getId().equals(attachedActor.getId())) {
+                    throw new AccessDeniedException("Only the requester's team leader is authorized for this step.");
+                }
+            } else if (!attachedActor.getRole().equals(currentStep.getRole())) {
                 throw new AccessDeniedException("User with role " + attachedActor.getRole() +
                         " is not authorized for this step. Required: " + currentStep.getRole());
             }

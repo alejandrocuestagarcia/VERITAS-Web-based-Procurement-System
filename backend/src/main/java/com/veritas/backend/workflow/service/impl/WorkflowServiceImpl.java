@@ -149,6 +149,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                             } else if (text.startsWith(AUTO_APPROVE_PREFIX)) {
                                 String autoApproveVal = text.substring(AUTO_APPROVE_PREFIX.length());
                                 step.setIsAutomatedApproval(Boolean.parseBoolean(autoApproveVal));
+                            } else if (text.startsWith("[TEAM_LEADER]")) {
+                                String teamLeaderStr = text.substring("[TEAM_LEADER]".length()).trim();
+                                step.setIsTeamLeader(Boolean.parseBoolean(teamLeaderStr));
                             } else {
                                 step.setDescription(text);
                             }

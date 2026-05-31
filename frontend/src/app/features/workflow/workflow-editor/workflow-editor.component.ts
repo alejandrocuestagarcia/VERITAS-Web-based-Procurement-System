@@ -43,6 +43,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public currentTask: any = {
     role: '',
     description: '',
+    isTeamLeader: false,
     automatedApproval: false
   };
   public roles = Object.values(UserDtoRoleEnum);
@@ -420,6 +421,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const assigneeDoc = docs.find((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
     const assignee = assigneeDoc ? assigneeDoc.text.substring(10) : '';
 
+    const teamLeaderDoc = docs.find((d: any) => d.text && d.text.startsWith('[TEAM_LEADER]'));
+    const isTeamLeader = teamLeaderDoc ? teamLeaderDoc.text.substring(13).trim() === 'true' : false;
+
     const autoApproveDoc = docs.find((d: any) => d.text && d.text.startsWith('[AUTO_APPROVE]'));
     const autoApprove = autoApproveDoc ? autoApproveDoc.text.substring(14) === 'true' : false;
 
@@ -429,15 +433,16 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask = {
       role: assignee,
       description: description,
+      isTeamLeader: isTeamLeader,
       automatedApproval: autoApprove
     };
   }
 
   private resetTask() {
-    this.currentTask = { role: '', description: '', automatedApproval: false };
+    this.currentTask = { role: '', description: '', automatedApproval: false, isTeamLeader: false };
   }
 
-  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval', value: any) {
+  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval' | 'isTeamLeader', value: string) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -456,6 +461,16 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[ASSIGNEE]'));
       if (value) {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: `[ASSIGNEE]${value}` });
+        docs.push(doc);
+      }
+      if (value !== 'REQUESTER') {
+        docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[TEAM_LEADER]'));
+        this.currentTask.isTeamLeader = false;
+      }
+    } else if (key === 'isTeamLeader') {
+      docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[TEAM_LEADER]'));
+      if (value) {
+        const doc = bpmnFactory.create('bpmn:Documentation', { text: `[TEAM_LEADER]${value}` });
         docs.push(doc);
       }
     } else if (key === 'automatedApproval') {

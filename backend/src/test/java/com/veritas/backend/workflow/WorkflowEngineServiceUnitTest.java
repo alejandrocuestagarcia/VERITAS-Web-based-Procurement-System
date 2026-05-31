@@ -485,7 +485,7 @@ class WorkflowEngineServiceUnitTest {
 
         assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
-        assertEquals(endStep, testRequest.getCurrentStepID());
+        assertEquals(endStep, testRequest.getCurrentStep());
     }
 
     @Test
@@ -499,5 +499,90 @@ class WorkflowEngineServiceUnitTest {
         testActor.setRole(UserRole.REQUESTER);
 
         assertDoesNotThrow(() -> workflowEngineService.checkAuthorization(testRequest, testActor, automatedStep));
+    }
+
+    // AI-GENERATED
+    @Test
+    void moveToNextStep_TeamLeaderStep_AssigneeResolvedToTeamLeader_Success() {
+        nextStep.setWorkflowComponent(WorkflowComponent.STEP);
+        nextStep.setRole(UserRole.REQUESTER);
+        nextStep.setIsTeamLeader(true);
+
+        User reqUser = new User();
+        Team reqTeam = new Team();
+        User teamLeader = new User();
+        teamLeader.setId(200L);
+        reqTeam.setLeader(teamLeader);
+        reqUser.setTeam(reqTeam);
+        testRequest.setUser(reqUser);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertEquals(teamLeader, testRequest.getAssignee());
+    }
+
+    // AI-GENERATED
+    @Test
+    void moveToNextStep_TeamLeaderStep_NoTeamOrLeader_ThrowsException() {
+        nextStep.setWorkflowComponent(WorkflowComponent.STEP);
+        nextStep.setRole(UserRole.REQUESTER);
+        nextStep.setIsTeamLeader(true);
+
+        User reqUser = new User();
+        testRequest.setUser(reqUser);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertTrue(ex.getMessage().contains("team leader could not be resolved"));
+    }
+
+    // AI-GENERATED
+    @Test
+    void checkAuthorization_TeamLeaderStep_NonTeamLeaderActor_ThrowsAccessDeniedException() {
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        currentStep.setRole(UserRole.REQUESTER);
+        currentStep.setIsTeamLeader(true);
+
+        User reqUser = new User();
+        Team reqTeam = new Team();
+        User teamLeader = new User();
+        teamLeader.setId(200L);
+        reqTeam.setLeader(teamLeader);
+        reqUser.setTeam(reqTeam);
+        testRequest.setUser(reqUser);
+
+        // Actor is different
+        testActor.setId(99L);
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> workflowEngineService.checkAuthorization(testRequest, testActor, currentStep));
+        assertTrue(ex.getMessage().contains("Only the requester's team leader is authorized"));
+    }
+
+    // AI-GENERATED
+    @Test
+    void checkAuthorization_TeamLeaderStep_TeamLeaderActor_Success() {
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        currentStep.setRole(UserRole.REQUESTER);
+        currentStep.setIsTeamLeader(true);
+
+        User reqUser = new User();
+        Team reqTeam = new Team();
+        User teamLeader = new User();
+        teamLeader.setId(200L);
+        reqTeam.setLeader(teamLeader);
+        reqUser.setTeam(reqTeam);
+        testRequest.setUser(reqUser);
+
+        // Actor is the team leader
+        testActor.setId(200L);
+        when(userRepository.findById(testActor.getId())).thenReturn(Optional.of(testActor));
+
+        assertDoesNotThrow(() -> workflowEngineService.checkAuthorization(testRequest, testActor, currentStep));
     }
 }
