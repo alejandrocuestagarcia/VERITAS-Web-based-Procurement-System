@@ -30,6 +30,11 @@
     <span>Upload Invoice</span>
   </button>
 
+  <button actions mat-flat-button color="warn" (click)="deleteInvoice()" *ngIf="hasInvoice">
+    <mat-icon>delete</mat-icon>
+    <span>Delete Invoice</span>
+  </button>
+
   <button filters mat-stroked-button class="v-btn-secondary" type="button">
     <mat-icon class="scale-90">compare_arrows</mat-icon>
     <span>Vendor Comparison</span>
