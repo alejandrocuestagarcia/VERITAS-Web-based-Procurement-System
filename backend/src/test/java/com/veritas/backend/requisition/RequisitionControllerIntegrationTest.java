@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition;
 
+import static com.veritas.backend.common.model.AuditActionConstants.APPROVE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -473,7 +474,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .request(request)
                 .previousStep(startStep)
                 .newStep(stepOne)
-                .action("APPROVE")
+                .action(APPROVE)
                 .entryHash("mock-hash-123")
                 .timestamp(java.time.LocalDateTime.now())
                 .build();

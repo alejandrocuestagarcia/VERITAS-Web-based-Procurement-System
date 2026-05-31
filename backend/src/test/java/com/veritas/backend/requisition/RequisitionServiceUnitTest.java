@@ -938,11 +938,9 @@ class RequisitionServiceUnitTest {
 
     @Test
     void ProcessPayment_WithInvalidRequestId_ThrowsEntityNotFoundException() {
-
-
         when(requestRepository.findById(100L)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> requisitionService.processPayment(100L));
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> requisitionService.processPayment(100L, null));
 
         assertTrue(ex.getMessage().contains("Request not found with id: 100"));
         verify(requestRepository, never()).save(any());
@@ -960,7 +958,7 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> requisitionService.processPayment(1L));
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> requisitionService.processPayment(1L, null));
 
         assertTrue(ex.getMessage().contains("Invoice not found for request with id: 1"));
         verify(requestRepository, never()).save(any());
@@ -993,7 +991,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.save(any(Request.class))).thenReturn(request);
 
         // Act
-        requisitionService.processPayment(1L);
+        requisitionService.processPayment(1L, null);
 
         // Assert
         assertTrue(invoice.getIsPaid());
@@ -1029,7 +1027,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> requisitionService.processPayment(1L));
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> requisitionService.processPayment(1L, null));
 
         assertTrue(ex.getMessage().contains("Invoice has no Total amount defined"));
 

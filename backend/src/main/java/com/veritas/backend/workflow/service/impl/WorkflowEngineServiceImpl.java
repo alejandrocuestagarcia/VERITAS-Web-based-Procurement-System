@@ -45,6 +45,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.veritas.backend.common.model.AuditActionConstants.APPROVE;
+import static com.veritas.backend.common.model.AuditActionConstants.REVERT;
+
 @Service
 @RequiredArgsConstructor
 public class WorkflowEngineServiceImpl implements WorkflowEngineService {
@@ -186,13 +189,13 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
                 request.setCurrentStepID(transition.getToStep());
                 request.setRejectionReason(null);
+                String toStepName = transition.getToStep().getName() == null ? "Finished" : transition.getToStep().getName();
                 auditService.createWorkflowTransitionLog(
                         actor,
                         request,
                         transition,
-                        "APPROVE",
-                        "Transitioned from " + transition.getFromStep().getName() + " to "
-                                + transition.getToStep().getName());
+                        APPROVE,
+                        "Transitioned from " + transition.getFromStep().getName() + " to " + toStepName);
 
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
                 if (componentType == WorkflowComponent.BRANCH) {
@@ -223,7 +226,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         WorkflowStep targetStep = null;
 
         Optional<AuditLog> arrivalLog = auditLogRepository
-                .findFirstByRequestAndNewStepAndActionOrderByTimestampDesc(request, stepToRevertFrom, "APPROVE");
+                .findFirstByRequestAndNewStepAndActionOrderByTimestampDesc(request, stepToRevertFrom, APPROVE);
 
         if (arrivalLog.isPresent()) {
             targetStep = arrivalLog.get().getPreviousStep();
@@ -238,7 +241,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
                 final WorkflowStep branchStep = targetStep;
                 targetStep = auditLogRepository
-                        .findFirstByRequestAndNewStepAndActionOrderByTimestampDesc(request, branchStep, "APPROVE")
+                        .findFirstByRequestAndNewStepAndActionOrderByTimestampDesc(request, branchStep, APPROVE)
                         .map(AuditLog::getPreviousStep)
                         .orElse(null);
             }
@@ -254,7 +257,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             request.setAssignee(null);
         } else {
             Optional<AuditLog> targetDepartureLog = auditLogRepository
-                    .findFirstByRequestAndPreviousStepAndActionOrderByTimestampDesc(request, targetStep, "APPROVE");
+                    .findFirstByRequestAndPreviousStepAndActionOrderByTimestampDesc(request, targetStep, APPROVE);
             if (targetDepartureLog.isPresent()) {
                 request.setAssignee(targetDepartureLog.get().getActor());
             } else {
@@ -269,7 +272,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 actor,
                 request,
                 null,
-                "REVERT",
+                REVERT,
                 "Reverted from " + stepToRevertFrom.getName() + " to " + targetStep.getName() + ". Reason: " + reason);
 
         if (jiraSyncService != null) {
