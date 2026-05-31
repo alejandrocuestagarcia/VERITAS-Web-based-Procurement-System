@@ -2,7 +2,7 @@
 
 <mat-dialog-content>
   <p>
-    {{ data.message }}<span *ngIf="data.highlightText"> <strong>{{ data.highlightText }}</strong></span>?
+    {{ data.message }}<span *ngIf="data.highlightText"> <strong>{{ data.highlightText }}</strong></span>{{ data.messageSuffix }}
   </p>
   <p *ngIf="data.subMessage" class="mt-4 text-sm text-muted-grey">
     {{ data.subMessage }}
