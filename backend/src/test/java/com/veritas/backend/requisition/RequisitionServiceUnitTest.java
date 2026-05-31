@@ -990,6 +990,7 @@ class RequisitionServiceUnitTest {
         request.setInvoice(invoice);
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenReturn(request);
 
         // Act
         requisitionService.processPayment(1L);

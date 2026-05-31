@@ -3,9 +3,11 @@ package com.veritas.backend.team;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.dto.TeamCreateDto;
 import com.veritas.backend.team.dto.TeamEditDto;
 import com.veritas.backend.team.entity.Team;
@@ -54,6 +56,12 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         ProjectRepository projectRepository;
 
         @Autowired
+        InternalBudgetRepository internalBudgetRepository;
+
+        @Autowired
+        RequestRepository requestRepository;
+
+        @Autowired
         UserRepository userRepository;
 
         @Autowired
@@ -73,6 +81,9 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
         @BeforeEach
         void setup() {
+                jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
+                requestRepository.deleteAll();
+
                 projectRepository.deleteAll();
 
                 // Break circular references between users.team_id and teams.leader_id before
@@ -85,6 +96,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 userRepository.deleteAll();
                 teamRepository.deleteAll();
                 departmentRepository.deleteAll();
+                internalBudgetRepository.deleteAll();
 
                 departmentIT = departmentRepository.save(Department.builder().name("IT").build());
                 departmentHR = departmentRepository.save(Department.builder().name("HR").build());

@@ -328,4 +328,61 @@ public class JiraSyncServiceUnitTest {
         }
         assertTrue(foundTable);
     }
+
+    //AI-GENERATED
+    @Test
+    void ProcessQueue_SyncJiraItemWithRejectionReason_PostsRejectionComment() {
+        Request request = new Request();
+        request.setRequestID(101L);
+        request.setRequestName("Office Requisition");
+        request.setJiraIssueKey("TEST-1");
+        request.setJiraIssueUrl("https://test.atlassian.net/browse/TEST-1");
+        request.setDescription("Req description");
+        request.setRejectionReason("Budget exceeded");
+
+        WorkflowStep step = new WorkflowStep();
+        step.setName("Technical Review");
+        request.setCurrentStepID(step);
+
+        JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
+                .id(1L)
+                .request(request)
+                .jiraIssueKey("TEST-1")
+                .actionType("SYNC_JIRA")
+                .status("PENDING")
+                .build();
+
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(queueItem));
+        when(configRepository.findAll()).thenReturn(List.of(config));
+
+        when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        when(restTemplate.exchange(contains("fields=attachment"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+                .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+        String transitionsJson = "{\"transitions\":[{\"id\":\"11\",\"name\":\"Technical Review\",\"to\":{\"name\":\"Technical Review\"}}]}";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode transNode = null;
+        try {
+            transNode = mapper.readTree(transitionsJson);
+        } catch (Exception e) {}
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+                .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
+
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        service.processQueue();
+
+        assertEquals("COMPLETED", queueItem.getStatus());
+        verify(queueItemRepository).save(queueItem);
+        verify(restTemplate).exchange(contains("/comment"), eq(HttpMethod.POST), argThat(entity -> {
+            String body = (String) entity.getBody();
+            return body != null && body.contains("\"type\": \"strong\"") 
+                              && body.contains("Budget exceeded");
+        }), eq(String.class));
+    }
 }

@@ -744,8 +744,20 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
         
         String stepNameForComment;
+        String extraContext = null;
         if (RequestStatus.FINISHED.equals(request.getState())) {
-            stepNameForComment = "Finished";
+            if (request.getInvoice() != null) {
+                if (Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                    stepNameForComment = "Paid";
+                } else {
+                    stepNameForComment = "Finished and Awaiting Payment";
+                }
+                if (request.getInvoice().getTotalAmount() != null) {
+                    extraContext = "Invoice Total: EUR " + request.getInvoice().getTotalAmount().toPlainString();
+                }
+            } else {
+                stepNameForComment = "Finished";
+            }
         } else if (request.getCurrentStepID() != null && request.getCurrentStepID().getName() != null) {
             stepNameForComment = request.getCurrentStepID().getName();
         } else {
@@ -754,9 +766,9 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         String requestName = request.getRequestName() != null && !request.getRequestName().isBlank() ? request.getRequestName() : request.getRequestKey();
         try {
-            postStatusChangeComment(config, key, requestName, stepNameForComment);
+            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext);
         } catch (RestClientException e) {
-            log.warn("Failed to post status comment to Jira for {}", key, e);
+            log.warn("Failed to post status or rejection comment to Jira for {}", key, e);
         }
 
         syncAttachmentsToJira(config, key, request);
@@ -941,23 +953,55 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
     }
 
-    private void postStatusChangeComment(JiraConfig config, String issueKey, String requestName, String stepName) {
+    private void postTransitionComment(JiraConfig config, String issueKey, String requestName, String stepName, String rejectionReason, String extraContext) {
         String url = config.getJiraUrl().replaceAll("/+$", "") + "/rest/api/3/issue/" + issueKey + "/comment";
         HttpHeaders headers = createHeaders(config.getUsername(), config.getApiToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         String cleanReqName = requestName != null ? requestName.replace("\"", "\\\"") : "";
         String cleanStepName = stepName != null ? stepName.replace("\"", "\\\"") : "";
-        
-        String jsonPayload = String.format(
-            "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [" +
-            "{\"type\": \"text\", \"text\": \"Request \"}, " +
-            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
-            "{\"type\": \"text\", \"text\": \" moved to state \"}, " +
-            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}" +
-            "]}]}}",
-            cleanReqName, cleanStepName
-        );
+
+        String jsonPayload;
+        if (rejectionReason != null && !rejectionReason.isBlank()) {
+            String cleanReason = rejectionReason.replace("\"", "\\\"").replace("\r", "");
+            String reasonWithBreaks = cleanReason.replace("\n", "\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"");
+
+            jsonPayload = String.format(
+                "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [" +
+                  "{\"type\": \"paragraph\", \"content\": [" +
+                    "{\"type\": \"text\", \"text\": \"Request \"}, " +
+                    "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
+                    "{\"type\": \"text\", \"text\": \" was rejected with reason:\"}," +
+                    "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                    "{\"type\": \"text\", \"text\": \"%s\"}," +
+                    "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                    "{\"type\": \"text\", \"text\": \"and moved back to step \"}, " +
+                    "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}," +
+                    "{\"type\": \"text\", \"text\": \".\"}" +
+                  "]}" +
+                "]}}",
+                cleanReqName, reasonWithBreaks, cleanStepName
+            );
+        } else {
+            String extraContextNodes = "";
+            if (extraContext != null && !extraContext.isBlank()) {
+                String cleanExtra = extraContext.replace("\"", "\\\"");
+                extraContextNodes =
+                        ",{\"type\": \"hardBreak\"}," +
+                                "{\"type\": \"text\", \"text\": \"" + cleanExtra + "\", \"marks\": [{\"type\": \"em\"}]}";
+            }
+
+            jsonPayload = String.format(
+                    "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [" +
+                            "{\"type\": \"text\", \"text\": \"Request \"}, " +
+                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
+                            "{\"type\": \"text\", \"text\": \" moved to state \"}, " +
+                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}" +
+                            "%s" +
+                            "]}]}}",
+                    cleanReqName, cleanStepName, extraContextNodes
+            );
+        }
 
         HttpEntity<String> entity = new HttpEntity<>(jsonPayload, headers);
         restTemplate.exchange(url, HttpMethod.POST, entity, String.class);

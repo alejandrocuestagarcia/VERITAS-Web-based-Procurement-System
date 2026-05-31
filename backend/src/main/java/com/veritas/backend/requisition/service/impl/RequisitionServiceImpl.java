@@ -590,9 +590,11 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         request.setState(RequestStatus.FINISHED);
-        requestRepository.save(request);
+        Request saved = requestRepository.save(request);
 
-
+        if (saved.getJiraIssueKey() != null && !saved.getJiraIssueKey().isBlank()) {
+            jiraSyncService.handleVeritasWorkflowChange(saved);
+        }
     }
 
     private void addToBudgets(InternalBudget budget, Invoice invoice) {
