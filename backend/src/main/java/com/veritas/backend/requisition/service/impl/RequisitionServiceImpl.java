@@ -268,6 +268,11 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
+        if (attachment.getInvoice() != null) {
+            deleteInvoice(attachment.getRequest().getRequestID());
+            return;
+        }
+
         try {
             Path filePath = Paths.get(attachment.getStoragePath());
             Files.deleteIfExists(filePath);
@@ -675,6 +680,37 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         return invoiceMapper.toDto(invoice);
+    }
+
+    @Override
+    @Transactional
+    public void deleteInvoice(Long requestId) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        Invoice invoice = request.getInvoice();
+        if (invoice == null) {
+            throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
+        }
+
+        if (Boolean.TRUE.equals(invoice.getIsPaid())) {
+            throw new IllegalStateException("Cannot delete an invoice that has already been paid.");
+        }
+
+        // Delete attachment files and entities
+        for (Attachment attachment : invoice.getAttachments()) {
+            try {
+                Path filePath = Paths.get(attachment.getStoragePath());
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not delete file: " + attachment.getFileName(), e);
+            }
+            request.getAttachments().remove(attachment);
+            attachmentRepository.delete(attachment);
+        }
+
+        request.setInvoice(null);
+        invoiceRepository.delete(invoice);
     }
 
     private void storeAttachment(MultipartFile file, Request request, Invoice invoice) {
