@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.integrations.jira.dto.*;
@@ -22,6 +23,8 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
+import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
@@ -31,6 +34,9 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
+
+import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,15 +72,17 @@ public class JiraSyncServiceUnitTest {
     @Mock
     private JiraSyncQueueItemRepository queueItemRepository;
     @Mock
-    private com.veritas.backend.workflow.repository.WorkflowDefinitionRepository workflowDefinitionRepository;
+    private WorkflowDefinitionRepository workflowDefinitionRepository;
     @Mock
-    private com.veritas.backend.workflow.repository.WorkflowStepRepository workflowStepRepository;
+    private WorkflowStepRepository workflowStepRepository;
     @Mock
-    private com.veritas.backend.requisition.service.RequisitionService requisitionService;
+    private RequisitionService requisitionService;
     @Mock
-    private com.veritas.backend.requisition.repository.AttachmentRepository attachmentRepository;
+    private AttachmentRepository attachmentRepository;
     @Mock
     private InternalBudgetRepository internalBudgetRepository;
+    @Mock
+    private AuditLogRepository auditLogRepository;
 
     @InjectMocks
     private JiraSyncServiceImpl service;
@@ -279,6 +287,9 @@ public class JiraSyncServiceUnitTest {
         try {
             transNode = mapper.readTree(transitionsJson);
         } catch (JsonProcessingException e) {}
+        when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(any(Request.class), anyString()))
+                .thenReturn(Optional.empty());
+
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
                 .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
 
@@ -367,6 +378,9 @@ public class JiraSyncServiceUnitTest {
         try {
             transNode = mapper.readTree(transitionsJson);
         } catch (Exception e) {}
+        when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(any(Request.class), anyString()))
+                .thenReturn(Optional.empty());
+
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
                 .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
 

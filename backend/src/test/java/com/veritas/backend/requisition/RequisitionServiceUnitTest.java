@@ -973,6 +973,9 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(1L);
 
+        User user = new User();
+        user.setName("user");
+
         BigDecimal totalAmount = new BigDecimal("120.00");
         BigDecimal committedSpend = new BigDecimal("200.00");
         BigDecimal actualSpend = new BigDecimal("50.00");
@@ -991,7 +994,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.save(any(Request.class))).thenReturn(request);
 
         // Act
-        requisitionService.processPayment(1L, null);
+        requisitionService.processPayment(1L, user);
 
         // Assert
         assertTrue(invoice.getIsPaid());
