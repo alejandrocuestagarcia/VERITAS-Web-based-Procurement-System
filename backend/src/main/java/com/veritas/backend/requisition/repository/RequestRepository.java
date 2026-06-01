@@ -14,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface RequestRepository extends JpaRepository<Request, Long> {
     Optional<Request> findByJiraIssueKey(String jiraIssueKey);
+    List<Request> findByJiraConfigId(Long jiraConfigId);
 
     @Query("SELECT r FROM Request r WHERE r.userID.id = :userId AND r.state <> 'FINISHED'")
     List<Request> findActiveRequestsByUserId(@Param("userId") Long userId);

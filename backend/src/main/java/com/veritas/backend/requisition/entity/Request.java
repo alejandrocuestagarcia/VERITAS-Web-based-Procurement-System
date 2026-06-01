@@ -8,7 +8,7 @@ import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.VendorEvaluation;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
-import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -109,6 +109,10 @@ public class Request {
 
     @Column(name = "jira_status")
     private String jiraStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "jira_config_id")
+    private JiraConfig jiraConfig;
 
     @Column(columnDefinition = "TEXT")
     private String description;

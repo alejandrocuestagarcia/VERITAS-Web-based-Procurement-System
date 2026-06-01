@@ -6,7 +6,7 @@ import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.mapper.DepartmentMapper;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.department.service.DepartmentService;
-import org.springframework.dao.DataIntegrityViolationException;
+import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
@@ -73,15 +73,15 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public void deleteDepartment(Long id) {
         if (!departmentRepository.existsById(id)) {
-            throw new jakarta.persistence.EntityNotFoundException("Department not found with id " + id);
+            throw new EntityNotFoundException("Department not found with id " + id);
         }
         
         if (teamRepository.existsByDepartmentDepartmentId(id)) {
-            throw new DataIntegrityViolationException("Cannot delete department because there are teams pointing to it");
+            throw new IllegalStateException("Cannot delete department because there are teams pointing to it");
         }
 
         if (userRepository.existsByDepartmentDepartmentId(id)) {
-            throw new DataIntegrityViolationException("Cannot delete department because there are users pointing to it");
+            throw new IllegalStateException("Cannot delete department because there are users pointing to it");
         }
 
         departmentRepository.deleteById(id);

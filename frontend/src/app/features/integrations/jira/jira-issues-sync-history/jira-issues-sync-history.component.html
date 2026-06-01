@@ -17,7 +17,7 @@
 
   <!-- Stats -->
   <ng-container stats>
-    <app-stat-card [value]="totalElements" label="Synced Requests"/>
+    <app-stat-card [value]="totalElements" label="Total Sync Events"/>
   </ng-container>
 
   <ng-container columns>
@@ -65,9 +65,9 @@
     <ng-container matColumnDef="action">
       <th *matHeaderCellDef mat-header-cell class="!text-center">ACTION</th>
       <td *matCellDef="let log" mat-cell class="!text-center">
-          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                       bg-green-100 text-green-800">
-            {{ log.action }}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                [ngClass]="getActionClass(log.action)">
+            {{ getActionLabel(log.action) }}
           </span>
       </td>
     </ng-container>

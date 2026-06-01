@@ -21,6 +21,10 @@ public class JiraSyncQueueItem {
     @JoinColumn(name = "request_id", nullable = false)
     private Request request;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "jira_config_id", nullable = false)
+    private JiraConfig jiraConfig;
+
     @Column(name = "jira_issue_key", nullable = false)
     private String jiraIssueKey;
 

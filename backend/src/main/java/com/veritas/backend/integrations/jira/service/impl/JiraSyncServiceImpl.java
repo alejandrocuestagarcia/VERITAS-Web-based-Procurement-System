@@ -204,6 +204,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         String browserUrl = config.getJiraUrl().replaceAll("/+$", "") + "/browse/" + key;
         request.setJiraIssueUrl(browserUrl);
+        request.setJiraConfig(config);
 
         if (issueRecord.fields() != null && issueRecord.fields().description() != null) {
             request.setDescription(mapDescription(issueRecord.fields().description()));
@@ -305,6 +306,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
             JiraSyncQueueItem lockItem = JiraSyncQueueItem.builder()
                     .request(request)
+                    .jiraConfig(config)
                     .jiraIssueKey(key)
                     .actionType("LOCK")
                     .status("PENDING")
@@ -572,7 +574,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     @Override
     @Transactional
     public void runAllSyncs() {
-        log.info("Starting global sync for all Jira configurations");
+        log.info("Starting global sync for all active Jira configurations");
         List<JiraConfig> allConfigs = configRepository.findAll();
 
         for (JiraConfig config : allConfigs) {
@@ -581,21 +583,22 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 config.setLastSyncTime(LocalDateTime.now());
                 configRepository.save(config);
             } catch (RuntimeException e) {
-                log.error("Error during global sync for config ID {}", config.getId(), e);
+                log.error("Error during global sync for active config ID {}", config.getId(), e);
             }
         }
-        log.info("Completed global sync for {} configurations", allConfigs.size());
+        log.info("Completed global sync for {} active configurations", allConfigs.size());
     }
 
     @Override
     @Transactional
     public void handleVeritasWorkflowChange(Request request) {
-        if (request.getJiraIssueKey() == null || request.getJiraIssueKey().isBlank()) {
+        if (request.getJiraIssueKey() == null || request.getJiraIssueKey().isBlank() || request.getJiraConfig() == null) {
             return;
         }
 
         JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
                 .request(request)
+                .jiraConfig(request.getJiraConfig())
                 .jiraIssueKey(request.getJiraIssueKey())
                 .actionType("SYNC_JIRA")
                 .status("PENDING")
@@ -614,38 +617,21 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
 
         log.info("Processing {} pending Jira sync queue items", pendingItems.size());
-        List<JiraConfig> allConfigs = configRepository.findAll();
-
         for (JiraSyncQueueItem item : pendingItems) {
-            processQueueItem(item, allConfigs);
+            processQueueItem(item);
         }
     }
 
-    private void processQueueItem(JiraSyncQueueItem item, List<JiraConfig> allConfigs) {
+    private void processQueueItem(JiraSyncQueueItem item) {
         item.setLastAttempt(LocalDateTime.now());
         item.setRetries(item.getRetries() + 1);
 
         try {
             Request request = item.getRequest();
-            String issueUrl = request.getJiraIssueUrl();
-            if (issueUrl == null || issueUrl.isBlank()) {
-                log.warn("Jira issue URL is blank for request ID {}. Cannot process queue item.", request.getRequestID());
-                item.setStatus("FAILED");
-                queueItemRepository.save(item);
-                return;
-            }
-
-            JiraConfig matchedConfig = null;
-            for (JiraConfig config : allConfigs) {
-                String cleanUrl = config.getJiraUrl().replaceAll("/+$", "");
-                if (issueUrl.contains(cleanUrl)) {
-                    matchedConfig = config;
-                    break;
-                }
-            }
+            JiraConfig matchedConfig = item.getJiraConfig();
 
             if (matchedConfig == null) {
-                log.warn("No matching Jira configuration found for issue URL: {}", issueUrl);
+                log.warn("No Jira configuration found for queue item ID: {}", item.getId());
                 if (item.getRetries() >= 5) {
                     item.setStatus("FAILED");
                 }
@@ -769,27 +755,29 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             stepNameForComment = "Unknown";
         }
 
-        String actor = null;
+        User actor = null;
         if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
             Optional<AuditLog> paymentLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, PAID);
             if (paymentLog.isPresent()) {
-                actor = paymentLog.get().getActor().getName();
+                actor = paymentLog.get().getActor();
             }
         } else if (request.getRejectionReason() != null && !request.getRejectionReason().isBlank()) {
             Optional<AuditLog> rejectionLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT);
             if (rejectionLog.isPresent()) {
-                actor = rejectionLog.get().getActor().getName();
+                actor = rejectionLog.get().getActor();
             }
         } else {
             Optional<AuditLog> approvalLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, APPROVE);
             if (approvalLog.isPresent()) {
-                actor = approvalLog.get().getActor().getName();
+                actor = approvalLog.get().getActor();
             }
         }
 
         String requestName = request.getRequestName() != null && !request.getRequestName().isBlank() ? request.getRequestName() : request.getRequestKey();
+        String actorName = actor != null ? actor.getName() : "System";
         try {
-            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actor);
+            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actorName);
+            auditService.createJiraRequestUpdatedLog(actor, request, "Updated Jira issue " + request.getJiraIssueKey());
         } catch (RestClientException e) {
             log.warn("Failed to post status or rejection comment to Jira for {}", key, e);
         }

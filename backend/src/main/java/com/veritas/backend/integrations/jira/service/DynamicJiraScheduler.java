@@ -73,7 +73,7 @@ public class DynamicJiraScheduler {
         }
     }
 
-    private void cancelConfig(Long id) {
+    public void cancelConfig(Long id) {
         ScheduledFuture<?> future = scheduledTasks.remove(id);
         if (future != null) {
             future.cancel(false);

@@ -135,7 +135,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void DeleteDepartment_WhenReferencedByTeam_ThrowsDataIntegrityViolationException() {
+    void DeleteDepartment_WhenReferencedByTeam_ThrowsIllegalStateException() {
         Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
 
         teamRepository.save(Team.builder()
@@ -145,7 +145,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
                 .isActive(true)
                 .build());
 
-        assertThrows(DataIntegrityViolationException.class,
+        assertThrows(IllegalStateException.class,
                 () -> departmentService.deleteDepartment(saved.getDepartmentId()));
     }
 }

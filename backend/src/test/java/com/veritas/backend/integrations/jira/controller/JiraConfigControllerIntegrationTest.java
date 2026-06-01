@@ -136,4 +136,22 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").exists());
     }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void DeleteConfig_AsAdmin_ShouldDeleteAndReturnNoContent() throws Exception {
+        JiraConfig existing = repository.findAll().get(0);
+        Long id = existing.getId();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/jira-configs/" + id))
+                .andExpect(status().isNoContent());
+
+        org.junit.jupiter.api.Assertions.assertTrue(repository.findById(id).isEmpty());
+
+        mockMvc.perform(get("/api/v1/jira-configs")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.id == " + id + ")]").doesNotExist());
+    }
 }
