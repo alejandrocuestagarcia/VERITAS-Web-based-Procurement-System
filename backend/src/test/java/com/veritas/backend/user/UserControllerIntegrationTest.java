@@ -76,14 +76,14 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
-    requestRepository.deleteAll();
-    projectRepository.deleteAll();
-
     jdbcTemplate.update("UPDATE users SET team_id = NULL");
     jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
     jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
+
+                requestRepository.deleteAll();
+                projectRepository.deleteAll();
+    jdbcTemplate.update("DELETE FROM internal_budgets");
 
     entityManager.clear();
 
@@ -99,14 +99,14 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @AfterEach
   void tearDown() {
-    jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
-    requestRepository.deleteAll();
-    projectRepository.deleteAll();
-
     jdbcTemplate.update("UPDATE users SET team_id = NULL");
     jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
     jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
+
+                requestRepository.deleteAll();
+                projectRepository.deleteAll();
+    jdbcTemplate.update("DELETE FROM internal_budgets");
 
     entityManager.clear();
 
