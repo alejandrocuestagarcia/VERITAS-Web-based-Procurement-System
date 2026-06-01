@@ -512,7 +512,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         secondRequester.setRole(UserRole.REQUESTER);
         secondRequester.setIsActive(true);
         secondRequester.setRequiresPasswordChange(false);
-        secondRequester.setTeam(userRepository.findAll().getFirst().getTeam());
+        secondRequester.setTeam(userRepository.findByEmail("req-integration@veritas.com").orElseThrow().getTeam());
         secondRequester = userRepository.save(secondRequester);
 
         mockMvc.perform(post("/api/v1/requisitions")

@@ -80,16 +80,15 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
         @BeforeEach
         void setup() {
-                jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
-
-                projectRepository.deleteAll();
-
                 // Break circular references between users.team_id and teams.leader_id before
                 // deletes.
                 jdbcTemplate.update("UPDATE users SET team_id = NULL");
                 jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
                 jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
                 jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
+
+                projectRepository.deleteAll();
+                jdbcTemplate.update("DELETE FROM internal_budgets");
 
                 userRepository.deleteAll();
                 teamRepository.deleteAll();
