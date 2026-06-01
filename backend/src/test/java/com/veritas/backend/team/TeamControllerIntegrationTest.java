@@ -7,6 +7,7 @@ import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.team.dto.TeamCreateDto;
 import com.veritas.backend.team.dto.TeamEditDto;
 import com.veritas.backend.team.entity.Team;
@@ -14,6 +15,7 @@ import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -77,6 +80,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
         @BeforeEach
         void setup() {
+                jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
+
                 projectRepository.deleteAll();
 
                 // Break circular references between users.team_id and teams.leader_id before
@@ -193,7 +198,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .email("leader-" + UUID.randomUUID() + "@veritas.com")
                                 .passwordHash(encoder.encode("password123"))
                                 .role(UserRole.REQUESTER)
-                                
+
                                 .isActive(true)
                                 .build());
 
@@ -236,7 +241,8 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(2))
-                                .andExpect(jsonPath("$[*].name").value(org.hamcrest.Matchers.containsInAnyOrder("Alpha Team", "Beta Team")));
+                                .andExpect(jsonPath("$[*].name").value(
+                                                org.hamcrest.Matchers.containsInAnyOrder("Alpha Team", "Beta Team")));
         }
 
         @Test
@@ -856,6 +862,93 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isNotFound())
                                 .andExpect(content().string(containsString("Team not found")));
+        }
+
+        // AI-GENERATED
+        @Test
+        void TeamDeletion_AsFinanceOfficer_ReturnsNoContent() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Expendable Team", departmentIT);
+
+                mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isNoContent());
+
+                assertFalse(teamRepository.existsById(team.getTeamId()));
+        }
+
+        @Test
+        void TeamDeletion_WithAssignedProject_ReturnsBadRequest() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Project Team", departmentIT);
+
+                Project project = Project.builder()
+                                .name("Assigned Project")
+                                .projectKey("AP-1")
+                                .team(team)
+                                .startDate(LocalDate.now())
+                                .endDate(LocalDate.now().plusDays(30))
+                                .build();
+                projectRepository.save(project);
+
+                mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("Cannot delete team because it is currently assigned to one or more projects.")));
+        }
+
+        @Test
+        void TeamDeletion_UnlinksAllMembers() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Member Team", departmentIT);
+                User member1 = createUser("Member One", team);
+                User member2 = createUser("Member Two", team);
+
+                mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isNoContent());
+
+                User refreshed1 = userRepository.findById(member1.getId()).orElseThrow();
+                User refreshed2 = userRepository.findById(member2.getId()).orElseThrow();
+                assertNull(refreshed1.getTeam(), "Member 1 should have no team after deletion");
+                assertNull(refreshed2.getTeam(), "Member 2 should have no team after deletion");
+        }
+
+        @Test
+        void TeamDeletion_WithLeader_UnlinksLeaderAndDeletes() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Leader Team", departmentIT);
+                User leader = createUser("Team Leader", team);
+                team.setLeader(leader);
+                teamRepository.save(team);
+
+                mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isNoContent());
+
+                assertFalse(teamRepository.existsById(team.getTeamId()));
+                User refreshedLeader = userRepository.findById(leader.getId()).orElseThrow();
+                assertNull(refreshedLeader.getTeam(), "Leader should have no team after deletion");
+        }
+
+        @Test
+        void TeamDeletion_TeamNotFound_ReturnsNotFound() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+                mockMvc.perform(delete("/api/v1/teams/999999")
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string(containsString("Team not found")));
+        }
+
+        @Test
+        void TeamDeletion_AsRequester_ReturnsForbidden() throws Exception {
+                String token = createTokenForRole(UserRole.REQUESTER);
+                Team team = createTeam("Protected Team", departmentIT);
+
+                mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isForbidden());
         }
 
         private String createTokenForRole(UserRole role) {

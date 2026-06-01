@@ -76,6 +76,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @BeforeEach
   void setUp() {
+    jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
     requestRepository.deleteAll();
     projectRepository.deleteAll();
 
@@ -98,6 +99,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @AfterEach
   void tearDown() {
+    jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
     requestRepository.deleteAll();
     projectRepository.deleteAll();
 
