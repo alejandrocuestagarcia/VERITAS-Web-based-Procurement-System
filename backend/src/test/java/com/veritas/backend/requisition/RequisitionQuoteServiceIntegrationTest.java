@@ -118,6 +118,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
         jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
+        jdbcTemplate.execute("TRUNCATE TABLE internal_budgets CASCADE");
         quoteLineItemRepository.deleteAll();
         quoteRepository.deleteAll();
         requestRepository.deleteAll();
