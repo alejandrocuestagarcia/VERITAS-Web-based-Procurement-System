@@ -18,6 +18,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
 @RestControllerAdvice
@@ -64,16 +65,23 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
+    log.warn("Illegal state: " + ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+  }
+
   @ExceptionHandler(EntityExistsException.class)
   public ResponseEntity<String> handleConflict(EntityExistsException ex) {
     log.warn("Entity conflict: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
-  @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+  @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<String> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-    log.warn("Data integrity violation: {}", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    log.error("Data integrity violation: {}", ex.getMessage(), ex);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body("An unexpected database error occurred. Please contact support.");
   }
 
   @ExceptionHandler(MailException.class)
@@ -104,8 +112,8 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
   }
 
-  @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
-  public ResponseEntity<String> handleMaxUploadSizeExceeded(org.springframework.web.multipart.MaxUploadSizeExceededException exception) {
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<String> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
     log.warn("Max upload size exceeded: {}", exception.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Maximum upload size exceeded. Please keep files under 10MB.");
   }

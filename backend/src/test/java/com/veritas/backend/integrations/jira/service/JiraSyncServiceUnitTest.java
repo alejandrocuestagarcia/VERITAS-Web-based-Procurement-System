@@ -399,4 +399,26 @@ public class JiraSyncServiceUnitTest {
                               && body.contains("Budget exceeded");
         }), eq(String.class));
     }
+
+    @Test
+    void HandleVeritasWorkflowChange_NullJiraConfig_DoesNotQueueTask() {
+        Request request = new Request();
+        request.setJiraIssueKey("TEST-1");
+        request.setJiraConfig(null);
+
+        service.handleVeritasWorkflowChange(request);
+
+        verifyNoInteractions(queueItemRepository);
+    }
+
+    @Test
+    void HandleVeritasWorkflowChange_ValidConfig_QueuesTask() {
+        Request request = new Request();
+        request.setJiraIssueKey("TEST-1");
+        request.setJiraConfig(config);
+
+        service.handleVeritasWorkflowChange(request);
+
+        verify(queueItemRepository, times(1)).save(any(JiraSyncQueueItem.class));
+    }
 }

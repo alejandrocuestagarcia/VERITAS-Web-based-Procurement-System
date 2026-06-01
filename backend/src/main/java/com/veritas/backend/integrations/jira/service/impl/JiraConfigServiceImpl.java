@@ -133,21 +133,21 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     private void resolveFallbackEntities(JiraConfigDto dto, JiraConfig entity) {
         if (dto.fallbackUserId() != null) {
             entity.setFallbackUser(userRepository.findById(dto.fallbackUserId())
-                .orElseThrow(() -> new DataIntegrityViolationException("Fallback user not found")));
+                .orElseThrow(() -> new EntityNotFoundException("Fallback user not found")));
         } else {
             entity.setFallbackUser(null);
         }
         
         if (dto.fallbackProjectId() != null) {
             entity.setFallbackProject(projectRepository.findById(dto.fallbackProjectId())
-                .orElseThrow(() -> new DataIntegrityViolationException("Fallback project not found")));
+                .orElseThrow(() -> new EntityNotFoundException("Fallback project not found")));
         } else {
             entity.setFallbackProject(null);
         }
         
         if (dto.fallbackWorkflowId() != null) {
             entity.setFallbackWorkflow(workflowDefinitionRepository.findById(dto.fallbackWorkflowId())
-                .orElseThrow(() -> new DataIntegrityViolationException("Fallback workflow not found")));
+                .orElseThrow(() -> new EntityNotFoundException("Fallback workflow not found")));
         } else {
             entity.setFallbackWorkflow(null);
         }

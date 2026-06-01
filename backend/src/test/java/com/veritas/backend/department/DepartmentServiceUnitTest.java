@@ -201,7 +201,7 @@ class DepartmentServiceUnitTest {
         when(departmentRepository.existsById(1L)).thenReturn(true);
         when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(true);
 
-        assertThrows(DataIntegrityViolationException.class, () -> departmentService.deleteDepartment(1L));
+        assertThrows(IllegalStateException.class, () -> departmentService.deleteDepartment(1L));
 
         verify(departmentRepository, never()).deleteById(any());
     }

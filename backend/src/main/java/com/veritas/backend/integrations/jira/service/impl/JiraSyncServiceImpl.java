@@ -592,7 +592,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     @Override
     @Transactional
     public void handleVeritasWorkflowChange(Request request) {
-        if (request.getJiraIssueKey() == null || request.getJiraIssueKey().isBlank()) {
+        if (request.getJiraIssueKey() == null || request.getJiraIssueKey().isBlank() || request.getJiraConfig() == null) {
             return;
         }
 
