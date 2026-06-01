@@ -2,6 +2,7 @@ package com.veritas.backend.team.service.impl;
 
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
+import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.mapper.UserMapper;
 import jakarta.persistence.EntityExistsException;
@@ -20,15 +21,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final ProjectRepository projectRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -201,6 +205,27 @@ public class TeamServiceImpl implements TeamService {
         }
 
         return convertTeamToTeamDto(updatedTeam);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTeam(Long id) {
+        Team team = teamRepository.findById(Objects.requireNonNull(id))
+                .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
+
+        if (projectRepository.existsByTeamTeamId(id)) {
+            throw new IllegalArgumentException("Cannot delete team because it is currently assigned to one or more projects.");
+        }
+
+        List<User> members = userRepository.findAllByTeamTeamId(team.getTeamId());
+        members.forEach(user -> user.setTeam(null));
+        userRepository.saveAll(members);
+
+        team.setLeader(null);
+        teamRepository.save(team);
+
+        teamRepository.delete(team);
+        log.info("Team deleted – id: {}, name: {}", id, team.getName());
     }
 
     private void ensureLeaderAssignment(User leader, Team team) {
