@@ -49,7 +49,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         canRequesterOrProcurementOfficerAccessRequestDetails(request);
 
-        List<Quote> quotes = quoteRepository.findByRequestRequestID(requestId);
+        List<Quote> quotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         
         return quotes.stream()
             .map(this::mapToDto)
@@ -212,7 +212,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         }
         
         // Unselect all other quotes for this request
-        List<Quote> otherQuotes = quoteRepository.findByRequestRequestID(requestId);
+        List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         for (Quote quote : otherQuotes) {
             quote.setSelected(false);
             quoteRepository.save(quote);
