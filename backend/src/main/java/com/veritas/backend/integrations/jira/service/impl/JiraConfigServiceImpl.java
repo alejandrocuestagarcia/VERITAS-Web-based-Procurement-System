@@ -90,16 +90,7 @@ public class JiraConfigServiceImpl implements JiraConfigService {
 
         scheduler.cancelConfig(id);
 
-        String cleanUrl = entity.getJiraUrl().replaceAll("/+$", "");
-        List<JiraSyncQueueItem> pendingItems = queueItemRepository.findByStatus("PENDING");
-        List<JiraSyncQueueItem> itemsToDelete = pendingItems.stream()
-            .filter(item -> item.getRequest() != null && 
-                            item.getRequest().getJiraIssueUrl() != null && 
-                            item.getRequest().getJiraIssueUrl().contains(cleanUrl))
-            .collect(Collectors.toList());
-        if (!itemsToDelete.isEmpty()) {
-            queueItemRepository.deleteAll(itemsToDelete);
-        }
+        queueItemRepository.deleteByJiraConfig(entity);
 
         User actor = null;
         var auth = SecurityContextHolder.getContext().getAuthentication();

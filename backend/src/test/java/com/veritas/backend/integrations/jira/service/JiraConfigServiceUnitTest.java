@@ -180,7 +180,6 @@ public class JiraConfigServiceUnitTest {
     void DeleteConfig_ExistingConfig_DeletesAndCancels() {
         config.setJiraUrl("https://test.atlassian.net");
         when(repository.findById(1L)).thenReturn(Optional.of(config));
-        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of());
         when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of());
         when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
 
@@ -188,7 +187,7 @@ public class JiraConfigServiceUnitTest {
 
         assertNotNull(result);
         verify(repository).delete(config);
-        verify(queueItemRepository).findByStatus("PENDING");
+        verify(queueItemRepository).deleteByJiraConfig(config);
         verify(requestRepository).findByJiraConfigId(1L);
         verify(scheduler).cancelConfig(1L);
     }
@@ -197,7 +196,6 @@ public class JiraConfigServiceUnitTest {
     void DeleteConfig_WithSyncedRequests_ClearsJiraFieldsOnRequests() {
         config.setJiraUrl("https://test.atlassian.net");
         when(repository.findById(1L)).thenReturn(Optional.of(config));
-        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of());
         
         Request syncedRequest = new Request();
         syncedRequest.setJiraIssueKey("TEST-123");
@@ -225,6 +223,7 @@ public class JiraConfigServiceUnitTest {
         assertEquals("https://test.atlassian.net/browse/OTHER-456", otherRequest.getJiraIssueUrl());
         assertEquals("Done", otherRequest.getJiraStatus());
 
+        verify(queueItemRepository).deleteByJiraConfig(config);
         verify(requestRepository).saveAll(List.of(syncedRequest));
         verify(auditService).createJiraUnsyncLog(eq(null), eq(syncedRequest), anyString());
     }

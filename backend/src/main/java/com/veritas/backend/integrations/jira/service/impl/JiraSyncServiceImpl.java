@@ -306,6 +306,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
             JiraSyncQueueItem lockItem = JiraSyncQueueItem.builder()
                     .request(request)
+                    .jiraConfig(config)
                     .jiraIssueKey(key)
                     .actionType("LOCK")
                     .status("PENDING")
@@ -597,6 +598,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
                 .request(request)
+                .jiraConfig(request.getJiraConfig())
                 .jiraIssueKey(request.getJiraIssueKey())
                 .actionType("SYNC_JIRA")
                 .status("PENDING")
@@ -615,38 +617,21 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
 
         log.info("Processing {} pending Jira sync queue items", pendingItems.size());
-        List<JiraConfig> allConfigs = configRepository.findAll();
-
         for (JiraSyncQueueItem item : pendingItems) {
-            processQueueItem(item, allConfigs);
+            processQueueItem(item);
         }
     }
 
-    private void processQueueItem(JiraSyncQueueItem item, List<JiraConfig> allConfigs) {
+    private void processQueueItem(JiraSyncQueueItem item) {
         item.setLastAttempt(LocalDateTime.now());
         item.setRetries(item.getRetries() + 1);
 
         try {
             Request request = item.getRequest();
-            String issueUrl = request.getJiraIssueUrl();
-            if (issueUrl == null || issueUrl.isBlank()) {
-                log.warn("Jira issue URL is blank for request ID {}. Cannot process queue item.", request.getRequestID());
-                item.setStatus("FAILED");
-                queueItemRepository.save(item);
-                return;
-            }
-
-            JiraConfig matchedConfig = null;
-            for (JiraConfig config : allConfigs) {
-                String cleanUrl = config.getJiraUrl().replaceAll("/+$", "");
-                if (issueUrl.contains(cleanUrl)) {
-                    matchedConfig = config;
-                    break;
-                }
-            }
+            JiraConfig matchedConfig = item.getJiraConfig();
 
             if (matchedConfig == null) {
-                log.warn("No matching Jira configuration found for issue URL: {}", issueUrl);
+                log.warn("No Jira configuration found for queue item ID: {}", item.getId());
                 if (item.getRetries() >= 5) {
                     item.setStatus("FAILED");
                 }

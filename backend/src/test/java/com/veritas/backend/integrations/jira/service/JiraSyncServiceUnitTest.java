@@ -264,13 +264,13 @@ public class JiraSyncServiceUnitTest {
         JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
                 .id(1L)
                 .request(request)
+                .jiraConfig(config)
                 .jiraIssueKey("TEST-1")
                 .actionType("SYNC_JIRA")
                 .status("PENDING")
                 .build();
 
         when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(queueItem));
-        when(configRepository.findAll()).thenReturn(List.of(config));
 
         // Mock PUT to update description
         when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
@@ -358,13 +358,13 @@ public class JiraSyncServiceUnitTest {
         JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
                 .id(1L)
                 .request(request)
+                .jiraConfig(config)
                 .jiraIssueKey("TEST-1")
                 .actionType("SYNC_JIRA")
                 .status("PENDING")
                 .build();
 
         when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(queueItem));
-        when(configRepository.findAll()).thenReturn(List.of(config));
 
         when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(HttpStatus.OK));
