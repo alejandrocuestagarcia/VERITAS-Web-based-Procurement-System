@@ -31,6 +31,21 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     """)
     Page<AuditLog> findAllByAction(@Param("action") String action, Pageable pageable, @Param("search") String search);
 
+    @Query("""
+    SELECT a FROM AuditLog a
+    LEFT JOIN FETCH a.actor
+    LEFT JOIN FETCH a.request
+    LEFT JOIN FETCH a.previousStep
+    LEFT JOIN FETCH a.newStep
+    LEFT JOIN FETCH a.transition
+    WHERE a.action IN :actions
+    AND (:search IS NULL OR
+        LOWER(a.description) LIKE LOWER(CONCAT('%', :search, '%')) OR
+        (a.actor IS NOT NULL AND LOWER(a.actor.email) LIKE LOWER(CONCAT('%', :search, '%'))) OR
+        (a.actor IS NULL AND LOWER('system') LIKE LOWER(CONCAT('%', :search, '%'))))
+    """)
+    Page<AuditLog> findAllByActionIn(@Param("actions") List<String> actions, Pageable pageable, @Param("search") String search);
+
     Optional<AuditLog> findFirstByRequestAndNewStepAndActionOrderByTimestampDesc(
             Request request,
             WorkflowStep newStep,

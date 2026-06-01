@@ -21,9 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
-import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
-import static com.veritas.backend.common.model.AuditActionConstants.REQUISITION_EDITED;
+import static com.veritas.backend.common.model.AuditActionConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.data.domain.Sort;
 
 @SpringBootTest
 class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
@@ -137,5 +137,20 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
         assertThat(saved.getEntryHash()).isNotNull();
         assertThat(saved.getTimestamp()).isNotNull();
+    }
+
+    @Test
+    void GetJiraIssueLogsByActions_MultipleActions_ReturnsSortedAndFilteredLogs() {
+        auditService.createJiraSyncLog(testActor, testRequest, "Syncing 1");
+        auditService.createJiraUnsyncLog(testActor, testRequest, "Unsyncing 2");
+        auditService.createJiraRequestUpdatedLog(testActor, testRequest, "Updating 3");
+
+        Page<AuditLogDto> result = auditService.getJiraIssueLogsByActions(
+                List.of(JIRA_SYNC, JIRA_UNSYNC, JIRA_REQUEST_UPDATED),
+                PageRequest.of(0, 10, Sort.by("timestamp").descending()),
+                ""
+        );
+
+        assertThat(result.getContent()).hasSize(3);
     }
 }

@@ -15,6 +15,10 @@ import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import com.veritas.backend.integrations.jira.mapper.JiraConfigMapper;
 import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
 import com.veritas.backend.integrations.jira.service.impl.JiraConfigServiceImpl;
+import com.veritas.backend.integrations.jira.repository.JiraSyncQueueItemRepository;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.requisition.entity.Request;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +48,15 @@ public class JiraConfigServiceUnitTest {
 
     @Mock
     private DynamicJiraScheduler scheduler;
+
+    @Mock
+    private JiraSyncQueueItemRepository queueItemRepository;
+
+    @Mock
+    private RequestRepository requestRepository;
+
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private JiraConfigServiceImpl service;
@@ -164,16 +177,55 @@ public class JiraConfigServiceUnitTest {
     }
 
     @Test
-    void DeleteConfig_ExistingConfig_DeactivatesAndCancels() {
+    void DeleteConfig_ExistingConfig_DeletesAndCancels() {
+        config.setJiraUrl("https://test.atlassian.net");
         when(repository.findById(1L)).thenReturn(Optional.of(config));
-        when(repository.save(any(JiraConfig.class))).thenReturn(config);
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of());
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of());
         when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
 
         JiraConfigResponseDto result = service.deleteConfigById(1L);
 
         assertNotNull(result);
-        assertEquals(false, config.isActive());
-        verify(repository).save(config);
+        verify(repository).delete(config);
+        verify(queueItemRepository).findByStatus("PENDING");
+        verify(requestRepository).findByJiraConfigId(1L);
         verify(scheduler).cancelConfig(1L);
+    }
+
+    @Test
+    void DeleteConfig_WithSyncedRequests_ClearsJiraFieldsOnRequests() {
+        config.setJiraUrl("https://test.atlassian.net");
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of());
+        
+        Request syncedRequest = new Request();
+        syncedRequest.setJiraIssueKey("TEST-123");
+        syncedRequest.setJiraIssueUrl("https://test.atlassian.net/browse/TEST-123");
+        syncedRequest.setJiraStatus("Done");
+        syncedRequest.setJiraConfig(config);
+
+        Request otherRequest = new Request();
+        otherRequest.setJiraIssueKey("OTHER-456");
+        otherRequest.setJiraIssueUrl("https://test.atlassian.net/browse/OTHER-456");
+        otherRequest.setJiraStatus("Done");
+        
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(syncedRequest));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        assertEquals("TEST-123", syncedRequest.getJiraIssueKey());
+        assertEquals("https://test.atlassian.net/browse/TEST-123", syncedRequest.getJiraIssueUrl());
+        assertEquals("NOT_SYNCED", syncedRequest.getJiraStatus());
+        org.junit.jupiter.api.Assertions.assertNull(syncedRequest.getJiraConfig());
+
+        // otherRequest is untouched because it wasn't returned by findByJiraConfigId
+        assertEquals("OTHER-456", otherRequest.getJiraIssueKey());
+        assertEquals("https://test.atlassian.net/browse/OTHER-456", otherRequest.getJiraIssueUrl());
+        assertEquals("Done", otherRequest.getJiraStatus());
+
+        verify(requestRepository).saveAll(List.of(syncedRequest));
+        verify(auditService).createJiraUnsyncLog(eq(null), eq(syncedRequest), anyString());
     }
 }

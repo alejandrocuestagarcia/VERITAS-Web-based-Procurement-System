@@ -15,7 +15,10 @@ public interface AuditService {
      */
     void createPasswordResetLog(User actor, String action, String details);
     void createJiraSyncLog(User actor, Request request, String details);
+    void createJiraUnsyncLog(User actor, Request request, String details);
+    void createJiraRequestUpdatedLog(User actor, Request request, String details);
     Page<AuditLogDto> getJiraIssueLogsByAction(String action, Pageable pageable, String search);
+    Page<AuditLogDto> getJiraIssueLogsByActions(java.util.List<String> actions, Pageable pageable, String search);
     void createWorkflowTransitionLog(User actor, Request request, WorkflowTransition transition, String action, String description);
     void createRequisitionChangeLog(User actor, Request request, String details);
 }

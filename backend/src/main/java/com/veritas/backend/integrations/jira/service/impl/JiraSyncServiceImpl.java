@@ -204,6 +204,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
         String browserUrl = config.getJiraUrl().replaceAll("/+$", "") + "/browse/" + key;
         request.setJiraIssueUrl(browserUrl);
+        request.setJiraConfig(config);
 
         if (issueRecord.fields() != null && issueRecord.fields().description() != null) {
             request.setDescription(mapDescription(issueRecord.fields().description()));
@@ -769,27 +770,29 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             stepNameForComment = "Unknown";
         }
 
-        String actor = null;
+        User actor = null;
         if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
             Optional<AuditLog> paymentLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, PAID);
             if (paymentLog.isPresent()) {
-                actor = paymentLog.get().getActor().getName();
+                actor = paymentLog.get().getActor();
             }
         } else if (request.getRejectionReason() != null && !request.getRejectionReason().isBlank()) {
             Optional<AuditLog> rejectionLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT);
             if (rejectionLog.isPresent()) {
-                actor = rejectionLog.get().getActor().getName();
+                actor = rejectionLog.get().getActor();
             }
         } else {
             Optional<AuditLog> approvalLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, APPROVE);
             if (approvalLog.isPresent()) {
-                actor = approvalLog.get().getActor().getName();
+                actor = approvalLog.get().getActor();
             }
         }
 
         String requestName = request.getRequestName() != null && !request.getRequestName().isBlank() ? request.getRequestName() : request.getRequestKey();
+        String actorName = actor != null ? actor.getName() : "System";
         try {
-            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actor);
+            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actorName);
+            auditService.createJiraRequestUpdatedLog(actor, request, "Updated Jira issue " + request.getJiraIssueKey());
         } catch (RestClientException e) {
             log.warn("Failed to post status or rejection comment to Jira for {}", key, e);
         }

@@ -10,7 +10,16 @@ import com.veritas.backend.integrations.jira.service.JiraConfigService;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
+import com.veritas.backend.integrations.jira.repository.JiraSyncQueueItemRepository;
+import com.veritas.backend.integrations.jira.entity.JiraSyncQueueItem;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.user.entity.User;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +41,9 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
+    private final JiraSyncQueueItemRepository queueItemRepository;
+    private final RequestRepository requestRepository;
+    private final AuditService auditService;
 
     @Override
     public Page<JiraConfigResponseDto> getAllConfigs(Pageable pageable, String filter) {
@@ -76,10 +88,37 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         JiraConfig entity = repository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Config not found"));
 
-        entity.setActive(false);
-        JiraConfig saved = repository.save(entity);
         scheduler.cancelConfig(id);
-        return mapper.toDto(saved);
+
+        String cleanUrl = entity.getJiraUrl().replaceAll("/+$", "");
+        List<JiraSyncQueueItem> pendingItems = queueItemRepository.findByStatus("PENDING");
+        List<JiraSyncQueueItem> itemsToDelete = pendingItems.stream()
+            .filter(item -> item.getRequest() != null && 
+                            item.getRequest().getJiraIssueUrl() != null && 
+                            item.getRequest().getJiraIssueUrl().contains(cleanUrl))
+            .collect(Collectors.toList());
+        if (!itemsToDelete.isEmpty()) {
+            queueItemRepository.deleteAll(itemsToDelete);
+        }
+
+        User actor = null;
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof User user) {
+            actor = user;
+        }
+
+        List<Request> syncedRequests = requestRepository.findByJiraConfigId(id);
+        for (Request request : syncedRequests) {
+            request.setJiraStatus("NOT_SYNCED");
+            request.setJiraConfig(null);
+            auditService.createJiraUnsyncLog(actor, request, "Unsynced from Jira issue " + request.getJiraIssueKey() + " | Connection deleted");
+        }
+        if (!syncedRequests.isEmpty()) {
+            requestRepository.saveAll(syncedRequests);
+        }
+
+        repository.delete(entity);
+        return mapper.toDto(entity);
     }
 
     @Override
