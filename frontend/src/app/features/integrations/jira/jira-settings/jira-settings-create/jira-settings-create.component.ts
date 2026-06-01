@@ -58,7 +58,7 @@ export class JiraSettingsCreateComponent implements OnInit {
     this.projectService.getAllProjects().subscribe(res => {
       this.projects = res || [];
     });
-    this.workflowService.getAllWorkflows({ page: 0, size: 1000 }).subscribe(res => {
+    this.workflowService.getAllWorkflows({ page: 0, size: 1000 }, undefined, true ).subscribe(res => {
       this.workflows = res.content || [];
     });
   }
