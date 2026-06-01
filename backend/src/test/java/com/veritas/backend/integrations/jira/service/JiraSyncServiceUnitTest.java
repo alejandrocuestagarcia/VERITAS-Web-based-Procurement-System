@@ -353,7 +353,7 @@ public class JiraSyncServiceUnitTest {
 
         WorkflowStep step = new WorkflowStep();
         step.setName("Technical Review");
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
 
         JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
                 .id(1L)
