@@ -100,7 +100,7 @@ class RequisitionQuoteServiceUnitTest {
         QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
-        when(quoteRepository.findByRequestRequestID(requestId)).thenReturn(List.of(quote));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
         when(quoteMapper.toDto(quote, items)).thenReturn(expectedDto);
 
@@ -109,7 +109,7 @@ class RequisitionQuoteServiceUnitTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().quoteId()).isEqualTo(10L);
         verify(requestRepository).findById(requestId);
-        verify(quoteRepository).findByRequestRequestID(requestId);
+        verify(quoteRepository).findByRequestRequestIDOrderByQuoteIDAsc(requestId);
     }
 
     @Test
@@ -121,7 +121,7 @@ class RequisitionQuoteServiceUnitTest {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Request not found");
 
-        verify(quoteRepository, never()).findByRequestRequestID(any());
+        verify(quoteRepository, never()).findByRequestRequestIDOrderByQuoteIDAsc(any());
     }
 
     @Test
@@ -343,7 +343,7 @@ class RequisitionQuoteServiceUnitTest {
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
-        when(quoteRepository.findByRequestRequestID(requestId)).thenReturn(List.of(quoteToSelect, otherQuote));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quoteToSelect, otherQuote));
 
         quoteService.selectQuoteForRequest(requestId, quoteId);
 

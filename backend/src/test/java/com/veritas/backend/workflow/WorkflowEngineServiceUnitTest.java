@@ -213,7 +213,7 @@ class WorkflowEngineServiceUnitTest {
         Quote quote = new Quote();
         quote.setVendorID(vendor);
 
-        when(quoteRepository.findByRequestRequestID(testRequest.getRequestID()))
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID()))
             .thenReturn(List.of(quote));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
@@ -240,7 +240,7 @@ class WorkflowEngineServiceUnitTest {
         Quote quote2 = new Quote();
         quote2.setVendorID(vendor2);
 
-        when(quoteRepository.findByRequestRequestID(testRequest.getRequestID()))
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID()))
             .thenReturn(List.of(quote1, quote2));
 
         assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));

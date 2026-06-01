@@ -126,7 +126,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     if (rule.getMinRequiredVendors() != null && rule.getMinRequiredVendors() > 0) {
                         Long requestId = request.getRequestID();
                         List<Quote> quotes = requestId != null
-                                ? quoteRepository.findByRequestRequestID(requestId)
+                                ? quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)
                                 : List.of();
                         long distinctVendors = quotes.stream()
                                 .map(Quote::getVendorID)

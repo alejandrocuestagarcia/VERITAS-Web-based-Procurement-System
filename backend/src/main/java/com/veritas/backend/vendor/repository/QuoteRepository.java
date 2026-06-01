@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface QuoteRepository extends JpaRepository<Quote, Long> {
-    java.util.List<Quote> findByRequestRequestID(Long requestID);
+    java.util.List<Quote> findByRequestRequestIDOrderByQuoteIDAsc(Long requestID);
 
     @Modifying
     @Query("DELETE FROM Quote q WHERE q.request.requestID = :requestId")
