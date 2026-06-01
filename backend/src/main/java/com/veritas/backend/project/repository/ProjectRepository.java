@@ -19,6 +19,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT p FROM Project p WHERE p.id = :id AND  p.team.department = :department")
     Optional<Project> findByIdAndTeamDepartment(@Param("id") Long id, @Param("department") Department department);
     boolean existsByNameOrProjectKey(String name, String projectKey);
+    boolean existsByTeamTeamId(Long teamId);
 
     Optional<Project> findByProjectKey(String projectKey);
     Optional<Project> findByName(String name);

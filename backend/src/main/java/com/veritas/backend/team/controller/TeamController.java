@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,5 +66,15 @@ public class TeamController {
     public TeamDto editTeam(@PathVariable Long id, @Valid @RequestBody TeamEditDto edits) {
         log.info("PATCH /teams/{}", id);
         return teamService.editTeam(id, edits);
+    }
+
+    @Operation(summary = "Delete team", description = "Deletes a team and unlinks all its members.")
+    @IsFinanceOfficer
+    @DeleteMapping(value = "/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTeam(@PathVariable Long id) {
+        log.info("DELETE /teams/{}", id);
+        teamService.deleteTeam(id);
+        log.info("Team deleted successfully – id: {}", id);
     }
 }

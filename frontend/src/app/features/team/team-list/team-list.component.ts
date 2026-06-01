@@ -13,6 +13,7 @@ import {
 } from '../../../core/api';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 type DepartmentFilter = string;
 
@@ -56,7 +57,8 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     private projectService: ProjectModuleService,
     private departmentsService: DepartmentsModuleService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private toastService: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -115,7 +117,17 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        // TODO: call deleteTeam
+        this.teamsService.deleteTeam(row.id).subscribe({
+          next: () => {
+            this.dataSource.data = this.dataSource.data.filter(r => r.id !== row.id);
+            this.totalTeams = this.dataSource.data.length;
+            this.toastService.showSuccess(`Team "${row.name}" deleted successfully.`);
+          },
+          error: (err) => {
+            const errorMessage = err?.error || err?.message || `Failed to delete team "${row.name}". Please try again.`;
+            this.toastService.showError(errorMessage);
+          }
+        });
       }
     });
   }
