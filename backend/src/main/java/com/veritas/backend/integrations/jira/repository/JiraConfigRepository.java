@@ -21,4 +21,6 @@ public interface JiraConfigRepository extends JpaRepository<JiraConfig, Long> {
             "LOWER(j.jiraUrl) LIKE :search OR " +
             "LOWER(j.jql) LIKE:search))")
     Page<JiraConfig> findAllFiltered(@Param("search") String search, Pageable pageable);
+
+    boolean existsByFallbackProjectId(Long projectId);
 }

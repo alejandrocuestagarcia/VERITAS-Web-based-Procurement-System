@@ -12,4 +12,5 @@ public interface ProjectService {
     ProjectDto createProject(ProjectCreationDto projectDto);
     ProjectDto getProjectById(Long id,User user);
     ProjectDto editProject(Long id, ProjectEditDto updatedProject);
+    void deleteProject(Long id);
 }

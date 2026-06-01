@@ -8,6 +8,8 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.mapper.ProjectMapper;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -33,6 +35,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final TeamRepository teamRepository;
     private final ProjectMapper projectMapper;
+    private final RequestRepository requestRepository;
+    private final JiraConfigRepository jiraConfigRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -180,6 +184,24 @@ public class ProjectServiceImpl implements ProjectService {
         Project saved = projectRepository.save(project);
         log.info("Project edited successfully – id: {}", saved.getId());
         return projectMapper.toProjectDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProject(Long id) {
+        if (!projectRepository.existsById(id)) {
+            throw new EntityNotFoundException("Project not found with id " + id);
+        }
+
+        if (requestRepository.existsByProjectIDId(id)) {
+            throw new IllegalStateException("Cannot delete project because there are requisitions pointing to it");
+        }
+
+        if (jiraConfigRepository.existsByFallbackProjectId(id)) {
+            throw new IllegalStateException("Cannot delete project because it is used as a fallback project in a Jira configuration");
+        }
+
+        projectRepository.deleteById(id);
     }
 }
 
