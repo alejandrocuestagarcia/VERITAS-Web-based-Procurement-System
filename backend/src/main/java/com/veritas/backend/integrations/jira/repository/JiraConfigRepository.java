@@ -15,9 +15,8 @@ import java.util.Optional;
 public interface JiraConfigRepository extends JpaRepository<JiraConfig, Long> {
     boolean existsByJiraUrlAndJql(String jiraUrl, String jql);
     Optional<JiraConfig> findByJiraUrlAndJql(String jiraUrl, String jql);
-    List<JiraConfig> findAllByIsActiveTrue();
 
-    @Query("SELECT j FROM JiraConfig j WHERE j.isActive = true AND " +
+    @Query("SELECT j FROM JiraConfig j WHERE " +
             "(:search IS NULL OR (" +
             "LOWER(j.name) LIKE :search OR " +
             "LOWER(j.jiraUrl) LIKE :search OR " +

@@ -575,7 +575,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     @Transactional
     public void runAllSyncs() {
         log.info("Starting global sync for all active Jira configurations");
-        List<JiraConfig> allConfigs = configRepository.findAllByIsActiveTrue();
+        List<JiraConfig> allConfigs = configRepository.findAll();
 
         for (JiraConfig config : allConfigs) {
             try {

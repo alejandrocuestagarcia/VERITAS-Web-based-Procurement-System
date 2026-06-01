@@ -66,10 +66,6 @@ public class JiraConfig {
     @Column(name = "last_sync_time")
     private java.time.LocalDateTime lastSyncTime;
 
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private boolean isActive = true;
-
     public java.time.LocalDateTime getNextSyncTime() {
         if (syncIntervalMinutes == null || syncIntervalMinutes <= 0) {
             return null;

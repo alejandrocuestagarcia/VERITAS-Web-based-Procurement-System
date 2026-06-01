@@ -75,10 +75,10 @@ public class JiraConfigServiceUnitTest {
 
         configDto =
             new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", null, null, null, null, null, true);
+                "jql", 60, "customfield_10015", null, null, null, null, null);
 
         responseDto = new JiraConfigResponseDto(1L, "Test Config", "https://test.atlassian.net", "user",
-            "jql", 60, "customfield_10015", null, null, null, null, null, null, null, null, true, true);
+            "jql", 60, "customfield_10015", null, null, null, null, null, null, null, null, true);
     }
 
     @Test

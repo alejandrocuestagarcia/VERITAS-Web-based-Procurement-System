@@ -11,7 +11,6 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.integrations.jira.repository.JiraSyncQueueItemRepository;
-import com.veritas.backend.integrations.jira.entity.JiraSyncQueueItem;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.audit.service.AuditService;
@@ -19,7 +18,6 @@ import com.veritas.backend.user.entity.User;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -70,12 +68,6 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         }
         JiraConfig entity = mapper.toEntity(dto);
         resolveFallbackEntities(dto, entity);
-        
-        if (dto.isActive() != null) {
-            entity.setActive(dto.isActive());
-        } else {
-            entity.setActive(true);
-        }
 
         JiraConfig saved = repository.save(entity);
         scheduler.scheduleConfig(saved);
@@ -132,10 +124,6 @@ public class JiraConfigServiceImpl implements JiraConfigService {
             entity.setApiToken(existingToken);
         }
         resolveFallbackEntities(dto, entity);
-
-        if (dto.isActive() != null) {
-            entity.setActive(dto.isActive());
-        }
 
         JiraConfig updated = repository.save(entity);
         scheduler.scheduleConfig(updated);

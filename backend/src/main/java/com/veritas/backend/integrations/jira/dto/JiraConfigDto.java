@@ -41,7 +41,6 @@ public record JiraConfigDto(
     Long fallbackWorkflowId,
 
     LocalDateTime lastSyncTime,
-    LocalDateTime nextSyncTime,
-    Boolean isActive
+    LocalDateTime nextSyncTime
 ) {
 }
