@@ -30,6 +30,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   List<User> findAllByTeamTeamId(Long teamId);
 
+  boolean existsByTeamTeamId(Long teamId);
+
   Page<User> findAllByRoleAndIsActiveTrue(UserRole role, Pageable pageable);
 
   List<User> findAllByRoleAndIsActiveTrue(UserRole role);

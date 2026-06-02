@@ -76,7 +76,8 @@ public class TeamServiceImpl implements TeamService {
                     () -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
 
             if (leader.getRole() != UserRole.REQUESTER) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' must be a requester to be a team leader");
+                throw new IllegalArgumentException(
+                        "User '" + leader.getName() + "' must be a requester to be a team leader");
             }
 
             if (teamRepository.existsByLeaderId(request.getLeaderId())) {
@@ -116,7 +117,8 @@ public class TeamServiceImpl implements TeamService {
                 }
 
                 if (user.getRole() != UserRole.REQUESTER) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' must be a requester to be added to a team");
+                    throw new IllegalArgumentException(
+                            "User '" + user.getName() + "' must be a requester to be added to a team");
                 }
             }
 
@@ -175,7 +177,8 @@ public class TeamServiceImpl implements TeamService {
                     .orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + edits.getLeaderId()));
 
             if (leader.getRole() != UserRole.REQUESTER) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' must be a requester to be a team leader");
+                throw new IllegalArgumentException(
+                        "User '" + leader.getName() + "' must be a requester to be a team leader");
             }
 
             if (team.getLeader() != null && !team.getLeader().getId().equals(leader.getId())) {
@@ -213,13 +216,19 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
 
+        List<String> errors = new java.util.ArrayList<>();
+
         if (projectRepository.existsByTeamTeamId(id)) {
-            throw new IllegalArgumentException("Cannot delete team because it is currently assigned to one or more projects.");
+            errors.add("Cannot delete team because it is currently assigned to one or more projects.");
         }
 
-        List<User> members = userRepository.findAllByTeamTeamId(team.getTeamId());
-        members.forEach(user -> user.setTeam(null));
-        userRepository.saveAll(members);
+        if (userRepository.existsByTeamTeamId(id)) {
+            errors.add("Cannot delete team because it still has assigned users.");
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("\n ", errors));
+        }
 
         team.setLeader(null);
         teamRepository.save(team);
@@ -292,7 +301,8 @@ public class TeamServiceImpl implements TeamService {
                 }
 
                 if (user.getRole() != UserRole.REQUESTER) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' must be a requester to be added to a team");
+                    throw new IllegalArgumentException(
+                            "User '" + user.getName() + "' must be a requester to be added to a team");
                 }
             }
 
