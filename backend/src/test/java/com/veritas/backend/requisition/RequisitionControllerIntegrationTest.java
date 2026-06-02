@@ -37,6 +37,7 @@ import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.workflow.entity.WorkflowTransition;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
@@ -929,6 +930,81 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
         Files.deleteIfExists(tempFile);
     }
+    //AI-GENERATED
+
+    @Test
+    void ApproveRequest_NextStepIsAutomatedApproval_AutomaticallyApprovesAndAdvances() throws Exception {
+        // Arrange
+        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
+
+        WorkflowStep stepOne = new WorkflowStep();
+        stepOne.setWorkflowDefinition(workflow);
+        stepOne.setWorkflowComponent(WorkflowComponent.STEP);
+        stepOne.setName("Finance Review");
+        stepOne.setRole(UserRole.FINANCE_OFFICER);
+        stepOne = workflowStepRepository.save(stepOne);
+
+        WorkflowStep automatedStep = new WorkflowStep();
+        automatedStep.setWorkflowDefinition(workflow);
+        automatedStep.setWorkflowComponent(WorkflowComponent.STEP);
+        automatedStep.setName("Automated Administrator Step");
+        automatedStep.setRole(UserRole.ADMINISTRATOR);
+        automatedStep.setIsAutomatedApproval(true);
+        automatedStep = workflowStepRepository.save(automatedStep);
+
+        WorkflowStep endStep = new WorkflowStep();
+        endStep.setWorkflowDefinition(workflow);
+        endStep.setWorkflowComponent(WorkflowComponent.END_EVENT);
+        endStep.setName("End");
+        endStep = workflowStepRepository.save(endStep);
+
+        // Transitions: startStep -> stepOne -> automatedStep -> endStep
+        WorkflowTransition startToStepOne = new WorkflowTransition();
+        startToStepOne.setFromStep(startStep);
+        startToStepOne.setToStep(stepOne);
+        workflowTransitionRepository.save(startToStepOne);
+
+        WorkflowTransition stepOneToAutomated = new WorkflowTransition();
+        stepOneToAutomated.setFromStep(stepOne);
+        stepOneToAutomated.setToStep(automatedStep);
+        workflowTransitionRepository.save(stepOneToAutomated);
+
+        WorkflowTransition automatedToEnd = new WorkflowTransition();
+        automatedToEnd.setFromStep(automatedStep);
+        automatedToEnd.setToStep(endStep);
+        workflowTransitionRepository.save(automatedToEnd);
+
+        Project project = projectRepository.findAll().get(0);
+        Request request = new Request();
+        request.setRequestName("Automated Approval Requisition");
+        request.setState(RequestStatus.ACTIVE);
+        request.setProjectID(project);
+        request.setWorkflowDefinitionID(workflow);
+        request.setCurrentStepID(stepOne);
+        request = requestRepository.save(request);
+
+        // Seed AuditLog for entering stepOne
+        AuditLog log = AuditLog.builder()
+                .request(request)
+                .previousStep(startStep)
+                .newStep(stepOne)
+                .action("APPROVE")
+                .entryHash("hash-abc")
+                .timestamp(java.time.LocalDateTime.now())
+                .build();
+        auditLogRepository.save(log);
+
+        // Act: Approve as Finance Officer at stepOne
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/approve")
+                        .header("Authorization", "Bearer " + financeOfficerToken)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Assert: Request should have automatically skipped the automatedStep and advanced directly to endStep, changing state to FINISHED
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertEquals(RequestStatus.FINISHED, updatedRequest.getState());
+        assertEquals(endStep.getId(), updatedRequest.getCurrentStepID().getId());
+    }
 
 }
-

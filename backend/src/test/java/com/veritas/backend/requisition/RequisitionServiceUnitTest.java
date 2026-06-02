@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -1124,5 +1125,41 @@ class RequisitionServiceUnitTest {
                 () -> requisitionService.deleteAttachment(1L));
 
         verify(attachmentRepository, never()).delete(any());
+    }
+
+
+    //AI-GENERATED
+    @Test
+    void getNextStepRole_NextStepIsAutomated_ReturnsNull() {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        WorkflowStep nextStep = new WorkflowStep();
+        nextStep.setRole(UserRole.ADMINISTRATOR);
+        nextStep.setIsAutomatedApproval(true);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(workflowEngineService.getNextStep(request)).thenReturn(nextStep);
+
+        String result = requisitionService.getNextStepRole(1L);
+
+        assertNull(result);
+    }
+
+    @Test
+    void getNextStepRole_NextStepIsNotAutomatedWithRole_ReturnsRoleName() {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        WorkflowStep nextStep = new WorkflowStep();
+        nextStep.setRole(UserRole.ADMINISTRATOR);
+        nextStep.setIsAutomatedApproval(false);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(workflowEngineService.getNextStep(request)).thenReturn(nextStep);
+
+        String result = requisitionService.getNextStepRole(1L);
+
+        assertEquals("ADMINISTRATOR", result);
     }
 }

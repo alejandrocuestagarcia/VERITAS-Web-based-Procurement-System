@@ -458,4 +458,46 @@ class WorkflowEngineServiceUnitTest {
 
         assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }
+    //AI-GENERATED
+    @Test
+    void moveToNextStep_NextStepIsAutomatedApproval_TransitionsAutomatically() {
+        WorkflowStep automatedStep = new WorkflowStep();
+        automatedStep.setWorkflowComponent(WorkflowComponent.STEP);
+        automatedStep.setName("Automated Approve Step");
+        automatedStep.setIsAutomatedApproval(true);
+
+        WorkflowStep endStep = new WorkflowStep();
+        endStep.setWorkflowComponent(WorkflowComponent.END_EVENT);
+        endStep.setName("End");
+
+        WorkflowTransition firstTransition = new WorkflowTransition();
+        firstTransition.setFromStep(currentStep);
+        firstTransition.setToStep(automatedStep);
+
+        WorkflowTransition secondTransition = new WorkflowTransition();
+        secondTransition.setFromStep(automatedStep);
+        secondTransition.setToStep(endStep);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(firstTransition));
+        when(workflowTransitionRepository.findByFromStep(automatedStep)).thenReturn(List.of(secondTransition));
+        when(transitionRuleRepository.findByTransition(firstTransition)).thenReturn(Optional.empty());
+        when(transitionRuleRepository.findByTransition(secondTransition)).thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+
+        assertEquals(endStep, testRequest.getCurrentStepID());
+    }
+
+    @Test
+    void checkAuthorization_AutomatedStep_ReturnsEarlyWithoutError() {
+        WorkflowStep automatedStep = new WorkflowStep();
+        automatedStep.setWorkflowComponent(WorkflowComponent.STEP);
+        automatedStep.setIsAutomatedApproval(true);
+        automatedStep.setRole(UserRole.ADMINISTRATOR);
+
+        testActor.setId(99L);
+        testActor.setRole(UserRole.REQUESTER);
+
+        assertDoesNotThrow(() -> workflowEngineService.checkAuthorization(testRequest, testActor, automatedStep));
+    }
 }
