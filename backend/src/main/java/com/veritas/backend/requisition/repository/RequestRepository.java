@@ -45,4 +45,6 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                      @Param("teamId") Long teamId,
                                      @Param("departmentId") Long departmentId,
                                      Pageable pageable);
+
+    boolean existsByProjectIDId(Long projectId);
 }

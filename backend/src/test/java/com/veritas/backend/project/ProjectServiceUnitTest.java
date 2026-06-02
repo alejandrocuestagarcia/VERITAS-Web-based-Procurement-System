@@ -9,6 +9,8 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.mapper.ProjectMapper;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.impl.ProjectServiceImpl;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -40,6 +42,12 @@ class ProjectServiceUnitTest {
 
     @Mock
     private TeamRepository teamRepository;
+
+    @Mock
+    private RequestRepository requestRepository;
+
+    @Mock
+    private JiraConfigRepository jiraConfigRepository;
 
     @InjectMocks
     private ProjectServiceImpl projectService;
@@ -284,5 +292,43 @@ class ProjectServiceUnitTest {
 
         verify(projectRepository, never()).save(any());
         verify(projectMapper, never()).toProjectDto(any());
+    }
+
+    @Test
+    void DeleteProject_NoReferences_DeletesSuccessfully() {
+        Long projectId = 1L;
+
+        when(projectRepository.existsById(projectId)).thenReturn(true);
+        when(requestRepository.existsByProjectIDId(projectId)).thenReturn(false);
+        when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(false);
+
+        projectService.deleteProject(projectId);
+
+        verify(projectRepository).deleteById(projectId);
+    }
+
+    @Test
+    void DeleteProject_HasRequisitions_ThrowsIllegalStateException() {
+        Long projectId = 1L;
+
+        when(projectRepository.existsById(projectId)).thenReturn(true);
+        when(requestRepository.existsByProjectIDId(projectId)).thenReturn(true);
+
+        assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
+
+        verify(projectRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void DeleteProject_IsJiraFallbackProject_ThrowsIllegalStateException() {
+        Long projectId = 1L;
+
+        when(projectRepository.existsById(projectId)).thenReturn(true);
+        when(requestRepository.existsByProjectIDId(projectId)).thenReturn(false);
+        when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(true);
+
+        assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
+
+        verify(projectRepository, never()).deleteById(any());
     }
 }

@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import {Router} from "@angular/router";
 import {AuthService} from "../../../core/services/auth.service";
+import {ToastService} from "../../../core/services/toast.service";
 
 @Component({
   selector: 'app-project-list',
@@ -23,11 +24,16 @@ export class ProjectListComponent implements OnInit {
   constructor(
     private projectService: ProjectModuleService,
     private authService: AuthService,
+    private toastService: ToastService,
     private router: Router,
     private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
+    this.loadData();
+  }
+
+  private loadData(): void {
     this.loading = true;
     this.projectService.getAllProjects().subscribe({
       next: (projects) => {
@@ -56,7 +62,15 @@ export class ProjectListComponent implements OnInit {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        // TODO: call deleteProject
+        this.projectService.deleteProject(project.id!).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Project deleted successfully.');
+            this.loadData();
+          },
+          error: () => {
+            this.toastService.showError('Cannot delete project. It may still have requisitions or other entities associated with it.');
+          }
+        });
       }
     });
   }

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -62,6 +63,16 @@ public class ProjectController {
         URI projectURI = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(projectDto.id()).toUri();
         log.info("Project created successfully – id: {}", projectDto.id());
         return ResponseEntity.created(projectURI).body(projectDto);
+    }
+
+    @Operation(summary = "Delete project", description = "Deletes an existing project.")
+    @DeleteMapping(value = "/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @IsFinanceOfficer
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+        log.info("DELETE /projects/{}", id);
+        projectService.deleteProject(id);
+        return ResponseEntity.noContent().build();
     }
 }
 

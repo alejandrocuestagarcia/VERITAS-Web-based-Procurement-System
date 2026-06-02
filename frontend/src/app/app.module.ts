@@ -5,6 +5,7 @@ import { HttpClientModule, HTTP_INTERCEPTORS } from "@angular/common/http";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { NoopScrollStrategy } from '@angular/cdk/overlay';
 
 // Material Modules
 import { MatCardModule } from "@angular/material/card";
@@ -25,7 +26,7 @@ import { MatNativeDateModule, MatOptionModule } from "@angular/material/core";
 import { MatSelectModule } from "@angular/material/select";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
-import { MatDialogModule } from "@angular/material/dialog";
+import { MatDialogModule, MAT_DIALOG_DEFAULT_OPTIONS } from "@angular/material/dialog";
 import { MatStepperModule } from "@angular/material/stepper";
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
@@ -214,6 +215,10 @@ import { AssigneeSelectDialogComponent } from './shared/components/assignee-sele
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
       useValue: { subscriptSizing: 'dynamic', appearance: 'outline' }
+    },
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useValue: { hasBackdrop: true, scrollStrategy: new NoopScrollStrategy() }
     }
   ],
   bootstrap: [AppComponent]
