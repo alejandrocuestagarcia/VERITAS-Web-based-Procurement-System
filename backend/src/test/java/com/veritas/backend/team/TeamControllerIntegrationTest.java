@@ -897,7 +897,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         }
 
         @Test
-        void TeamDeletion_UnlinksAllMembers() throws Exception {
+        void TeamDeletion_WithAssignedUsers_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
                 Team team = createTeam("Member Team", departmentIT);
                 User member1 = createUser("Member One", team);
@@ -905,16 +905,14 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("Cannot delete team because it still has assigned users.")));
 
-                User refreshed1 = userRepository.findById(member1.getId()).orElseThrow();
-                User refreshed2 = userRepository.findById(member2.getId()).orElseThrow();
-                assertNull(refreshed1.getTeam(), "Member 1 should have no team after deletion");
-                assertNull(refreshed2.getTeam(), "Member 2 should have no team after deletion");
+                assertTrue(teamRepository.existsById(team.getTeamId()), "Team should still exist");
         }
 
         @Test
-        void TeamDeletion_WithLeader_UnlinksLeaderAndDeletes() throws Exception {
+        void TeamDeletion_WithLeader_ReturnsBadRequest() throws Exception {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
                 Team team = createTeam("Leader Team", departmentIT);
                 User leader = createUser("Team Leader", team);
@@ -923,11 +921,10 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string(containsString("Cannot delete team because it still has assigned users.")));
 
-                assertFalse(teamRepository.existsById(team.getTeamId()));
-                User refreshedLeader = userRepository.findById(leader.getId()).orElseThrow();
-                assertNull(refreshedLeader.getTeam(), "Leader should have no team after deletion");
+                assertTrue(teamRepository.existsById(team.getTeamId()), "Team should still exist");
         }
 
         @Test
