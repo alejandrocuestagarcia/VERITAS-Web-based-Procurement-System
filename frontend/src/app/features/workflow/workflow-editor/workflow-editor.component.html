@@ -215,6 +215,29 @@
       <div class="p-6 space-y-6 overflow-y-auto">
         <div class="space-y-4">
           <div>
+
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Approval Mode</label>
+            <div *ngIf="isEditable" class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm mt-2 mb-6 transition-all duration-200"
+                 [class.opacity-50]="!currentTask.role"
+                 [class.bg-slate-50]="!currentTask.role">
+              <input type="checkbox" [checked]="currentTask.automatedApproval" [disabled]="!currentTask.role"
+                     (change)="updateTaskProperty('automatedApproval', !currentTask.automatedApproval)"
+                     class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-700">Automated Approval</span>
+                <span class="text-[10px] text-slate-400">
+                  {{ currentTask.role ? 'Skip manual role approval for this step' : 'Select a responsible role first to enable automated approval' }}
+                </span>
+              </div>
+            </div>
+            <div *ngIf="!isEditable" class="flex items-center gap-3 p-4 mt-2 mb-6 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+              <mat-icon *ngIf="currentTask.automatedApproval" class="text-green-500">check_circle</mat-icon>
+              <mat-icon *ngIf="!currentTask.automatedApproval" class="text-slate-400 font-bold">cancel</mat-icon>
+              <span class="text-sm font-semibold text-slate-700">
+                {{ currentTask.automatedApproval ? 'Automated Approval Enabled' : 'Manual Approval Required' }}
+              </span>
+            </div>
+
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Responsible Role <span class="text-red-500 font-bold">*</span></label>
             <div *ngIf="isEditable" class="mt-2 mb-6">
               <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
@@ -237,27 +260,7 @@
               </div>
             </div>
 
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Approval Mode</label>
-            <div *ngIf="isEditable" class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm mt-2 mb-6 transition-all duration-200"
-              [class.opacity-50]="!currentTask.role"
-              [class.bg-slate-50]="!currentTask.role">
-              <input type="checkbox" [checked]="currentTask.automatedApproval" [disabled]="!currentTask.role"
-                (change)="updateTaskProperty('automatedApproval', !currentTask.automatedApproval)"
-                class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
-              <div class="flex flex-col">
-                <span class="text-sm font-semibold text-slate-700">Automated Approval</span>
-                <span class="text-[10px] text-slate-400">
-                  {{ currentTask.role ? 'Skip manual role approval for this step' : 'Select a responsible role first to enable automated approval' }}
-                </span>
-              </div>
-            </div>
-            <div *ngIf="!isEditable" class="flex items-center gap-3 p-4 mt-2 mb-6 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-              <mat-icon *ngIf="currentTask.automatedApproval" class="text-green-500">check_circle</mat-icon>
-              <mat-icon *ngIf="!currentTask.automatedApproval" class="text-slate-400 font-bold">cancel</mat-icon>
-              <span class="text-sm font-semibold text-slate-700">
-                {{ currentTask.automatedApproval ? 'Automated Approval Enabled' : 'Manual Approval Required' }}
-              </span>
-            </div>
+
 
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description / Custom Instructions</label>
             <div *ngIf="isEditable" class="mt-2">
