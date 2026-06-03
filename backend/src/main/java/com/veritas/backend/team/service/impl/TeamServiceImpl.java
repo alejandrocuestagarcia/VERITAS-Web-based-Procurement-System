@@ -2,6 +2,7 @@ package com.veritas.backend.team.service.impl;
 
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
+import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.mapper.UserMapper;
 import jakarta.persistence.EntityExistsException;
@@ -20,15 +21,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final ProjectRepository projectRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -72,7 +76,8 @@ public class TeamServiceImpl implements TeamService {
                     () -> new EntityNotFoundException("Leader not found with id " + request.getLeaderId()));
 
             if (leader.getRole() != UserRole.REQUESTER) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' must be a requester to be a team leader");
+                throw new IllegalArgumentException(
+                        "User '" + leader.getName() + "' must be a requester to be a team leader");
             }
 
             if (teamRepository.existsByLeaderId(request.getLeaderId())) {
@@ -112,7 +117,8 @@ public class TeamServiceImpl implements TeamService {
                 }
 
                 if (user.getRole() != UserRole.REQUESTER) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' must be a requester to be added to a team");
+                    throw new IllegalArgumentException(
+                            "User '" + user.getName() + "' must be a requester to be added to a team");
                 }
             }
 
@@ -171,7 +177,8 @@ public class TeamServiceImpl implements TeamService {
                     .orElseThrow(() -> new EntityNotFoundException("Leader not found with id " + edits.getLeaderId()));
 
             if (leader.getRole() != UserRole.REQUESTER) {
-                throw new IllegalArgumentException("User '" + leader.getName() + "' must be a requester to be a team leader");
+                throw new IllegalArgumentException(
+                        "User '" + leader.getName() + "' must be a requester to be a team leader");
             }
 
             if (team.getLeader() != null && !team.getLeader().getId().equals(leader.getId())) {
@@ -201,6 +208,33 @@ public class TeamServiceImpl implements TeamService {
         }
 
         return convertTeamToTeamDto(updatedTeam);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTeam(Long id) {
+        Team team = teamRepository.findById(Objects.requireNonNull(id))
+                .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
+
+        List<String> errors = new java.util.ArrayList<>();
+
+        if (projectRepository.existsByTeamTeamId(id)) {
+            errors.add("Cannot delete team because it is currently assigned to one or more projects.");
+        }
+
+        if (userRepository.existsByTeamTeamId(id)) {
+            errors.add("Cannot delete team because it still has assigned users.");
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("\n ", errors));
+        }
+
+        team.setLeader(null);
+        teamRepository.save(team);
+
+        teamRepository.delete(team);
+        log.info("Team deleted – id: {}, name: {}", id, team.getName());
     }
 
     private void ensureLeaderAssignment(User leader, Team team) {
@@ -267,7 +301,8 @@ public class TeamServiceImpl implements TeamService {
                 }
 
                 if (user.getRole() != UserRole.REQUESTER) {
-                    throw new IllegalArgumentException("User '" + user.getName() + "' must be a requester to be added to a team");
+                    throw new IllegalArgumentException(
+                            "User '" + user.getName() + "' must be a requester to be added to a team");
                 }
             }
 

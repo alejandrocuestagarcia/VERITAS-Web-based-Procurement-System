@@ -115,14 +115,19 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     private void cleanAllData() {
+        jdbcTemplate.update("UPDATE users SET team_id = NULL");
+        jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
         jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
         jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
+        jdbcTemplate.update("UPDATE projects SET budget_id = NULL");
 
         quoteLineItemRepository.deleteAll();
         quoteRepository.deleteAll();
         requestRepository.deleteAll();
 
         projectRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM internal_budgets");
+
         teamRepository.deleteAll();
         userRepository.deleteAll();
         departmentRepository.deleteAll();
