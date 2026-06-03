@@ -1185,7 +1185,7 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
-        requisitionService.deleteInvoice(1L);
+        requisitionService.deleteInvoice(1L, testUser);
 
         verify(attachmentRepository).delete(attachment);
         verify(invoiceRepository).delete(invoice);
@@ -1199,7 +1199,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(999L)).thenReturn(Optional.empty());
 
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> requisitionService.deleteInvoice(999L));
+                () -> requisitionService.deleteInvoice(999L, testUser));
         assertTrue(ex.getMessage().contains("Request not found with id: 999"));
         verify(invoiceRepository, never()).delete(any());
     }
@@ -1213,7 +1213,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> requisitionService.deleteInvoice(1L));
+                () -> requisitionService.deleteInvoice(1L, testUser));
         assertTrue(ex.getMessage().contains("Invoice not found for request with id: 1"));
         verify(invoiceRepository, never()).delete(any());
     }
@@ -1230,7 +1230,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> requisitionService.deleteInvoice(1L));
+                () -> requisitionService.deleteInvoice(1L, testUser));
         assertTrue(ex.getMessage().contains("Cannot delete an invoice that has already been paid."));
         verify(invoiceRepository, never()).delete(any());
     }
@@ -1254,7 +1254,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> requisitionService.deleteInvoice(1L));
+                () -> requisitionService.deleteInvoice(1L, testUser));
 
         verify(invoiceRepository, never()).delete(any());
     }

@@ -184,8 +184,8 @@ public class RequisitionController {
     @Operation(summary = "Delete invoice", description = "Deletes the invoice for a requisition. Only unpaid invoices can be deleted.")
     @IsProcurementOfficer
     @DeleteMapping("/{id}/invoice")
-    public ResponseEntity<Void> deleteInvoice(@PathVariable Long id) {
-        requisitionService.deleteInvoice(id);
+    public ResponseEntity<Void> deleteInvoice(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        requisitionService.deleteInvoice(id, user);
         return ResponseEntity.noContent().build();
     }
 }

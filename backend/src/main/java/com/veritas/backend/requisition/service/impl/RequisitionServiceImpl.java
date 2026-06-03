@@ -36,6 +36,9 @@ import lombok.RequiredArgsConstructor;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.department.entity.Department;
+import java.util.Optional;
 import java.math.BigDecimal;
 
 import org.springframework.context.annotation.Lazy;
@@ -135,7 +138,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         budget.setTotalAmount(BigDecimal.ZERO);
         budget.setParentBudget(project.getInternalBudget());
         internalBudgetRepository.save(budget);
-        
+
         request.setBudgetID(budget);
 
         project.setRequestCounter(project.getRequestCounter() + 1);
@@ -264,12 +267,10 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
-        if (user.getRole() == UserRole.PROCUREMENT_OFFICER && !attachment.getRequest().getTeamID().getDepartment().getDepartmentId().equals(user.getDepartment().getDepartmentId())) {
-            throw new AccessDeniedException("Not allowed to access this request");
-        }
+        checkProcurementOfficerAccess(attachment.getRequest(), user);
 
         if (attachment.getInvoice() != null) {
-            deleteInvoice(attachment.getRequest().getRequestID());
+            deleteInvoice(attachment.getRequest().getRequestID(), user);
             return;
         }
 
@@ -378,7 +379,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (jiraSyncService != null) {
             jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
         }
-        
+
         return requisitionMapper.toDto(updatedRequest);
     }
 
@@ -420,7 +421,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     }
                     if (requiredRole == UserRole.REQUESTER) {
                         return u.getTeam() != null && u.getTeam().getDepartment() != null &&
-                               u.getTeam().getDepartment().getDepartmentId().equals(finalReqDeptId);
+                                u.getTeam().getDepartment().getDepartmentId().equals(finalReqDeptId);
                     }
                     return false;
                 })
@@ -480,10 +481,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (itemsChanged) {
             String oldItemsStr = request.getItems() == null ? "" : request.getItems().stream()
                     .map(item -> item.getName() + " (" + item.getQuantity() + " " + item.getUnit() + (item.getDescription() != null && !item.getDescription().isEmpty() ? " - " + item.getDescription() : "") + ")")
-                    .collect(Collectors.joining(", "));
+                            .collect(Collectors.joining(", "));
             String newItemsStr = updates.items() == null ? "" : updates.items().stream()
                     .map(item -> item.name() + " (" + item.quantity() + " " + item.unit() + (item.description() != null && !item.description().isEmpty() ? " - " + item.description() : "") + ")")
-                    .collect(Collectors.joining(", "));
+                            .collect(Collectors.joining(", "));
             changes.add("Field 'items' changed from '" + oldItemsStr + "' to '" + newItemsStr + "'");
         }
 
@@ -684,16 +685,18 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public void deleteInvoice(Long requestId) {
+    public void deleteInvoice(Long requestId, User user) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        checkProcurementOfficerAccess(request, user);
 
         Invoice invoice = request.getInvoice();
         if (invoice == null) {
             throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
         }
 
-        if (Boolean.TRUE.equals(invoice.getIsPaid())) {
+        if (invoice.getIsPaid()) {
             throw new IllegalStateException("Cannot delete an invoice that has already been paid.");
         }
 
@@ -748,6 +751,19 @@ public class RequisitionServiceImpl implements RequisitionService {
             attachmentRepository.save(attachment);
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file. Please try again!", ex);
+        }
+    }
+
+    private void checkProcurementOfficerAccess(Request request, User user) {
+        if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            Department userDept = user.getDepartment();
+            Team requestTeam = request.getTeamID();
+            Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
+
+            if (userDept == null || requestDept == null
+                    || !userDept.getDepartmentId().equals(requestDept.getDepartmentId())) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
         }
     }
 }

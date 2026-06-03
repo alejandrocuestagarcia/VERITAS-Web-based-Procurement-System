@@ -35,5 +35,5 @@ public interface RequisitionService {
     void processPayment(Long requestId, User actor);
     InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file);
     InvoiceDto getInvoice(Long requestId);
-    void deleteInvoice(Long requestId);
+    void deleteInvoice(Long requestId, User user);
 }

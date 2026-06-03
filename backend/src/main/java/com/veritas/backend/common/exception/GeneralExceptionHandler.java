@@ -59,12 +59,6 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
   }
 
-  @ExceptionHandler(IllegalStateException.class)
-  public ResponseEntity<String> handleIllegalStateError(IllegalStateException exception) {
-    log.warn("Illegal state: {}", exception.getMessage());
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
-  }
-
   @ExceptionHandler(EntityNotFoundException.class)
   public ResponseEntity<String> handleNotFound(EntityNotFoundException ex) {
     log.warn("Entity not found: {}", ex.getMessage());
@@ -74,7 +68,7 @@ public class GeneralExceptionHandler {
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
     log.warn("Illegal state: " + ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
   @ExceptionHandler(EntityExistsException.class)

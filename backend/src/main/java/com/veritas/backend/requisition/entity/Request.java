@@ -56,7 +56,7 @@ public class Request {
     @Column(name = "request_name", nullable = false)
     private String requestName;
 
-    @OneToOne(mappedBy = "request", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)

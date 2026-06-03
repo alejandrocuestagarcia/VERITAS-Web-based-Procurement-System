@@ -119,6 +119,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.update("DELETE FROM attachments");
         jdbcTemplate.update("DELETE FROM invoices");
         jdbcTemplate.update("DELETE FROM vendor_evaluations");
         jdbcTemplate.update("DELETE FROM quote_line_items");
@@ -1015,6 +1016,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             request.setRequestName("Delete Invoice Test");
             request.setState(RequestStatus.ACTIVE);
             request.setProjectID(project);
+            request.setTeamID(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();
@@ -1051,6 +1053,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             request.setRequestName("Delete Invoice Forbidden");
             request.setState(RequestStatus.ACTIVE);
             request.setProjectID(project);
+            request.setTeamID(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
@@ -1059,12 +1062,13 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    void DeleteInvoice_PaidInvoice_ReturnsBadRequest() throws Exception {
+    void DeleteInvoice_PaidInvoice_ReturnsConflict() throws Exception {
             Project project = projectRepository.findAll().get(0);
             Request request = new Request();
             request.setRequestName("Delete Paid Invoice");
             request.setState(RequestStatus.ACTIVE);
             request.setProjectID(project);
+            request.setTeamID(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();
@@ -1077,7 +1081,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
             mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
                             .header("Authorization", "Bearer " + procurementOfficerToken))
-                            .andExpect(status().isBadRequest())
+                            .andExpect(status().isConflict())
                             .andExpect(content().string(org.hamcrest.Matchers.containsString(
                                             "Cannot delete an invoice that has already been paid.")));
     }
