@@ -75,7 +75,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import static com.veritas.backend.common.model.AuditActionConstants.PAID;
+import static com.veritas.backend.common.model.AuditActionConstants.*;
 
 @Slf4j
 @Service
@@ -307,6 +307,8 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be approved");
         }
 
+        request.setRevisionRequired(false);
+
         workflowEngineService.moveToNextStep(request, actor, nextAssigneeId);
 
 
@@ -317,24 +319,28 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData) {
+    public RequisitionDto revertRequest(Long id, User actor, RequisitionRejectDto rejectionData) {
 
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
         if (request.getState() == RequestStatus.FINISHED) {
-            throw new WorkflowStateException("Request " + id + " is already finished and cannot be rejected");
+            throw new WorkflowStateException("Request " + id + " is already finished and cannot be reverted");
         }
 
         if (request.getState() == RequestStatus.DRAFT) {
-            throw new WorkflowStateException("Request " + id + " is in draft and cannot be rejected");
+            throw new WorkflowStateException("Request " + id + " is in draft and cannot be reverted");
         }
 
         if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
-            throw new WorkflowStateException("Request " + id + " has already been paid and cannot be rejected");
+            throw new WorkflowStateException("Request " + id + " has already been paid and cannot be reverted");
         }
 
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
+
+        if (rejectionData.getRevisionRequired()!=null && rejectionData.getRevisionRequired()) {
+            request.setRevisionRequired(true);
+        }
 
         Request savedRequest = requestRepository.save(request);
 
@@ -354,10 +360,80 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         request.setState(RequestStatus.ACTIVE);
+        request.setRevisionRequired(false);
 
         workflowEngineService.startWorkflow(request, actor, nextAssigneeId);
 
         Request savedRequest = requestRepository.save(request);
+        return requisitionMapper.toDto(savedRequest);
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData) {
+
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Request " + id + " is already finished and cannot be rejected");
+        }
+
+        if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+            throw new WorkflowStateException("Request " + id + " has already been paid and cannot be rejected");
+        }
+
+        if (request.getCurrentStepID() != null && !canAct(id, actor)) {
+            throw new AccessDeniedException("Not allowed to access this request");
+        }
+
+        request.setDeletedAt(java.time.LocalDateTime.now());
+        request.setRejectionReason(rejectionData.getReason());
+        request.setState(RequestStatus.FINISHED);
+
+        auditService.createWorkflowTransitionLog(
+                actor,
+                request,
+                null,
+                REJECT,
+                "Request was rejected with the following reason: " + rejectionData.getReason());
+
+        Request savedRequest = requestRepository.save(request);
+
+        return requisitionMapper.toDto(savedRequest);
+    }
+
+    @Override
+    @Transactional
+    public RequisitionDto cancelRequest(Long id, User actor) {
+
+        Request request = requestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+
+        if (request.getState() != RequestStatus.DRAFT) {
+            throw new WorkflowStateException("Only requests in Draft can be cancelled");
+        }
+
+        if (request.getCurrentStepID() != null && !canAct(id, actor)) {
+            throw new AccessDeniedException("Not allowed to access this request");
+        }
+
+        if(actor.getRole()!= UserRole.REQUESTER || !actor.getId().equals(request.getUserID().getId()) ) {
+            throw new AccessDeniedException("Only the creator of the request can cancel it");
+        }
+
+        request.setDeletedAt(java.time.LocalDateTime.now());
+        request.setState(RequestStatus.FINISHED);
+
+        auditService.createWorkflowTransitionLog(
+                actor,
+                request,
+                null,
+                CANCEL,
+                "Request was canceled by " + actor.getName());
+
+        Request savedRequest = requestRepository.save(request);
+
         return requisitionMapper.toDto(savedRequest);
     }
 
@@ -454,8 +530,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Procurement Request with id '" + id + "' not found"));
 
-        if (request.getState() != RequestStatus.DRAFT) {
-            throw new WorkflowStateException("Only drafts can be updated/edited");
+        if (request.getState() != RequestStatus.DRAFT && !request.getRevisionRequired()) {
+            throw new WorkflowStateException("Only requests that are in DRAFT or need a Revision can be edited");
         }
 
         if (!request.getUser().getId().equals(actor.getId())) {
@@ -532,6 +608,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                     .findFirstByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
                     .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
             request.setCurrentStep(startStep);
+            request.setAssignee(request.getUser());
+            request.setState(RequestStatus.DRAFT);
         }
 
         if (itemsChanged) {

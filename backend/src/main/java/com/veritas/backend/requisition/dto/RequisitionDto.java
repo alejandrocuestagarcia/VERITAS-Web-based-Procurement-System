@@ -42,5 +42,6 @@ public record RequisitionDto(
     String assigneeEmail,
     Long workflowDefinitionId,
     Boolean isPaid,
-    BigDecimal paidAmountEur
+    BigDecimal paidAmountEur,
+    Boolean revisionRequired
 ) {}

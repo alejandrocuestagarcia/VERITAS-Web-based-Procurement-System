@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class RequisitionRejectDto {
     private String reason;
+    private Boolean revisionRequired;
 }

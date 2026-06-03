@@ -27,6 +27,7 @@ import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
+import com.veritas.backend.requisition.dto.RequisitionRejectDto;
 import com.veritas.backend.requisition.entity.*;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.security.access.AccessDeniedException;
@@ -110,7 +111,6 @@ class RequisitionServiceUnitTest {
     private InvoiceMapper invoiceMapper;
     @Mock
     private WorkflowEngineService workflowEngineService;
-    ;
     @Mock
     private InternalBudgetRepository internalBudgetRepository;
     @Mock
@@ -1323,5 +1323,265 @@ class RequisitionServiceUnitTest {
         assertNotNull(result);
         verify(invoiceMapper).toDto(eq(invoice), isNull());
     }
+
+    // AI-Generated
+    @Test
+    void ApproveRequest_RequestNotFound_ThrowsIllegalArgumentException() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class, () -> requisitionService.approveRequest(999L, testUser, 2L));
+    }
+
+    // AI-Generated
+    @Test
+    void ApproveRequest_FinishedRequest_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.FINISHED);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.approveRequest(1L, testUser, 2L));
+    }
+
+    // AI-Generated
+    @Test
+    void ApproveRequest_DraftRequest_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.approveRequest(1L, testUser, 2L));
+    }
+
+    // AI-Generated
+    @Test
+    void ApproveRequest_PaidInvoice_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.approveRequest(1L, testUser, 2L));
+    }
+
+    // AI-Generated
+    @Test
+    void ApproveRequest_ValidRequest_ApprovesAndReturnsDto() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setRevisionRequired(true);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionDto result = requisitionService.approveRequest(1L, testUser, 2L);
+
+        assertNotNull(result);
+        assertEquals(expectedDto, result);
+        assertFalse(request.getRevisionRequired());
+        verify(workflowEngineService).moveToNextStep(request, testUser, 2L);
+        verify(requestRepository).save(request);
+    }
+
+    // AI-Generated
+    @Test
+    void RevertRequest_RequestNotFound_ThrowsIllegalArgumentException() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+        assertThrows(IllegalArgumentException.class, () -> requisitionService.revertRequest(999L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RevertRequest_FinishedRequest_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.FINISHED);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.revertRequest(1L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RevertRequest_DraftRequest_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.revertRequest(1L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RevertRequest_PaidInvoice_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.revertRequest(1L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RevertRequest_RevisionRequiredTrue_RevertsAndSetsRevisionRequired() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setRevisionRequired(false);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(true);
+        RequisitionDto result = requisitionService.revertRequest(1L, testUser, dto);
+
+        assertNotNull(result);
+        assertEquals(expectedDto, result);
+        assertTrue(request.getRevisionRequired());
+        verify(workflowEngineService).revertToPreviousStep(request, testUser, "Reason");
+        verify(requestRepository).save(request);
+    }
+
+    // AI-Generated
+    @Test
+    void RevertRequest_RevisionRequiredFalse_RevertsWithoutRevisionRequired() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setRevisionRequired(false);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+        RequisitionDto result = requisitionService.revertRequest(1L, testUser, dto);
+
+        assertNotNull(result);
+        assertEquals(expectedDto, result);
+        assertFalse(request.getRevisionRequired());
+        verify(workflowEngineService).revertToPreviousStep(request, testUser, "Reason");
+        verify(requestRepository).save(request);
+    }
+
+    // AI-Generated
+    @Test
+    void RejectRequest_RequestNotFound_ThrowsIllegalArgumentException() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+        assertThrows(IllegalArgumentException.class, () -> requisitionService.rejectRequest(999L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RejectRequest_FinishedRequest_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.FINISHED);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.rejectRequest(1L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RejectRequest_PaidInvoice_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.rejectRequest(1L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RejectRequest_NotAllowedToReject_ThrowsAccessDeniedException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        WorkflowStep step = new WorkflowStep();
+        step.setId(10L);
+        request.setCurrentStepID(step);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        org.mockito.Mockito.doThrow(new AccessDeniedException("Forbidden")).when(workflowEngineService)
+                .checkAuthorization(eq(request), eq(testUser), eq(step));
+
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+        assertThrows(AccessDeniedException.class, () -> requisitionService.rejectRequest(1L, testUser, dto));
+    }
+
+    // AI-Generated
+    @Test
+    void RejectRequest_Valid_RejectsSuccessfully() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        WorkflowStep step = new WorkflowStep();
+        step.setId(10L);
+        request.setCurrentStepID(step);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Reason");
+        dto.setRevisionRequired(false);
+        RequisitionDto result = requisitionService.rejectRequest(1L, testUser, dto);
+
+        assertNotNull(result);
+        assertEquals(expectedDto, result);
+        assertEquals(RequestStatus.FINISHED, request.getState());
+        assertEquals("Reason", request.getRejectionReason());
+        assertNotNull(request.getDeletedAt());
+        verify(requestRepository).save(request);
+    }
+
 }
 
