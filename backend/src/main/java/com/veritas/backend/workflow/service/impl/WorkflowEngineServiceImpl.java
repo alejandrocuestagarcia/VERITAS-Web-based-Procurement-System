@@ -194,7 +194,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     }
                 }
 
-                request.setCurrentStep(transition.getToStep());
+                WorkflowStep nextStep = transition.getToStep();
+                request.setCurrentStep(nextStep);
                 request.setRejectionReason(null);
                 String toStepName = transition.getToStep().getName() == null ? "Finished" : transition.getToStep().getName();
                 auditService.createWorkflowTransitionLog(

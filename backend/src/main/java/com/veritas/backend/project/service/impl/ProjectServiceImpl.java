@@ -193,7 +193,7 @@ public class ProjectServiceImpl implements ProjectService {
             throw new EntityNotFoundException("Project not found with id " + id);
         }
 
-        if (requestRepository.existsByProjectIDId(id)) {
+        if (requestRepository.existsByProjectId(id)) {
             throw new IllegalStateException("Cannot delete project because there are requisitions pointing to it");
         }
 

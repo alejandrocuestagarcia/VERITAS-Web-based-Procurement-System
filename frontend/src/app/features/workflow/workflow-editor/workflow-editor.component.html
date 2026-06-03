@@ -236,7 +236,7 @@
         <div class="space-y-4">
           <div>
 
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Approval Mode</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Approval Mode</label>
             <div *ngIf="isEditable" class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm mt-2 mb-6 transition-all duration-200"
                  [class.opacity-50]="!currentTask.role"
                  [class.bg-slate-50]="!currentTask.role">
@@ -245,9 +245,6 @@
                      class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
               <div class="flex flex-col">
                 <span class="text-sm font-semibold text-slate-700">Automated Approval</span>
-                <span class="text-[10px] text-slate-400">
-                  {{ currentTask.role ? 'Skip manual role approval for this step' : 'Select a responsible role first to enable automated approval' }}
-                </span>
               </div>
             </div>
             <div *ngIf="!isEditable" class="flex items-center gap-3 p-4 mt-2 mb-6 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
@@ -258,8 +255,8 @@
               </span>
             </div>
 
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Responsible Role <span class="text-red-500 font-bold">*</span></label>
-            <div *ngIf="isEditable">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Responsible Role <span class="text-red-500 font-bold">*</span></label>
+            <div *ngIf="isEditable" class="mt-2">
               <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
                 <mat-select [ngModelOptions]="{standalone: true}" [ngModel]="currentTask.role" (ngModelChange)="updateTaskProperty('role', $event)" placeholder="Select Role">
                   <mat-option *ngFor="let role of roles" [value]="role">
@@ -272,8 +269,8 @@
               </div>
             </div>
 
-            <div *ngIf="isEditable && currentTask.role === 'REQUESTER'" class="animate-in fade-in duration-200">
-              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
+            <div *ngIf="isEditable && currentTask.role === 'REQUESTER' && !currentTask.automatedApproval" class="animate-in fade-in duration-200 mt-2">
+              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm mt-2">
                 <input id="isTeamLeaderCheckbox" type="checkbox" [checked]="currentTask.isTeamLeader"
                    (change)="updateTaskProperty('isTeamLeader', !currentTask.isTeamLeader)"
                    class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
@@ -295,7 +292,7 @@
             </div>
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-2 mt-4">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description / Custom Instructions</label>
             <div *ngIf="isEditable">
               <textarea class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-y"
@@ -308,6 +305,7 @@
             </div>
           </div>
         </div>
+      </div>
       </div>
     </aside>
 

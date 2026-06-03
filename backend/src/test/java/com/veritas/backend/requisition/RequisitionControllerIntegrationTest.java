@@ -980,9 +980,9 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Automated Approval Requisition");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
-        request.setWorkflowDefinitionID(workflow);
-        request.setCurrentStepID(stepOne);
+        request.setProject(project);
+        request.setWorkflowDefinition(workflow);
+        request.setCurrentStep(stepOne);
         request = requestRepository.save(request);
 
         // Seed AuditLog for entering stepOne
@@ -1005,7 +1005,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         // Assert: Request should have automatically skipped the automatedStep and advanced directly to endStep, changing state to FINISHED
         Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
         assertEquals(RequestStatus.FINISHED, updatedRequest.getState());
-        assertEquals(endStep.getId(), updatedRequest.getCurrentStepID().getId());
+        assertEquals(endStep.getId(), updatedRequest.getCurrentStep().getId());
     }
 
     // AI-GENERATED

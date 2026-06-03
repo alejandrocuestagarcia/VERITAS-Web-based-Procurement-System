@@ -439,10 +439,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   private resetTask() {
-    this.currentTask = { role: '', description: '', automatedApproval: false, isTeamLeader: false };
+    this.currentTask = { role: '', description: '', isTeamLeader: false, automatedApproval: false };
   }
 
-  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval' | 'isTeamLeader', value: string) {
+  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval' | 'isTeamLeader', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
