@@ -14,5 +14,7 @@ public record ProjectDto (
         BigDecimal actualSpend,
         BigDecimal safetyBuffer,
         String teamName,
-        Long teamId
+        Long teamId,
+        String departmentName,
+        Long departmentId
 ) {}

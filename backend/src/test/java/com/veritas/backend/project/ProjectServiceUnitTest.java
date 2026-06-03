@@ -59,8 +59,8 @@ class ProjectServiceUnitTest {
         Project project1 = Project.builder().team(team).build();
         Project project2 = Project.builder().team(team).build();
 
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null, "Testing Team",null);
-        ProjectDto dto2 = new ProjectDto(2L, "Project 2", null, null, null, null, null, null, "Testing Team",null);
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null, "Testing Team",null, null, null);
+        ProjectDto dto2 = new ProjectDto(2L, "Project 2", null, null, null, null, null, null, "Testing Team",null, null, null);
 
         User financeOfficer = User.builder()
                 .role(UserRole.FINANCE_OFFICER)
@@ -81,7 +81,7 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null);
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null, null, null);
 
         User user = User.builder()
                 .role(UserRole.REQUESTER)
@@ -103,7 +103,7 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").department(department).build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null);
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null, null, null);
 
         User user = User.builder()
                 .role(UserRole.PROCUREMENT_OFFICER)
@@ -128,7 +128,7 @@ class ProjectServiceUnitTest {
         Project project = Project.builder().name("Secret Project").projectKey("KEY-123").build();
         Project saved = Project.builder().id(1L).name("Secret Project").projectKey("KEY-123").team(team).build();
 
-        ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, null, null, null,"Team A",null);
+        ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, null, null, null,"Team A",null, null, null);
 
         when(projectRepository.existsByNameOrProjectKey("Secret Project", "KEY-123")).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
@@ -169,7 +169,7 @@ class ProjectServiceUnitTest {
 
         Team team = Team.builder().teamId(10L).name("Testing Team").build();
         Project project = Project.builder().id(1L).name("Secret Project").team(team).build();
-        ProjectDto expectedDto = new ProjectDto(1L, "Secret Project", null, null, null, null,null,null,"Testing Team",null);
+        ProjectDto expectedDto = new ProjectDto(1L, "Secret Project", null, null, null, null,null,null,"Testing Team",null, null, null);
         User requester = User.builder().role(UserRole.REQUESTER).team(team).build();
 
         when(projectRepository.findByIdAndTeam(1L, team)).thenReturn(Optional.of(project));
@@ -207,7 +207,7 @@ class ProjectServiceUnitTest {
         Department department = Department.builder().departmentId(5L).name("Logistics").build();
         Team team = Team.builder().teamId(10L).department(department).build();
         Project project = Project.builder().id(1L).name("Logistics Project").team(team).build();
-        ProjectDto expectedDto = new ProjectDto(1L, "Logistics Project", null, null, null, null, null, null, "Team Logistics",null);
+        ProjectDto expectedDto = new ProjectDto(1L, "Logistics Project", null, null, null, null, null, null, "Team Logistics",null, null, null);
         User procurementOfficer = User.builder().role(UserRole.PROCUREMENT_OFFICER).department(department).build();
 
         when(projectRepository.findByIdAndTeamDepartment(1L, department)).thenReturn(Optional.of(project));
@@ -252,7 +252,7 @@ class ProjectServiceUnitTest {
                 .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(50000.00)).build())
                 .build();
 
-        ProjectDto expectedDto = new ProjectDto(projectId, "Updated Project Name", null, null, BigDecimal.valueOf(50000.00), null, null, null, null,null);
+        ProjectDto expectedDto = new ProjectDto(projectId, "Updated Project Name", null, null, BigDecimal.valueOf(50000.00), null, null, null, null,null, null, null);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(projectRepository.save(existingProject)).thenReturn(savedProject);

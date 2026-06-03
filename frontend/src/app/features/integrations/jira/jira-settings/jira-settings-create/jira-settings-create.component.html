@@ -85,8 +85,14 @@
       <app-shared-form-field label="FALLBACK USER">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="fallbackUserId" placeholder="Select a fallback user">
-            <mat-option *ngFor="let u of users" [value]="u.id">{{u.name}} ({{u.email}})</mat-option>
+          <mat-select formControlName="fallbackUserId" placeholder="Select a fallback user" (opened)="userSearch = ''">
+            <div class="sticky top-0 z-10 bg-white px-3 py-2 border-b">
+              <input class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:border-blue-500"
+                     placeholder="Search users..." [(ngModel)]="userSearch" [ngModelOptions]="{standalone: true}"
+                     (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+            </div>
+            <mat-option *ngIf="settingsForm.get('fallbackUserId')?.value" [value]="null" class="text-slate-500 italic">-- Clear Selection --</mat-option>
+            <mat-option *ngFor="let u of filteredUsers | searchFilter:userSearch:'name,email'" [value]="u.id">{{u.name}} ({{u.email}}) — {{u.teamName}}</mat-option>
           </mat-select>
           <mat-error *ngIf="settingsForm.get('fallbackUserId')?.hasError('required')">Fallback user is required</mat-error>
         </mat-form-field>
@@ -95,8 +101,14 @@
       <app-shared-form-field label="FALLBACK PROJECT">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>folder</mat-icon>
-          <mat-select formControlName="fallbackProjectId" placeholder="Select a fallback project">
-            <mat-option *ngFor="let p of projects" [value]="p.id">{{p.name}}</mat-option>
+          <mat-select formControlName="fallbackProjectId" placeholder="Select a fallback project" (opened)="projectSearch = ''">
+            <div class="sticky top-0 z-10 bg-white px-3 py-2 border-b">
+              <input class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:border-blue-500"
+                     placeholder="Search projects..." [(ngModel)]="projectSearch" [ngModelOptions]="{standalone: true}"
+                     (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+            </div>
+            <mat-option *ngIf="settingsForm.get('fallbackProjectId')?.value" [value]="null" class="text-slate-500 italic">-- Clear Selection --</mat-option>
+            <mat-option *ngFor="let p of filteredProjects | searchFilter:projectSearch:'name,teamName'" [value]="p.id">{{p.name}} — {{p.teamName}}</mat-option>
           </mat-select>
           <mat-error *ngIf="settingsForm.get('fallbackProjectId')?.hasError('required')">Fallback project is required</mat-error>
         </mat-form-field>
@@ -105,8 +117,14 @@
       <app-shared-form-field label="USED WORKFLOW">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>account_tree</mat-icon>
-          <mat-select formControlName="fallbackWorkflowId" placeholder="Select a used workflow">
-            <mat-option *ngFor="let w of workflows" [value]="w.id">{{w.name}}</mat-option>
+          <mat-select formControlName="fallbackWorkflowId" placeholder="Select a used workflow" (opened)="workflowSearch = ''">
+            <div class="sticky top-0 z-10 bg-white px-3 py-2 border-b">
+              <input class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:border-blue-500"
+                     placeholder="Search workflows..." [(ngModel)]="workflowSearch" [ngModelOptions]="{standalone: true}"
+                     (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+            </div>
+            <mat-option *ngIf="settingsForm.get('fallbackWorkflowId')?.value" [value]="null" class="text-slate-500 italic">-- Clear Selection --</mat-option>
+            <mat-option *ngFor="let w of filteredWorkflows | searchFilter:workflowSearch:'name'" [value]="w.id">{{w.name}} — {{w.department?.name || 'Global'}}</mat-option>
           </mat-select>
           <mat-error *ngIf="settingsForm.get('fallbackWorkflowId')?.hasError('required')">Workflow is required</mat-error>
         </mat-form-field>

@@ -299,7 +299,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.corp", true, UserRole.REQUESTER, "IT Team", 1L, null, LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.corp", true, UserRole.REQUESTER, "IT Team", 1L, null, null, LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(mockTeam));
@@ -324,7 +324,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Admin User", "admin@veritas.corp", true, UserRole.ADMINISTRATOR, null, null, null, LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Admin User", "admin@veritas.corp", true, UserRole.ADMINISTRATOR, null, null, null, null, LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(userMapper.toUser(request)).thenReturn(mappedUser);
@@ -363,7 +363,7 @@ class UserServiceUnitTest {
 
         User mappedUser = new User();
         User savedUser = new User();
-        UserDto expectedDto = new UserDto(1L, "Procurement", "pro@veritas.corp", true, UserRole.PROCUREMENT_OFFICER, null, null, "IT", LocalDateTime.now());
+        UserDto expectedDto = new UserDto(1L, "Procurement", "pro@veritas.corp", true, UserRole.PROCUREMENT_OFFICER, null, null, "IT", null, LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(dept));

@@ -16,6 +16,7 @@ public interface UserMapper {
   @Mapping(source = "team.name", target = "teamName")
   @Mapping(source = "team.teamId", target = "teamId")
   @Mapping(target = "departmentName", expression = "java(user.getDepartment() != null ? user.getDepartment().getName() : (user.getTeam() != null && user.getTeam().getDepartment() != null ? user.getTeam().getDepartment().getName() : null))")
+  @Mapping(target = "departmentId", expression = "java(user.getDepartment() != null ? user.getDepartment().getDepartmentId() : (user.getTeam() != null && user.getTeam().getDepartment() != null ? user.getTeam().getDepartment().getDepartmentId() : null))")
   UserDto toUserDto(User user);
 
   @Mapping(source = "user.team.teamId", target = "teamId")

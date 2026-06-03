@@ -40,6 +40,7 @@ import { AuthInterceptor } from "./core/interceptors/AuthInterceptor";
 // Directives & Pipes
 import { HasRoleDirective } from './core/directives/has-role.directive';
 import { FormatEnumPipe } from './shared/pipes/format-enum.pipe';
+import { SearchFilterPipe } from './shared/pipes/search-filter.pipe';
 
 // Core Components
 import { SidebarComponent } from './core/components/sidebar/sidebar.component';
@@ -168,7 +169,8 @@ import { AssigneeSelectDialogComponent } from './shared/components/assignee-sele
 
     // Directives & Pipes
     HasRoleDirective,
-    FormatEnumPipe
+    FormatEnumPipe,
+    SearchFilterPipe
   ],
   imports: [
     BrowserModule,

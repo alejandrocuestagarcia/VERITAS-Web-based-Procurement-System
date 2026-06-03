@@ -150,6 +150,23 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         } else {
             entity.setFallbackWorkflow(null);
         }
+
+        if (entity.getFallbackUser() != null && entity.getFallbackProject() != null) {
+            var userTeam = entity.getFallbackUser().getTeam();
+            var projectTeam = entity.getFallbackProject().getTeam();
+            if (userTeam == null || !userTeam.getTeamId().equals(projectTeam.getTeamId())) {
+                throw new IllegalArgumentException("Fallback user and fallback project must belong to the same team.");
+            }
+        }
+
+        if (entity.getFallbackWorkflow() != null && entity.getFallbackProject() != null) {
+            var workflowDept = entity.getFallbackWorkflow().getDepartment();
+            var projectDept = entity.getFallbackProject().getTeam().getDepartment();
+            if (workflowDept != null && projectDept != null
+                    && !workflowDept.getDepartmentId().equals(projectDept.getDepartmentId())) {
+                throw new IllegalArgumentException("Fallback workflow must be global or belong to the same department as the fallback project.");
+            }
+        }
     }
 
 }
