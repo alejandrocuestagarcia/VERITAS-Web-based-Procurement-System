@@ -74,6 +74,10 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     @Transactional
     public void moveToNextStep(Request request, User actor, Long nextAssigneeId) {
         moveToNextStep(request, actor, 0, nextAssigneeId);
+
+        if (jiraSyncService != null) {
+            jiraSyncService.handleVeritasWorkflowChange(request);
+        }
     }
 
     private void moveToNextStep(Request request, User actor, int gatewayDepth, Long nextAssigneeId) {
@@ -218,10 +222,6 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
                 if (componentType == WorkflowComponent.END_EVENT) {
                     request.setState(RequestStatus.FINISHED);
-                }
-
-                if (jiraSyncService != null) {
-                    jiraSyncService.handleVeritasWorkflowChange(request);
                 }
 
                 break;
