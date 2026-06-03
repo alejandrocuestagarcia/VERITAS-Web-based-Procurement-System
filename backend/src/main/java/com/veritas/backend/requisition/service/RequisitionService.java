@@ -25,7 +25,9 @@ public interface RequisitionService {
     ResponseEntity<Resource> downloadAttachment(Long attachmentId);
     void deleteAttachment(Long attachmentId);
     RequisitionDto approveRequest(Long id, User actor, Long nextAssigneeId);
+    RequisitionDto revertRequest(Long id, User actor, RequisitionRejectDto rejectionData);
     RequisitionDto rejectRequest(Long id, User actor, RequisitionRejectDto rejectionData);
+    RequisitionDto cancelRequest(Long id, User actor);
     RequisitionDto submitRequest(Long id, User actor, Long nextAssigneeId);
     RequisitionDto changeRequester(Long id, Long newRequesterId);
     String getNextStepRole(Long id);

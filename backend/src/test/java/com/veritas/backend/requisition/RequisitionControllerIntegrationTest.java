@@ -22,6 +22,7 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionRejectDto;
+import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
 import com.veritas.backend.requisition.entity.*;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
@@ -427,7 +428,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     //AI-Generated
     @Test
-    void RejectRequest_NoHistoryExists_ReturnsConflictStatus() throws Exception {
+    void RevertRequest_NoHistoryExists_ReturnsConflictStatus() throws Exception {
         // 1. Create an active request but don't add any AuditLogs to the DB
         Request request = new Request();
         request.setRequestName("Orphan Step Test");
@@ -444,7 +445,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         rejectDto.setReason("Nowhere to go");
 
         // 2. Trigger a reject (revert) which will fail targetStep generation
-        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/revert")
                         .header("Authorization", "Bearer " + requesterToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rejectDto)))
@@ -452,9 +453,49 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("No valid step found in history to revert to")));
     }
 
+    @Test
+    void RevertRequest_InDraft_ReturnsConflictStatus() throws Exception {
+        // 1. Create a request and manually save it as DRAFT
+        Request request = new Request();
+        request.setRequestName("Finished Test Rejection");
+        request.setState(RequestStatus.DRAFT);
+        request = requestRepository.save(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Sending back to draft");
+
+        // 2. Try to hit the revert endpoint
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/revert")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("is in draft and cannot be reverted")));
+    }
+
+    @Test
+    void RevertRequest_AlreadyFinished_ReturnsConflictStatus() throws Exception {
+        // 1. Create a request and manually save it as FINISHED
+        Request request = new Request();
+        request.setRequestName("Finished Test Rejection");
+        request.setState(RequestStatus.FINISHED);
+        request = requestRepository.save(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Sending back to draft");
+
+        // 2. Try to hit the revert endpoint
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/revert")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("is already finished and cannot be reverted")));
+    }
+
     //AI-Generated
     @Test
-    void RejectRequest_FromFirstStep_SetsStatusToDraft() throws Exception {
+    void RevertRequest_FromFirstStep_SetsStatusToDraft() throws Exception {
         WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
         WorkflowStep startStep = workflowStepRepository.findAll().get(0);
 
@@ -486,7 +527,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         rejectDto.setReason("Needs complete rewrite");
 
         // 3. Reverting from Step 1 back to the START_EVENT
-        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/revert")
                         .header("Authorization", "Bearer " + financeOfficerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rejectDto)))
@@ -502,6 +543,30 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 () -> assertEquals(startStep.getId(), updatedRequest.getCurrentStep().getId(),
                         "The current step ID should match the workflow's START_EVENT id")
         );
+    }
+
+    //AI-Generated
+    @Test
+    void RejectRequest_SoftDeletesRequestAndSavesReason() throws Exception {
+        Project project = projectRepository.findAll().get(0);
+        Request request = new Request();
+        request.setRequestName("Soft Delete Test Rejection");
+        request.setState(RequestStatus.ACTIVE);
+        request.setProjectID(project);
+        request = requestRepository.save(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Item is obsolete");
+
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isOk());
+
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertNotNull(updatedRequest.getDeletedAt());
+        assertEquals("Item is obsolete", updatedRequest.getRejectionReason());
     }
 
     //AI-Generated
@@ -725,6 +790,34 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .content(objectMapper.writeValueAsString(rejectDto)))
                 .andExpect(status().isConflict())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be rejected")));
+    }
+
+    @Test
+    void RevertRequest_AlreadyPaid_ReturnsConflictStatus() throws Exception {
+        // Arrange
+        Project project = projectRepository.findAll().get(0);
+        Request request = new Request();
+        request.setRequestName("Revert Paid Request");
+        request.setState(RequestStatus.ACTIVE);
+        request.setProjectID(project);
+        request = requestRepository.save(request);
+
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setTotalAmount(new BigDecimal("100.00"));
+        invoice.setIsPaid(true); // Manually seed as already paid
+        invoice = invoiceRepository.save(invoice);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Reverting paid order");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/revert")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be reverted")));
     }
 
     @Test
@@ -1085,5 +1178,90 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                             .andExpect(content().string(org.hamcrest.Matchers.containsString(
                                             "Cannot delete an invoice that has already been paid.")));
     }
+    @Test
+    void RevertRequest_WithRevisionRequired_SetsRevisionRequiredFlag() throws Exception {
+        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
+
+        WorkflowStep stepOne = new WorkflowStep();
+        stepOne.setWorkflowDefinition(workflow);
+        stepOne.setWorkflowComponent(WorkflowComponent.STEP);
+        stepOne.setName("Manager Review");
+        stepOne = workflowStepRepository.save(stepOne);
+
+        Request request = new Request();
+        request.setRequestName("Revision Required Test");
+        request.setState(RequestStatus.ACTIVE);
+        request.setWorkflowDefinitionID(workflow);
+        request.setCurrentStepID(stepOne);
+        request = requestRepository.save(request);
+
+        AuditLog log = new AuditLog().builder()
+                .request(request)
+                .previousStep(startStep)
+                .newStep(stepOne)
+                .action(APPROVE)
+                .entryHash("mock-hash-revision")
+                .timestamp(java.time.LocalDateTime.now())
+                .build();
+        auditLogRepository.save(log);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Needs complete rewrite");
+        rejectDto.setRevisionRequired(true);
+
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/revert")
+                        .header("Authorization", "Bearer " + financeOfficerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rejectDto)))
+                .andExpect(status().isOk());
+
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertEquals(RequestStatus.DRAFT, updatedRequest.getState());
+        assertTrue(updatedRequest.getRevisionRequired());
+    }
+
+    @Test
+    void UpdateAndSubmitRequest_WithRevisionRequired_AllowsEditAndResetsFlag() throws Exception {
+        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
+
+        Project project = projectRepository.findAll().get(0);
+        User owner = userRepository.findByEmail("req-integration@veritas.com").orElseThrow();
+
+        Request request = new Request();
+        request.setRequestName("Original Name");
+        request.setState(RequestStatus.DRAFT);
+        request.setWorkflowDefinitionID(workflow);
+        request.setCurrentStepID(startStep);
+        request.setProjectID(project);
+        request.setItems(new java.util.ArrayList<>());
+        request.setRevisionRequired(true);
+        request.setUserID(owner); // Owner
+        request = requestRepository.save(request);
+
+        RequisitionUpdateDto updateDto = new RequisitionUpdateDto(
+                "Updated Name", "Desc", projectId, workflowId, Priority.HIGH, List.of(new RequisitionItemCreateDto("Item A", 1, "pcs", "note"))
+        );
+
+        // Edit request (should be allowed even though it needs revision)
+        mockMvc.perform(patch("/api/v1/requisitions/" + request.getRequestID())
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestName").value("Updated Name"));
+
+        // Submit request (should clear revisionRequired)
+        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/submit")
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertEquals(RequestStatus.ACTIVE, updatedRequest.getState());
+        assertFalse(updatedRequest.getRevisionRequired());
+    }
+
 }
 

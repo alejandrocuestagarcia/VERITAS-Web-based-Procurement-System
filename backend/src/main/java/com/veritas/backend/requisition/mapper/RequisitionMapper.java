@@ -41,6 +41,7 @@ public interface RequisitionMapper {
     @Mapping(target = "workflowDefinitionId", source = "workflowDefinition.id")
     @Mapping(target = "isPaid", expression = "java(request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid()))")
     @Mapping(target = "workflowStepDescription", expression = "java(request.getCurrentStep() != null && request.getCurrentStep().getDescription() != null ? request.getCurrentStep().getDescription() : null)")
+    @Mapping(target = "revisionRequired", source = "revisionRequired")
     RequisitionDto toDto(Request request);
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);

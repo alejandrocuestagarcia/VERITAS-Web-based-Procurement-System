@@ -94,11 +94,27 @@ public class RequisitionController {
         return ResponseEntity.ok(requisitionService.approveRequest(id, actor, nextAssigneeId));
     }
 
+    @Operation(summary = "Revert request", description = "Reverts the request. Requires a reason in the body.")
+    @IsRequester
+    @PostMapping("/{id}/revert")
+    public ResponseEntity<RequisitionDto> revertRequest(@PathVariable Long id, @AuthenticationPrincipal User actor, @RequestBody RequisitionRejectDto rejectionData) {
+        RequisitionDto updatedRequest = requisitionService.revertRequest(id, actor, rejectionData);
+        return ResponseEntity.ok(updatedRequest);
+    }
+
     @Operation(summary = "Reject request", description = "Rejects the request. Requires a reason in the body.")
     @IsRequester
     @PostMapping("/{id}/reject")
     public ResponseEntity<RequisitionDto> rejectRequest(@PathVariable Long id, @AuthenticationPrincipal User actor, @RequestBody RequisitionRejectDto rejectionData) {
         RequisitionDto updatedRequest = requisitionService.rejectRequest(id, actor, rejectionData);
+        return ResponseEntity.ok(updatedRequest);
+    }
+
+    @Operation(summary = "Cancel request", description = "Cancels the request.")
+    @IsRequester
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<RequisitionDto> cancelRequest(@PathVariable Long id, @AuthenticationPrincipal User actor) {
+        RequisitionDto updatedRequest = requisitionService.cancelRequest(id, actor);
         return ResponseEntity.ok(updatedRequest);
     }
 

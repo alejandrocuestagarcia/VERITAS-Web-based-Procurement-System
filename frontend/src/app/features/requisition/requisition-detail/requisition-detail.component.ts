@@ -129,6 +129,37 @@ export class RequisitionDetailComponent implements OnInit {
     }
   }
 
+  revertRequest(): void {
+    const dialogRef = this.dialog.open(RejectDialogComponent, {
+      width: '80vw',
+      maxWidth: '550px',
+      disableClose: true,
+      data: { isRevert: true }
+    });
+
+    dialogRef.afterClosed().subscribe((result: { reason: string, revisionRequired: boolean } | undefined) => {
+      if (!result || !result.reason) {
+        return;
+      }
+
+      this.loading = true;
+      this.requisitionService.revertRequest(this.request!.id!, {
+        reason: result.reason,
+        revisionRequired: result.revisionRequired
+      }).subscribe({
+        next: () => {
+          this.loading = false;
+          this.toastService.showInfo("Requisition reverted successfully!");
+          this.goBack();
+        },
+        error: (err) => {
+          this.toastService.showError(err.error);
+          this.loading = false;
+        }
+      });
+    });
+  }
+
   rejectRequest(): void {
     const dialogRef = this.dialog.open(RejectDialogComponent, {
       width: '80vw',
@@ -136,20 +167,20 @@ export class RequisitionDetailComponent implements OnInit {
       disableClose: true
     });
 
-    dialogRef.afterClosed().subscribe((reason: string | undefined) => {
-      if (!reason) {
+    dialogRef.afterClosed().subscribe((result: { reason: string, revisionRequired: boolean } | undefined) => {
+      if (!result || !result.reason) {
         return;
       }
 
       this.loading = true;
-      this.requisitionService.rejectRequest(this.request!.id!, {reason: reason}).subscribe({
+      this.requisitionService.rejectRequest(this.request!.id!, {reason: result.reason}).subscribe({
         next: () => {
           this.loading = false;
           this.toastService.showInfo("Requisition rejected successfully!");
           this.goBack();
         },
         error: (err) => {
-          this.toastService.showError(err.error);
+          this.toastService.showError(err.error?.message || err.error || "Rejection failed");
           this.loading = false;
         }
       });
@@ -284,6 +315,34 @@ export class RequisitionDetailComponent implements OnInit {
       error: (err) => {
         this.toastService.showError(err.error?.message || err.error || "Submission failed");
         this.loading = false;
+      }
+    });
+  }
+
+  cancelRequest(): void {
+    if (!this.request || !this.request.id) return;
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Cancel Requisition',
+        message: 'Are you sure you want to cancel this requisition? This action cannot be undone.'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.loading = true;
+        this.requisitionService.cancelRequest(this.request!.id!).subscribe({
+          next: () => {
+            this.loading = false;
+            this.toastService.showInfo("Requisition cancelled successfully!");
+            this.goBack();
+          },
+          error: (err) => {
+            this.toastService.showError(err.error?.message || err.error || "Cancellation failed");
+            this.loading = false;
+          }
+        });
       }
     });
   }

@@ -39,5 +39,6 @@ public record RequisitionDto(
     String assigneeName,
     String assigneeEmail,
     Long workflowDefinitionId,
-    Boolean isPaid
+    Boolean isPaid,
+    Boolean revisionRequired
 ) {}

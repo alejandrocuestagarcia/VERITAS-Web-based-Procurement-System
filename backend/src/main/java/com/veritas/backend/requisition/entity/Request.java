@@ -122,4 +122,7 @@ public class Request {
 
     @Column(name = "rejection_reason",columnDefinition = "TEXT")
     private String rejectionReason;
+
+    @Column(name = "revision_required", nullable = false)
+    private Boolean revisionRequired = false;
 }
