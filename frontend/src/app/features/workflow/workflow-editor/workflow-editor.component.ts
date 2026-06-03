@@ -7,8 +7,9 @@ import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
-import {AuthService} from "../../../core/services/auth.service";
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { AuthService } from "../../../core/services/auth.service";
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { WorkflowHelpDialogComponent } from '../workflow-help-dialog/workflow-help-dialog.component';
 
 export type WorkflowMode = 'create' | 'edit' | 'view';
 
@@ -37,9 +38,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public showPropertiesPanelTask = false;
   public selectedElementId = '';
   public selectedFlowLeavesGateway = false;
+  public selectedFlowLeavesStartEvent = false;
+  public selectedFlowEntersEndEvent = false;
   public currentTask: any = {
     role: '',
     description: '',
+    isTeamLeader: false,
     automatedApproval: false
   };
   public roles = Object.values(UserDtoRoleEnum);
@@ -73,6 +77,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private toastService: ToastService,
     private fb: FormBuilder,
+    private dialog: MatDialog,
     @Optional() @Inject(MAT_DIALOG_DATA) public data: any,
     @Optional() public dialogRef: MatDialogRef<WorkflowEditorComponent>
   ) {
@@ -197,6 +202,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   resetZoom() { this.fitDiagram(); }
 
   private async getUpdatedBpmnXml(): Promise<string> {
+    if (!this.isEditable) {
+      const { xml } = await this.bpmnInstance.saveXML({ format: true });
+      return xml;
+    }
+
     const modeling = this.bpmnInstance.get('modeling');
     const bpmnFactory = this.bpmnInstance.get('bpmnFactory');
     const rootElement = this.bpmnInstance.get('canvas').getRootElement();
@@ -313,6 +323,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  openHelpDialog(tab: string = 'structure') {
+    this.dialog.open(WorkflowHelpDialogComponent, {
+      width: '650px',
+      maxHeight: '90vh',
+      data: { tab }
+    });
+  }
+
   ngOnDestroy() { this.bpmnInstance?.destroy(); }
 
   loadTransitionRules(selection: any) {
@@ -331,7 +349,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     // Check if this flow leaves a gateway (for showing the condition expression field)
     const sourceRef = bo.sourceRef;
+    const targetRef = bo.targetRef;
     this.selectedFlowLeavesGateway = sourceRef?.$type === 'bpmn:ExclusiveGateway';
+    this.selectedFlowLeavesStartEvent = sourceRef?.$type === 'bpmn:StartEvent';
+    this.selectedFlowEntersEndEvent = targetRef?.$type === 'bpmn:EndEvent';
 
     // Load existing conditionExpression
     const condExpr = bo.conditionExpression;
@@ -373,6 +394,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private resetRule() {
     this.selectedFlowLeavesGateway = false;
+    this.selectedFlowLeavesStartEvent = false;
+    this.selectedFlowEntersEndEvent = false;
     this.currentRule = {
       isPdfRequired: false,
       isCsvRequired: false,
@@ -398,24 +421,28 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const assigneeDoc = docs.find((d: any) => d.text && d.text.startsWith('[ASSIGNEE]'));
     const assignee = assigneeDoc ? assigneeDoc.text.substring(10) : '';
 
+    const teamLeaderDoc = docs.find((d: any) => d.text && d.text.startsWith('[TEAM_LEADER]'));
+    const isTeamLeader = teamLeaderDoc ? teamLeaderDoc.text.substring(13).trim() === 'true' : false;
+
     const autoApproveDoc = docs.find((d: any) => d.text && d.text.startsWith('[AUTO_APPROVE]'));
     const autoApprove = autoApproveDoc ? autoApproveDoc.text.substring(14) === 'true' : false;
 
-    const descDoc = docs.find((d: any) => !d.text || (!d.text.startsWith('[ASSIGNEE]') && !d.text.startsWith('[AUTO_APPROVE]')));
+    const descDoc = docs.find((d: any) => !d.text || (!d.text.startsWith('[ASSIGNEE]') && !d.text.startsWith('[AUTO_APPROVE]') && !d.text.startsWith('[TEAM_LEADER]')));
     const description = descDoc ? descDoc.text : '';
 
     this.currentTask = {
       role: assignee,
       description: description,
+      isTeamLeader: isTeamLeader,
       automatedApproval: autoApprove
     };
   }
 
   private resetTask() {
-    this.currentTask = { role: '', description: '', automatedApproval: false };
+    this.currentTask = { role: '', description: '', isTeamLeader: false, automatedApproval: false };
   }
 
-  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval', value: any) {
+  updateTaskProperty(key: 'role' | 'description' | 'automatedApproval' | 'isTeamLeader', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -436,6 +463,16 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: `[ASSIGNEE]${value}` });
         docs.push(doc);
       }
+      if (value !== 'REQUESTER') {
+        docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[TEAM_LEADER]'));
+        this.currentTask.isTeamLeader = false;
+      }
+    } else if (key === 'isTeamLeader') {
+      docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[TEAM_LEADER]'));
+      if (value) {
+        const doc = bpmnFactory.create('bpmn:Documentation', { text: `[TEAM_LEADER]${value}` });
+        docs.push(doc);
+      }
     } else if (key === 'automatedApproval') {
       docs = docs.filter((d: any) => !d.text || !d.text.startsWith('[AUTO_APPROVE]'));
       if (value) {
@@ -443,7 +480,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         docs.push(doc);
       }
     } else if (key === 'description') {
-      docs = docs.filter((d: any) => d.text && (d.text.startsWith('[ASSIGNEE]') || d.text.startsWith('[AUTO_APPROVE]')));
+      docs = docs.filter((d: any) => d.text && (d.text.startsWith('[ASSIGNEE]') || d.text.startsWith('[AUTO_APPROVE]') || d.text.startsWith('[TEAM_LEADER]')));
       if (value) {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: value });
         docs.push(doc);
@@ -491,9 +528,26 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
 
     rule[key] = value;
-    modeling.updateProperties(element, { extensionElements });
+
+    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0);
+
+    if (isRuleEmpty) {
+      if (extensionElements.values) {
+        extensionElements.values = extensionElements.values.filter((e: any) =>
+          e.$type !== 'veritas:transitionRule' && e.type !== 'veritas:transitionRule'
+        );
+      }
+      if (!extensionElements.values || extensionElements.values.length === 0) {
+        modeling.updateProperties(element, { extensionElements: undefined });
+      } else {
+        modeling.updateProperties(element, { extensionElements });
+      }
+    } else {
+      modeling.updateProperties(element, { extensionElements });
+    }
 
     this.currentRule[key] = value;
+    this.applyTransitionRuleCss();
   }
 
   updateConditionExpression(value: string) {
@@ -511,18 +565,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const cleanValue = (value || '').trim();
 
     if (cleanValue) {
-      // Create a proper BPMN conditionExpression with ${...} wrapping
       const wrappedExpression = cleanValue.startsWith('${') ? cleanValue : `\${${cleanValue}}`;
       const conditionExpression = moddle.create('bpmn:FormalExpression', {
         body: wrappedExpression
       });
       modeling.updateProperties(element, { conditionExpression });
     } else {
-      // Remove conditionExpression when cleared
       modeling.updateProperties(element, { conditionExpression: undefined });
     }
 
     this.currentRule.conditionExpression = cleanValue;
+    this.applyTransitionRuleCss();
   }
 
   private applyTransitionRuleCss() {
@@ -535,8 +588,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         const hasConstraint = extensions?.values?.some((val: any) =>
           [val.$type, val.type].includes('veritas:transitionRule')
         );
-        if (hasConstraint) {
+        const hasCondition = !!element.businessObject.conditionExpression;
+
+        if (hasConstraint || hasCondition) {
           canvas.addMarker(element.id, 'highlight');
+        } else {
+          canvas.removeMarker(element.id, 'highlight');
         }
       }
     });

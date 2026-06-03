@@ -37,6 +37,7 @@ public class BpmnValidator {
     private static final int MAX_NODE_COUNT = 100;
 
     private static final String ASSIGNEE_PREFIX = "[ASSIGNEE]";
+    private static final String TEAM_LEADER_PREFIX = "[TEAM_LEADER]";
 
     /** Pattern to detect unsafe SpEL constructs. */
     private static final Pattern UNSAFE_SPEL_PATTERN = Pattern.compile(
@@ -46,7 +47,7 @@ public class BpmnValidator {
     private static final Set<String> KNOWN_REQUEST_PROPERTIES = Set.of(
             "requestID", "requestName", "description", "priority",
             "state", "totalQuantity", "createdAt", "updatedAt",
-            "budgetID", "teamID", "projectID", "userID",
+            "budget", "team", "project", "user",
             "requestKey", "jiraIssueKey", "jiraStatus",
             "selectedQuoteTotalAmount"
     );
@@ -581,7 +582,14 @@ public class BpmnValidator {
                     result.addError("Step '" + getNodeName(task) + "' must have a responsible role selected");
                 } else {
                     try {
-                        UserRole.valueOf(roleName);
+                        UserRole r = UserRole.valueOf(roleName);
+                        boolean hasTeamLeaderDoc = task.getDocumentations().stream()
+                                .map(Documentation::getTextContent)
+                                .filter(Objects::nonNull)
+                                .anyMatch(text -> text.startsWith(TEAM_LEADER_PREFIX) && text.substring(13).trim().equalsIgnoreCase("true"));
+                        if (hasTeamLeaderDoc && r != UserRole.REQUESTER) {
+                            result.addError("Step '" + getNodeName(task) + "' cannot have Team Leader option enabled for non-REQUESTER roles.");
+                        }
                     } catch (IllegalArgumentException e) {
                         result.addError("Invalid role assigned in BPMN: " + roleName);
                     }
@@ -676,9 +684,15 @@ public class BpmnValidator {
 
             if (!hasTransitionRule) continue;
 
-            // Validate that transition rules are only on flows from tasks
+            // Validate that transition rules are only on flows from tasks (and not entering end events)
             String sourceId = flow.getSource().getId();
-            if (!taskIds.contains(sourceId) && !(flow.getSource() instanceof StartEvent)) {
+            if (flow.getSource() instanceof StartEvent) {
+                result.addError("Transition rules cannot be added on the first transition leaving the Start Event.");
+            } else if (flow.getSource() instanceof Gateway) {
+                result.addError("Transition rules cannot be added after XOR gateways. Only branching conditions are allowed on transitions leaving a gateway.");
+            } else if (flow.getTarget() instanceof EndEvent) {
+                result.addError("Transition rules cannot be added on the last transition entering the End Event.");
+            } else if (!taskIds.contains(sourceId)) {
                 result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
                         + "' originates from a non-task step — transition rules must be on transitions leaving tasks");
             }

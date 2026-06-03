@@ -40,18 +40,18 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User userID;
+    private User user;
 
     @Column(name = "request_key")
     private String requestKey;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "budget_id")
-    private InternalBudget budgetID;
+    private InternalBudget budget;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
-    private Team teamID;
+    private Team team;
 
     @Column(name = "request_name", nullable = false)
     private String requestName;
@@ -61,11 +61,11 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflow_definition_id")
-    private WorkflowDefinition workflowDefinitionID;
+    private WorkflowDefinition workflowDefinition;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_step_id")
-    private WorkflowStep currentStepID;
+    private WorkflowStep currentStep;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
@@ -76,7 +76,7 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
-    private Project projectID;
+    private Project project;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

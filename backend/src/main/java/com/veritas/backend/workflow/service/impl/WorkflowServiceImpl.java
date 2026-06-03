@@ -45,6 +45,7 @@ import java.util.*;
 public class WorkflowServiceImpl implements WorkflowService {
     private static final String ASSIGNEE_PREFIX = "[ASSIGNEE]";
     private static final String AUTO_APPROVE_PREFIX = "[AUTO_APPROVE]";
+    private static final String TEAM_LEADER_PREFIX = "[TEAM_LEADER]";
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
     private final WorkflowStepRepository workflowStepRepository;
     private final WorkflowTransitionRepository workflowTransitionRepository;
@@ -149,6 +150,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                             } else if (text.startsWith(AUTO_APPROVE_PREFIX)) {
                                 String autoApproveVal = text.substring(AUTO_APPROVE_PREFIX.length());
                                 step.setIsAutomatedApproval(Boolean.parseBoolean(autoApproveVal));
+                            } else if (text.startsWith(TEAM_LEADER_PREFIX)) {
+                                String teamLeaderStr = text.substring(TEAM_LEADER_PREFIX.length()).trim();
+                                step.setIsTeamLeader(Boolean.parseBoolean(teamLeaderStr));
                             } else {
                                 step.setDescription(text);
                             }

@@ -85,7 +85,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         request = new Request();
         request.setRequestName("Integration Request");
-        request.setTeamID(team);
+        request.setTeam(team);
         request = requestRepository.save(request);
 
         vendor = new Vendor();

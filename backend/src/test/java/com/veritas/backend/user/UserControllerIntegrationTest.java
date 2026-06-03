@@ -206,9 +206,9 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     Request dummyRequest = new Request();
     dummyRequest.setRequestName("New Laptop for Alex");
-    dummyRequest.setUserID(alex);
+    dummyRequest.setUser(alex);
     dummyRequest.setPriority(Priority.MEDIUM);
-    dummyRequest.setCurrentStepID(startStep);
+    dummyRequest.setCurrentStep(startStep);
 
     requestRepository.save(dummyRequest);
 

@@ -1,0 +1,298 @@
+<!-- AI-GENERATED -->
+<div class="flex flex-col max-h-[85vh] overflow-hidden bg-white font-inter">
+  <!-- Dialog Header -->
+  <header class="flex justify-between items-start px-6 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 m-0">Workflow Documentation</h2>
+      <p class="text-xs text-slate-500 m-0 mt-0.5">Learn how to build, configure, and define rules for procurement workflows.</p>
+    </div>
+    <button (click)="onClose()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-50 flex items-center justify-center">
+      <mat-icon style="font-size: 20px; width: 20px; height: 20px;" class="flex items-center justify-center">close</mat-icon>
+    </button>
+  </header>
+
+  <!-- Custom Navigation Tabs -->
+  <div class="px-6 border-b border-slate-100 bg-slate-50/50 flex-shrink-0">
+    <nav class="flex gap-6 -mb-px text-xs font-semibold uppercase tracking-wider" aria-label="Tabs">
+      <button (click)="setTab('structure')"
+        [class]="activeTab === 'structure' ? 'border-blue-600 text-blue-600 border-b-2 py-4' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-4 border-b-2 transition-all'">
+        Structure & Logic
+      </button>
+      <button (click)="setTab('steps')"
+        [class]="activeTab === 'steps' ? 'border-blue-600 text-blue-600 border-b-2 py-4' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-4 border-b-2 transition-all'">
+        Workflow Steps
+      </button>
+      <button (click)="setTab('transitions')"
+        [class]="activeTab === 'transitions' ? 'border-blue-600 text-blue-600 border-b-2 py-4' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-4 border-b-2 transition-all'">
+        Transition Rules
+      </button>
+      <button (click)="setTab('routing')"
+        [class]="activeTab === 'routing' ? 'border-blue-600 text-blue-600 border-b-2 py-4' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-4 border-b-2 transition-all'">
+        Routing Expressions
+      </button>
+    </nav>
+  </div>
+
+  <!-- Dialog Content (Scrollable) -->
+  <div class="flex-1 overflow-y-auto p-6 min-h-0 bg-white">
+
+    <!-- Tab 1: Structure & Logic -->
+    <div *ngIf="activeTab === 'structure'" class="space-y-5 animate-in fade-in duration-200">
+      <div class="p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-3">
+        <mat-icon class="text-blue-600 flex-shrink-0" style="font-size: 24px; width: 24px; height: 24px;">info</mat-icon>
+        <p class="text-xs text-blue-800 leading-relaxed m-0">
+          Veritas procurement workflows are modeled using BPMN standards. Before a workflow can be saved or deployed, its graph structure must pass semantic validation checks.
+        </p>
+      </div>
+
+      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Validation Requirements</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 border border-slate-100 rounded-xl bg-slate-50/30">
+          <div class="flex items-center gap-2 mb-2">
+            <mat-icon class="text-green-600 flex-shrink-0" style="font-size: 20px; width: 20px; height: 20px;">play_circle_outline</mat-icon>
+            <h4 class="text-xs font-bold text-slate-800 m-0">Single Start Event</h4>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed m-0">
+            Workflows must contain exactly <strong>one</strong> Start Event node. It cannot have incoming transitions.
+          </p>
+        </div>
+
+        <div class="p-4 border border-slate-100 rounded-xl bg-slate-50/30">
+          <div class="flex items-center gap-2 mb-2">
+            <mat-icon class="text-red-600 flex-shrink-0" style="font-size: 20px; width: 20px; height: 20px;">highlight_off</mat-icon>
+            <h4 class="text-xs font-bold text-slate-800 m-0">End Events Reachable</h4>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed m-0">
+            Every step must have a path leading to at least <strong>one</strong> End Event. Dead ends are not allowed.
+          </p>
+        </div>
+
+        <div class="p-4 border border-slate-100 rounded-xl bg-slate-50/30">
+          <div class="flex items-center gap-2 mb-2">
+            <mat-icon class="text-blue-600 flex-shrink-0" style="font-size: 20px; width: 20px; height: 20px;">task_alt</mat-icon>
+            <h4 class="text-xs font-bold text-slate-800 m-0">Minimum Complexity</h4>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed m-0">
+            Workflows must include at least <strong>one Task step</strong> (approval step) between the start and end event.
+          </p>
+        </div>
+
+        <div class="p-4 border border-slate-100 rounded-xl bg-slate-50/30">
+          <div class="flex items-center gap-2 mb-2">
+            <mat-icon class="text-amber-600 flex-shrink-0" style="font-size: 20px; width: 20px; height: 20px;">loop</mat-icon>
+            <h4 class="text-xs font-bold text-slate-800 m-0">Cycle Prevention</h4>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed m-0">
+            Gateway-only loops are prohibited as they cause infinite recursion. Loops are allowed only if they pass through <strong>at least one human task step</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Workflow Steps -->
+    <div *ngIf="activeTab === 'steps'" class="space-y-6 animate-in fade-in duration-200">
+      <div>
+        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Understanding Steps</h3>
+        <p class="text-xs text-slate-600 leading-relaxed m-0">
+          Steps represent physical human tasks in the procurement request pipeline. When a request progresses to a task step, it halts until an eligible user completes the action.
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Available User Roles</h3>
+
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="p-3 font-semibold text-slate-700 w-1/3">Role Name</th>
+                <th class="p-3 font-semibold text-slate-700">Responsibility in Procurement</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr>
+                <td class="p-3 font-mono font-semibold text-blue-600">REQUESTER</td>
+                <td class="p-3 text-slate-600 leading-relaxed">Initiates requisition requests, adds initial requirements, and makes necessary adjustments or re-submissions if rejected.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-semibold text-blue-600">PROCUREMENT_OFFICER</td>
+                <td class="p-3 text-slate-600 leading-relaxed">Responsible for contacting vendors, gathering competitive quotes, uploading documentation, and evaluating vendor bids.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-semibold text-blue-600">FINANCE_OFFICER</td>
+                <td class="p-3 text-slate-600 leading-relaxed">Evaluates financial impacts, performs budget audits, verifies fund availability, and performs final monetary approvals.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono font-semibold text-blue-600">ADMINISTRATOR</td>
+                <td class="p-3 text-slate-600 leading-relaxed">Supervises system health and manages overall workflow configurations and overrides.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="p-4 border border-slate-100 rounded-xl bg-slate-50/50">
+        <h4 class="text-xs font-bold text-slate-700 m-0 mb-1">Custom Instructions / Description</h4>
+        <p class="text-xs text-slate-600 leading-relaxed m-0">
+          You can provide clear instructions in the task description. These instructions will be directly shown to the assigned role on their dashboard when they take ownership of this step, ensuring standard operating procedures are followed.
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab 3: Transition Rules -->
+    <div *ngIf="activeTab === 'transitions'" class="space-y-6 animate-in fade-in duration-200">
+      <div>
+        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Understanding Transition Rules</h3>
+        <p class="text-xs text-slate-600 leading-relaxed m-0">
+          Transition rules are <strong>document and criteria constraints</strong> that must be fulfilled before a human task step can be approved. They act as pre-validation barriers to guarantee data integrity.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4">
+        <div class="flex gap-3 p-4 border border-slate-100 rounded-xl bg-slate-50/30">
+          <mat-icon class="text-red-500 flex-shrink-0" style="font-size: 24px; width: 24px; height: 24px;">picture_as_pdf</mat-icon>
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 m-0 mb-0.5">Required File Types (PDF / CSV / Image)</h4>
+            <p class="text-xs text-slate-600 leading-relaxed m-0">
+              When checked, the system enforces that at least one file of the specified format (e.g. PDF for signed agreements, CSV for item sheets, or Images for receipts) must be uploaded to the request before completing the task.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-3 p-4 border border-slate-100 rounded-xl bg-slate-50/30">
+          <mat-icon class="text-amber-600 flex-shrink-0" style="font-size: 24px; width: 24px; height: 24px;">store</mat-icon>
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 m-0 mb-0.5">Minimum Required Vendors</h4>
+            <p class="text-xs text-slate-600 leading-relaxed m-0">
+              Requires the request to contain quotes from at least the specified number of distinct vendors before it can leave the step. Perfect for enforcing competitive bidding rules (e.g., three quotes rule).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
+        <mat-icon class="text-amber-700 flex-shrink-0" style="font-size: 24px; width: 24px; height: 24px;">warning</mat-icon>
+        <p class="text-xs text-amber-800 leading-relaxed m-0 font-medium">
+          <strong>Important Placement Rule:</strong> Transition rules can only be placed on paths leaving <strong>Task</strong> nodes. They cannot be placed on gateway paths, the start event transition, or the end event transition.
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab 4: Routing Expressions -->
+    <div *ngIf="activeTab === 'routing'" class="space-y-6 animate-in fade-in duration-200">
+      <div>
+        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Gateway Routing (XOR)</h3>
+        <p class="text-xs text-slate-600 leading-relaxed m-0">
+          When multiple paths exit an <strong>Exclusive Gateway (XOR)</strong>, the system evaluates <strong>Spring Expression Language (SpEL)</strong> conditions to decide which path the request should take.
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Valid Request Fields</h4>
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="p-2.5 font-semibold text-slate-700">Field Name</th>
+                <th class="p-2.5 font-semibold text-slate-700">Type</th>
+                <th class="p-2.5 font-semibold text-slate-700">Description</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-inter">
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">selectedQuoteTotalAmount</td>
+                <td class="p-2.5 text-slate-500">Number</td>
+                <td class="p-2.5 text-slate-600">Sum of the selected vendor quote amount.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">priority</td>
+                <td class="p-2.5 text-slate-500">String</td>
+                <td class="p-2.5 text-slate-600">Priority of the request: <code class="text-slate-500">'LOW'</code>, <code class="text-slate-500">'MEDIUM'</code>, <code class="text-slate-500">'HIGH'</code>.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">totalQuantity</td>
+                <td class="p-2.5 text-slate-500">Number</td>
+                <td class="p-2.5 text-slate-600">Sum of all item quantities in the request.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">project</td>
+                <td class="p-2.5 text-slate-500">Project Entity</td>
+                <td class="p-2.5 text-slate-600">The associated Project. Available nested fields: <code>project.id</code>, <code>project.name</code>, <code>project.projectKey</code>, <code>project.startDate</code>, <code>project.endDate</code>, and <code>project.requestCounter</code>.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">team</td>
+                <td class="p-2.5 text-slate-500">Team Entity</td>
+                <td class="p-2.5 text-slate-600">The Team that created the request. Available nested fields: <code>team.teamId</code>, <code>team.name</code>, <code>team.description</code>, <code>team.isActive</code>, <code>team.createdAt</code>, and nested department fields like <code>team.department.departmentId</code> or <code>team.department.name</code>.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">user</td>
+                <td class="p-2.5 text-slate-500">User Entity</td>
+                <td class="p-2.5 text-slate-600">The User (creator) who submitted the request. Available nested fields: <code>user.id</code>, <code>user.name</code>, <code>user.email</code>, <code>user.isActive</code>, and <code>user.role</code> (values: <code>'REQUESTER'</code>, <code>'PROCUREMENT_OFFICER'</code>, <code>'FINANCE_OFFICER'</code>, <code>'ADMINISTRATOR'</code>).</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono font-semibold text-blue-600">budget</td>
+                <td class="p-2.5 text-slate-500">Budget Entity</td>
+                <td class="p-2.5 text-slate-600">The associated Internal Budget. Available nested fields: <code>budget.id</code>, <code>budget.budgetName</code>, <code>budget.totalAmount</code>, <code>budget.committedSpend</code>, <code>budget.actualSpend</code>, and <code>budget.safetyBuffer</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Allowed Operators & Grouping</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Logical Operations (Words Only)</span>
+            <div class="text-xs text-slate-600 space-y-1.5">
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">and</code>: Logical AND (e.g. <code>A and B</code>)</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">or</code>: Logical OR (e.g. <code>A or B</code>)</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">not</code>: Logical NOT (e.g. <code>not A</code>)</div>
+            </div>
+          </div>
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comparison & Grouping</span>
+            <div class="text-xs text-slate-600 space-y-1.5">
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">==</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">!=</code>: Equal, Not Equal</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&lt;</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&gt;</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&lt;=</code>, <code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">&gt;=</code>: Comparators</div>
+              <div><code class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded">( )</code>: Grouping expressions (e.g. <code>(A or B) and C</code>)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Example Expressions</h4>
+        <div class="space-y-2">
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">High Priority Check</span>
+            <div class="help-code-block">priority == 'HIGH'</div>
+          </div>
+
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Compound Logic (Amount and Priority)</span>
+            <div class="help-code-block">selectedQuoteTotalAmount >= 5000 and (priority == 'HIGH' or priority == 'CRITICAL')</div>
+          </div>
+
+          <div class="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-1.5">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Team Leader Self-Submission Check (Nested Traversal)</span>
+            <div class="help-code-block">user.id == team.leader.id</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-100 border border-slate-200 rounded-xl flex gap-3">
+        <mat-icon class="text-slate-600 flex-shrink-0" style="font-size: 24px; width: 24px; height: 24px;">alt_route</mat-icon>
+        <p class="text-xs text-slate-600 leading-relaxed m-0">
+          <strong>Default Path:</strong> An XOR gateway must always have exactly <strong>one default transition</strong> with <strong>no condition</strong>. If none of the other path conditions are met, the request will automatically follow this default path.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Dialog Footer -->
+  <footer class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end flex-shrink-0">
+    <button mat-flat-button class="v-btn-brand" (click)="onClose()">Got It</button>
+  </footer>
+</div>

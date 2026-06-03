@@ -1,7 +1,6 @@
 package com.veritas.backend.workflow.entity;
 
 import com.veritas.backend.user.entity.UserRole;
-
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -28,6 +27,8 @@ public class WorkflowStep {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role")
     private UserRole role;
+
+    private Boolean isTeamLeader;
 
     @Column(name = "is_automated_approval", nullable = false)
     private Boolean isAutomatedApproval = false;

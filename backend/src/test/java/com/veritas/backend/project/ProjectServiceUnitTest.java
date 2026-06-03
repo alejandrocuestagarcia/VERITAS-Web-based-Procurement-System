@@ -299,7 +299,7 @@ class ProjectServiceUnitTest {
         Long projectId = 1L;
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        when(requestRepository.existsByProjectIDId(projectId)).thenReturn(false);
+        when(requestRepository.existsByProjectId(projectId)).thenReturn(false);
         when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(false);
 
         projectService.deleteProject(projectId);
@@ -312,7 +312,7 @@ class ProjectServiceUnitTest {
         Long projectId = 1L;
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        when(requestRepository.existsByProjectIDId(projectId)).thenReturn(true);
+        when(requestRepository.existsByProjectId(projectId)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
 
@@ -324,7 +324,7 @@ class ProjectServiceUnitTest {
         Long projectId = 1L;
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        when(requestRepository.existsByProjectIDId(projectId)).thenReturn(false);
+        when(requestRepository.existsByProjectId(projectId)).thenReturn(false);
         when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));

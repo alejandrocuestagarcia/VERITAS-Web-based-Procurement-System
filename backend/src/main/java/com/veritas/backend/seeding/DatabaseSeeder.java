@@ -124,17 +124,17 @@ public class DatabaseSeeder implements ApplicationRunner {
             basicFinishedReq.setDescription(
                     "Acquisition of high-throughput firewall licenses to secure core edge network endpoints and prevent unauthorized traffic.");
             basicFinishedReq.setPriority(Priority.MEDIUM);
-            basicFinishedReq.setUserID(requester);
-            basicFinishedReq.setProjectID(p1 != null ? p1 : p2);
-            basicFinishedReq.setTeamID(teamOne);
+            basicFinishedReq.setUser(requester);
+            basicFinishedReq.setProject(p1 != null ? p1 : p2);
+            basicFinishedReq.setTeam(teamOne);
 
             var workflowDef = workflowDefinitionRepository.findAll().stream().findFirst().orElse(null);
             if (workflowDef != null) {
-                basicFinishedReq.setWorkflowDefinitionID(workflowDef);
+                basicFinishedReq.setWorkflowDefinition(workflowDef);
                 WorkflowStep endStep = workflowStepRepository
                         .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT)
                         .orElse(null);
-                basicFinishedReq.setCurrentStepID(endStep);
+                basicFinishedReq.setCurrentStep(endStep);
             }
 
             basicFinishedReq.setState(RequestStatus.FINISHED);
@@ -486,10 +486,10 @@ public class DatabaseSeeder implements ApplicationRunner {
         request.setRequestName(name);
         request.setDescription(description);
         request.setPriority(priority);
-        request.setUserID(creator);
-        request.setProjectID(project);
-        request.setTeamID(creator != null ? creator.getTeam() : null);
-        request.setWorkflowDefinitionID(workflowDef);
+        request.setUser(creator);
+        request.setProject(project);
+        request.setTeam(creator != null ? creator.getTeam() : null);
+        request.setWorkflowDefinition(workflowDef);
 
         if (workflowDef != null) {
             WorkflowStep step = workflowStepRepository.findAll().stream()
@@ -505,7 +505,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                     })
                     .findFirst()
                     .orElse(null);
-            request.setCurrentStepID(step);
+            request.setCurrentStep(step);
         }
 
         request.setState(state);
@@ -527,7 +527,7 @@ public class DatabaseSeeder implements ApplicationRunner {
             budget.setParentBudget(project.getInternalBudget());
         }
         InternalBudget savedBudget = internalBudgetRepository.save(budget);
-        request.setBudgetID(savedBudget);
+        request.setBudget(savedBudget);
 
         // Add line items
         if (items != null) {

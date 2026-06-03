@@ -83,7 +83,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                             + "). This likely indicates a cycle in the workflow definition.");
         }
 
-        WorkflowStep currentStep = request.getCurrentStepID();
+        WorkflowStep currentStep = request.getCurrentStep();
 
         checkAuthorization(request, actor, currentStep);
 
@@ -91,15 +91,22 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request, transition)) {
-                assertBudgetWithinSafetyBuffer(request.getBudgetID());
+                assertBudgetWithinSafetyBuffer(request.getBudget());
 
                 WorkflowStep toStep = transition.getToStep();
-                request.setCurrentStepID(toStep);
+                request.setCurrentStep(toStep);
 
                 if (toStep.getWorkflowComponent() != WorkflowComponent.END_EVENT &&
                         toStep.getWorkflowComponent() != WorkflowComponent.BRANCH) {
                     if (toStep.getRole() == UserRole.REQUESTER) {
-                        request.setAssignee(request.getUserID());
+                        if (Boolean.TRUE.equals(toStep.getIsTeamLeader())) {
+                            if (request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null) {
+                                throw new WorkflowStateException("The requester's team leader could not be resolved because the requester does not belong to a team or the team has no team leader assigned.");
+                            }
+                            request.setAssignee(request.getUser().getTeam().getLeader());
+                        } else {
+                            request.setAssignee(request.getUser());
+                        }
                     } else if (nextAssigneeId != null) {
                         User nextAssignee = userRepository.findById(nextAssigneeId)
                                 .orElseThrow(() -> new IllegalArgumentException(
@@ -146,7 +153,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                                 .findFirstByRequestAndNewStepOrderByTimestampAsc(request, currentStep)
                                 .map(AuditLog::getTimestamp)
                                 .orElse(request.getCreatedAt() != null ? request.getCreatedAt()
-                                        : java.time.LocalDateTime.MIN);
+                                        : LocalDateTime.MIN);
                     }
                     final LocalDateTime finalEntryTime = entryTime;
 
@@ -188,8 +195,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 }
 
                 WorkflowStep nextStep = transition.getToStep();
-
-                request.setCurrentStepID(nextStep);
+                request.setCurrentStep(nextStep);
                 request.setRejectionReason(null);
                 String toStepName = transition.getToStep().getName() == null ? "Finished" : transition.getToStep().getName();
                 auditService.createWorkflowTransitionLog(
@@ -227,7 +233,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     @Transactional
     public void revertToPreviousStep(Request request, User actor, String reason) {
 
-        WorkflowStep stepToRevertFrom = request.getCurrentStepID();
+        WorkflowStep stepToRevertFrom = request.getCurrentStep();
 
         checkAuthorization(request, actor, stepToRevertFrom);
 
@@ -274,7 +280,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         }
 
         request.setRejectionReason(reason);
-        request.setCurrentStepID(targetStep);
+        request.setCurrentStep(targetStep);
 
         auditService.createWorkflowTransitionLog(
                 actor,
@@ -301,15 +307,20 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         User attachedActor = userRepository.findById(actor.getId()).orElse(actor);
 
         if (currentStep.getRole() != null) {
-            if (!attachedActor.getRole().equals(currentStep.getRole())) {
+            if (Boolean.TRUE.equals(currentStep.getIsTeamLeader())) {
+                if (request.getUser() == null || request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null
+                        || !request.getUser().getTeam().getLeader().getId().equals(attachedActor.getId())) {
+                    throw new AccessDeniedException("Only the requester's team leader is authorized for this step.");
+                }
+            } else if (!attachedActor.getRole().equals(currentStep.getRole())) {
                 throw new AccessDeniedException("User with role " + attachedActor.getRole() +
                         " is not authorized for this step. Required: " + currentStep.getRole());
             }
             if (currentStep.getRole() == UserRole.PROCUREMENT_OFFICER) {
                 Long reqDept = null;
-                if (request.getUserID() != null && request.getUserID().getTeam() != null
-                        && request.getUserID().getTeam().getDepartment() != null) {
-                    reqDept = request.getUserID().getTeam().getDepartment().getDepartmentId();
+                if (request.getUser() != null && request.getUser().getTeam() != null
+                        && request.getUser().getTeam().getDepartment() != null) {
+                    reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
                 }
                 Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
                         : null;
@@ -319,7 +330,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             }
         } else {
             if (currentStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
-                if (request.getUserID() != null && !request.getUserID().getId().equals(attachedActor.getId())) {
+                if (request.getUser() != null && !request.getUser().getId().equals(attachedActor.getId())) {
                     throw new AccessDeniedException("Only the creator of the request can submit it.");
                 }
                 return;
@@ -334,9 +345,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             }
             if (attachedActor.getRole() == UserRole.PROCUREMENT_OFFICER) {
                 Long reqDept = null;
-                if (request.getUserID() != null && request.getUserID().getTeam() != null
-                        && request.getUserID().getTeam().getDepartment() != null) {
-                    reqDept = request.getUserID().getTeam().getDepartment().getDepartmentId();
+                if (request.getUser() != null && request.getUser().getTeam() != null
+                        && request.getUser().getTeam().getDepartment() != null) {
+                    reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
                 }
                 Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
                         : null;
@@ -393,7 +404,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     @Transactional
     public void startWorkflow(Request request, User actor, Long nextAssigneeId) {
 
-        WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
+        WorkflowDefinition workflowDef = request.getWorkflowDefinition();
 
         WorkflowStep startStep = workflowStepRepository
                 .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
@@ -411,9 +422,9 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
     @Override
     public WorkflowStep getNextStep(Request request) {
-        WorkflowStep currentStep = request.getCurrentStepID();
+        WorkflowStep currentStep = request.getCurrentStep();
         if (request.getState() == RequestStatus.DRAFT) {
-            WorkflowDefinition workflowDef = request.getWorkflowDefinitionID();
+            WorkflowDefinition workflowDef = request.getWorkflowDefinition();
             currentStep = workflowStepRepository
                     .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.START_EVENT)
                     .orElse(null);

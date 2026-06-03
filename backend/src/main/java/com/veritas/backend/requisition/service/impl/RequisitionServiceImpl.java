@@ -120,17 +120,17 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = new Request();
         request.setRequestName(createDto.requestName());
         request.setDescription(createDto.description());
-        request.setProjectID(project);
-        request.setWorkflowDefinitionID(workflow);
+        request.setProject(project);
+        request.setWorkflowDefinition(workflow);
         request.setPriority(createDto.priority());
 
         // Set initial workflow step
         WorkflowStep startStep = workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(workflow, WorkflowComponent.START_EVENT)
                 .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
-        request.setCurrentStepID(startStep);
+        request.setCurrentStep(startStep);
 
-        request.setUserID(user);
-        request.setTeamID(user.getTeam());
+        request.setUser(user);
+        request.setTeam(user.getTeam());
 
         // Initialize Request Budget
         InternalBudget budget = new InternalBudget();
@@ -138,8 +138,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         budget.setTotalAmount(BigDecimal.ZERO);
         budget.setParentBudget(project.getInternalBudget());
         internalBudgetRepository.save(budget);
-
-        request.setBudgetID(budget);
+        
+        request.setBudget(budget);
 
         project.setRequestCounter(project.getRequestCounter() + 1);
         projectRepository.save(project);
@@ -263,7 +263,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
 
-        if (user.getRole() == UserRole.REQUESTER && !attachment.getRequest().getUserID().getId().equals(user.getId())) {
+        if (user.getRole() == UserRole.REQUESTER && !attachment.getRequest().getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
@@ -370,16 +370,16 @@ public class RequisitionServiceImpl implements RequisitionService {
         User newRequester = userRepository.findById(newRequesterId)
                 .orElseThrow(() -> new EntityNotFoundException("New assigned user not found"));
 
-        if (newRequester.getRole() != UserRole.REQUESTER || !newRequester.getTeam().getTeamId().equals(request.getUserID().getTeam().getTeamId())) {
+        if (newRequester.getRole() != UserRole.REQUESTER || !newRequester.getTeam().getTeamId().equals(request.getUser().getTeam().getTeamId())) {
             throw new IllegalArgumentException("New assigned user must be a requester from the same team");
         }
 
-        request.setUserID(newRequester);
+        request.setUser(newRequester);
         Request updatedRequest = requestRepository.save(request);
         if (jiraSyncService != null) {
             jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
         }
-
+        
         return requisitionMapper.toDto(updatedRequest);
     }
 
@@ -403,8 +403,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         UserRole requiredRole = UserRole.valueOf(roleName);
 
         Long requestDepartmentId = null;
-        if (request.getUserID() != null && request.getUserID().getTeam() != null && request.getUserID().getTeam().getDepartment() != null) {
-            requestDepartmentId = request.getUserID().getTeam().getDepartment().getDepartmentId();
+        if (request.getUser() != null && request.getUser().getTeam() != null && request.getUser().getTeam().getDepartment() != null) {
+            requestDepartmentId = request.getUser().getTeam().getDepartment().getDepartmentId();
         }
 
         final Long finalReqDeptId = requestDepartmentId;
@@ -421,7 +421,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     }
                     if (requiredRole == UserRole.REQUESTER) {
                         return u.getTeam() != null && u.getTeam().getDepartment() != null &&
-                                u.getTeam().getDepartment().getDepartmentId().equals(finalReqDeptId);
+                               u.getTeam().getDepartment().getDepartmentId().equals(finalReqDeptId);
                     }
                     return false;
                 })
@@ -433,11 +433,11 @@ public class RequisitionServiceImpl implements RequisitionService {
     @Transactional(readOnly = true)
     public boolean canAct(Long id, User actor) {
         Request request = requestRepository.findById(id).orElse(null);
-        if (request == null || request.getCurrentStepID() == null) {
+        if (request == null || request.getCurrentStep() == null) {
             return false;
         }
         try {
-            workflowEngineService.checkAuthorization(request, actor, request.getCurrentStepID());
+            workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
             return true;
         } catch (AccessDeniedException e) {
             return false;
@@ -454,7 +454,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Only drafts can be updated/edited");
         }
 
-        if (!request.getUserID().getId().equals(actor.getId())) {
+        if (!request.getUser().getId().equals(actor.getId())) {
             throw new AccessDeniedException("You are not authorized to edit this request");
         }
 
@@ -468,12 +468,12 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (!Objects.equals(request.getPriority(), updates.priority())) {
             changes.add("Field 'priority' changed from '" + request.getPriority() + "' to '" + updates.priority() + "'");
         }
-        if (updates.projectId() != null && (request.getProjectID() == null || !request.getProjectID().getId().equals(updates.projectId()))) {
-            Long oldId = request.getProjectID() != null ? request.getProjectID().getId() : null;
+        if (updates.projectId() != null && (request.getProject() == null || !request.getProject().getId().equals(updates.projectId()))) {
+            Long oldId = request.getProject() != null ? request.getProject().getId() : null;
             changes.add("Field 'projectId' changed from '" + oldId + "' to '" + updates.projectId() + "'");
         }
-        if (updates.workflowDefinitionId() != null && (request.getWorkflowDefinitionID() == null || !request.getWorkflowDefinitionID().getId().equals(updates.workflowDefinitionId()))) {
-            Long oldId = request.getWorkflowDefinitionID() != null ? request.getWorkflowDefinitionID().getId() : null;
+        if (updates.workflowDefinitionId() != null && (request.getWorkflowDefinition() == null || !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId()))) {
+            Long oldId = request.getWorkflowDefinition() != null ? request.getWorkflowDefinition().getId() : null;
             changes.add("Field 'workflowDefinitionId' changed from '" + oldId + "' to '" + updates.workflowDefinitionId() + "'");
         }
 
@@ -497,7 +497,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setDescription(updates.description());
         request.setPriority(updates.priority());
 
-        if (updates.projectId() != null && !request.getProjectID().getId().equals(updates.projectId())) {
+        if (updates.projectId() != null && !request.getProject().getId().equals(updates.projectId())) {
             Project newProject = projectRepository.findById(updates.projectId())
                     .orElseThrow(
                             () -> new IllegalArgumentException("Project not found with ID: " + updates.projectId()));
@@ -505,29 +505,29 @@ public class RequisitionServiceImpl implements RequisitionService {
             newProject.setRequestCounter(newProject.getRequestCounter() + 1);
             projectRepository.save(newProject);
             request.setRequestKey(newProject.getProjectKey() + "-" + newProject.getRequestCounter());
-            request.setProjectID(newProject);
+            request.setProject(newProject);
 
-            if (request.getBudgetID() != null) {
-                request.getBudgetID().setParentBudget(newProject.getInternalBudget());
+            if (request.getBudget() != null) {
+                request.getBudget().setParentBudget(newProject.getInternalBudget());
             }
         }
 
-        if (request.getBudgetID() != null) {
-            request.getBudgetID().setBudgetName("Request: " + updates.requestName());
-            internalBudgetRepository.save(request.getBudgetID());
+        if (request.getBudget() != null) {
+            request.getBudget().setBudgetName("Request: " + updates.requestName());
+            internalBudgetRepository.save(request.getBudget());
         }
 
         if (updates.workflowDefinitionId() != null
-                && !request.getWorkflowDefinitionID().getId().equals(updates.workflowDefinitionId())) {
+                && !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId())) {
             WorkflowDefinition newWorkflow = workflowDefinitionRepository.findById(updates.workflowDefinitionId())
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Workflow not found with ID: " + updates.workflowDefinitionId()));
 
-            request.setWorkflowDefinitionID(newWorkflow);
+            request.setWorkflowDefinition(newWorkflow);
             WorkflowStep startStep = workflowStepRepository
                     .findFirstByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
                     .orElseThrow(() -> new IllegalStateException("Workflow has no START_EVENT step defined"));
-            request.setCurrentStepID(startStep);
+            request.setCurrentStep(startStep);
         }
 
         if (itemsChanged) {
@@ -591,8 +591,8 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
         }
 
-        if (request.getBudgetID() != null) {
-            addToBudgets(request.getBudgetID(), invoice);
+        if (request.getBudget() != null) {
+            addToBudgets(request.getBudget(), invoice);
             invoice.setIsPaid(true);
             invoiceRepository.save(invoice);
         }
@@ -757,7 +757,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     private void checkProcurementOfficerAccess(Request request, User user) {
         if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
             Department userDept = user.getDepartment();
-            Team requestTeam = request.getTeamID();
+            Team requestTeam = request.getTeam();
             Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
 
             if (userDept == null || requestDept == null

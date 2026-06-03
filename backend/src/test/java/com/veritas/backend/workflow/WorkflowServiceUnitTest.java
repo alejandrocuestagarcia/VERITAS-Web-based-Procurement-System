@@ -235,16 +235,20 @@ class WorkflowServiceUnitTest {
                 "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
                 "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
-                "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:task id=\"Task_2\" name=\"Approval Step B\">\n" +
                 "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
                 "    </bpmn:task>\n" +
                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
-                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n" +
                 "      <bpmn:extensionElements>\n" +
                 "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"false\" />\n" +
                 "      </bpmn:extensionElements>\n" +
                 "    </bpmn:sequenceFlow>\n" +
-                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n" +
                 "  </bpmn:process>\n" +
                 "</bpmn:definitions>";
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);

@@ -250,16 +250,16 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) auth.getPrincipal();
 
-        if (user.getRole() == UserRole.REQUESTER && !request.getUserID().getId().equals(user.getId())) {
+        if (user.getRole() == UserRole.REQUESTER && !request.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
         if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
-            if (request.getTeamID() == null || user.getDepartment() == null) {
+            if (request.getTeam() == null || user.getDepartment() == null) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
 
-            if (!request.getTeamID().getDepartment().getDepartmentId().equals(user.getDepartment().getDepartmentId())) {
+            if (!request.getTeam().getDepartment().getDepartmentId().equals(user.getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         }

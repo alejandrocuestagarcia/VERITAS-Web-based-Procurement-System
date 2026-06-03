@@ -259,7 +259,7 @@ public class UserServiceImpl implements UserService {
 
         List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
         for (Request req : activeRequests) {
-          req.setUserID(fallbackUser);
+          req.setUser(fallbackUser);
         }
         requestRepository.saveAll(activeRequests);
       }

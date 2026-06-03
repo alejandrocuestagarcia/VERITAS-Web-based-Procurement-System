@@ -29,7 +29,7 @@ class RequisitionMapperUnitTest {
         step.setName("Manager Approval");
 
         Request request = buildRequest();
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
 
         RequisitionDto dto = mapper.toDto(request);
         assertEquals("Manager Approval", dto.status());
@@ -38,7 +38,7 @@ class RequisitionMapperUnitTest {
     @Test
     void ToDto_NullCurrentStep_ReturnsDraftStatus() {
         Request request = buildRequest();
-        request.setCurrentStepID(null);
+        request.setCurrentStep(null);
 
         RequisitionDto dto = mapper.toDto(request);
         assertEquals("DRAFT", dto.status());
@@ -62,10 +62,10 @@ class RequisitionMapperUnitTest {
         request.setRequestName("Test Request");
         request.setRequestKey("PRJ-1");
         request.setPriority(Priority.HIGH);
-        request.setProjectID(project);
-        request.setTeamID(team);
-        request.setUserID(user);
-        request.setCurrentStepID(step);
+        request.setProject(project);
+        request.setTeam(team);
+        request.setUser(user);
+        request.setCurrentStep(step);
         return request;
     }
 }

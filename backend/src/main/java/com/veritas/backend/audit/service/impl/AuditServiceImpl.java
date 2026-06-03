@@ -106,7 +106,7 @@ public class AuditServiceImpl implements AuditService {
         String mockHash = UUID.randomUUID().toString();
 
         WorkflowStep fromStep = (transition != null) ? transition.getFromStep() : null;
-        WorkflowStep toStep = (transition != null) ? transition.getToStep() : request.getCurrentStepID();
+        WorkflowStep toStep = (transition != null) ? transition.getToStep() : request.getCurrentStep();
 
         AuditLog log = AuditLog.builder()
                 .request(request)

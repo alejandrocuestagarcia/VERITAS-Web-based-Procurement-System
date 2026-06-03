@@ -222,7 +222,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
 
             if (matchedProject.isPresent()) {
                 Project project = matchedProject.get();
-                request.setProjectID(project);
+                request.setProject(project);
                 if (request.getRequestKey() == null) {
                     project.setRequestCounter(project.getRequestCounter() + 1);
                     projectRepository.saveAndFlush(project);
@@ -230,7 +230,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 }
             } else if (config.getFallbackProject() != null) {
                 Project fallbackProject = config.getFallbackProject();
-                request.setProjectID(fallbackProject);
+                request.setProject(fallbackProject);
                 if (request.getRequestKey() == null) {
                     fallbackProject.setRequestCounter(fallbackProject.getRequestCounter() + 1);
                     projectRepository.saveAndFlush(fallbackProject);
@@ -243,45 +243,45 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             request.setRequestKey(key);
         }
 
-        if (request.getWorkflowDefinitionID() == null) {
+        if (request.getWorkflowDefinition() == null) {
             if (config.getFallbackWorkflow() != null) {
-                request.setWorkflowDefinitionID(config.getFallbackWorkflow());
+                request.setWorkflowDefinition(config.getFallbackWorkflow());
             }
         }
 
-        if (request.getCurrentStepID() == null && request.getWorkflowDefinitionID() != null) {
+        if (request.getCurrentStep() == null && request.getWorkflowDefinition() != null) {
             workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(
-                    request.getWorkflowDefinitionID(), WorkflowComponent.START_EVENT
-            ).ifPresent(request::setCurrentStepID);
+                    request.getWorkflowDefinition(), WorkflowComponent.START_EVENT
+            ).ifPresent(request::setCurrentStep);
         }
 
-        if (request.getUserID() == null && issueRecord.fields() != null && issueRecord.fields().reporter() != null) {
+        if (request.getUser() == null && issueRecord.fields() != null && issueRecord.fields().reporter() != null) {
             String email = issueRecord.fields().reporter().emailAddress();
             if (email != null && !email.isBlank()) {
                 Optional<User> matchedUser = userRepository.findByEmail(email.toLowerCase().trim());
                 if (matchedUser.isPresent()) {
                     User user = matchedUser.get();
-                    request.setUserID(user);
-                    request.setTeamID(user.getTeam());
+                    request.setUser(user);
+                    request.setTeam(user.getTeam());
                 }
             }
         }
         
-        if (request.getUserID() == null && config.getFallbackUser() != null) {
-            request.setUserID(config.getFallbackUser());
-            request.setTeamID(config.getFallbackUser().getTeam());
+        if (request.getUser() == null && config.getFallbackUser() != null) {
+            request.setUser(config.getFallbackUser());
+            request.setTeam(config.getFallbackUser().getTeam());
         }
 
-        if (request.getBudgetID() == null) {
+        if (request.getBudget() == null) {
             InternalBudget budget = new InternalBudget();
             budget.setBudgetName("Request: " + request.getRequestName());
             budget.setTotalAmount(BigDecimal.ZERO);
-            if (request.getProjectID() != null) {
-                budget.setParentBudget(request.getProjectID().getInternalBudget());
+            if (request.getProject() != null) {
+                budget.setParentBudget(request.getProject().getInternalBudget());
             }
             internalBudgetRepository.save(budget);
 
-            request.setBudgetID(budget);
+            request.setBudget(budget);
         }
 
         request = requestRepository.saveAndFlush(request);
@@ -724,8 +724,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String targetStepName = null;
         if (RequestStatus.FINISHED.equals(request.getState())) {
             targetStepName = "Delegated Ready";
-        } else if (request.getCurrentStepID() != null) {
-            targetStepName = request.getCurrentStepID().getName();
+        } else if (request.getCurrentStep() != null) {
+            targetStepName = request.getCurrentStep().getName();
         }
         
         if (targetStepName != null && !targetStepName.isBlank()) {
@@ -749,8 +749,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             } else {
                 stepNameForComment = "Finished";
             }
-        } else if (request.getCurrentStepID() != null && request.getCurrentStepID().getName() != null) {
-            stepNameForComment = request.getCurrentStepID().getName();
+        } else if (request.getCurrentStep() != null && request.getCurrentStep().getName() != null) {
+            stepNameForComment = request.getCurrentStep().getName();
         } else {
             stepNameForComment = "Unknown";
         }

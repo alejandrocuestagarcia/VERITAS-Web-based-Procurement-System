@@ -436,8 +436,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         // Fetch the Start event we built in setUp() to simulate starting point
         WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
         WorkflowStep startStep = workflowStepRepository.findAll().get(0);
-        request.setWorkflowDefinitionID(workflow);
-        request.setCurrentStepID(startStep);
+        request.setWorkflowDefinition(workflow);
+        request.setCurrentStep(startStep);
         request = requestRepository.save(request);
 
         RequisitionRejectDto rejectDto = new RequisitionRejectDto();
@@ -467,8 +467,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Draft Loopback Test");
         request.setState(RequestStatus.ACTIVE);
-        request.setWorkflowDefinitionID(workflow);
-        request.setCurrentStepID(stepOne);
+        request.setWorkflowDefinition(workflow);
+        request.setCurrentStep(stepOne);
         request = requestRepository.save(request);
 
         // 2. Seed an execution history log mapping: startStep -> stepOne via an "APPROVE"
@@ -499,7 +499,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         assertAll("Request state rollback verification",
                 () -> assertEquals(RequestStatus.DRAFT, updatedRequest.getState(),
                         "The request status should have reverted to DRAFT"),
-                () -> assertEquals(startStep.getId(), updatedRequest.getCurrentStepID().getId(),
+                () -> assertEquals(startStep.getId(), updatedRequest.getCurrentStep().getId(),
                         "The current step ID should match the workflow's START_EVENT id")
         );
     }
@@ -598,8 +598,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Office Furniture");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
-        request.setBudgetID(budget);
+        request.setProject(project);
+        request.setBudget(budget);
         request = requestRepository.save(request);
 
         Invoice invoice = new Invoice();
@@ -631,7 +631,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Office Furniture No Invoice");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
+        request.setProject(project);
         request = requestRepository.save(request);
 
         // Act & Assert
@@ -657,7 +657,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Office Furniture");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
+        request.setProject(project);
         request = requestRepository.save(request);
 
         // Act & Assert
@@ -679,8 +679,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Office Supplies Finished");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
-        request.setBudgetID(budget);
+        request.setProject(project);
+        request.setBudget(budget);
         request = requestRepository.save(request);
 
         Invoice invoice = new Invoice();
@@ -706,7 +706,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Reject Paid Request");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
+        request.setProject(project);
         request = requestRepository.save(request);
 
         Invoice invoice = new Invoice();
@@ -734,7 +734,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Approve Paid Request");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
+        request.setProject(project);
         request = requestRepository.save(request);
 
         Invoice invoice = new Invoice();
@@ -980,9 +980,9 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Automated Approval Requisition");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
-        request.setWorkflowDefinitionID(workflow);
-        request.setCurrentStepID(stepOne);
+        request.setProject(project);
+        request.setWorkflowDefinition(workflow);
+        request.setCurrentStep(stepOne);
         request = requestRepository.save(request);
 
         // Seed AuditLog for entering stepOne
@@ -1005,7 +1005,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         // Assert: Request should have automatically skipped the automatedStep and advanced directly to endStep, changing state to FINISHED
         Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
         assertEquals(RequestStatus.FINISHED, updatedRequest.getState());
-        assertEquals(endStep.getId(), updatedRequest.getCurrentStepID().getId());
+        assertEquals(endStep.getId(), updatedRequest.getCurrentStep().getId());
     }
 
     // AI-GENERATED
@@ -1015,8 +1015,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Request request = new Request();
             request.setRequestName("Delete Invoice Test");
             request.setState(RequestStatus.ACTIVE);
-            request.setProjectID(project);
-            request.setTeamID(teamRepository.findAll().get(0));
+            request.setProject(project);
+            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();
@@ -1052,8 +1052,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Request request = new Request();
             request.setRequestName("Delete Invoice Forbidden");
             request.setState(RequestStatus.ACTIVE);
-            request.setProjectID(project);
-            request.setTeamID(teamRepository.findAll().get(0));
+            request.setProject(project);
+            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
@@ -1067,8 +1067,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Request request = new Request();
             request.setRequestName("Delete Paid Invoice");
             request.setState(RequestStatus.ACTIVE);
-            request.setProjectID(project);
-            request.setTeamID(teamRepository.findAll().get(0));
+            request.setProject(project);
+            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();

@@ -84,6 +84,7 @@ import { DepartmentCreateComponent } from './features/department/department-crea
 
 import { WorkflowEditorComponent } from './features/workflow/workflow-editor/workflow-editor.component';
 import { WorkflowListComponent } from './features/workflow/workflow-list/workflow-list.component';
+import { WorkflowHelpDialogComponent } from './features/workflow/workflow-help-dialog/workflow-help-dialog.component';
 
 import { JiraSettingsListComponent } from "./features/integrations/jira/jira-settings/jira-settings-list/jira-settings-list.component";
 import { JiraSettingsCreateComponent } from "./features/integrations/jira/jira-settings/jira-settings-create/jira-settings-create.component";
@@ -139,6 +140,7 @@ import { AssigneeSelectDialogComponent } from './shared/components/assignee-sele
     // Workflow & Jira
     WorkflowEditorComponent,
     WorkflowListComponent,
+    WorkflowHelpDialogComponent,
     JiraSettingsListComponent,
     JiraSettingsCreateComponent,
     JiraIssuesSyncHistoryComponent,

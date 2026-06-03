@@ -153,4 +153,38 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
         WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML, null);
         assertThrows(EntityNotFoundException.class, () -> workflowService.editWorkflow(99999L, editDto));
     }
+
+    // AI-GENERATED
+    @Test
+    void WorkflowCreation_WithTeamLeaderAssignee_PersistsIsTeamLeaderFlag() {
+        String bpmnWithTeamLeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
+                "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                "  <bpmn:process id=\"Process_1\" name=\"Team Leader Workflow\" isExecutable=\"true\">\n" +
+                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Team Leader Approval\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]REQUESTER</bpmn:documentation>\n" +
+                "      <bpmn:documentation>[TEAM_LEADER]true</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
+                "  </bpmn:process>\n" +
+                "</bpmn:definitions>";
+
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(bpmnWithTeamLeader, null);
+        WorkflowDto result = workflowService.createWorkflow(saveDto);
+
+        assertNotNull(result);
+        
+        var steps = workflowStepRepository.findAll();
+        var teamLeaderStep = steps.stream()
+                .filter(s -> "Team Leader Approval".equals(s.getName()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(teamLeaderStep);
+        assertEquals(com.veritas.backend.user.entity.UserRole.REQUESTER, teamLeaderStep.getRole());
+        assertTrue(teamLeaderStep.getIsTeamLeader());
+    }
 }
