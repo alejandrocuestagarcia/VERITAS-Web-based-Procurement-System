@@ -1,12 +1,14 @@
 <div class="bg-surface text-on-surface antialiased min-h-screen">
-
   <div class="flex min-h-screen w-full">
-
     <app-sidebar *ngIf="authService.isLoggedIn()"></app-sidebar>
 
-    <main class="flex-1 flex flex-col" [class.pl-[260px]]="authService.isLoggedIn()">
+    <main
+      class="flex-1 flex flex-col"
+      [ngClass]="{
+        'lg:pl-[260px]': authService.isLoggedIn(),
+        'pt-14 lg:pt-0': authService.isLoggedIn()
+      }">
       <router-outlet></router-outlet>
     </main>
-
   </div>
 </div>

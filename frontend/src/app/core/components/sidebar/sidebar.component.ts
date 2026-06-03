@@ -16,6 +16,7 @@ export class SidebarComponent implements OnInit{
   }
 
   navLinks: NavItem[] = [];
+  isOpen: boolean = false;
 
   ngOnInit(): void {
     const role = this.authService.getRole()
@@ -23,7 +24,16 @@ export class SidebarComponent implements OnInit{
       this.navLinks = this.navService.getLinksForRole(role);
     }
   }
+
   onLogout() {
     this.authService.logout();
+  }
+
+  toggleMenu(): void {
+    this.isOpen = !this.isOpen;
+  }
+
+  closeMenu(): void {
+    this.isOpen = false;
   }
 }
