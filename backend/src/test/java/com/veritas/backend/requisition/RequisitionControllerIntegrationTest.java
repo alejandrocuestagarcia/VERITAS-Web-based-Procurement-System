@@ -1015,8 +1015,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Request request = new Request();
             request.setRequestName("Delete Invoice Test");
             request.setState(RequestStatus.ACTIVE);
-            request.setProjectID(project);
-            request.setTeamID(teamRepository.findAll().get(0));
+            request.setProject(project);
+            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();
@@ -1052,8 +1052,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Request request = new Request();
             request.setRequestName("Delete Invoice Forbidden");
             request.setState(RequestStatus.ACTIVE);
-            request.setProjectID(project);
-            request.setTeamID(teamRepository.findAll().get(0));
+            request.setProject(project);
+            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
@@ -1067,8 +1067,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Request request = new Request();
             request.setRequestName("Delete Paid Invoice");
             request.setState(RequestStatus.ACTIVE);
-            request.setProjectID(project);
-            request.setTeamID(teamRepository.findAll().get(0));
+            request.setProject(project);
+            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();
