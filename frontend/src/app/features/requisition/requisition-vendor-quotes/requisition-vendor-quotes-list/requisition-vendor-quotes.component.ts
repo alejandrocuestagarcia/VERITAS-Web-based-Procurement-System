@@ -255,6 +255,33 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     });
   }
 
+  deleteInvoice(): void {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Delete Invoice',
+        message: 'Are you sure you want to delete the current invoice? This action cannot be undone.'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: any) => {
+      if (confirmed) {
+        this.loading = true;
+        this.requisitionService.deleteInvoice(this.requisitionId).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Invoice deleted successfully');
+            this.hasInvoice = false;
+            this.loading = false;
+          },
+          error: (err: any) => {
+            const message = err?.error || 'Failed to delete invoice';
+            this.toastService.showError(message);
+            this.loading = false;
+          }
+        });
+      }
+    });
+  }
+
   navigateToCreate(): void {
     this.router.navigate([`/requisitions/${this.requisitionId}/vendor-quotes/create`]);
   }

@@ -119,6 +119,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.update("DELETE FROM attachments");
         jdbcTemplate.update("DELETE FROM invoices");
         jdbcTemplate.update("DELETE FROM vendor_evaluations");
         jdbcTemplate.update("DELETE FROM quote_line_items");
@@ -1007,4 +1008,81 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         assertEquals(endStep.getId(), updatedRequest.getCurrentStepID().getId());
     }
 
+    // AI-GENERATED
+    @Test
+    void DeleteInvoice_AsProcurementOfficer_ReturnsNoContentAndDeletesInvoice() throws Exception {
+            Project project = projectRepository.findAll().get(0);
+            Request request = new Request();
+            request.setRequestName("Delete Invoice Test");
+            request.setState(RequestStatus.ACTIVE);
+            request.setProjectID(project);
+            request.setTeamID(teamRepository.findAll().get(0));
+            request = requestRepository.save(request);
+
+            Invoice invoice = new Invoice();
+            invoice.setRequest(request);
+            invoice.setTotalAmount(new BigDecimal("100.00"));
+            invoice.setIsPaid(false);
+            invoice = invoiceRepository.save(invoice);
+            request.setInvoice(invoice);
+            requestRepository.save(request);
+
+            Path tempFile = Files.createTempFile("invoice-attachment", ".pdf");
+            Attachment attachment = new Attachment();
+            attachment.setRequest(request);
+            attachment.setFileName("invoice.pdf");
+            attachment.setFileType("application/pdf");
+            attachment.setFileSize(100L);
+            attachment.setStoragePath(tempFile.toString());
+            attachment.setInvoice(invoice);
+            attachmentRepository.save(attachment);
+
+            mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
+                            .header("Authorization", "Bearer " + procurementOfficerToken))
+                            .andExpect(status().isNoContent());
+
+            assertEquals(0, invoiceRepository.count());
+            assertEquals(0, attachmentRepository.count());
+            assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteInvoice_AsRequester_ReturnsForbidden() throws Exception {
+            Project project = projectRepository.findAll().get(0);
+            Request request = new Request();
+            request.setRequestName("Delete Invoice Forbidden");
+            request.setState(RequestStatus.ACTIVE);
+            request.setProjectID(project);
+            request.setTeamID(teamRepository.findAll().get(0));
+            request = requestRepository.save(request);
+
+            mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
+                            .header("Authorization", "Bearer " + requesterToken))
+                            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void DeleteInvoice_PaidInvoice_ReturnsConflict() throws Exception {
+            Project project = projectRepository.findAll().get(0);
+            Request request = new Request();
+            request.setRequestName("Delete Paid Invoice");
+            request.setState(RequestStatus.ACTIVE);
+            request.setProjectID(project);
+            request.setTeamID(teamRepository.findAll().get(0));
+            request = requestRepository.save(request);
+
+            Invoice invoice = new Invoice();
+            invoice.setRequest(request);
+            invoice.setTotalAmount(new BigDecimal("100.00"));
+            invoice.setIsPaid(true);
+            invoice = invoiceRepository.save(invoice);
+            request.setInvoice(invoice);
+            requestRepository.save(request);
+
+            mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
+                            .header("Authorization", "Bearer " + procurementOfficerToken))
+                            .andExpect(status().isConflict())
+                            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                                            "Cannot delete an invoice that has already been paid.")));
+    }
 }

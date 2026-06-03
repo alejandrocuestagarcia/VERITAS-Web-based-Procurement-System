@@ -68,7 +68,7 @@ public class GeneralExceptionHandler {
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
     log.warn("Illegal state: " + ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
   @ExceptionHandler(EntityExistsException.class)

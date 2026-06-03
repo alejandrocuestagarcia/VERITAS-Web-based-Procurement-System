@@ -45,7 +45,7 @@ public class Request {
     @Column(name = "request_key")
     private String requestKey;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "budget_id")
     private InternalBudget budgetID;
 
@@ -56,7 +56,7 @@ public class Request {
     @Column(name = "request_name", nullable = false)
     private String requestName;
 
-    @OneToOne(mappedBy = "request", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)

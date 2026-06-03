@@ -104,8 +104,9 @@ export class WorkflowListComponent implements OnInit {
       width: '450px',
       data: {
         title: 'Delete Workflow',
-        message: 'Are you sure you want to delete the workflow ',
+        message: 'Are you sure you want to delete the workflow',
         highlightText: workflow.name,
+        messageSuffix: '?',
         subMessage: 'This will disable the workflow, preventing it from being selected for new procurement requests. Existing requests using this workflow will not be affected.'
       }
     });

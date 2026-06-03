@@ -1162,4 +1162,100 @@ class RequisitionServiceUnitTest {
 
         assertEquals("ADMINISTRATOR", result);
     }
+
+    // AI-GENERATED
+    @Test
+    void DeleteInvoice_ValidRequest_DeletesInvoiceAndAttachments() throws IOException {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(1L);
+        invoice.setIsPaid(false);
+
+        Path tempFile = Files.createTempFile("test-invoice-attachment", ".pdf");
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment.setFileName("test.pdf");
+
+        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        request.setInvoice(invoice);
+        request.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        requisitionService.deleteInvoice(1L, testUser);
+
+        verify(attachmentRepository).delete(attachment);
+        verify(invoiceRepository).delete(invoice);
+        assertNull(request.getInvoice());
+        assertTrue(request.getAttachments().isEmpty());
+        assertFalse(Files.exists(tempFile));
+    }
+
+    @Test
+    void DeleteInvoice_RequestNotFound_ThrowsEntityNotFoundException() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+                () -> requisitionService.deleteInvoice(999L, testUser));
+        assertTrue(ex.getMessage().contains("Request not found with id: 999"));
+        verify(invoiceRepository, never()).delete(any());
+    }
+
+    @Test
+    void DeleteInvoice_InvoiceNotFound_ThrowsEntityNotFoundException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setInvoice(null);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+                () -> requisitionService.deleteInvoice(1L, testUser));
+        assertTrue(ex.getMessage().contains("Invoice not found for request with id: 1"));
+        verify(invoiceRepository, never()).delete(any());
+    }
+
+    @Test
+    void DeleteInvoice_InvoiceAlreadyPaid_ThrowsIllegalStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> requisitionService.deleteInvoice(1L, testUser));
+        assertTrue(ex.getMessage().contains("Cannot delete an invoice that has already been paid."));
+        verify(invoiceRepository, never()).delete(any());
+    }
+
+    @Test
+    void DeleteInvoice_IOExceptionOnDelete_ThrowsRuntimeException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(false);
+
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setStoragePath("\0invalid-path");
+        attachment.setFileName("broken.pdf");
+
+        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> requisitionService.deleteInvoice(1L, testUser));
+
+        verify(invoiceRepository, never()).delete(any());
+    }
 }
