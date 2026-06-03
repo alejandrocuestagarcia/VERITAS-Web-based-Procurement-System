@@ -11,6 +11,8 @@ import org.springframework.expression.spel.ast.CompoundExpression;
 import org.springframework.expression.spel.ast.PropertyOrFieldReference;
 import org.springframework.expression.spel.SpelNode;
 import org.springframework.expression.ParseException;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -44,12 +46,55 @@ public class BpmnValidator {
             "(T\\s*\\(|new\\s+|#|\\bgetClass\\b|\\bforName\\b|\\bRuntime\\b|\\bjava\\.)"
     );
 
-    private static final Set<String> KNOWN_REQUEST_PROPERTIES = Set.of(
-            "requestID", "requestName", "description", "priority",
-            "state", "totalQuantity", "createdAt", "updatedAt",
-            "budget", "team", "project", "user",
-            "requestKey", "jiraIssueKey", "jiraStatus",
-            "selectedQuoteTotalAmount"
+    private static final Set<String> ALLOWED_BRANCHING_PATHS = Set.of(
+            "selectedquotetotalamount",
+            "priority",
+            "totalquantity",
+            "department",
+            "department.id",
+            "department.name",
+            "department.budget",
+            "department.budget.id",
+            "department.budget.name",
+            "department.budget.totalamount",
+            "department.budget.committedspend",
+            "department.budget.actualspend",
+            "department.budget.safetybuffer",
+            "department.budget.remainingamount",
+            "project",
+            "project.id",
+            "project.name",
+            "project.key",
+            "project.budget",
+            "project.budget.id",
+            "project.budget.name",
+            "project.budget.totalamount",
+            "project.budget.committedspend",
+            "project.budget.actualspend",
+            "project.budget.safetybuffer",
+            "project.budget.remainingamount",
+            "requester",
+            "requester.id",
+            "requester.name",
+            "requester.email",
+            "requester.role",
+            "requester.isteamleader",
+            "budget",
+            "budget.id",
+            "budget.name",
+            "budget.totalamount",
+            "budget.committedspend",
+            "budget.actualspend",
+            "budget.safetybuffer",
+            "budget.remainingamount",
+            "globalbudget",
+            "globalbudget.id",
+            "globalbudget.name",
+            "globalbudget.totalamount",
+            "globalbudget.committedspend",
+            "globalbudget.actualspend",
+            "globalbudget.safetybuffer",
+            "globalbudget.remainingamount"
     );
 
     private final SpelExpressionParser spelParser = new SpelExpressionParser();
@@ -634,34 +679,64 @@ public class BpmnValidator {
 
             // Semantic: check that referenced properties are known
             validateExpressionProperties(parsedExpression, flow, result);
+
+            // Type check: check that expression evaluates to a boolean
+            try {
+                EvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+                Object value = parsedExpression.getValue(evalContext, WorkflowBranchingContext.createDummyContext());
+                if (!(value instanceof Boolean)) {
+                    result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
+                            + "' must evaluate to a boolean, but returned type: " + (value == null ? "null" : value.getClass().getSimpleName()));
+                }
+            } catch (Exception e) {
+                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
+                        + "' failed to evaluate: " + e.getMessage());
+            }
         }
     }
 
     private void validateExpressionProperties(SpelExpression expression, SequenceFlow flow, BpmnValidationResult result) {
-        Set<String> rootProperties = new HashSet<>();
+        List<String> paths = new ArrayList<>();
         SpelNode ast = expression.getAST();
         if (ast != null) {
-            collectRootPropertyReferences(ast, null, -1, rootProperties);
+            collectPropertyPaths(ast, paths);
         }
 
-        for (String rootProperty : rootProperties) {
-            if (!KNOWN_REQUEST_PROPERTIES.contains(rootProperty)) {
+        for (String path : paths) {
+            if (!ALLOWED_BRANCHING_PATHS.contains(path.toLowerCase())) {
                 result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget()) + "' references property '"
-                        + rootProperty + "' which is not a known Request field");
+                        + path + "' which is not an allowed branching field");
             }
         }
     }
 
-    private void collectRootPropertyReferences(SpelNode node, SpelNode parent, int childIndex, Set<String> rootProperties) {
-        if (node instanceof PropertyOrFieldReference) {
-            boolean isChainedProperty = parent instanceof CompoundExpression && childIndex > 0;
-            if (!isChainedProperty) {
-                rootProperties.add(((PropertyOrFieldReference) node).getName());
+    private void collectPropertyPaths(SpelNode node, List<String> paths) {
+        if (node instanceof CompoundExpression) {
+            StringBuilder pathBuilder = new StringBuilder();
+            boolean isPurePropertyChain = true;
+            for (int i = 0; i < node.getChildCount(); i++) {
+                SpelNode child = node.getChild(i);
+                if (child instanceof PropertyOrFieldReference) {
+                    if (pathBuilder.length() > 0) {
+                        pathBuilder.append(".");
+                    }
+                    pathBuilder.append(((PropertyOrFieldReference) child).getName());
+                } else {
+                    isPurePropertyChain = false;
+                    break;
+                }
             }
+            if (isPurePropertyChain && pathBuilder.length() > 0) {
+                paths.add(pathBuilder.toString());
+                return;
+            }
+        } else if (node instanceof PropertyOrFieldReference) {
+            paths.add(((PropertyOrFieldReference) node).getName());
+            return;
         }
 
         for (int i = 0; i < node.getChildCount(); i++) {
-            collectRootPropertyReferences(node.getChild(i), node, i, rootProperties);
+            collectPropertyPaths(node.getChild(i), paths);
         }
     }
 

@@ -20,6 +20,7 @@ import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
 
+import com.veritas.backend.workflow.validation.WorkflowBranchingContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -367,7 +368,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             ExpressionParser parser = new SpelExpressionParser();
             EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             return parser.parseExpression(transition.getConditionExpression())
-                    .getValue(context, requisition, Boolean.class);
+                    .getValue(context, new WorkflowBranchingContext(requisition), Boolean.class);
         } catch (ExpressionException e) {
             return false;
         }

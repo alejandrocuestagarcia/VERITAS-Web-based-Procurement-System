@@ -24,7 +24,7 @@ public class DatabaseSeederConstants {
      <bpmn:outgoing>Flow_0qnfjjy</bpmn:outgoing>
    </bpmn:task>
    <bpmn:sequenceFlow id="Flow_0sbraey" sourceRef="Gateway_1dwq3xb" targetRef="Activity_1mp955o">
-     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${user.id != team.leader.id}</bpmn:conditionExpression>
+     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${not requester.isteamleader}</bpmn:conditionExpression>
    </bpmn:sequenceFlow>
    <bpmn:task id="Activity_1scv5mh" name="Vendor Quote Selection">
      <bpmn:documentation>Enter 3 different vendors with correct data. Choose the best vendor offer based on our Selection Guidelines.</bpmn:documentation>
@@ -34,7 +34,7 @@ public class DatabaseSeederConstants {
      <bpmn:outgoing>Flow_0b9tqhi</bpmn:outgoing>
    </bpmn:task>
    <bpmn:sequenceFlow id="Flow_1s1k4y5" sourceRef="Gateway_1dwq3xb" targetRef="Activity_1scv5mh">
-     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${user.id == team.leader.id}</bpmn:conditionExpression>
+     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${requester.isteamleader}</bpmn:conditionExpression>
    </bpmn:sequenceFlow>
    <bpmn:sequenceFlow id="Flow_0qnfjjy" sourceRef="Activity_1mp955o" targetRef="Activity_1scv5mh" />
    <bpmn:exclusiveGateway id="Gateway_0no29ob" name="Budget Check">
