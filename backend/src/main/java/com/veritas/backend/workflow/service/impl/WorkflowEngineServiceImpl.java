@@ -308,7 +308,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         if (currentStep.getRole() != null) {
             if (Boolean.TRUE.equals(currentStep.getIsTeamLeader())) {
-                if (request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null 
+                if (request.getUser() == null || request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null
                         || !request.getUser().getTeam().getLeader().getId().equals(attachedActor.getId())) {
                     throw new AccessDeniedException("Only the requester's team leader is authorized for this step.");
                 }

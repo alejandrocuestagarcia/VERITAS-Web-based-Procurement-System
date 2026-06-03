@@ -37,6 +37,7 @@ public class BpmnValidator {
     private static final int MAX_NODE_COUNT = 100;
 
     private static final String ASSIGNEE_PREFIX = "[ASSIGNEE]";
+    private static final String TEAM_LEADER_PREFIX = "[TEAM_LEADER]";
 
     /** Pattern to detect unsafe SpEL constructs. */
     private static final Pattern UNSAFE_SPEL_PATTERN = Pattern.compile(
@@ -585,7 +586,7 @@ public class BpmnValidator {
                         boolean hasTeamLeaderDoc = task.getDocumentations().stream()
                                 .map(Documentation::getTextContent)
                                 .filter(Objects::nonNull)
-                                .anyMatch(text -> text.startsWith("[TEAM_LEADER]") && text.substring(13).trim().equalsIgnoreCase("true"));
+                                .anyMatch(text -> text.startsWith(TEAM_LEADER_PREFIX) && text.substring(13).trim().equalsIgnoreCase("true"));
                         if (hasTeamLeaderDoc && r != UserRole.REQUESTER) {
                             result.addError("Step '" + getNodeName(task) + "' cannot have Team Leader option enabled for non-REQUESTER roles.");
                         }
