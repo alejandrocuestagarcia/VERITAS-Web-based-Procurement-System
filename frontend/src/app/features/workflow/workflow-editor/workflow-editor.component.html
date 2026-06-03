@@ -276,21 +276,18 @@
                    class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
                 <label for="isTeamLeaderCheckbox" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">Assign to Team Leader</label>
               </div>
+            </div>
+
             <div *ngIf="!isEditable" class="flex flex-col gap-1.5 mt-2 mb-6">
               <div class="flex items-center gap-3 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-                <span class="text-sm font-semibold text-slate-700">{{ currentTask.role || 'Unassigned' }}</span>
+                <span class="text-sm font-semibold text-slate-700">
+                  {{ currentTask.role || 'Unassigned' }}{{ currentTask.role === 'REQUESTER' && currentTask.isTeamLeader ? ' (Team Leader)' : '' }}
+                </span>
               </div>
               <div *ngIf="currentTask.automatedApproval && currentTask.role" class="text-[10px] text-slate-400 font-medium px-1">
                 No manual approval required since automated approval is enabled
               </div>
             </div>
-
-            <div *ngIf="!isEditable" class="flex items-center gap-3 p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-              <span class="text-sm font-semibold text-slate-700">
-                {{ currentTask.role }}{{ currentTask.role === 'REQUESTER' && currentTask.isTeamLeader ? ' (Team Leader)' : '' }}
-              </span>
-            </div>
-          </div>
 
           <div class="space-y-2 mt-4">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description / Custom Instructions</label>

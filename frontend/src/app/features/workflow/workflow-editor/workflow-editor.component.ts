@@ -427,7 +427,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const autoApproveDoc = docs.find((d: any) => d.text && d.text.startsWith('[AUTO_APPROVE]'));
     const autoApprove = autoApproveDoc ? autoApproveDoc.text.substring(14) === 'true' : false;
 
-    const descDoc = docs.find((d: any) => !d.text || (!d.text.startsWith('[ASSIGNEE]') && !d.text.startsWith('[AUTO_APPROVE]')));
+    const descDoc = docs.find((d: any) => !d.text || (!d.text.startsWith('[ASSIGNEE]') && !d.text.startsWith('[AUTO_APPROVE]') && !d.text.startsWith('[TEAM_LEADER]')));
     const description = descDoc ? descDoc.text : '';
 
     this.currentTask = {
@@ -480,7 +480,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         docs.push(doc);
       }
     } else if (key === 'description') {
-      docs = docs.filter((d: any) => d.text && (d.text.startsWith('[ASSIGNEE]') || d.text.startsWith('[AUTO_APPROVE]')));
+      docs = docs.filter((d: any) => d.text && (d.text.startsWith('[ASSIGNEE]') || d.text.startsWith('[AUTO_APPROVE]') || d.text.startsWith('[TEAM_LEADER]')));
       if (value) {
         const doc = bpmnFactory.create('bpmn:Documentation', { text: value });
         docs.push(doc);
