@@ -1544,7 +1544,7 @@ class RequisitionServiceUnitTest {
         request.setState(RequestStatus.ACTIVE);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         doThrow(new AccessDeniedException("Forbidden")).when(workflowEngineService)
@@ -1564,7 +1564,7 @@ class RequisitionServiceUnitTest {
         request.setState(RequestStatus.ACTIVE);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -1603,7 +1603,7 @@ class RequisitionServiceUnitTest {
         request.setState(RequestStatus.ACTIVE);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         doThrow(new AccessDeniedException("Forbidden")).when(workflowEngineService)
@@ -1622,7 +1622,7 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(1L);
         request.setState(RequestStatus.DRAFT);
-        request.setUserID(anotherUser);
+        request.setUser(anotherUser);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         testUser.setRole(UserRole.REQUESTER);
@@ -1635,7 +1635,7 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(1L);
         request.setState(RequestStatus.DRAFT);
-        request.setUserID(testUser);
+        request.setUser(testUser);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         testUser.setRole(UserRole.PROCUREMENT_OFFICER);
@@ -1648,7 +1648,7 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(1L);
         request.setState(RequestStatus.DRAFT);
-        request.setUserID(testUser);
+        request.setUser(testUser);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -1677,10 +1677,10 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(1L);
         request.setState(RequestStatus.ACTIVE);
-        request.setUserID(testUser);
+        request.setUser(testUser);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
-        request.setCurrentStepID(step);
+        request.setCurrentStep(step);
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));

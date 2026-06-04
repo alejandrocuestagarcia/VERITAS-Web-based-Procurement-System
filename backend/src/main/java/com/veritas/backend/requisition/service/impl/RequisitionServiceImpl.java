@@ -383,7 +383,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be rejected");
         }
 
-        if (request.getCurrentStepID() != null && !canAct(id, actor)) {
+        if (request.getCurrentStep() != null && !canAct(id, actor)) {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
@@ -418,7 +418,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Only requests in Draft or where the current step is assigned to you can be cancelled");
         }
 
-        if (actor.getRole() != UserRole.REQUESTER || !actor.getId().equals(request.getUserID().getId())) {
+        if (actor.getRole() != UserRole.REQUESTER || !actor.getId().equals(request.getUser().getId())) {
             throw new AccessDeniedException("Only the creator of the request can cancel it");
         }
 
