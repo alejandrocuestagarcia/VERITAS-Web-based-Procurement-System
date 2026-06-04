@@ -203,7 +203,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
                 "New Laptop", "Need a laptop", 1L, 1L, Priority.MEDIUM,
-                List.of(new RequisitionItemCreateDto("MacBook Pro", 2, "pcs", "test")));
+                List.of(new RequisitionItemCreateDto("MacBook Pro", 2, RequestItemUnit.PIECES, "test")));
 
         RequisitionDto result = requisitionService.createRequest(createDto, testUser);
 
@@ -228,9 +228,9 @@ class RequisitionServiceUnitTest {
         when(requisitionMapper.toDto(any())).thenReturn(mock(RequisitionDto.class));
 
         List<RequisitionItemCreateDto> items = List.of(
-                new RequisitionItemCreateDto("Monitor", 3, "pcs", "27 inch"),
-                new RequisitionItemCreateDto("Keyboard", 5, "pcs", "Mechanical"),
-                new RequisitionItemCreateDto("Cable", 10, "m", "USB-C"));
+                new RequisitionItemCreateDto("Monitor", 3, RequestItemUnit.PIECES, "27 inch"),
+                new RequisitionItemCreateDto("Keyboard", 5, RequestItemUnit.PIECES, "Mechanical"),
+                new RequisitionItemCreateDto("Cable", 10, RequestItemUnit.KG, "USB-C"));
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
                 "Office Equipment", "Test for employees", 1L, 1L, Priority.MEDIUM, items);
@@ -241,10 +241,10 @@ class RequisitionServiceUnitTest {
         List<RequestItem> savedItems = itemCaptor.getAllValues();
         assertEquals("Monitor", savedItems.get(0).getName());
         assertEquals(3, savedItems.get(0).getQuantity());
-        assertEquals("pcs", savedItems.get(0).getUnit());
+        assertEquals(RequestItemUnit.PIECES, savedItems.get(0).getUnit());
         assertEquals("27 inch", savedItems.get(0).getDescription());
         assertEquals("Cable", savedItems.get(2).getName());
-        assertEquals("m", savedItems.get(2).getUnit());
+        assertEquals(RequestItemUnit.KG, savedItems.get(2).getUnit());
     }
 
     @Test
@@ -267,7 +267,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
                 "Test", null, 1L, 1L, Priority.LOW,
-                List.of(new RequisitionItemCreateDto("Item", 1, "pcs", null)));
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> requisitionService.createRequest(createDto, testUser));
@@ -282,7 +282,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
                 "Test", null, 999L, 1L, Priority.LOW,
-                List.of(new RequisitionItemCreateDto("Item", 1, "pcs", null)));
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> requisitionService.createRequest(createDto, testUser));
@@ -298,7 +298,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
                 "Test", null, 1L, 999L, Priority.LOW,
-                List.of(new RequisitionItemCreateDto("Item", 1, "pcs", null)));
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> requisitionService.createRequest(createDto, testUser));
@@ -316,7 +316,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionCreateDto createDto = new RequisitionCreateDto(
                 "Test", null, 1L, 1L, Priority.LOW,
-                List.of(new RequisitionItemCreateDto("Item", 1, "pcs", null)));
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> requisitionService.createRequest(createDto, testUser));
@@ -704,7 +704,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Updated Laptop", "Need an updated laptop", 1L, 1L, Priority.HIGH,
-                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, "pcs", "updated")));
+                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, RequestItemUnit.PIECES, "updated")));
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -780,7 +780,7 @@ class RequisitionServiceUnitTest {
         RequestItem currentItem = new RequestItem();
         currentItem.setName("Old Item");
         currentItem.setQuantity(5);
-        currentItem.setUnit("pcs");
+        currentItem.setUnit(RequestItemUnit.PIECES);
         currentItem.setDescription("old details");
         request.setItems(new java.util.ArrayList<>(List.of(currentItem)));
 
@@ -791,7 +791,7 @@ class RequisitionServiceUnitTest {
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Updated Laptop", "Need an updated laptop", 2L, 1L, Priority.HIGH,
-                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, "pcs", "updated")));
+                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, RequestItemUnit.PIECES, "updated")));
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(projectRepository.findById(2L)).thenReturn(Optional.of(newProject));
@@ -920,7 +920,7 @@ class RequisitionServiceUnitTest {
         RequestItem currentItem = new RequestItem();
         currentItem.setName("Old Item");
         currentItem.setQuantity(5);
-        currentItem.setUnit("pcs");
+        currentItem.setUnit(RequestItemUnit.PIECES);
         request.setItems(new java.util.ArrayList<>(List.of(currentItem)));
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
@@ -1260,3 +1260,4 @@ class RequisitionServiceUnitTest {
         verify(invoiceRepository, never()).delete(any());
     }
 }
+

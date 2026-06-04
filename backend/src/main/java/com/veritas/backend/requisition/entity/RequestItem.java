@@ -22,7 +22,8 @@ public class RequestItem {
     private Integer quantity;
 
     @Column(nullable = false)
-    private String unit;
+    @Enumerated(EnumType.STRING)
+    private RequestItemUnit unit;
 
     @Column(columnDefinition = "TEXT")
     private String description;

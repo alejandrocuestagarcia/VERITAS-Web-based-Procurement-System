@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition.dto;
 
+import com.veritas.backend.requisition.entity.RequestItemUnit;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -12,8 +13,8 @@ public record RequisitionItemCreateDto(
     @Positive(message = "Quantity must be greater than zero")
     Integer quantity,
 
-    @NotBlank(message = "Unit is required")
-    String unit,
+    @NotNull(message = "Unit is required")
+    RequestItemUnit unit,
 
     String description
 ) {}

@@ -317,7 +317,7 @@ public class JiraSyncServiceUnitTest {
         RequestItem item1 = new RequestItem();
         item1.setName("Notebooks");
         item1.setQuantity(10);
-        item1.setUnit("pcs");
+        item1.setUnit(RequestItemUnit.PIECES);
         items.add(item1);
         request.setItems(items);
 

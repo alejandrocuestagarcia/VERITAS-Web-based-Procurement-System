@@ -21,6 +21,7 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
+import com.veritas.backend.requisition.entity.RequestItemUnit;
 import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
@@ -106,7 +107,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             .toFormatter();
 
     private static final Pattern QTY_UNIT_PATTERN =
-            Pattern.compile("^(\\d+)\\s*(pcs|pc|x|units|unit|stk|packages|pkg|items|item)?$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^(\\d+)\\s*([a-zA-Z]+)?$", Pattern.CASE_INSENSITIVE);
 
     @Override
     @Transactional
@@ -437,10 +438,10 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                     } catch (NumberFormatException e) {
                         item.setQuantity(1);
                     }
-                    item.setUnit(col3.isBlank() ? "pcs" : col3);
+                    item.setUnit(parseJiraUnitOrDefault(col3));
                 } else {
                     item.setQuantity(1);
-                    item.setUnit("pcs");
+                    item.setUnit(RequestItemUnit.PIECES);
                 }
                 
                 if (!col4.isBlank()) {
@@ -478,14 +479,14 @@ public class JiraSyncServiceImpl implements JiraSyncService {
     private void parseQtyAndUnit(String text, RequestItem item) {
         if (text == null || text.isBlank()) {
             item.setQuantity(1);
-            item.setUnit("pcs");
+            item.setUnit(RequestItemUnit.PIECES);
             return;
         }
         Matcher m = QTY_UNIT_PATTERN.matcher(text.trim());
         if (m.matches()) {
             item.setQuantity(Integer.parseInt(m.group(1)));
             String unit = m.group(2);
-            item.setUnit(unit != null && !unit.isBlank() ? unit : "pcs");
+            item.setUnit(parseJiraUnitOrDefault(unit));
         } else {
             try {
                 String digitsOnly = text.replaceAll("[^\\d]", "");
@@ -497,8 +498,22 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             } catch (NumberFormatException e) {
                 item.setQuantity(1);
             }
-            item.setUnit("pcs");
+            item.setUnit(RequestItemUnit.PIECES);
         }
+    }
+
+    private RequestItemUnit parseJiraUnitOrDefault(String rawUnit) {
+        if (rawUnit == null || rawUnit.isBlank()) {
+            return RequestItemUnit.PIECES;
+        }
+
+        String normalized = rawUnit.trim().toLowerCase();
+        return switch (normalized) {
+            case "pieces", "piece", "pcs", "pc", "unit", "units", "item", "items", "x", "stk" -> RequestItemUnit.PIECES;
+            case "boxes", "box", "pkg", "pkgs", "package", "packages", "pack" -> RequestItemUnit.BOXES;
+            case "kg", "kgs", "kilogram", "kilograms", "kilo", "kilos" -> RequestItemUnit.KG;
+            default -> RequestItemUnit.PIECES;
+        };
     }
 
     public String mapDescription(JsonNode description) {
@@ -1092,7 +1107,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 ArrayNode dataCells = mapper.createArrayNode();
                 dataCells.add(createTableCellNode(mapper, "tableCell", item.getName()));
                 dataCells.add(createTableCellNode(mapper, "tableCell", String.valueOf(item.getQuantity())));
-                dataCells.add(createTableCellNode(mapper, "tableCell", item.getUnit() != null ? item.getUnit() : "pcs"));
+                dataCells.add(createTableCellNode(mapper, "tableCell", (item.getUnit() != null ? item.getUnit() : RequestItemUnit.PIECES).name()));
                 dataCells.add(createTableCellNode(mapper, "tableCell", item.getDescription() != null ? item.getDescription() : ""));
                 dataRow.set("content", dataCells);
                 rowsArray.add(dataRow);

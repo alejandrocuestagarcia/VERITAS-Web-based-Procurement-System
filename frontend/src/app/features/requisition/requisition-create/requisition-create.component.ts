@@ -44,6 +44,11 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   workflows: WorkflowDto[] = [];
   workflowSearch: string = '';
   priorities = Object.values(RequisitionCreateDtoPriorityEnum)
+  unitOptions = [
+    { value: 'PIECES', label: 'Pieces' },
+    { value: 'BOXES', label: 'Boxes' },
+    { value: 'KG', label: 'Kg' }
+  ];
 
   uploadedFiles: File[] = [];
   existingAttachments: AttachmentDto[] = [];
@@ -320,7 +325,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
     return this.fb.group({
       name: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
-      unit: ['', Validators.required],
+      unit: ['PIECES', Validators.required],
       description: ['']
     });
   }

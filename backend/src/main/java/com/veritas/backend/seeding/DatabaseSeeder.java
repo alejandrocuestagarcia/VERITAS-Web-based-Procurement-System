@@ -25,6 +25,7 @@ import com.veritas.backend.workflow.service.WorkflowService;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.requisition.entity.RequestItem;
+import com.veritas.backend.requisition.entity.RequestItemUnit;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -274,7 +275,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                 RequestItem draftItem = new RequestItem();
                 draftItem.setName("Dell XPS 15 Laptop");
                 draftItem.setQuantity(1);
-                draftItem.setUnit("pcs");
+                draftItem.setUnit(RequestItemUnit.PIECES);
                 draftItem.setDescription("16GB RAM, 512GB SSD");
 
                 seedMockRequest(
@@ -295,7 +296,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                 RequestItem requesterReviewItem = new RequestItem();
                 requesterReviewItem.setName("AWS Dev Sandbox Credits");
                 requesterReviewItem.setQuantity(1);
-                requesterReviewItem.setUnit("pcs");
+                requesterReviewItem.setUnit(RequestItemUnit.PIECES);
                 requesterReviewItem.setDescription("Monthly dev allowance");
 
                 seedMockRequest(
@@ -316,13 +317,13 @@ public class DatabaseSeeder implements ApplicationRunner {
                 RequestItem chairsItem = new RequestItem();
                 chairsItem.setName("Ergonomic Chairs");
                 chairsItem.setQuantity(5);
-                chairsItem.setUnit("pcs");
+                chairsItem.setUnit(RequestItemUnit.PIECES);
                 chairsItem.setDescription("Mesh backing, fully adjustable");
 
                 RequestItem desksItem = new RequestItem();
                 desksItem.setName("Standing Desk Converters");
                 desksItem.setQuantity(3);
-                desksItem.setUnit("pcs");
+                desksItem.setUnit(RequestItemUnit.PIECES);
                 desksItem.setDescription("Dual monitor support");
 
                 seedMockRequest(
@@ -343,7 +344,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                 RequestItem licensesItem = new RequestItem();
                 licensesItem.setName("IntelliJ IDEA Ultimate License");
                 licensesItem.setQuantity(15);
-                licensesItem.setUnit("licenses");
+                licensesItem.setUnit(RequestItemUnit.PIECES);
                 licensesItem.setDescription("Annual corporate subscription");
 
                 seedMockRequest(
@@ -364,7 +365,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                 RequestItem finishedItem = new RequestItem();
                 finishedItem.setName("GitKraken Pro License Pack");
                 finishedItem.setQuantity(1);
-                finishedItem.setUnit("pack");
+                finishedItem.setUnit(RequestItemUnit.BOXES);
                 finishedItem.setDescription("10 licenses annual subscription");
 
                 seedMockRequest(

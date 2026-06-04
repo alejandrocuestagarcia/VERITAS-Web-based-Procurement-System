@@ -266,7 +266,9 @@
                 <div class="w-48">
                   <app-shared-form-field label="Unit" [required]="true">
                     <mat-form-field appearance="outline" class="w-full">
-                      <input matInput formControlName="unit" placeholder="e.g. pcs, kg, box">
+                      <mat-select formControlName="unit" placeholder="Select unit">
+                        <mat-option *ngFor="let unit of unitOptions" [value]="unit.value">{{ unit.label }}</mat-option>
+                      </mat-select>
                       <mat-error *ngIf="item.get('unit')?.hasError('required')">Unit is required</mat-error>
                     </mat-form-field>
                   </app-shared-form-field>

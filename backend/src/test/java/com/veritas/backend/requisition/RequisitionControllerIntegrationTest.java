@@ -225,7 +225,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 "Need new monitors",
                 projectId, workflowId,
                 Priority.HIGH,
-                List.of(new RequisitionItemCreateDto("Monitor", 2, "pcs", "27-inch")));
+                List.of(new RequisitionItemCreateDto("Monitor", 2, RequestItemUnit.PIECES, "27-inch")));
     }
 
 
@@ -254,9 +254,9 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         RequisitionCreateDto dto = new RequisitionCreateDto(
                 "Bulk Order", "Multiple items", projectId, workflowId, Priority.MEDIUM,
                 List.of(
-                        new RequisitionItemCreateDto("Laptop", 5, "pcs", "16-inch"),
-                        new RequisitionItemCreateDto("Mouse", 10, "pcs", "Wireless"),
-                        new RequisitionItemCreateDto("Cable", 20, "m", "USB-C")));
+                        new RequisitionItemCreateDto("Laptop", 5, RequestItemUnit.PIECES, "16-inch"),
+                        new RequisitionItemCreateDto("Mouse", 10, RequestItemUnit.PIECES, "Wireless"),
+                        new RequisitionItemCreateDto("Cable", 20, RequestItemUnit.KG, "USB-C")));
 
         mockMvc.perform(post("/api/v1/requisitions")
                         .header("Authorization", "Bearer " + requesterToken)
@@ -328,7 +328,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     void RequisitionCreation_BlankRequestName_ReturnsBadRequest() throws Exception {
         RequisitionCreateDto dto = new RequisitionCreateDto(
                 "", "desc", projectId, workflowId, Priority.HIGH,
-                List.of(new RequisitionItemCreateDto("Item", 1, "pcs", null)));
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
 
         mockMvc.perform(post("/api/v1/requisitions")
                         .header("Authorization", "Bearer " + requesterToken)
@@ -344,7 +344,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     void RequisitionCreation_NullRequiredFields_ReturnsBadRequest() throws Exception {
         RequisitionCreateDto dto = new RequisitionCreateDto(
                 "Valid Name", "desc", null, null, null,
-                List.of(new RequisitionItemCreateDto("Item", 1, "pcs", null)));
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
 
         mockMvc.perform(post("/api/v1/requisitions")
                         .header("Authorization", "Bearer " + requesterToken)
@@ -375,7 +375,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     void RequisitionCreation_InvalidItemFields_ReturnsBadRequest() throws Exception {
         RequisitionCreateDto dto = new RequisitionCreateDto(
                 "Valid Name", "desc", projectId, workflowId, Priority.HIGH,
-                List.of(new RequisitionItemCreateDto("", -1, "", null)));
+                                List.of(new RequisitionItemCreateDto("", -1, null, null)));
 
         mockMvc.perform(post("/api/v1/requisitions")
                         .header("Authorization", "Bearer " + requesterToken)
@@ -1086,3 +1086,4 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                                             "Cannot delete an invoice that has already been paid.")));
     }
 }
+
