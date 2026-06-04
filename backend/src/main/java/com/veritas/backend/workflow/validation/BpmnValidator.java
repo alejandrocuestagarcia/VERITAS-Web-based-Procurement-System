@@ -576,9 +576,12 @@ public class BpmnValidator {
                         .count();
                 long flowsWithoutCondition = outgoing.size() - flowsWithCondition;
 
-                if (flowsWithoutCondition > 1) {
+                if (flowsWithoutCondition == 0) {
+                    result.addError("XOR Gateway '" + gatewayLabel + "' has no default fallback transition. "
+                            + "Exactly one default (unconditional) transition is required to act as a fallback when all other conditions are false");
+                } else if (flowsWithoutCondition > 1) {
                     result.addError("XOR Gateway '" + gatewayLabel + "' has " + flowsWithoutCondition
-                            + " outgoing transitions without conditions. At most one default (unconditional) transition is allowed");
+                            + " outgoing transitions without conditions. Exactly one default (unconditional) transition is required to act as a fallback");
                 }
             }
         }

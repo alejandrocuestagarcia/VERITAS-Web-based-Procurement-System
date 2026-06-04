@@ -671,7 +671,46 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("without conditions"));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("outgoing transitions without conditions"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_XorSplitAllConditional_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"XOR All Conditional\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\" />\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\" />\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\" />\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${totalQuantity > 100}</bpmn:conditionExpression>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${totalQuantity &lt;= 100}</bpmn:conditionExpression>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("has no default fallback transition"));
         }
 
         // ========================================================================
