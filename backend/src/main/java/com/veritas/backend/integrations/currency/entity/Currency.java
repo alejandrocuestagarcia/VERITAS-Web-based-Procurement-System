@@ -1,4 +1,4 @@
-package com.veritas.backend.vendor.entity;
+package com.veritas.backend.integrations.currency.entity;
 
 public enum Currency {
     EUR,

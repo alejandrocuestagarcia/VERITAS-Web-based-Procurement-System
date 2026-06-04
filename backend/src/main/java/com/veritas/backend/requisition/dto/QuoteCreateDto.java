@@ -2,7 +2,8 @@ package com.veritas.backend.requisition.dto;
 
 import java.math.BigDecimal;
 import java.util.List;
-import com.veritas.backend.vendor.entity.Currency;
+
+import com.veritas.backend.integrations.currency.entity.Currency;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

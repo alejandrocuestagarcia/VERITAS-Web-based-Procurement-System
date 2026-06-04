@@ -2,8 +2,9 @@ package com.veritas.backend.requisition.dto;
 
 import java.math.BigDecimal;
 import java.util.List;
+
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.vendor.dto.VendorDto;
-import com.veritas.backend.vendor.entity.Currency;
 
 public record QuoteDto(
     Long quoteId,
