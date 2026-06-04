@@ -1,9 +1,9 @@
 package com.veritas.backend.requisition;
 
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
 import com.veritas.backend.requisition.dto.QuoteLineItemCreateDto;
-import com.veritas.backend.requisition.dto.QuoteLineItemDto;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
@@ -11,7 +11,6 @@ import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
-import com.veritas.backend.vendor.entity.Currency;
 import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.QuoteLineItem;
 import com.veritas.backend.vendor.entity.Vendor;

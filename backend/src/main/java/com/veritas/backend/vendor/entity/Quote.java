@@ -1,5 +1,6 @@
 package com.veritas.backend.vendor.entity;
 
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.entity.Request;
 import jakarta.persistence.*;
 import lombok.Data;

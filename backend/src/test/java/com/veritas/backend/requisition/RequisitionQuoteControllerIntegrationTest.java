@@ -2,10 +2,11 @@ package com.veritas.backend.requisition;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
 import com.veritas.backend.requisition.service.RequisitionQuoteService;
-import com.veritas.backend.vendor.entity.Currency;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
