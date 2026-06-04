@@ -406,15 +406,15 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
-        if (request.getState() != RequestStatus.DRAFT) {
-            throw new WorkflowStateException("Only requests in Draft can be cancelled");
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Finished requests cannot be cancelled");
         }
 
-        if (request.getCurrentStepID() != null && !canAct(id, actor)) {
-            throw new AccessDeniedException("Not allowed to access this request");
+        if (request.getState() != RequestStatus.DRAFT && !canAct(id, actor)) {
+            throw new WorkflowStateException("Only requests in Draft or where the current step is assigned to you can be cancelled");
         }
 
-        if(actor.getRole()!= UserRole.REQUESTER || !actor.getId().equals(request.getUserID().getId()) ) {
+        if (actor.getRole() != UserRole.REQUESTER || !actor.getId().equals(request.getUserID().getId())) {
             throw new AccessDeniedException("Only the creator of the request can cancel it");
         }
 
