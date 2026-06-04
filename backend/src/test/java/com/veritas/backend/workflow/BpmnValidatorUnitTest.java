@@ -987,7 +987,7 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("nonExistentField") && e.contains("not an allowed branching field"));
+                                e -> e.contains("nonExistentField") && e.contains("not an allowed field"));
         }
 
         // AI-GENERATED
@@ -1072,7 +1072,7 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("team.department.id") && e.contains("not an allowed branching field"));
+                                e -> e.contains("team.department.id") && e.contains("not an allowed field"));
         }
 
         // AI-GENERATED
@@ -1117,7 +1117,7 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("amount") && e.contains("not an allowed branching field"));
+                                e -> e.contains("amount") && e.contains("not an allowed field"));
         }
 
         // AI-GENERATED
@@ -1162,7 +1162,7 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("user.name") && e.contains("not an allowed branching field"));
+                                e -> e.contains("user.name") && e.contains("not an allowed field"));
         }
 
         // AI-GENERATED
@@ -1439,7 +1439,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("references property 'unknownProperty' which is not an allowed branching field"));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("references property 'unknownProperty' which is not an allowed field"));
         }
 
         // AI-GENERATED

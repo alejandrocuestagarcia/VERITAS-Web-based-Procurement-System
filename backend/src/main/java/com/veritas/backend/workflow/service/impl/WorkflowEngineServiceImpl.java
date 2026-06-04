@@ -42,6 +42,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,7 +93,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         checkAuthorization(request, actor, currentStep);
 
-        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
+        List<WorkflowTransition> transitions = getPrioritizedTransitions(currentStep);
 
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request, transition)) {
@@ -450,8 +451,20 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         return resolveNextStep(request, currentStep);
     }
 
+    private List<WorkflowTransition> getPrioritizedTransitions(WorkflowStep step) {
+        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(step);
+        if (transitions == null) {
+            return List.of();
+        }
+        return transitions.stream()
+                .sorted(Comparator.comparing(
+                        t -> t.getConditionExpression() == null || t.getConditionExpression().isEmpty()
+                ))
+                .toList();
+    }
+
     private WorkflowStep resolveNextStep(Request request, WorkflowStep currentStep) {
-        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
+        List<WorkflowTransition> transitions = getPrioritizedTransitions(currentStep);
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request, transition)) {
                 WorkflowStep toStep = transition.getToStep();
