@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition;
 
+import static com.veritas.backend.common.model.AuditActionConstants.CANCEL;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -1546,7 +1547,7 @@ class RequisitionServiceUnitTest {
         request.setCurrentStepID(step);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
-        org.mockito.Mockito.doThrow(new AccessDeniedException("Forbidden")).when(workflowEngineService)
+        doThrow(new AccessDeniedException("Forbidden")).when(workflowEngineService)
                 .checkAuthorization(eq(request), eq(testUser), eq(step));
 
         RequisitionRejectDto dto = new RequisitionRejectDto();
@@ -1581,6 +1582,126 @@ class RequisitionServiceUnitTest {
         assertEquals("Reason", request.getRejectionReason());
         assertNotNull(request.getDeletedAt());
         verify(requestRepository).save(request);
+    }
+
+    // AI-Generated
+    @Test
+    void CancelRequest_FinishedState_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.FINISHED);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.cancelRequest(1L, testUser));
+    }
+
+    // AI-Generated
+    @Test
+    void CancelRequest_NotDraftAndCannotAct_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        WorkflowStep step = new WorkflowStep();
+        step.setId(10L);
+        request.setCurrentStepID(step);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        doThrow(new AccessDeniedException("Forbidden")).when(workflowEngineService)
+                .checkAuthorization(eq(request), eq(testUser), eq(step));
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.cancelRequest(1L, testUser));
+    }
+
+    // AI-Generated
+    @Test
+    void CancelRequest_NotCreator_ThrowsAccessDeniedException() {
+        User anotherUser = new User();
+        anotherUser.setId(999L);
+        anotherUser.setRole(UserRole.REQUESTER);
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(anotherUser);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        testUser.setRole(UserRole.REQUESTER);
+        assertThrows(AccessDeniedException.class, () -> requisitionService.cancelRequest(1L, testUser));
+    }
+
+    // AI-Generated
+    @Test
+    void CancelRequest_NotRequesterRole_ThrowsAccessDeniedException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        testUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        assertThrows(AccessDeniedException.class, () -> requisitionService.cancelRequest(1L, testUser));
+    }
+
+    // AI-Generated
+    @Test
+    void CancelRequest_DraftAndCreator_Succeeds() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUserID(testUser);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        testUser.setRole(UserRole.REQUESTER);
+        RequisitionDto result = requisitionService.cancelRequest(1L, testUser);
+
+        assertAll("Cancel draft request validation",
+                () -> assertNotNull(result),
+                () -> assertEquals(expectedDto, result),
+                () -> assertEquals(RequestStatus.FINISHED, request.getState()),
+                () -> assertNotNull(request.getDeletedAt())
+        );
+
+        verify(requestRepository).save(request);
+        verify(auditService).createWorkflowTransitionLog(
+                eq(testUser), eq(request), eq(null), eq(CANCEL), any(String.class)
+        );
+    }
+
+    // AI-Generated
+    @Test
+    void CancelRequest_ActiveAndCanActAndCreator_Succeeds() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUserID(testUser);
+        WorkflowStep step = new WorkflowStep();
+        step.setId(10L);
+        request.setCurrentStepID(step);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        testUser.setRole(UserRole.REQUESTER);
+        RequisitionDto result = requisitionService.cancelRequest(1L, testUser);
+
+        assertAll("Cancel active request validation",
+                () -> assertNotNull(result),
+                () -> assertEquals(expectedDto, result),
+                () -> assertEquals(RequestStatus.FINISHED, request.getState()),
+                () -> assertNotNull(request.getDeletedAt())
+        );
+
+        verify(requestRepository).save(request);
+        verify(auditService).createWorkflowTransitionLog(
+                eq(testUser), eq(request), eq(null), eq(CANCEL), any(String.class)
+        );
     }
 
 }

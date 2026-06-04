@@ -53,7 +53,11 @@
             Edit
           </button>
           <div *ngIf="canAct && request.state !== 'DRAFT'" class="flex items-center gap-2" >
-            <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+            <button *ngIf="isRequester()" (click)="cancelRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">close</mat-icon>
+              Cancel
+            </button>
+            <button *ngIf="!isRequester()" (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">close</mat-icon>
               Reject
             </button>
