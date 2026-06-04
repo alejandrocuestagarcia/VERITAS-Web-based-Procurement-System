@@ -23,4 +23,7 @@ public class TransitionRule {
     private Boolean isPdfRequired = false;
     private Boolean isCsvRequired = false;
     private Boolean isImageRequired = false;
+
+    @Column(name = "advanced_rule")
+    private String advancedRule;
 }

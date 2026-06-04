@@ -585,4 +585,45 @@ class WorkflowEngineServiceUnitTest {
 
         assertDoesNotThrow(() -> workflowEngineService.checkAuthorization(testRequest, testActor, currentStep));
     }
+
+    @Test
+    void moveToNextStep_AdvancedRuleEvaluatesToTrue_Success() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        TransitionRule rule = new TransitionRule();
+        rule.setAdvancedRule("totalQuantity < 10");
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        testRequest.setTotalQuantity(5);
+
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    @Test
+    void moveToNextStep_AdvancedRuleEvaluatesToFalse_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        TransitionRule rule = new TransitionRule();
+        rule.setAdvancedRule("totalQuantity < 10");
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        testRequest.setTotalQuantity(15);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertTrue(ex.getMessage().contains("Advanced validation rule failed: totalQuantity < 10"));
+    }
+
+    @Test
+    void moveToNextStep_AdvancedRuleEvaluationError_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        TransitionRule rule = new TransitionRule();
+        rule.setAdvancedRule("invalidSpelConstruct");
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertTrue(ex.getMessage().contains("Advanced validation rule failed: invalidSpelConstruct"));
+    }
 }

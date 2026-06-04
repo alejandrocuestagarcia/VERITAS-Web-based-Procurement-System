@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
 import org.camunda.bpm.model.bpmn.instance.Process;
+import org.springframework.expression.EvaluationException;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.ast.CompoundExpression;
@@ -661,44 +662,50 @@ public class BpmnValidator {
             String cleanCondition = rawText.replace("${", "").replace("}", "").trim();
             if (cleanCondition.isEmpty()) continue;
 
-            // Security: check for unsafe SpEL constructs
-            if (UNSAFE_SPEL_PATTERN.matcher(cleanCondition).find()) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
-                        + "' contains potentially unsafe expressions (method calls, type references, or bean access are not allowed)");
-                log.warn("Unsafe SpEL detected on transition from {}: {}", getNodeName(flow.getSource()), cleanCondition);
-                continue;
-            }
-
-            // Syntax: try to parse the SpEL expression
-            SpelExpression parsedExpression;
-            try {
-                parsedExpression = (SpelExpression) spelParser.parseExpression(cleanCondition);
-            } catch (ParseException e) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
-                        + "' has invalid syntax: " + e.getMessage());
-                log.warn("Failed to parse SpEL condition on transition from {}: {}", getNodeName(flow.getSource()), e.getMessage());
-                continue;
-            }
-
-            // Semantic: check that referenced properties are known
-            validateExpressionProperties(parsedExpression, flow, result);
-
-            // Type check: check that expression evaluates to a boolean
-            try {
-                EvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
-                Object value = parsedExpression.getValue(evalContext, WorkflowBranchingContext.createDummyContext());
-                if (!(value instanceof Boolean)) {
-                    result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
-                            + "' must evaluate to a boolean, but returned type: " + (value == null ? "null" : value.getClass().getSimpleName()));
-                }
-            } catch (Exception e) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
-                        + "' failed to evaluate: " + e.getMessage());
-            }
+            validateSpelExpression(cleanCondition, flow.getSource(), flow.getTarget(), result, "Condition");
         }
     }
 
-    private void validateExpressionProperties(SpelExpression expression, SequenceFlow flow, BpmnValidationResult result) {
+    private void validateSpelExpression(String cleanExpression, FlowNode source, FlowNode target, BpmnValidationResult result, String contextDesc) {
+        if (cleanExpression == null || cleanExpression.isBlank()) return;
+
+        // Security: check for unsafe SpEL constructs
+        if (UNSAFE_SPEL_PATTERN.matcher(cleanExpression).find()) {
+            result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                    + "' contains potentially unsafe expressions (method calls, type references, or bean access are not allowed)");
+            log.warn("Unsafe SpEL detected on transition from {}: {}", getNodeName(source), cleanExpression);
+            return;
+        }
+
+        // Syntax: try to parse the SpEL expression
+        SpelExpression parsedExpression;
+        try {
+            parsedExpression = (SpelExpression) spelParser.parseExpression(cleanExpression);
+        } catch (ParseException e) {
+            result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                    + "' has invalid syntax: " + e.getMessage());
+            log.warn("Failed to parse SpEL condition on transition from {}: {}", getNodeName(source), e.getMessage());
+            return;
+        }
+
+        // Semantic: check that referenced properties are known
+        validateExpressionProperties(parsedExpression, source, target, result, contextDesc);
+
+        // Type check: check that expression evaluates to a boolean
+        try {
+            EvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+            Object value = parsedExpression.getValue(evalContext, WorkflowBranchingContext.createDummyContext());
+            if (!(value instanceof Boolean)) {
+                result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                        + "' must evaluate to a boolean, but returned type: " + (value == null ? "null" : value.getClass().getSimpleName()));
+            }
+        } catch (EvaluationException e) {
+            result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                    + "' failed to evaluate: '" + cleanExpression + "'");
+        }
+    }
+
+    private void validateExpressionProperties(SpelExpression expression, FlowNode source, FlowNode target, BpmnValidationResult result, String contextDesc) {
         List<String> paths = new ArrayList<>();
         SpelNode ast = expression.getAST();
         if (ast != null) {
@@ -707,8 +714,8 @@ public class BpmnValidator {
 
         for (String path : paths) {
             if (!ALLOWED_BRANCHING_PATHS.contains(path.toLowerCase())) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget()) + "' references property '"
-                        + path + "' which is not an allowed branching field");
+                result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target) + "' references property '"
+                        + path + "' which is not an allowed field");
             }
         }
     }
@@ -790,6 +797,10 @@ public class BpmnValidator {
                             result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
                                     + "' has non-numeric minRequiredVendors: '" + minVendors + "'");
                         }
+                    }
+                    String advancedRule = child.getAttribute("advancedRule");
+                    if (advancedRule != null && !advancedRule.isBlank()) {
+                        validateSpelExpression(advancedRule, flow.getSource(), flow.getTarget(), result, "Advanced rule");
                     }
                 }
             });

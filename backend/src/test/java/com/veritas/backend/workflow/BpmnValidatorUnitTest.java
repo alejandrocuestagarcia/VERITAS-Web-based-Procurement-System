@@ -1372,6 +1372,86 @@ class BpmnValidatorUnitTest {
                 assertThat(ex.getErrors()).anyMatch(e -> e.contains("Transition rules cannot be added on the last transition entering the End Event"));
         }
 
+        // AI-GENERATED
+        private String getXmlWithAdvancedRule(String advancedRule) {
+                return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:veritas=\"http://veritas\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Advanced Rule Test\" isExecutable=\"true\">\n" +
+                                "    <bpmn:documentation>Test workflow</bpmn:documentation>\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Submit Details\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]REQUESTER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n"
+                                +
+                                "      <bpmn:extensionElements>\n" +
+                                "        <veritas:transitionRule advancedRule=\"" + advancedRule + "\" />\n" +
+                                "      </bpmn:extensionElements>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleValid_NoErrors() {
+                String xml = getXmlWithAdvancedRule("selectedQuoteTotalAmount &lt; 5000");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationResult result = validator.validate(xml, model);
+                assertThat(result.hasErrors()).isFalse();
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithUnsafeSpel_Error() {
+                String xml = getXmlWithAdvancedRule("T(java.lang.Runtime).getRuntime().exec('rm -rf /')");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("contains potentially unsafe expressions"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithInvalidSyntax_Error() {
+                String xml = getXmlWithAdvancedRule("&gt;&gt;&gt; invalid");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("has invalid syntax"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithInvalidProperty_Error() {
+                String xml = getXmlWithAdvancedRule("unknownProperty == 'test'");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("references property 'unknownProperty' which is not an allowed branching field"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithNonBooleanType_Error() {
+                String xml = getXmlWithAdvancedRule("'non-boolean'");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must evaluate to a boolean, but returned type: String"));
+        }
+
         // ========================================================================
         // Size limit tests
         // ========================================================================

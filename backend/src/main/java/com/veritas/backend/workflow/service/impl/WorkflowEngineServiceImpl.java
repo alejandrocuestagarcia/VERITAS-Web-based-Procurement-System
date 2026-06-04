@@ -194,6 +194,20 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         validationErrors.add("Missing required attachments: " + String.join(", ", missingAttachments));
                     }
 
+                    if (rule.getAdvancedRule() != null && !rule.getAdvancedRule().isBlank()) {
+                        try {
+                            ExpressionParser parser = new SpelExpressionParser();
+                            EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+                            Boolean isValid = parser.parseExpression(rule.getAdvancedRule())
+                                    .getValue(context, new WorkflowBranchingContext(request), Boolean.class);
+                            if (Boolean.FALSE.equals(isValid)) {
+                                validationErrors.add("Advanced validation rule failed: " + rule.getAdvancedRule());
+                            }
+                        } catch (ExpressionException e) {
+                            validationErrors.add("Advanced validation rule failed: " + rule.getAdvancedRule());
+                        }
+                    }
+
                     if (!validationErrors.isEmpty()) {
                         throw new WorkflowStateException(buildRuleFailureMessage(validationErrors));
                     }
