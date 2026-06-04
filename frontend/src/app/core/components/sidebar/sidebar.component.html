@@ -1,24 +1,63 @@
-<nav class="w-[260px] h-screen flex flex-col p-4 fixed left-0 top-0
-            border-r border-border-ghost z-[1000] v-glass-panel">
+<!-- AI-REFACTORED -->
 
-  <!-- Logo -->
+<div class="lg:hidden fixed top-0 left-0 right-0 h-14 z-[1000]
+            flex items-center px-4 border-b border-border-ghost bg-slate-100">
+  <button
+    (click)="toggleMenu()"
+    class="flex flex-col justify-center items-center w-9 h-9 rounded-lg
+           cursor-pointer transition-colors duration-200 hover:bg-surface-highest
+           bg-transparent border-0 gap-1.5">
+    <span class="block w-5 h-0.5 bg-on-surface transition-all duration-300"
+          [class.rotate-45]="isOpen" [class.translate-y-2]="isOpen"></span>
+    <span class="block w-5 h-0.5 bg-on-surface transition-all duration-300"
+          [class.opacity-0]="isOpen" [class.scale-x-0]="isOpen"></span>
+    <span class="block w-5 h-0.5 bg-on-surface transition-all duration-300"
+          [class.-rotate-45]="isOpen" [class.-translate-y-2]="isOpen"></span>
+  </button>
+
+  <span class="font-manrope font-extrabold text-xl text-veritas-dark ml-3">
+    VERITAS
+  </span>
+</div>
+
+<div
+  *ngIf="isOpen"
+  (click)="closeMenu()"
+  class="lg:hidden fixed inset-0 bg-black/40 z-[1001] backdrop-blur-sm transition-opacity duration-300">
+</div>
+
+<nav class="w-[260px] h-screen flex flex-col p-4 fixed left-0 top-0
+            border-r border-border-ghost z-[1002] v-glass-panel
+            transition-transform duration-300 ease-in-out
+            -translate-x-full lg:translate-x-0
+            bg-surface lg:v-glass-panel"
+     [class.translate-x-0]="isOpen"
+     [class.-translate-x-full]="!isOpen">
+
   <span class="font-manrope font-extrabold text-3xl text-veritas-dark mb-10 pl-4 block">
     VERITAS
   </span>
 
-  <!-- New Requisition button -->
+  <button
+    (click)="closeMenu()"
+    class="lg:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center
+           rounded-lg hover:bg-surface-highest bg-transparent border-0 cursor-pointer">
+    <mat-icon class="text-on-surface text-lg">close</mat-icon>
+  </button>
+
   <div class="flex pb-6" *ngIf="authService.hasRole('REQUESTER')">
-    <button routerLink="/requisitions/create" mat-flat-button class="v-btn-brand w-full">
+    <button routerLink="/requisitions/create" mat-flat-button class="v-btn-brand w-full"
+            (click)="closeMenu()">
       <mat-icon>add</mat-icon>
       <span>New Requisition</span>
     </button>
   </div>
 
-  <!-- Nav links -->
   <div class="flex-1">
     <a *ngFor="let item of navLinks"
        [routerLink]="item.route"
        routerLinkActive="v-active-link"
+       (click)="closeMenu()"
        class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
               text-on-surface cursor-pointer transition-colors duration-200
               hover:bg-surface-highest no-underline">
@@ -27,7 +66,6 @@
     </a>
   </div>
 
-  <!-- Logout -->
   <button (click)="onLogout()"
           class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
                  text-on-surface cursor-pointer transition-colors duration-200
@@ -35,5 +73,4 @@
     <mat-icon class="mr-4 w-5 h-5 opacity-60">logout</mat-icon>
     <span>Logout</span>
   </button>
-
 </nav>
