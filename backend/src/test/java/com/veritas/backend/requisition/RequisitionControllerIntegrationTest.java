@@ -552,7 +552,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Soft Delete Test Rejection");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
+        request.setProject(project);
         request = requestRepository.save(request);
 
         RequisitionRejectDto rejectDto = new RequisitionRejectDto();
@@ -799,7 +799,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Revert Paid Request");
         request.setState(RequestStatus.ACTIVE);
-        request.setProjectID(project);
+        request.setProject(project);
         request = requestRepository.save(request);
 
         Invoice invoice = new Invoice();
@@ -1192,8 +1192,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Revision Required Test");
         request.setState(RequestStatus.ACTIVE);
-        request.setWorkflowDefinitionID(workflow);
-        request.setCurrentStepID(stepOne);
+        request.setWorkflowDefinition(workflow);
+        request.setCurrentStep(stepOne);
         request = requestRepository.save(request);
 
         AuditLog log = new AuditLog().builder()
@@ -1232,12 +1232,12 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Request request = new Request();
         request.setRequestName("Original Name");
         request.setState(RequestStatus.DRAFT);
-        request.setWorkflowDefinitionID(workflow);
-        request.setCurrentStepID(startStep);
-        request.setProjectID(project);
+        request.setWorkflowDefinition(workflow);
+        request.setCurrentStep(startStep);
+        request.setProject(project);
         request.setItems(new java.util.ArrayList<>());
         request.setRevisionRequired(true);
-        request.setUserID(owner); // Owner
+        request.setUser(owner); // Owner
         request = requestRepository.save(request);
 
         RequisitionUpdateDto updateDto = new RequisitionUpdateDto(
