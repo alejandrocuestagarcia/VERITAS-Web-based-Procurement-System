@@ -10,6 +10,8 @@ import org.mapstruct.Mapping;
 public interface ProjectMapper {
     @Mapping(source = "team.name", target = "teamName")
     @Mapping(source = "team.teamId", target = "teamId")
+    @Mapping(source = "team.department.name", target = "departmentName")
+    @Mapping(source = "team.department.departmentId", target = "departmentId")
     @Mapping(source = "internalBudget.totalAmount", target = "budget")
     @Mapping(source = "internalBudget.committedSpend", target = "committedSpend")
     @Mapping(source = "internalBudget.actualSpend", target = "actualSpend")
