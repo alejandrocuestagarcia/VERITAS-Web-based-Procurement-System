@@ -121,7 +121,7 @@
                     <mat-select formControlName="requestItemId" placeholder="No direct link">
                       <mat-option [value]="null">No direct link</mat-option>
                       <mat-option *ngFor="let reqItem of requisition?.items" [value]="reqItem.id">
-                        {{ reqItem.name }} (Qty: {{ reqItem.quantity }} {{ reqItem.unit }})
+                        {{ reqItem.name }} (Qty: {{ reqItem.quantity }} {{ reqItem.unit | titlecase }})
                       </mat-option>
                     </mat-select>
                   </mat-form-field>

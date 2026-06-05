@@ -23,6 +23,7 @@ import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
+import com.veritas.backend.requisition.entity.RequestItemUnit;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.workflow.entity.WorkflowStep;
@@ -317,7 +318,7 @@ public class JiraSyncServiceUnitTest {
         RequestItem item1 = new RequestItem();
         item1.setName("Notebooks");
         item1.setQuantity(10);
-        item1.setUnit("pcs");
+        item1.setUnit(RequestItemUnit.PIECES);
         items.add(item1);
         request.setItems(items);
 
