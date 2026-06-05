@@ -23,10 +23,10 @@ public class CurrencyController {
 
     private final CurrencyConversionService currencyConversionService;
 
-    @Operation(summary = "Convert amount", description = "Converts amount from EUR to target currency using stored rates")
+    @Operation(summary = "Convert amount", description = "Converts amount from source currency to EUR using stored rates")
     @IsRequester
     @GetMapping(path = "/convert", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CurrencyConversionResponseDto> convert(@RequestParam BigDecimal amount, @RequestParam String toCurrency) {
-        return ResponseEntity.ok(currencyConversionService.convert(amount, toCurrency));
+    public ResponseEntity<CurrencyConversionResponseDto> convert(@RequestParam BigDecimal amount, @RequestParam String sourceCurrency) {
+        return ResponseEntity.ok(currencyConversionService.convert(amount, sourceCurrency));
     }
 }

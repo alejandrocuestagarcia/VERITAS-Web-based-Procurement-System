@@ -18,11 +18,11 @@ public class ExchangeRateScheduler {
 
     @EventListener(ApplicationReadyEvent.class)
     public void runInitialSync() {
-        log.info("Running initial exchange-rate sync on application startup.");
+        log.info("Running initial exchange-rate sync on application startup");
         executeExchangeRateSync();
     }
 
-    @Scheduled(fixedDelayString = "${currency.scheduler-interval-ms:600000}", initialDelay = 10000)
+    @Scheduled(fixedDelayString = "${currency.scheduler-interval-ms:3600000}", initialDelay = 10000)
     public void runScheduledSync() {
         executeExchangeRateSync();
     }

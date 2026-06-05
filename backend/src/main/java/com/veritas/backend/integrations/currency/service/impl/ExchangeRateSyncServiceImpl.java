@@ -87,7 +87,7 @@ public class ExchangeRateSyncServiceImpl implements ExchangeRateSyncService {
         for (String targetCurrency : targetCurrencies) {
             BigDecimal rate = result.rates().get(targetCurrency);
             if (rate == null) {
-                log.warn("Rate missing for target currency {} from source {}.", targetCurrency, result.source());
+                log.warn("Rate missing for target currency {} from source {}", targetCurrency, result.source());
                 continue;
             }
 
@@ -100,12 +100,12 @@ public class ExchangeRateSyncServiceImpl implements ExchangeRateSyncService {
         }
 
         if (entities.isEmpty()) {
-            log.error("No rates were persisted because provider payload had no usable target currencies.");
+            log.error("No rates were persisted because provider payload had no usable target currencies");
             return;
         }
 
         exchangeRateRepository.saveAll(entities);
-        log.info("Saved {} exchange rates using source {} at {}.", entities.size(), result.source(), fetchedAt);
+        log.info("Saved {} exchange rates using source {} at {}", entities.size(), result.source(), fetchedAt);
     }
 
     private Optional<FetchResult> fetchFromFrankfurterApi(List<String> targetCurrencies) {

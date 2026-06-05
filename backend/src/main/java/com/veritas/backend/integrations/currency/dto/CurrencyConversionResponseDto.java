@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public record CurrencyConversionResponseDto (
     BigDecimal amount,
-    String toCurrency,
+    String sourceCurrency,
     BigDecimal convertedAmount,
     BigDecimal appliedRate,
     LocalDateTime rateFetchedAt

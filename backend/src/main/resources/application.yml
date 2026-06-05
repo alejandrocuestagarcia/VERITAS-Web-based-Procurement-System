@@ -62,6 +62,6 @@ app:
 currency:
   primary-url: https://api.frankfurter.dev/v2/rates
   secondary-url: https://v6.exchangerate-api.com/v6
-  secondary-api-key: api-key
+  secondary-api-key: ${EXCHANGE_RATE_API_KEY:}
   target-currencies: USD,GBP,CHF,JPY
-  scheduler-interval-ms: 600000
+  scheduler-interval-ms: 3600000 # = 60 minutes
