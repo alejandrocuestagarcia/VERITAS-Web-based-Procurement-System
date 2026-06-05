@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 
 import com.veritas.backend.workflow.entity.WorkflowTransition;
 
+import java.util.List;
+
 public interface AuditService {
     /**
      * Records a new action. Actor is the User entity performing the action.
@@ -21,4 +23,5 @@ public interface AuditService {
     Page<AuditLogDto> getJiraIssueLogsByActions(java.util.List<String> actions, Pageable pageable, String search);
     void createWorkflowTransitionLog(User actor, Request request, WorkflowTransition transition, String action, String description);
     void createRequisitionChangeLog(User actor, Request request, String details);
+    List<AuditLogDto> getAuditLogsByRequestId(Long requestId);
 }
