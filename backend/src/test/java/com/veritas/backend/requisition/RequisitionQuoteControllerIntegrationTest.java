@@ -44,7 +44,7 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
     void GetQuotesForRequest_AsProcurementOfficer_ReturnsQuotesList() throws Exception {
-        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), false, List.of());
 
         when(requisitionQuoteService.getQuotesForRequest(1L)).thenReturn(List.of(quoteDto));
 
@@ -57,7 +57,7 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "REQUESTER")
     void GetQuotesForRequest_AsRequester_ReturnsQuotesList() throws Exception {
-        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), false, List.of());
 
         when(requisitionQuoteService.getQuotesForRequest(1L)).thenReturn(List.of(quoteDto));
 
@@ -69,7 +69,7 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "PROCUREMENT_OFFICER")
     void GetQuote_AsProcurementOfficer_ReturnsQuote() throws Exception {
-        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100),false, List.of());
 
         when(requisitionQuoteService.getQuoteById(1L, 10L)).thenReturn(quoteDto);
 
@@ -81,7 +81,7 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "REQUESTER")
     void GetQuote_AsRequester_ReturnsQuote() throws Exception {
-        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), false, List.of());
 
         when(requisitionQuoteService.getQuoteById(1L, 10L)).thenReturn(quoteDto);
 
@@ -95,7 +95,7 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     void CreateQuote_AsProcurementOfficer_ReturnsCreated() throws Exception {
         QuoteCreateDto createDto = new QuoteCreateDto(2L, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), List.of());
 
-        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), false, List.of());
 
         when(requisitionQuoteService.createQuoteForRequest(eq(1L), any(QuoteCreateDto.class))).thenReturn(quoteDto);
 
@@ -124,7 +124,7 @@ class RequisitionQuoteControllerIntegrationTest extends BaseDBIntegrationTest {
     void UpdateQuote_AsProcurementOfficer_ReturnsUpdated() throws Exception {
         QuoteCreateDto updateDto = new QuoteCreateDto(2L, Currency.EUR, BigDecimal.valueOf(120), BigDecimal.ZERO, BigDecimal.valueOf(120), List.of());
 
-        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(120), BigDecimal.ZERO, BigDecimal.valueOf(120), false, List.of());
+        QuoteDto quoteDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(120), BigDecimal.ZERO, BigDecimal.valueOf(120), BigDecimal.valueOf(100), false, List.of());
 
         when(requisitionQuoteService.updateQuoteForRequest(eq(1L), eq(10L), any(QuoteCreateDto.class))).thenReturn(quoteDto);
 

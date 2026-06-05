@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { environment } from 'src/environments/environment';
-import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto } from '../../../../core/api';
+import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto, InvoiceCreateDtoCurrencyEnum } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
@@ -20,7 +20,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   submitting = false;
 
   dataSource = new MatTableDataSource<QuoteDto>();
-  displayedColumns = ['vendor', 'currency', 'totalAmount', 'status', 'actions'];
+  displayedColumns = ['vendor', 'currency', 'totalAmount', 'totalAmountEuro', 'status', 'actions'];
 
   isInvoiceDrawerOpen = false;
   isUploadingInvoice = false;
@@ -232,6 +232,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     const invoiceData: InvoiceCreateDto = {
       invoiceNumber: formValue.invoiceNumber,
       totalAmount: formValue.totalAmount,
+      currency: (this.selectedQuote?.currency as unknown as InvoiceCreateDtoCurrencyEnum) || InvoiceCreateDtoCurrencyEnum.Eur,
       dueDate: formValue.dueDate,
       invoiceDate: formValue.invoiceDate || undefined
     };

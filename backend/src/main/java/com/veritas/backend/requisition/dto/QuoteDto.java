@@ -14,6 +14,7 @@ public record QuoteDto(
     BigDecimal baseAmount,
     BigDecimal shippingCosts,
     BigDecimal totalAmount,
+    BigDecimal totalAmountEuro,
     Boolean isSelected,
     List<QuoteLineItemDto> items
 ) {}

@@ -39,6 +39,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -96,12 +98,12 @@ class RequisitionQuoteServiceUnitTest {
         quote.setRequest(request);
 
         List<QuoteLineItem> items = new ArrayList<>();
-        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), false, List.of());
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
-        when(quoteMapper.toDto(quote, items)).thenReturn(expectedDto);
+        when(quoteMapper.toDto(quote, items, BigDecimal.valueOf(100))).thenReturn(expectedDto);
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
@@ -136,12 +138,12 @@ class RequisitionQuoteServiceUnitTest {
         quote.setRequest(request);
 
         List<QuoteLineItem> items = new ArrayList<>();
-        QuoteDto expectedDto = new QuoteDto(quoteId, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), false, List.of());
+        QuoteDto expectedDto = new QuoteDto(quoteId, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), false, List.of());
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(items);
-        when(quoteMapper.toDto(quote, items)).thenReturn(expectedDto);
+        when(quoteMapper.toDto(quote, items, BigDecimal.valueOf(100))).thenReturn(expectedDto);
 
         QuoteDto result = quoteService.getQuoteById(requestId, quoteId);
 
@@ -209,13 +211,13 @@ class RequisitionQuoteServiceUnitTest {
         RequestItem requestItem = new RequestItem();
         requestItem.setId(3L);
 
-        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(10), BigDecimal.valueOf(110), false, List.of());
+        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(10), BigDecimal.valueOf(110), BigDecimal.valueOf(100), false, List.of());
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(vendorRepository.findById(2L)).thenReturn(Optional.of(vendor));
         when(quoteRepository.save(any(Quote.class))).thenReturn(quote);
         when(requestItemRepository.findById(3L)).thenReturn(Optional.of(requestItem));
-        when(quoteMapper.toDto(eq(quote), anyList())).thenReturn(expectedDto);
+        when(quoteMapper.toDto(eq(quote), anyList(), BigDecimal.valueOf(100))).thenReturn(expectedDto);
 
         QuoteDto result = quoteService.createQuoteForRequest(requestId, createDto);
 
@@ -278,14 +280,14 @@ class RequisitionQuoteServiceUnitTest {
         existingItem.setLineItemId(5L);
         existingItem.setQuote(quote);
 
-        QuoteDto expectedDto = new QuoteDto(quoteId, 3L, null, Currency.USD, BigDecimal.valueOf(200), BigDecimal.valueOf(15), BigDecimal.valueOf(215), false, List.of());
+        QuoteDto expectedDto = new QuoteDto(quoteId, 3L, null, Currency.USD, BigDecimal.valueOf(200), BigDecimal.valueOf(15), BigDecimal.valueOf(215), BigDecimal.valueOf(100), false, List.of());
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(vendorRepository.findById(3L)).thenReturn(Optional.of(newVendor));
         when(quoteRepository.save(quote)).thenReturn(quote);
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(List.of(existingItem));
-        when(quoteMapper.toDto(eq(quote), anyList())).thenReturn(expectedDto);
+        when(quoteMapper.toDto(eq(quote), anyList(), BigDecimal.valueOf(100))).thenReturn(expectedDto);
 
         QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
 

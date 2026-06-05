@@ -30,7 +30,8 @@ public class ExchangeRate {
     private Long id;
 
     @Column(name = "target_currency", nullable = false, length = 3)
-    private String targetCurrency;
+    @Enumerated(EnumType.STRING)
+    private Currency targetCurrency;
 
     @Column(name = "rate", nullable = false, precision = 19, scale = 6)
     private BigDecimal rate;

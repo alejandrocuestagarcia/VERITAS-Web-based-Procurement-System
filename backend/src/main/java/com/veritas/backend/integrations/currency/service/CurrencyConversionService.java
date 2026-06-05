@@ -2,8 +2,8 @@ package com.veritas.backend.integrations.currency.service;
 
 import java.math.BigDecimal;
 
-import com.veritas.backend.integrations.currency.dto.CurrencyConversionResponseDto;
+import com.veritas.backend.integrations.currency.entity.Currency;
 
 public interface CurrencyConversionService {
-    CurrencyConversionResponseDto convert(BigDecimal amount, String toCurrency);
+    BigDecimal convert(BigDecimal amount, Currency sourceCurrency);
 }

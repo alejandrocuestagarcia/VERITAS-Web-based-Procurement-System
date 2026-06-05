@@ -2,6 +2,7 @@ package com.veritas.backend.requisition.service.impl;
 
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
@@ -40,6 +41,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final QuoteLineItemRepository quoteLineItemRepository;
     private final RequestItemRepository requestItemRepository;
     private final QuoteMapper quoteMapper;
+    private final CurrencyConversionService currencyConversionService;
 
     @Override
     @Transactional(readOnly = true)
@@ -52,7 +54,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         List<Quote> quotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         
         return quotes.stream()
-            .map(this::mapToDto)
+            .map(this::mapToDtoWithEuro)
             .toList();
     }
 
@@ -71,7 +73,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             throw new EntityNotFoundException("Quote does not belong to this request");
         }
             
-        return mapToDto(quote);
+        return mapToDtoWithEuro(quote);
     }
 
     @Override
@@ -117,7 +119,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             }
         }
         
-        return mapToDto(savedQuote);
+        return mapToDtoWithEuro(savedQuote);
     }
 
     @Override
@@ -172,7 +174,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             }
         }
         
-        return mapToDto(updatedQuote);
+        return mapToDtoWithEuro(updatedQuote);
     }
 
     @Override
@@ -241,9 +243,18 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         }
     }
 
-    private QuoteDto mapToDto(Quote quote) {
+    private QuoteDto mapToDtoWithEuro(Quote quote) {
         List<QuoteLineItem> items = quoteLineItemRepository.findByQuoteQuoteID(quote.getQuoteID());
-        return quoteMapper.toDto(quote, items);
+        BigDecimal totalAmountEuro;
+
+        try {
+            totalAmountEuro = currencyConversionService.convert(quote.getTotalAmount(), quote.getCurrency());
+        } catch (RuntimeException exception) {
+            log.warn("Could not convert quote {} amount {} {} to EUR: {}", quote.getQuoteID(), quote.getTotalAmount(), quote.getCurrency(), exception.getMessage());
+            totalAmountEuro = null;
+        }
+
+        return quoteMapper.toDto(quote, items, totalAmountEuro);
     }
 
     private void canRequesterOrProcurementOfficerAccessRequestDetails(Request request) {

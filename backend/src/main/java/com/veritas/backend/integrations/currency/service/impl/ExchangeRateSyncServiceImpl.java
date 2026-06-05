@@ -23,6 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.veritas.backend.integrations.currency.dto.ExchangeRateApiResponse;
 import com.veritas.backend.integrations.currency.dto.FetchResult;
 import com.veritas.backend.integrations.currency.dto.FrankfurterApiResponse;
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.integrations.currency.entity.ExchangeRate;
 import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.integrations.currency.repository.ExchangeRateRepository;
@@ -91,8 +92,16 @@ public class ExchangeRateSyncServiceImpl implements ExchangeRateSyncService {
                 continue;
             }
 
+            Currency parsedTargetCurrency;
+            try {
+                parsedTargetCurrency = Currency.valueOf(targetCurrency);
+            } catch (IllegalArgumentException exception) {
+                log.warn("Skipping unsupported target currency {} from source {}", targetCurrency, result.source());
+                continue;
+            }
+
             entities.add(ExchangeRate.builder()
-                .targetCurrency(targetCurrency)
+                .targetCurrency(parsedTargetCurrency)
                 .rate(rate)
                 .fetchedAt(fetchedAt)
                 .source(result.source())

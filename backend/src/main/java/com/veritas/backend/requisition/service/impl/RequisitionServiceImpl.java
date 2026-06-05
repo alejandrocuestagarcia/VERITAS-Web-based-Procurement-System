@@ -613,11 +613,8 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     private void addToBudgets(InternalBudget budget, Invoice invoice) {
-
-
         BigDecimal requestCommittedSpent = budget.getCommittedSpend();
         while (budget != null) {
-
             if (invoice.getTotalAmount() == null) {
                 throw new IllegalStateException("Invoice has no Total amount defined");
             }
@@ -627,13 +624,9 @@ public class RequisitionServiceImpl implements RequisitionService {
 
             budget.setCommittedSpend(budget.getCommittedSpend().subtract(requestCommittedSpent));
 
-
             internalBudgetRepository.save(budget);
             budget = budget.getParentBudget();
-
-
         }
-
     }
 
     @Override
@@ -657,6 +650,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         invoice.setInvoiceNumber(createDto.getInvoiceNumber());
         invoice.setInvoiceDate(createDto.getInvoiceDate());
         invoice.setTotalAmount(createDto.getTotalAmount());
+        invoice.setCurrency(createDto.getCurrency());
         invoice.setDueDate(createDto.getDueDate());
         invoice.setIsPaid(false);
 
