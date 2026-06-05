@@ -1105,9 +1105,11 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 ObjectNode dataRow = mapper.createObjectNode();
                 dataRow.put("type", "tableRow");
                 ArrayNode dataCells = mapper.createArrayNode();
+                RequestItemUnit unit = item.getUnit() != null ? item.getUnit() : RequestItemUnit.PIECES;
+                String unitDisplay = unit.name().charAt(0) + unit.name().substring(1).toLowerCase();
                 dataCells.add(createTableCellNode(mapper, "tableCell", item.getName()));
                 dataCells.add(createTableCellNode(mapper, "tableCell", String.valueOf(item.getQuantity())));
-                dataCells.add(createTableCellNode(mapper, "tableCell", (item.getUnit() != null ? item.getUnit() : RequestItemUnit.PIECES).name()));
+                dataCells.add(createTableCellNode(mapper, "tableCell", unitDisplay));
                 dataCells.add(createTableCellNode(mapper, "tableCell", item.getDescription() != null ? item.getDescription() : ""));
                 dataRow.set("content", dataCells);
                 rowsArray.add(dataRow);

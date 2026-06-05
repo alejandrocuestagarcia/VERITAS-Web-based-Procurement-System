@@ -65,8 +65,12 @@ export class RequisitionVendorQuoteViewComponent implements OnInit {
     if (!requestItemId || !this.requisition?.items) {
       return 'No direct link';
     }
+
     const item = this.requisition.items.find(i => i.id === requestItemId);
-    return item ? `${item.name} (Qty: ${item.quantity} ${item.unit})` : 'Linked item not found';
+    if (!item) return 'Linked item not found';
+    
+    const unit = item.unit ? item.unit.charAt(0).toUpperCase() + item.unit.slice(1).toLowerCase() : '';
+    return `${item.name} (Qty: ${item.quantity} ${unit})`;
   }
 
   edit(): void {
