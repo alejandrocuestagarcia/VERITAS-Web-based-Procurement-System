@@ -16,6 +16,7 @@ public record InvoiceDto(
     LocalDate invoiceDate,
     BigDecimal totalAmount,
     Currency currency,
+    BigDecimal totalAmountEuro,
     LocalDate dueDate,
     Boolean isPaid,
     Long vendorId,

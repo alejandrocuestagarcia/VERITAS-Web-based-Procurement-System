@@ -440,6 +440,10 @@
                         <span class="text-sm font-bold text-blue-800">Payment Amount</span>
                         <span class="text-3xl font-black text-blue-900 tracking-tight">
                           {{ (invoice?.totalAmount || selectedQuote?.totalAmount) | currency:selectedQuote?.currency }}
+
+                          <ng-container *ngIf="invoice?.currency !== 'EUR'">
+                            ({{ invoice?.totalAmountEuro | currency:'EUR' }})
+                          </ng-container>
                         </span>
                       </div>
                     </div>

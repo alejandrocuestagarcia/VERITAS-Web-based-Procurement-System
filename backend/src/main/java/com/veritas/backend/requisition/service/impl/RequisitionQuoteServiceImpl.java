@@ -249,7 +249,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         try {
             totalAmountEuro = currencyConversionService.convert(quote.getTotalAmount(), quote.getCurrency());
-        } catch (RuntimeException exception) {
+        } catch (IllegalArgumentException | EntityNotFoundException exception) {
             log.warn("Could not convert quote {} amount {} {} to EUR: {}", quote.getQuoteID(), quote.getTotalAmount(), quote.getCurrency(), exception.getMessage());
             totalAmountEuro = null;
         }
