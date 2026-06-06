@@ -4,6 +4,9 @@ import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.integrations.currency.entity.Currency;
+import com.veritas.backend.integrations.currency.entity.ExchangeRate;
+import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
+import com.veritas.backend.integrations.currency.repository.ExchangeRateRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
@@ -32,6 +35,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,6 +69,9 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private QuoteLineItemRepository quoteLineItemRepository;
+
+    @Autowired
+    private ExchangeRateRepository exchangeRateRepository;
 
     private Request request;
     private Vendor vendor;
@@ -100,6 +107,15 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         user.setDepartment(department);
         user.setEmail("test@test.com");
 
+        ExchangeRate rate = ExchangeRate.builder()
+            .targetCurrency(Currency.USD)
+            .rate(BigDecimal.valueOf(1.1))
+            .fetchedAt(LocalDateTime.now())
+            .source(ExchangeRateSource.FRANKFURTER)
+            .build();
+
+        exchangeRateRepository.save(rate);
+
         SecurityContextHolder.clearContext();
         Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -133,6 +149,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         departmentRepository.deleteAll();
 
         vendorRepository.deleteAll();
+        exchangeRateRepository.deleteAll();
     }
 
     @Test
