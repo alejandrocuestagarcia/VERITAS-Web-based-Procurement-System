@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -21,6 +22,7 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.dto.InvoiceDto;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
@@ -28,6 +30,8 @@ import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
 import com.veritas.backend.requisition.entity.*;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.security.access.AccessDeniedException;
+
+import com.veritas.backend.requisition.mapper.InvoiceMapper;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.InvoiceRepository;
@@ -102,6 +106,8 @@ class RequisitionServiceUnitTest {
     private WorkflowStepRepository workflowStepRepository;
     @Mock
     private RequisitionMapper requisitionMapper;
+    @Mock
+    private InvoiceMapper invoiceMapper;
     @Mock
     private WorkflowEngineService workflowEngineService;
     ;
@@ -1263,6 +1269,59 @@ class RequisitionServiceUnitTest {
                 () -> requisitionService.deleteInvoice(1L, testUser));
 
         verify(invoiceRepository, never()).delete(any());
+    }
+
+    //AI-GENERATED
+    @Test
+    void GetInvoice_WithValidConversion_ReturnsInvoiceDtoWithEuroValue() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(100L);
+        invoice.setTotalAmount(BigDecimal.valueOf(200));
+        invoice.setCurrency(Currency.EUR);
+        invoice.setRequest(request);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.EUR)).thenReturn(BigDecimal.valueOf(200));
+
+        InvoiceDto expectedDto = mock(InvoiceDto.class);
+        when(invoiceMapper.toDto(eq(invoice), eq(BigDecimal.valueOf(200)))).thenReturn(expectedDto);
+
+        InvoiceDto result = requisitionService.getInvoice(requestId);
+
+        assertNotNull(result);
+        verify(currencyConversionService).convert(BigDecimal.valueOf(200), Currency.EUR);
+        verify(invoiceMapper).toDto(eq(invoice), eq(BigDecimal.valueOf(200)));
+    }
+
+    //AI-GENERATED
+    @Test
+    void GetInvoice_WhenCurrencyConversionFails_ReturnsInvoiceDtoWithNullEuroValue() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(100L);
+        invoice.setTotalAmount(BigDecimal.valueOf(200));
+        invoice.setCurrency(Currency.EUR);
+        invoice.setRequest(request);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(currencyConversionService.convert(any(), any())).thenThrow(new IllegalArgumentException("Conversion failed"));
+
+        InvoiceDto expectedDto = mock(InvoiceDto.class);
+        when(invoiceMapper.toDto(eq(invoice), isNull())).thenReturn(expectedDto);
+
+        InvoiceDto result = requisitionService.getInvoice(requestId);
+
+        assertNotNull(result);
+        verify(invoiceMapper).toDto(eq(invoice), isNull());
     }
 }
 

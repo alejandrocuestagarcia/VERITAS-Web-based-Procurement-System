@@ -42,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -367,5 +368,83 @@ class RequisitionQuoteServiceUnitTest {
         assertThat(quoteToSelect.isSelected()).isTrue();
         assertThat(otherQuote.isSelected()).isFalse();
         verify(quoteRepository, times(3)).save(any(Quote.class)); // 2 for otherQuotes loop + 1 for quoteToSelect save
+    }
+
+    //AI-GENERATED
+    @Test
+    void GetQuotesForRequest_ConversionSuccess_MapsEuroValue() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(10L);
+        quote.setRequest(request);
+        quote.setTotalAmount(BigDecimal.valueOf(200));
+        quote.setCurrency(Currency.USD);
+
+        List<QuoteLineItem> items = List.of(new QuoteLineItem());
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
+        when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
+        when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.USD)).thenReturn(BigDecimal.valueOf(180));
+
+        QuoteDto expectedDto = new QuoteDto(
+                10L, 2L, null,
+                Currency.USD,
+                BigDecimal.valueOf(200),
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(200),
+                BigDecimal.valueOf(180),
+                false,
+                List.of()
+        );
+
+        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(180)))).thenReturn(expectedDto);
+
+        List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().totalAmountEuro()).isEqualByComparingTo(BigDecimal.valueOf(180));
+    }
+
+    //AI-GENERATED
+    @Test
+    void GetQuotesForRequest_ConversionIllegalArgument_ReturnsNullEuro() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(10L);
+        quote.setRequest(request);
+        quote.setTotalAmount(BigDecimal.valueOf(200));
+        quote.setCurrency(Currency.USD);
+
+        List<QuoteLineItem> items = List.of();
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
+        when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
+
+        when(currencyConversionService.convert(any(), any())).thenThrow(new IllegalArgumentException("Illegal input"));
+
+        QuoteDto expectedDto = new QuoteDto(
+                10L, 2L, null,
+                Currency.USD,
+                BigDecimal.valueOf(200),
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(200),
+                null,
+                false,
+                List.of()
+        );
+
+        when(quoteMapper.toDto(eq(quote), eq(items), isNull())).thenReturn(expectedDto);
+
+        List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
+
+        assertThat(result.getFirst().totalAmountEuro()).isNull();
     }
 }
