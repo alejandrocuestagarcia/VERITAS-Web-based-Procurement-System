@@ -76,6 +76,9 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 
 import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.integrations.currency.entity.Currency;
+import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -113,6 +116,8 @@ class RequisitionServiceUnitTest {
     private QuoteRepository quoteRepository;
     @Mock
     private AuditService auditService;
+    @Mock
+    private CurrencyConversionService currencyConversionService;
 
     @InjectMocks
     private RequisitionServiceImpl requisitionService;
@@ -953,8 +958,6 @@ class RequisitionServiceUnitTest {
 
   @Test
     void ProcessPayment_WithValidRequestIdAndInvalidInvoice_ThrowsEntityNotFoundException() {
-
-
         Request request = new Request();
         request.setRequestID(1L);
 
@@ -989,11 +992,13 @@ class RequisitionServiceUnitTest {
 
         Invoice invoice = new Invoice();
         invoice.setTotalAmount(totalAmount);
+        invoice.setCurrency(Currency.EUR);
         invoice.setIsPaid(false);
         request.setInvoice(invoice);
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenReturn(request);
+        when(currencyConversionService.convert(any(BigDecimal.class), any())).thenReturn(new BigDecimal("120.00"));
 
         // Act
         requisitionService.processPayment(1L, user);

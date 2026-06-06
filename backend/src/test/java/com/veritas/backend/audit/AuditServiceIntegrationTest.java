@@ -5,6 +5,7 @@ import com.veritas.backend.audit.dto.AuditLogDto;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -38,6 +39,9 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
     UserRepository userRepository;
 
     @Autowired
+    RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
     RequestRepository requestRepository;
 
     @Autowired
@@ -52,6 +56,7 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
     void setup() {
         auditLogRepository.deleteAll();
         requestRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 
         testActor = userRepository.save(User.builder()

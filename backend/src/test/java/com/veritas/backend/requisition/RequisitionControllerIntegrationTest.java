@@ -17,6 +17,7 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
@@ -605,6 +606,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
         invoice.setTotalAmount(new BigDecimal("300.00"));
+        invoice.setCurrency(Currency.EUR);
         invoice.setIsPaid(false);
         invoice = invoiceRepository.save(invoice);
 
@@ -686,6 +688,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
         invoice.setTotalAmount(new BigDecimal("200.00"));
+        invoice.setCurrency(Currency.EUR);
         invoice.setIsPaid(false);
         invoice = invoiceRepository.save(invoice);
 
@@ -712,6 +715,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
         invoice.setTotalAmount(new BigDecimal("100.00"));
+        invoice.setCurrency(Currency.EUR);
         invoice.setIsPaid(true); // Manually seed as already paid
         invoice = invoiceRepository.save(invoice);
 
@@ -740,6 +744,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
         invoice.setTotalAmount(new BigDecimal("100.00"));
+        invoice.setCurrency(Currency.EUR);
         invoice.setIsPaid(true); // Manually seed as already paid
         invoice = invoiceRepository.save(invoice);
 
@@ -1022,6 +1027,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Invoice invoice = new Invoice();
             invoice.setRequest(request);
             invoice.setTotalAmount(new BigDecimal("100.00"));
+            invoice.setCurrency(Currency.EUR);
             invoice.setIsPaid(false);
             invoice = invoiceRepository.save(invoice);
             request.setInvoice(invoice);
@@ -1074,6 +1080,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             Invoice invoice = new Invoice();
             invoice.setRequest(request);
             invoice.setTotalAmount(new BigDecimal("100.00"));
+            invoice.setCurrency(Currency.EUR);
             invoice.setIsPaid(true);
             invoice = invoiceRepository.save(invoice);
             request.setInvoice(invoice);
