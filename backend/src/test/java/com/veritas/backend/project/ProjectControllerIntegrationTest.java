@@ -1,7 +1,6 @@
 package com.veritas.backend.project;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.core.MappingsSaver;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.department.entity.Department;
@@ -11,6 +10,7 @@ import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectEditDto;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -57,6 +57,9 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
     DepartmentRepository departmentRepository;
 
     @Autowired
+    RequestRepository requestRepository;
+
+    @Autowired
     JwtService jwtService;
 
     @Autowired
@@ -70,6 +73,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setup() {
+        requestRepository.deleteAll();
         projectRepository.deleteAll();
         userRepository.deleteAll();
         teamRepository.deleteAll();

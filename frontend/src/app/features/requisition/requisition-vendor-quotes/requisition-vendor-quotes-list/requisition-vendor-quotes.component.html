@@ -75,6 +75,17 @@
       </td>
     </ng-container>
 
+    <ng-container matColumnDef="totalAmountEuro">
+      <th mat-header-cell *matHeaderCellDef>EURO CONVERTED</th>
+      <td mat-cell *matCellDef="let row">
+        <div *ngIf="row.currency !== 'EUR'" class="flex flex-col py-2">
+            <span class="font-extrabold text-[#0042d1] text-[15px]">
+              {{ row.totalAmountEuro | currency:'EUR' }}
+            </span>
+        </div>
+      </td>
+    </ng-container>
+
     <ng-container matColumnDef="status">
       <th mat-header-cell *matHeaderCellDef>STATUS</th>
       <td mat-cell *matCellDef="let row">
@@ -157,7 +168,13 @@
                 </div>
                 <div>
                   <span class="block text-xs font-semibold text-gray-400 uppercase">Quote Total</span>
-                  <span class="font-bold text-blue-700">{{ selectedQuote?.totalAmount | currency }}</span>
+                  <span class="font-bold text-blue-700">
+                    {{ selectedQuote?.totalAmount | currency: selectedQuote?.currency }}
+
+                    <ng-container *ngIf="selectedQuote?.currency !== 'EUR'">
+                      ({{ selectedQuote?.totalAmountEuro | currency:'EUR' }})
+                    </ng-container>
+                  </span>
                 </div>
               </div>
             </div>
@@ -180,9 +197,9 @@
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Total Amount *</label>
                 <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">€</span>
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">{{ selectedQuote?.currency }}</span>
                   <input formControlName="totalAmount" type="number" step="0.01" min="0"
-                         class="w-full pl-8 pr-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+                         class="w-full pl-12 pr-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
                          [class.border-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
                          [class.border-gray-300]="!(invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid)"
                          [class.focus:ring-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"

@@ -3,6 +3,7 @@ package com.veritas.backend.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
@@ -61,6 +62,9 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   private RequestRepository requestRepository;
 
   @Autowired
+  private AuditLogRepository auditLogRepository;
+
+  @Autowired
   private PasswordEncoder encoder;
 
   private Team testTeam;
@@ -81,8 +85,9 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
     jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
-                requestRepository.deleteAll();
-                projectRepository.deleteAll();
+    auditLogRepository.deleteAll();
+    requestRepository.deleteAll();
+    projectRepository.deleteAll();
     jdbcTemplate.update("DELETE FROM internal_budgets");
 
     entityManager.clear();
@@ -104,8 +109,9 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
     jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
-                requestRepository.deleteAll();
-                projectRepository.deleteAll();
+    auditLogRepository.deleteAll();
+    requestRepository.deleteAll();
+    projectRepository.deleteAll();
     jdbcTemplate.update("DELETE FROM internal_budgets");
 
     entityManager.clear();

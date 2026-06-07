@@ -58,3 +58,10 @@ security:
 app:
   frontend:
     url: ${APP_FRONTEND_URL:http://localhost:4200}
+
+currency:
+  primary-url: https://api.frankfurter.dev/v2/rates
+  secondary-url: https://v6.exchangerate-api.com/v6
+  secondary-api-key: ${EXCHANGE_RATE_API_KEY:}
+  target-currencies: USD,GBP,CHF,JPY
+  scheduler-interval-ms: 3600000 # = 60 minutes

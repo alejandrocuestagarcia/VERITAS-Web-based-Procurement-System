@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.veritas.backend.integrations.currency.entity.Currency;
+
 @Builder
 public record InvoiceDto(
     Long invoiceId,
@@ -13,6 +15,8 @@ public record InvoiceDto(
     String invoiceNumber,
     LocalDate invoiceDate,
     BigDecimal totalAmount,
+    Currency currency,
+    BigDecimal totalAmountEuro,
     LocalDate dueDate,
     Boolean isPaid,
     Long vendorId,

@@ -6,6 +6,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.vendor.entity.Quote;
 import lombok.Getter;
 import java.math.BigDecimal;
@@ -22,7 +23,7 @@ public class WorkflowBranchingContext {
     private final BranchingBudget budget;
     private final BranchingBudget globalBudget;
 
-    public WorkflowBranchingContext(Request request) {
+    public WorkflowBranchingContext(Request request, CurrencyConversionService currencyConversionService) {
 
         // Selected Quote Resolution
         List<Quote> quotes = request.getQuotes();
@@ -32,7 +33,8 @@ public class WorkflowBranchingContext {
                 selectedQuote = quote;
             }
         }
-        this.selectedQuoteTotalAmount = selectedQuote != null ? selectedQuote.getTotalAmount() : null;
+
+        this.selectedQuoteTotalAmount = selectedQuote != null ? currencyConversionService.convert(selectedQuote.getTotalAmount(), selectedQuote.getCurrency()) : null;
 
         this.priority = request.getPriority() != null ? request.getPriority().name() : null;
         this.totalQuantity = request.getTotalQuantity();
@@ -78,6 +80,7 @@ public class WorkflowBranchingContext {
         InternalBudget rootBudget = resolveGlobalBudget(b);
         this.globalBudget = (rootBudget != null) ? new BranchingBudget(rootBudget) : null;
     }
+
     public static WorkflowBranchingContext createDummyContext() {
         return new WorkflowBranchingContext();
     }

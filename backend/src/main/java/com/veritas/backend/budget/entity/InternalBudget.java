@@ -1,6 +1,5 @@
 package com.veritas.backend.budget.entity;
 
-import com.veritas.backend.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

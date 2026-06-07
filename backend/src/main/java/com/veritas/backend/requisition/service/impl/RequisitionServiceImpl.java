@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition.service.impl;
 
+import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
@@ -33,12 +34,13 @@ import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.department.entity.Department;
-import java.util.Optional;
 import java.math.BigDecimal;
 
 import org.springframework.context.annotation.Lazy;
@@ -75,6 +77,7 @@ import java.util.UUID;
 
 import static com.veritas.backend.common.model.AuditActionConstants.PAID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {
@@ -97,6 +100,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private final WorkflowEngineService workflowEngineService;
     private final AuditService auditService;
+    private final CurrencyConversionService currencyConversionService;
 
     @Lazy
     private final JiraSyncService jiraSyncService;
@@ -613,27 +617,23 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     private void addToBudgets(InternalBudget budget, Invoice invoice) {
-
-
         BigDecimal requestCommittedSpent = budget.getCommittedSpend();
         while (budget != null) {
-
             if (invoice.getTotalAmount() == null) {
                 throw new IllegalStateException("Invoice has no Total amount defined");
             }
 
-            BigDecimal newTotalSpend = budget.getActualSpend().add(invoice.getTotalAmount());
+            BigDecimal totalAmountEuro = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            invoice.setPaidAmountEur(totalAmountEuro);
+
+            BigDecimal newTotalSpend = budget.getActualSpend().add(totalAmountEuro);
             budget.setActualSpend(newTotalSpend);
 
             budget.setCommittedSpend(budget.getCommittedSpend().subtract(requestCommittedSpent));
 
-
             internalBudgetRepository.save(budget);
             budget = budget.getParentBudget();
-
-
         }
-
     }
 
     @Override
@@ -657,6 +657,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         invoice.setInvoiceNumber(createDto.getInvoiceNumber());
         invoice.setInvoiceDate(createDto.getInvoiceDate());
         invoice.setTotalAmount(createDto.getTotalAmount());
+        invoice.setCurrency(createDto.getCurrency());
         invoice.setDueDate(createDto.getDueDate());
         invoice.setIsPaid(false);
 
@@ -666,7 +667,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             storeAttachment(file, request, savedInvoice);
         }
 
-        return invoiceMapper.toDto(savedInvoice);
+        return this.mapToInvoiceDtoWithEuro(savedInvoice);
     }
 
     @Override
@@ -680,7 +681,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
         }
 
-        return invoiceMapper.toDto(invoice);
+        return this.mapToInvoiceDtoWithEuro(invoice);
     }
 
     @Override
@@ -714,6 +715,18 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setInvoice(null);
         invoiceRepository.delete(invoice);
+    }
+
+    private InvoiceDto mapToInvoiceDtoWithEuro(Invoice invoice) {
+        BigDecimal totalAmountEuro;
+        try {
+            totalAmountEuro = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+        } catch (IllegalArgumentException | EntityNotFoundException exception) {
+            log.warn("Could not convert invoice {} amount {} {} to EUR: {}", invoice.getInvoiceId(), invoice.getTotalAmount(), invoice.getCurrency(), exception.getMessage());
+            totalAmountEuro = null;
+        }
+
+        return invoiceMapper.toDto(invoice, totalAmountEuro);
     }
 
     private void storeAttachment(MultipartFile file, Request request, Invoice invoice) {

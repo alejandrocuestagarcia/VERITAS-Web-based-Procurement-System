@@ -61,7 +61,7 @@
       <!-- Project Budget Field -->
       <app-shared-form-field label="ALLOCATED BUDGET">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>attach_money</mat-icon>
+          <mat-icon matPrefix>euro</mat-icon>
           <input matInput formControlName="budget" type="number" placeholder="e.g. 50000">
           <mat-error *ngIf="projectForm.get('budget')?.hasError('required') && projectForm.get('budget')?.touched">
             Budget assignment is required

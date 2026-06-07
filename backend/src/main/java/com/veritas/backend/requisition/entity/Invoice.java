@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition.entity;
 
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.vendor.entity.Vendor;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -36,11 +37,19 @@ public class Invoice {
     private LocalDate invoiceDate;
 
     private BigDecimal totalAmount;
+
+    @Column(name = "currency", nullable = false, length = 3)
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
+    
     private LocalDate dueDate;
     private Boolean isPaid = false;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+    
+    @Column(name = "paid_amount_eur")
+    private BigDecimal paidAmountEur;
 
     @PrePersist
     protected void onCreate() {

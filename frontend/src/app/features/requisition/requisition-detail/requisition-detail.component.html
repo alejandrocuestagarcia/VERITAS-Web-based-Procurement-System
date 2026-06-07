@@ -146,6 +146,19 @@
             <span class="text-[14px] text-slate-500 font-medium">Total Amount</span>
             <span class="text-[16px] text-green-700 font-extrabold">{{ selectedQuote.totalAmount | currency:selectedQuote.currency }}</span>
           </div>
+          <div *ngIf="request.isPaid && selectedQuote.currency !== 'EUR'" class="flex items-center justify-between">
+            <span class="text-[14px] text-slate-500 font-medium">Paid Amount (EUR)</span>
+            <span class="text-[16px] text-emerald-700 font-extrabold">
+              {{ request.paidAmountEur | currency:'EUR' }}
+            </span>
+          </div>
+
+          <div *ngIf="!request.isPaid && selectedQuote.currency !== 'EUR'" class="flex items-center justify-between">
+            <span class="text-[14px] text-slate-500 font-medium">Total Amount (EUR)</span>
+            <span class="text-[16px] text-green-700 font-extrabold">
+              {{ selectedQuote.totalAmountEuro | currency:'EUR' }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -440,6 +453,10 @@
                         <span class="text-sm font-bold text-blue-800">Payment Amount</span>
                         <span class="text-3xl font-black text-blue-900 tracking-tight">
                           {{ (invoice?.totalAmount || selectedQuote?.totalAmount) | currency:selectedQuote?.currency }}
+
+                          <ng-container *ngIf="invoice?.currency !== 'EUR'">
+                            ({{ invoice?.totalAmountEuro | currency:'EUR' }})
+                          </ng-container>
                         </span>
                       </div>
                     </div>

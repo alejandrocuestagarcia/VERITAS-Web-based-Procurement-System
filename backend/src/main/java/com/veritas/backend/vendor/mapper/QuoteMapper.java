@@ -9,6 +9,7 @@ import com.veritas.backend.vendor.entity.Vendor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -21,9 +22,10 @@ public interface QuoteMapper {
     @Mapping(target = "baseAmount", source = "quote.baseAmount")
     @Mapping(target = "shippingCosts", source = "quote.shippingCosts")
     @Mapping(target = "totalAmount", source = "quote.totalAmount")
+    @Mapping(target = "totalAmountEuro", source = "totalAmountEuro")
     @Mapping(target = "isSelected", source = "quote.selected")
     @Mapping(target = "items", source = "items")
-    QuoteDto toDto(Quote quote, List<QuoteLineItem> items);
+    QuoteDto toDto(Quote quote, List<QuoteLineItem> items, BigDecimal totalAmountEuro);
 
     @Mapping(target = "lineItemId", source = "lineItemId")
     @Mapping(target = "productDescription", source = "productDescription")

@@ -8,6 +8,8 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.veritas.backend.integrations.currency.entity.Currency;
+
 @Data
 public class InvoiceCreateDto {
 
@@ -17,6 +19,9 @@ public class InvoiceCreateDto {
     @NotNull(message = "Total amount is required")
     @Positive(message = "Total amount must be positive")
     private BigDecimal totalAmount;
+
+    @NotNull(message = "Currency is required")
+    private Currency currency;
 
     @NotNull(message = "Due date is required")
     private LocalDate dueDate;

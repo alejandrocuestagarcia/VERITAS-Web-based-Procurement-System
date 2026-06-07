@@ -5,6 +5,7 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
@@ -41,6 +42,9 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
     TeamRepository teamRepository;
 
     @Autowired
+    RequestRepository requestRepository;
+
+    @Autowired
     PasswordEncoder encoder;
 
     @Autowired
@@ -54,6 +58,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setup() {
+        requestRepository.deleteAll();
         projectRepository.deleteAll();
         userRepository.deleteAll();
         teamRepository.deleteAll();

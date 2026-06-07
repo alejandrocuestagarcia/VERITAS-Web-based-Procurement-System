@@ -14,6 +14,7 @@ import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.workflow.entity.TransitionRule;
+import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
@@ -67,6 +68,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     private final QuoteRepository quoteRepository;
     private final AuditServiceImpl auditService;
     private final AuditLogRepository auditLogRepository;
+    private final CurrencyConversionService currencyConversionService;
 
     @Lazy
     private final JiraSyncService jiraSyncService;
@@ -200,7 +202,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                             ExpressionParser parser = new SpelExpressionParser();
                             EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
                             Boolean isValid = parser.parseExpression(rule.getAdvancedRule())
-                                    .getValue(context, new WorkflowBranchingContext(request), Boolean.class);
+                                    .getValue(context, new WorkflowBranchingContext(request, currencyConversionService), Boolean.class);
                             if (Boolean.FALSE.equals(isValid)) {
                                 validationErrors.add("Advanced validation rule failed: " + rule.getAdvancedRule());
                             }
@@ -383,7 +385,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             ExpressionParser parser = new SpelExpressionParser();
             EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             return parser.parseExpression(transition.getConditionExpression())
-                    .getValue(context, new WorkflowBranchingContext(requisition), Boolean.class);
+                    .getValue(context, new WorkflowBranchingContext(requisition, currencyConversionService), Boolean.class);
         } catch (ExpressionException e) {
             return false;
         }
