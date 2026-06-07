@@ -1248,7 +1248,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         request = requestRepository.save(request);
 
         RequisitionUpdateDto updateDto = new RequisitionUpdateDto(
-                "Updated Name", "Desc", projectId, workflowId, Priority.HIGH, List.of(new RequisitionItemCreateDto("Item A", 1, "pcs", "note"))
+                "Updated Name", "Desc", projectId, workflowId, Priority.HIGH, List.of(new RequisitionItemCreateDto("Item A", 1, RequestItemUnit.PIECES, "note"))
         );
 
         // Edit request (should be allowed even though it needs revision)
