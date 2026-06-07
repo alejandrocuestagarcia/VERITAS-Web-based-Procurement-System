@@ -40,6 +40,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   public selectedFlowLeavesGateway = false;
   public selectedFlowLeavesStartEvent = false;
   public selectedFlowEntersEndEvent = false;
+  public isAdvancedRuleExpanded = false;
   public currentTask: any = {
     role: '',
     description: '',
@@ -53,6 +54,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     isImageRequired: false,
     minRequiredVendors: 0,
     optionalFailureMessage: '',
+    advancedRule: '',
     description: '',
     conditionExpression: ''
   };
@@ -375,9 +377,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           isImageRequired: String(rule.isImageRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
           optionalFailureMessage: rule.optionalFailureMessage || '',
+          advancedRule: rule.advancedRule || '',
           description: doc,
           conditionExpression: conditionText
         };
+        this.isAdvancedRuleExpanded = !!rule.advancedRule;
         return;
       }
     }
@@ -387,21 +391,25 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       isImageRequired: false,
       minRequiredVendors: 0,
       optionalFailureMessage: '',
+      advancedRule: '',
       description: doc,
       conditionExpression: conditionText
     };
+    this.isAdvancedRuleExpanded = false;
   }
 
   private resetRule() {
     this.selectedFlowLeavesGateway = false;
     this.selectedFlowLeavesStartEvent = false;
     this.selectedFlowEntersEndEvent = false;
+    this.isAdvancedRuleExpanded = false;
     this.currentRule = {
       isPdfRequired: false,
       isCsvRequired: false,
       isImageRequired: false,
       minRequiredVendors: 0,
       optionalFailureMessage: '',
+      advancedRule: '',
       description: '',
       conditionExpression: ''
     };
@@ -491,7 +499,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
-  updateRuleProperty(key: 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired', value: any) {
+  updateRuleProperty(key: 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'advancedRule', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -529,7 +537,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     rule[key] = value;
 
-    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0);
+    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0) && !rule.advancedRule;
 
     if (isRuleEmpty) {
       if (extensionElements.values) {

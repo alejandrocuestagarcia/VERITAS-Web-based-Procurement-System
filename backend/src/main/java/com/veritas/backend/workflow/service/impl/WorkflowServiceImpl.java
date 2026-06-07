@@ -211,6 +211,10 @@ public class WorkflowServiceImpl implements WorkflowService {
                         if (imageRequired != null) {
                             rule.setIsImageRequired(Boolean.parseBoolean(imageRequired));
                         }
+                        String advancedRule = child.getAttribute("advancedRule");
+                        if (advancedRule != null && !advancedRule.isBlank()) {
+                            rule.setAdvancedRule(advancedRule);
+                        }
                         transitionRulesMap.put(transition, rule);
                     }
                 }

@@ -173,7 +173,7 @@
           </div>
 
           <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Configuration</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attachement Requirements</label>
             <div class="space-y-2">
               <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
                 <input type="checkbox" [checked]="currentRule.isPdfRequired" [disabled]="!isEditable"
@@ -209,6 +209,29 @@
             <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">
               <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minRequiredVendors }}</span>
               <span class="text-xs text-slate-500 uppercase font-semibold">Vendors</span>
+            </div>
+          </div>
+
+          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
+            <button type="button"
+                    (click)="isAdvancedRuleExpanded = !isAdvancedRuleExpanded"
+                    class="flex items-center justify-between w-full text-left focus:outline-none py-1 group">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer select-none group-hover:text-slate-600 transition-colors">Advanced Validation Rule</label>
+              <mat-icon class="text-slate-400 group-hover:text-slate-600 transition-colors text-sm w-4 h-4 flex items-center justify-center cursor-pointer select-none">
+                {{ isAdvancedRuleExpanded ? 'expand_less' : 'expand_more' }}
+              </mat-icon>
+            </button>
+            <div *ngIf="isAdvancedRuleExpanded" class="space-y-2 animate-in fade-in duration-200">
+              <div *ngIf="isEditable">
+                <textarea rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+                  [ngModelOptions]="{standalone: true}"
+                  [ngModel]="currentRule.advancedRule" (ngModelChange)="updateRuleProperty('advancedRule', $event)"
+                  placeholder="e.g. selectedQuoteTotalAmount &lt; 5000&#10;and totalQuantity &lt; 100"></textarea>
+              </div>
+              <div *ngIf="!isEditable && currentRule.advancedRule" class="p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm font-mono whitespace-pre-wrap break-all">{{ currentRule.advancedRule }}</div>
+              <div *ngIf="!isEditable && !currentRule.advancedRule" class="p-3 bg-slate-50 border border-dashed border-[#e4e7ef] rounded-xl">
+                <span class="text-[10px] text-slate-400 uppercase tracking-tighter">No advanced rule configured</span>
+              </div>
             </div>
           </div>
         </div>

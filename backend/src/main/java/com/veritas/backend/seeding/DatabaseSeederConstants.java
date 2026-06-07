@@ -24,7 +24,6 @@ public class DatabaseSeederConstants {
      <bpmn:outgoing>Flow_0qnfjjy</bpmn:outgoing>
    </bpmn:task>
    <bpmn:sequenceFlow id="Flow_0sbraey" sourceRef="Gateway_1dwq3xb" targetRef="Activity_1mp955o">
-     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${user.id != team.leader.id}</bpmn:conditionExpression>
    </bpmn:sequenceFlow>
    <bpmn:task id="Activity_1scv5mh" name="Vendor Quote Selection">
      <bpmn:documentation>Enter 3 different vendors with correct data. Choose the best vendor offer based on our Selection Guidelines.</bpmn:documentation>
@@ -34,7 +33,7 @@ public class DatabaseSeederConstants {
      <bpmn:outgoing>Flow_0b9tqhi</bpmn:outgoing>
    </bpmn:task>
    <bpmn:sequenceFlow id="Flow_1s1k4y5" sourceRef="Gateway_1dwq3xb" targetRef="Activity_1scv5mh">
-     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${user.id == team.leader.id}</bpmn:conditionExpression>
+     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${requester.isTeamLeader}</bpmn:conditionExpression>
    </bpmn:sequenceFlow>
    <bpmn:sequenceFlow id="Flow_0qnfjjy" sourceRef="Activity_1mp955o" targetRef="Activity_1scv5mh" />
    <bpmn:exclusiveGateway id="Gateway_0no29ob" name="Budget Check">
@@ -86,7 +85,6 @@ public class DatabaseSeederConstants {
    <bpmn:sequenceFlow id="Flow_1pi5o75" sourceRef="Activity_0u8kehp" targetRef="Event_0f7uyqa" />
    <bpmn:sequenceFlow id="Flow_0hojtag" sourceRef="Activity_17it5r8" targetRef="Event_0f7uyqa" />
    <bpmn:sequenceFlow id="Flow_0bzo1dd" sourceRef="Gateway_0no29ob" targetRef="Activity_0fktd09">
-     <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${selectedQuoteTotalAmount &gt;= 2000}</bpmn:conditionExpression>
    </bpmn:sequenceFlow>
    <bpmn:sequenceFlow id="Flow_1sapfpf" sourceRef="Activity_0fktd09" targetRef="Activity_0u8kehp">
      <bpmn:extensionElements>

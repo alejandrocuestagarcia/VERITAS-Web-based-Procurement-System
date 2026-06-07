@@ -12,7 +12,6 @@ import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -123,18 +122,4 @@ public class Request {
 
     @Column(name = "rejection_reason",columnDefinition = "TEXT")
     private String rejectionReason;
-
-    public BigDecimal getSelectedQuoteTotalAmount() {
-        if (quotes == null || quotes.isEmpty()) {
-            return null;
-        }
-
-        for (Quote quote : quotes) {
-            if (quote.isSelected()) {
-                return quote.getTotalAmount();
-            }
-        }
-
-        return null;
-    }
 }

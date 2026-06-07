@@ -671,7 +671,46 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("without conditions"));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("outgoing transitions without conditions"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_XorSplitAllConditional_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"XOR All Conditional\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\" />\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\" />\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\" />\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${totalQuantity > 100}</bpmn:conditionExpression>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${totalQuantity &lt;= 100}</bpmn:conditionExpression>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("has no default fallback transition"));
         }
 
         // ========================================================================
@@ -948,7 +987,227 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("nonExistentField") && e.contains("not a known Request field"));
+                                e -> e.contains("nonExistentField") && e.contains("not an allowed field"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AllowedBranchingPaths_Success() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Allowed Paths\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${selectedQuoteTotalAmount > 5000 and requester.isTeamLeader and department.name == 'IT' and budget.remainingAmount &lt; 0 and project.budget.remainingAmount > 100 and department.budget.committedSpend &lt; 500 and globalBudget.safetyBuffer == 0}</bpmn:conditionExpression>\n"
+                                +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+                assertDoesNotThrow(() -> validator.validate(xml, model));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_DisallowedDeepPath_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Deep Traversal Prop\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${team.department.id == 1}</bpmn:conditionExpression>\n"
+                                +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(
+                                e -> e.contains("team.department.id") && e.contains("not an allowed field"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_DeprecatedAmount_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Deprecated Amount\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${amount > 1000}</bpmn:conditionExpression>\n"
+                                +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(
+                                e -> e.contains("amount") && e.contains("not an allowed field"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_RemovedUser_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Removed User\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${user.name == 'Admin'}</bpmn:conditionExpression>\n"
+                                +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(
+                                e -> e.contains("user.name") && e.contains("not an allowed field"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_NonBooleanExpression_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Non-Boolean Check\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Path A\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Path B\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_2\" name=\"Merge\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${department.name}</bpmn:conditionExpression>\n"
+                                +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"XOR_2\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_7\" sourceRef=\"XOR_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertThat(ex.getErrors()).anyMatch(
+                                e -> e.contains("must evaluate to a boolean"));
         }
 
         // ========================================================================
@@ -1111,6 +1370,86 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertThat(ex.getErrors()).anyMatch(e -> e.contains("Transition rules cannot be added on the last transition entering the End Event"));
+        }
+
+        // AI-GENERATED
+        private String getXmlWithAdvancedRule(String advancedRule) {
+                return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:veritas=\"http://veritas\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Advanced Rule Test\" isExecutable=\"true\">\n" +
+                                "    <bpmn:documentation>Test workflow</bpmn:documentation>\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Submit Details\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]REQUESTER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n"
+                                +
+                                "      <bpmn:extensionElements>\n" +
+                                "        <veritas:transitionRule advancedRule=\"" + advancedRule + "\" />\n" +
+                                "      </bpmn:extensionElements>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleValid_NoErrors() {
+                String xml = getXmlWithAdvancedRule("selectedQuoteTotalAmount &lt; 5000");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationResult result = validator.validate(xml, model);
+                assertThat(result.hasErrors()).isFalse();
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithUnsafeSpel_Error() {
+                String xml = getXmlWithAdvancedRule("T(java.lang.Runtime).getRuntime().exec('rm -rf /')");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("contains potentially unsafe expressions"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithInvalidSyntax_Error() {
+                String xml = getXmlWithAdvancedRule("&gt;&gt;&gt; invalid");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("has invalid syntax"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithInvalidProperty_Error() {
+                String xml = getXmlWithAdvancedRule("unknownProperty == 'test'");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("references property 'unknownProperty' which is not an allowed field"));
+        }
+
+        // AI-GENERATED
+        @Test
+        void Validate_AdvancedRuleWithNonBooleanType_Error() {
+                String xml = getXmlWithAdvancedRule("'non-boolean'");
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must evaluate to a boolean, but returned type: String"));
         }
 
         // ========================================================================

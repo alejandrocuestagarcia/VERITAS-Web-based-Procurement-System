@@ -20,6 +20,7 @@ import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
 
+import com.veritas.backend.workflow.validation.WorkflowBranchingContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,7 +93,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         checkAuthorization(request, actor, currentStep);
 
-        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
+        List<WorkflowTransition> transitions = getPrioritizedTransitions(currentStep);
 
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request, transition)) {
@@ -191,6 +193,20 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         validationErrors.add(missingAttachments.getFirst() + " attachment required");
                     } else if (!missingAttachments.isEmpty()) {
                         validationErrors.add("Missing required attachments: " + String.join(", ", missingAttachments));
+                    }
+
+                    if (rule.getAdvancedRule() != null && !rule.getAdvancedRule().isBlank()) {
+                        try {
+                            ExpressionParser parser = new SpelExpressionParser();
+                            EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+                            Boolean isValid = parser.parseExpression(rule.getAdvancedRule())
+                                    .getValue(context, new WorkflowBranchingContext(request), Boolean.class);
+                            if (Boolean.FALSE.equals(isValid)) {
+                                validationErrors.add("Advanced validation rule failed: " + rule.getAdvancedRule());
+                            }
+                        } catch (ExpressionException e) {
+                            validationErrors.add("Advanced validation rule failed: " + rule.getAdvancedRule());
+                        }
                     }
 
                     if (!validationErrors.isEmpty()) {
@@ -367,7 +383,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             ExpressionParser parser = new SpelExpressionParser();
             EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             return parser.parseExpression(transition.getConditionExpression())
-                    .getValue(context, requisition, Boolean.class);
+                    .getValue(context, new WorkflowBranchingContext(requisition), Boolean.class);
         } catch (ExpressionException e) {
             return false;
         }
@@ -435,8 +451,20 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         return resolveNextStep(request, currentStep);
     }
 
+    private List<WorkflowTransition> getPrioritizedTransitions(WorkflowStep step) {
+        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(step);
+        if (transitions == null) {
+            return List.of();
+        }
+        return transitions.stream()
+                .sorted(Comparator.comparing(
+                        t -> t.getConditionExpression() == null || t.getConditionExpression().isEmpty()
+                ))
+                .toList();
+    }
+
     private WorkflowStep resolveNextStep(Request request, WorkflowStep currentStep) {
-        List<WorkflowTransition> transitions = workflowTransitionRepository.findByFromStep(currentStep);
+        List<WorkflowTransition> transitions = getPrioritizedTransitions(currentStep);
         for (WorkflowTransition transition : transitions) {
             if (checkCondition(request, transition)) {
                 WorkflowStep toStep = transition.getToStep();

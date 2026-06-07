@@ -5,12 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
 import org.camunda.bpm.model.bpmn.instance.Process;
+import org.springframework.expression.EvaluationException;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.ast.CompoundExpression;
 import org.springframework.expression.spel.ast.PropertyOrFieldReference;
 import org.springframework.expression.spel.SpelNode;
 import org.springframework.expression.ParseException;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -44,12 +47,55 @@ public class BpmnValidator {
             "(T\\s*\\(|new\\s+|#|\\bgetClass\\b|\\bforName\\b|\\bRuntime\\b|\\bjava\\.)"
     );
 
-    private static final Set<String> KNOWN_REQUEST_PROPERTIES = Set.of(
-            "requestID", "requestName", "description", "priority",
-            "state", "totalQuantity", "createdAt", "updatedAt",
-            "budget", "team", "project", "user",
-            "requestKey", "jiraIssueKey", "jiraStatus",
-            "selectedQuoteTotalAmount"
+    private static final Set<String> ALLOWED_BRANCHING_PATHS = Set.of(
+            "selectedquotetotalamount",
+            "priority",
+            "totalquantity",
+            "department",
+            "department.id",
+            "department.name",
+            "department.budget",
+            "department.budget.id",
+            "department.budget.name",
+            "department.budget.totalamount",
+            "department.budget.committedspend",
+            "department.budget.actualspend",
+            "department.budget.safetybuffer",
+            "department.budget.remainingamount",
+            "project",
+            "project.id",
+            "project.name",
+            "project.key",
+            "project.budget",
+            "project.budget.id",
+            "project.budget.name",
+            "project.budget.totalamount",
+            "project.budget.committedspend",
+            "project.budget.actualspend",
+            "project.budget.safetybuffer",
+            "project.budget.remainingamount",
+            "requester",
+            "requester.id",
+            "requester.name",
+            "requester.email",
+            "requester.role",
+            "requester.isteamleader",
+            "budget",
+            "budget.id",
+            "budget.name",
+            "budget.totalamount",
+            "budget.committedspend",
+            "budget.actualspend",
+            "budget.safetybuffer",
+            "budget.remainingamount",
+            "globalbudget",
+            "globalbudget.id",
+            "globalbudget.name",
+            "globalbudget.totalamount",
+            "globalbudget.committedspend",
+            "globalbudget.actualspend",
+            "globalbudget.safetybuffer",
+            "globalbudget.remainingamount"
     );
 
     private final SpelExpressionParser spelParser = new SpelExpressionParser();
@@ -531,9 +577,12 @@ public class BpmnValidator {
                         .count();
                 long flowsWithoutCondition = outgoing.size() - flowsWithCondition;
 
-                if (flowsWithoutCondition > 1) {
+                if (flowsWithoutCondition == 0) {
+                    result.addError("XOR Gateway '" + gatewayLabel + "' has no default fallback transition. "
+                            + "Exactly one default (unconditional) transition is required to act as a fallback when all other conditions are false");
+                } else if (flowsWithoutCondition > 1) {
                     result.addError("XOR Gateway '" + gatewayLabel + "' has " + flowsWithoutCondition
-                            + " outgoing transitions without conditions. At most one default (unconditional) transition is allowed");
+                            + " outgoing transitions without conditions. Exactly one default (unconditional) transition is required to act as a fallback");
                 }
             }
         }
@@ -613,55 +662,91 @@ public class BpmnValidator {
             String cleanCondition = rawText.replace("${", "").replace("}", "").trim();
             if (cleanCondition.isEmpty()) continue;
 
-            // Security: check for unsafe SpEL constructs
-            if (UNSAFE_SPEL_PATTERN.matcher(cleanCondition).find()) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
-                        + "' contains potentially unsafe expressions (method calls, type references, or bean access are not allowed)");
-                log.warn("Unsafe SpEL detected on transition from {}: {}", getNodeName(flow.getSource()), cleanCondition);
-                continue;
-            }
-
-            // Syntax: try to parse the SpEL expression
-            SpelExpression parsedExpression;
-            try {
-                parsedExpression = (SpelExpression) spelParser.parseExpression(cleanCondition);
-            } catch (ParseException e) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget())
-                        + "' has invalid syntax: " + e.getMessage());
-                log.warn("Failed to parse SpEL condition on transition from {}: {}", getNodeName(flow.getSource()), e.getMessage());
-                continue;
-            }
-
-            // Semantic: check that referenced properties are known
-            validateExpressionProperties(parsedExpression, flow, result);
+            validateSpelExpression(cleanCondition, flow.getSource(), flow.getTarget(), result, "Condition");
         }
     }
 
-    private void validateExpressionProperties(SpelExpression expression, SequenceFlow flow, BpmnValidationResult result) {
-        Set<String> rootProperties = new HashSet<>();
+    private void validateSpelExpression(String cleanExpression, FlowNode source, FlowNode target, BpmnValidationResult result, String contextDesc) {
+        if (cleanExpression == null || cleanExpression.isBlank()) return;
+
+        // Security: check for unsafe SpEL constructs
+        if (UNSAFE_SPEL_PATTERN.matcher(cleanExpression).find()) {
+            result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                    + "' contains potentially unsafe expressions (method calls, type references, or bean access are not allowed)");
+            log.warn("Unsafe SpEL detected on transition from {}: {}", getNodeName(source), cleanExpression);
+            return;
+        }
+
+        // Syntax: try to parse the SpEL expression
+        SpelExpression parsedExpression;
+        try {
+            parsedExpression = (SpelExpression) spelParser.parseExpression(cleanExpression);
+        } catch (ParseException e) {
+            result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                    + "' has invalid syntax: " + e.getMessage());
+            log.warn("Failed to parse SpEL condition on transition from {}: {}", getNodeName(source), e.getMessage());
+            return;
+        }
+
+        // Semantic: check that referenced properties are known
+        validateExpressionProperties(parsedExpression, source, target, result, contextDesc);
+
+        // Type check: check that expression evaluates to a boolean
+        try {
+            EvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+            Object value = parsedExpression.getValue(evalContext, WorkflowBranchingContext.createDummyContext());
+            if (!(value instanceof Boolean)) {
+                result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                        + "' must evaluate to a boolean, but returned type: " + (value == null ? "null" : value.getClass().getSimpleName()));
+            }
+        } catch (EvaluationException e) {
+            result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target)
+                    + "' failed to evaluate: '" + cleanExpression + "'");
+        }
+    }
+
+    private void validateExpressionProperties(SpelExpression expression, FlowNode source, FlowNode target, BpmnValidationResult result, String contextDesc) {
+        List<String> paths = new ArrayList<>();
         SpelNode ast = expression.getAST();
         if (ast != null) {
-            collectRootPropertyReferences(ast, null, -1, rootProperties);
+            collectPropertyPaths(ast, paths);
         }
 
-        for (String rootProperty : rootProperties) {
-            if (!KNOWN_REQUEST_PROPERTIES.contains(rootProperty)) {
-                result.addError("Condition on transition from '" + getNodeName(flow.getSource()) + "' to '" + getNodeName(flow.getTarget()) + "' references property '"
-                        + rootProperty + "' which is not a known Request field");
+        for (String path : paths) {
+            if (!ALLOWED_BRANCHING_PATHS.contains(path.toLowerCase())) {
+                result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target) + "' references property '"
+                        + path + "' which is not an allowed field");
             }
         }
     }
 
-    private void collectRootPropertyReferences(SpelNode node, SpelNode parent, int childIndex, Set<String> rootProperties) {
-        if (node instanceof PropertyOrFieldReference) {
-            boolean isChainedProperty = parent instanceof CompoundExpression && childIndex > 0;
-            if (!isChainedProperty) {
-                rootProperties.add(((PropertyOrFieldReference) node).getName());
+    private void collectPropertyPaths(SpelNode node, List<String> paths) {
+        if (node instanceof CompoundExpression) {
+            StringBuilder pathBuilder = new StringBuilder();
+            boolean isPurePropertyChain = true;
+            for (int i = 0; i < node.getChildCount(); i++) {
+                SpelNode child = node.getChild(i);
+                if (child instanceof PropertyOrFieldReference) {
+                    if (pathBuilder.length() > 0) {
+                        pathBuilder.append(".");
+                    }
+                    pathBuilder.append(((PropertyOrFieldReference) child).getName());
+                } else {
+                    isPurePropertyChain = false;
+                    break;
+                }
             }
+            if (isPurePropertyChain && pathBuilder.length() > 0) {
+                paths.add(pathBuilder.toString());
+                return;
+            }
+        } else if (node instanceof PropertyOrFieldReference) {
+            paths.add(((PropertyOrFieldReference) node).getName());
+            return;
         }
 
         for (int i = 0; i < node.getChildCount(); i++) {
-            collectRootPropertyReferences(node.getChild(i), node, i, rootProperties);
+            collectPropertyPaths(node.getChild(i), paths);
         }
     }
 
@@ -712,6 +797,10 @@ public class BpmnValidator {
                             result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
                                     + "' has non-numeric minRequiredVendors: '" + minVendors + "'");
                         }
+                    }
+                    String advancedRule = child.getAttribute("advancedRule");
+                    if (advancedRule != null && !advancedRule.isBlank()) {
+                        validateSpelExpression(advancedRule, flow.getSource(), flow.getTarget(), result, "Advanced rule");
                     }
                 }
             });
