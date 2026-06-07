@@ -1,6 +1,8 @@
 package com.veritas.backend.requisition.dto;
 
 import com.veritas.backend.requisition.entity.Priority;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,5 +41,6 @@ public record RequisitionDto(
     String assigneeName,
     String assigneeEmail,
     Long workflowDefinitionId,
-    Boolean isPaid
+    Boolean isPaid,
+    BigDecimal paidAmountEur
 ) {}

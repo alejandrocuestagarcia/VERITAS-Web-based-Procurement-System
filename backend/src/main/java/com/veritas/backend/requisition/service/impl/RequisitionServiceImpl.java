@@ -624,6 +624,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             }
 
             BigDecimal totalAmountEuro = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            invoice.setPaidAmountEur(totalAmountEuro);
 
             BigDecimal newTotalSpend = budget.getActualSpend().add(totalAmountEuro);
             budget.setActualSpend(newTotalSpend);

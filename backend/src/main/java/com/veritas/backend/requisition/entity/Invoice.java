@@ -47,6 +47,9 @@ public class Invoice {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+    
+    @Column(name = "paid_amount_eur")
+    private BigDecimal paidAmountEur;
 
     @PrePersist
     protected void onCreate() {
