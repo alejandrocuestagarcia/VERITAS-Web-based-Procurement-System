@@ -146,6 +146,10 @@
             <span class="text-[14px] text-slate-500 font-medium">Total Amount</span>
             <span class="text-[16px] text-green-700 font-extrabold">{{ selectedQuote.totalAmount | currency:selectedQuote.currency }}</span>
           </div>
+          <div *ngIf="selectedQuote.currency !== 'EUR'" class="flex items-center justify-between">
+            <span class="text-[14px] text-slate-500 font-medium">Total Amount in Euro</span>
+            <span class="text-[16px] text-green-700 font-extrabold">{{ selectedQuote.totalAmountEuro | currency:'EUR' }}</span>
+          </div>
         </div>
       </div>
     </div>

@@ -70,9 +70,9 @@
         </mat-form-field>
       </app-shared-form-field>
 
-      <app-shared-form-field label="BUDGET">
+      <app-shared-form-field label="ALLOCATED BUDGET">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>payments</mat-icon>
+          <mat-icon matPrefix>euro</mat-icon>
           <input matInput type="number" formControlName="budget" placeholder="e.g. 10000">
           <mat-error *ngIf="projectForm.get('budget')?.hasError('required') && projectForm.get('budget')?.touched">
             Budget is required

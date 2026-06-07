@@ -2,6 +2,7 @@ package com.veritas.backend.department;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.entity.Department;
@@ -49,6 +50,9 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
         private ProjectRepository projectRepository;
 
         @Autowired
+        private AuditLogRepository auditLogRepository;
+
+        @Autowired
         private JwtService jwtService;
 
         @Autowired
@@ -59,6 +63,7 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
 
         @BeforeEach
         void setup() {
+                auditLogRepository.deleteAll();
                 projectRepository.deleteAll();
                 userRepository.deleteAll();
                 teamRepository.deleteAll();
