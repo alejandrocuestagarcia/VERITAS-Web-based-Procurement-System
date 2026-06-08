@@ -219,13 +219,12 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 WorkflowStep nextStep = transition.getToStep();
                 request.setCurrentStep(nextStep);
                 request.setRejectionReason(null);
-                String toStepName = transition.getToStep().getName() == null ? "Finished" : transition.getToStep().getName();
                 auditService.createWorkflowTransitionLog(
                         actor,
                         request,
                         transition,
                         APPROVE,
-                        "Transitioned from " + transition.getFromStep().getName() + " to " + toStepName);
+                        "Transitioned from " + getStepName(transition.getFromStep()) + " to " + getStepName(transition.getToStep()));
 
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
 
@@ -281,7 +280,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
         if (targetStep == null) {
             throw new WorkflowStateException(
-                    "No valid step found in history to revert to from: " + stepToRevertFrom.getName());
+                    "No valid step found in history to revert to from: " + getStepName(stepToRevertFrom));
         }
 
         if (targetStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
@@ -305,7 +304,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 request,
                 null,
                 REVERT,
-                "Reverted from " + stepToRevertFrom.getName() + " to " + targetStep.getName() + ". Reason: " + reason);
+                "Reverted from " + getStepName(stepToRevertFrom) + " to " + getStepName(targetStep) + ". Reason: " + reason);
 
         if (jiraSyncService != null) {
             jiraSyncService.handleVeritasWorkflowChange(request);
@@ -433,7 +432,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 request,
                 null,
                 "SUBMIT",
-                "Request submitted and entered workflow at: " + startStep.getName());
+                "Request submitted and entered workflow at: " + getStepName(startStep));
 
         this.moveToNextStep(request, actor, nextAssigneeId);
     }
@@ -477,5 +476,23 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             }
         }
         return null;
+    }
+
+    private String getStepName(WorkflowStep step) {
+        if (step == null) {
+            return "Unknown";
+        }
+        if (step.getName() != null && !step.getName().trim().isEmpty()) {
+            return step.getName();
+        }
+        if (step.getWorkflowComponent() != null) {
+            switch (step.getWorkflowComponent()) {
+                case START_EVENT: return "Start Event";
+                case END_EVENT: return "Finished";
+                case BRANCH: return "Gateway";
+                case STEP: return "Unnamed Step";
+            }
+        }
+        return "Unknown";
     }
 }
