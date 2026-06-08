@@ -1,14 +1,19 @@
 package com.veritas.backend.audit.controller;
 
 import com.veritas.backend.audit.dto.AuditLogDto;
+import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.config.annotations.IsRequester;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,14 +23,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/requisitions/{requestId}/audit")
+@RequiredArgsConstructor
 @Tag(name = "Audit Module", description = "Traceability and history for procurement requests")
 public class AuditController {
 
+    private final AuditService auditService;
+
     @Operation(summary = "Get audit logs", description = "Retrieves a chronological list of all actions and state changes for a request.")
     @IsRequester
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<AuditLogDto> getAuditLogs(@PathVariable Long requestId) {
-        return List.of();
+        return auditService.getAuditLogsByRequestId(requestId);
     }
 
     @Operation(summary = "Export audit as PDF", description = "Generates and downloads a PDF report of the request lifecycle.")

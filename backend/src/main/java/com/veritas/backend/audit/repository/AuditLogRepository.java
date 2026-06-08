@@ -67,4 +67,16 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             Request request,
             String action
     );
+
+    @Query("""
+    SELECT a FROM AuditLog a
+    LEFT JOIN FETCH a.actor
+    LEFT JOIN FETCH a.request
+    LEFT JOIN FETCH a.previousStep
+    LEFT JOIN FETCH a.newStep
+    LEFT JOIN FETCH a.transition
+    WHERE a.request.requestID = :requestId
+    ORDER BY a.timestamp DESC
+    """)
+    List<AuditLog> findAllByRequestIdOrderByTimestampDesc(@Param("requestId") Long requestId);
 }

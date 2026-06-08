@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, UserModuleService, InvoiceDto } from 'src/app/core/api';
+import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, InvoiceDto, AuditModuleService, AuditLogDto } from 'src/app/core/api';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { RejectDialogComponent} from "../../../shared/components/reject-dialog/reject-dialog.component";
 import { AssigneeSelectDialogComponent } from '../../../shared/components/assignee-select-dialog/assignee-select-dialog.component';
@@ -37,6 +37,9 @@ export class RequisitionDetailComponent implements OnInit {
   isProcessingPayment = false;
   invoice: InvoiceDto | null = null;
 
+  auditLogs: AuditLogDto[] = [];
+  auditLogsLoading = false;
+
   get invoiceToQuoteDiff(): number | null {
     if (this.invoice?.totalAmount == null || this.selectedQuote?.totalAmount == null) return null;
     return this.invoice.totalAmount - this.selectedQuote.totalAmount;
@@ -51,6 +54,7 @@ export class RequisitionDetailComponent implements OnInit {
     private router: Router,
     private requisitionService: RequisitionModuleService,
     private quotesService: RequisitionQuotesModuleService,
+    private auditService: AuditModuleService,
     public authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService,
@@ -77,12 +81,83 @@ export class RequisitionDetailComponent implements OnInit {
         this.request = req;
         this.loadSelectedQuote(id);
         this.checkCanAct(id);
+        this.loadAuditLogs(id);
       },
       error: (err) => {
         console.error('Failed to load request details', err);
         this.loading = false;
       }
     });
+  }
+
+  loadAuditLogs(id: number): void {
+    this.auditLogsLoading = true;
+    this.auditService.getAuditLogs(id).subscribe({
+      next: (logs: AuditLogDto[]) => {
+        this.auditLogs = logs || [];
+        this.auditLogs.sort((a, b) => {
+          const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return tb - ta; // Descending order: latest first
+        });
+        this.auditLogsLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load audit logs', err);
+        this.toastService.showError(err.error?.message || err.error || 'Failed to load audit logs');
+        this.auditLogs = [];
+        this.auditLogsLoading = false;
+      }
+    });
+  }
+
+  formatAction(action: string | undefined): string {
+    if (!action) return '';
+    return action.replace(/_/g, ' ').replace(/\w\S*/g, txt =>
+      txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
+    );
+  }
+
+  getActionIcon(action: string | undefined): string {
+    switch (action) {
+      case 'APPROVE': return 'check_circle';
+      case 'REVERT': return 'undo';
+      case 'SUBMIT': return 'send';
+      case 'PAID': return 'payments';
+      case 'REQUISITION_EDITED': return 'edit';
+      case 'JIRA_SYNC': return 'sync';
+      case 'JIRA_UNSYNC': return 'sync_disabled';
+      case 'JIRA_REQUEST_UPDATED': return 'update';
+      default: return 'info';
+    }
+  }
+
+  getActionColor(action: string | undefined): string {
+    switch (action) {
+      case 'APPROVE': return 'text-emerald-600';
+      case 'REVERT': return 'text-red-500';
+      case 'SUBMIT': return 'text-blue-600';
+      case 'PAID': return 'text-teal-600';
+      case 'REQUISITION_EDITED': return 'text-amber-600';
+      case 'JIRA_SYNC': return 'text-purple-600';
+      case 'JIRA_UNSYNC': return 'text-rose-600';
+      case 'JIRA_REQUEST_UPDATED': return 'text-cyan-600';
+      default: return 'text-slate-500';
+    }
+  }
+
+  getActionBgColor(action: string | undefined): string {
+    switch (action) {
+      case 'APPROVE': return 'bg-emerald-100';
+      case 'REVERT': return 'bg-red-100';
+      case 'SUBMIT': return 'bg-blue-100';
+      case 'PAID': return 'bg-teal-100';
+      case 'REQUISITION_EDITED': return 'bg-amber-100';
+      case 'JIRA_SYNC': return 'bg-purple-100';
+      case 'JIRA_UNSYNC': return 'bg-rose-100';
+      case 'JIRA_REQUEST_UPDATED': return 'bg-cyan-100';
+      default: return 'bg-slate-100';
+    }
   }
 
   checkCanAct(id: number): void {

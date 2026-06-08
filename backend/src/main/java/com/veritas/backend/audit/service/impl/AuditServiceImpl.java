@@ -16,7 +16,9 @@ import com.veritas.backend.workflow.entity.WorkflowTransition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.veritas.backend.common.model.AuditActionConstants.*;
 
@@ -137,5 +139,13 @@ public class AuditServiceImpl implements AuditService {
                 .build();
 
         auditLogRepository.save(log);
+    }
+
+    @Override
+    public List<AuditLogDto> getAuditLogsByRequestId(Long requestId) {
+        return auditLogRepository.findAllByRequestIdOrderByTimestampDesc(requestId)
+                .stream()
+                .map(auditLogMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

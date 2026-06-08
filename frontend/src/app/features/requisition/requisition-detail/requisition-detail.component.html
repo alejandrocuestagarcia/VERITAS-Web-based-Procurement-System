@@ -20,8 +20,8 @@
           <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
           DRAFT
         </span>
-        <span *ngIf="request.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span *ngIf="request.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-100 shadow-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
         PAID
       </span>
         <span *ngIf="request.responsibleRole" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
@@ -296,6 +296,63 @@
       </div>
     </div>
   </div>
+
+  <!-- AI-GENERATED -->
+  <!-- Audit Log Timeline -->
+  <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm mt-8 overflow-hidden">
+    <div class="px-7 py-5 border-b border-slate-100 flex items-center gap-3">
+      <mat-icon class="text-slate-400">history</mat-icon>
+      <h3 class="text-[14px] font-bold text-slate-800 tracking-tight">Audit Log</h3>
+      <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md ml-auto">{{ auditLogs.length }} Entries</span>
+    </div>
+
+    <div *ngIf="auditLogsLoading" class="px-7 py-12 flex flex-col items-center justify-center">
+      <mat-spinner diameter="28"></mat-spinner>
+      <p class="text-[13px] text-slate-400 mt-3 font-medium">Loading audit history...</p>
+    </div>
+
+    <div *ngIf="!auditLogsLoading && auditLogs.length === 0" class="px-7 py-12 text-center flex flex-col items-center">
+      <mat-icon class="text-slate-300 mb-2 scale-110">receipt_long</mat-icon>
+      <span class="text-[13px] text-slate-500 font-medium">No audit entries found for this request.</span>
+    </div>
+
+    <div *ngIf="!auditLogsLoading && auditLogs.length > 0" class="px-7 py-5">
+      <div class="relative">
+        <!-- Timeline connector line -->
+        <div class="absolute left-[17px] top-6 bottom-6 w-[2px] bg-slate-100"></div>
+
+        <div *ngFor="let log of auditLogs; let i = index; let last = last"
+             class="relative flex gap-4 pb-6"
+             [class.pb-0]="last">
+
+          <!-- Timeline dot -->
+          <div class="relative z-10 flex-shrink-0 w-[36px] h-[36px] rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+               [ngClass]="getActionBgColor(log.action)">
+            <mat-icon class="scale-[0.55]" [ngClass]="getActionColor(log.action)">{{ getActionIcon(log.action) }}</mat-icon>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0 pt-0.5">
+            <div class="flex items-baseline flex-wrap gap-x-2 gap-y-0.5">
+              <span class="text-[13px] font-bold text-slate-900">{{ formatAction(log.action) }}</span>
+              <span class="text-[11px] text-slate-400 font-medium">by {{ log.user || 'System' }}</span>
+            </div>
+
+            <div *ngIf="log.previousStatus || log.newStatus" class="flex items-center gap-1.5 mt-1.5">
+              <span *ngIf="log.previousStatus" class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-150">{{ log.previousStatus }}</span>
+              <mat-icon *ngIf="log.previousStatus && log.newStatus" class="text-slate-300 scale-[0.6]">arrow_forward</mat-icon>
+              <span *ngIf="log.newStatus" class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">{{ log.newStatus }}</span>
+            </div>
+
+            <p *ngIf="log.description" class="text-[12px] text-slate-500 mt-1.5 leading-relaxed whitespace-pre-line">{{ log.description }}</p>
+
+            <span class="text-[11px] text-slate-400 mt-1 block font-medium">{{ log.timestamp | date:'MMM d, yyyy, h:mm:ss a' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="fixed inset-0 z-[1000] overflow-hidden transition-all duration-300"
        [class.pointer-events-none]="!isDrawerOpen"
        [class.pointer-events-auto]="isDrawerOpen"

@@ -9,6 +9,7 @@ public record AuditLogDto(
         String user,
         LocalDateTime timestamp,
         String action,
+        String description,
         String previousStatus,
         String newStatus,
         String currentHash,
