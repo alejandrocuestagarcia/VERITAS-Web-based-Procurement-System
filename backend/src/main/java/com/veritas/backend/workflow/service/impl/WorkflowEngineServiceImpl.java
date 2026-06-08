@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
@@ -51,6 +52,7 @@ import java.util.Optional;
 import static com.veritas.backend.common.model.AuditActionConstants.APPROVE;
 import static com.veritas.backend.common.model.AuditActionConstants.REVERT;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkflowEngineServiceImpl implements WorkflowEngineService {
@@ -386,6 +388,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             return parser.parseExpression(transition.getConditionExpression())
                     .getValue(context, new WorkflowBranchingContext(requisition, currencyConversionService), Boolean.class);
         } catch (ExpressionException e) {
+            log.warn("Failed to evaluate condition '{}' for request '{}': {}",
+                    transition.getConditionExpression(), requisition.getRequestKey(), e.getMessage());
             return false;
         }
     }

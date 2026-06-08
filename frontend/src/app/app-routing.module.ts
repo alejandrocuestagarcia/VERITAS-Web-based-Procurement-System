@@ -33,6 +33,7 @@ import { RequisitionVendorQuotesComponent } from "./features/requisition/requisi
 import { RequisitionVendorQuoteCreateComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component";
 import { RequisitionVendorQuoteViewComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component";
 import { ProjectEditComponent } from "./features/project/project-edit/project-edit.component";
+import { NotificationLogComponent } from "./features/notifications/notification-log/notification-log.component";
 
 const routes: Routes = [
   {
@@ -242,6 +243,11 @@ const routes: Routes = [
     component: JiraIssuesSyncHistoryComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRATOR'] }
+  },
+  {
+    path: 'notifications',
+    component: NotificationLogComponent,
+    canActivate: [authGuard]
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }

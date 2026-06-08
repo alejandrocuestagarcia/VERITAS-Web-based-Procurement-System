@@ -20,6 +20,10 @@ export class NavigationService {
       roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']
     },
     {
+      label: 'Notifications', icon: 'notifications', route: '/notifications',
+      roles: ['REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'ADMINISTRATOR']
+    },
+    {
       label: 'My Requisitions', icon: 'description', route: '/requisitions',
       roles: ['REQUESTER']
     },

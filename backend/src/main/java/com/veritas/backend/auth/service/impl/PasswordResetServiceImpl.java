@@ -17,8 +17,7 @@ import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.veritas.backend.mail.MailService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
+    private final MailService mailService;
     private final AuditService auditService;
 
     private final SecureRandom secureRandom = new SecureRandom();
@@ -44,8 +43,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Value("${security.password-reset.reset-link-base}")
     private String resetLinkBase;
 
-    @Value("${spring.mail.username:}")
-    private String fromAddress;
+
 
     @Value("${security.password-reset.subject:Reset your Veritas password}")
     private String subject;
@@ -139,20 +137,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     private void sendResetEmail(User user, String resetLink) {
-        if (fromAddress == null || fromAddress.isBlank()) {
-            log.warn("Skipping password reset email for {} because spring.mail.username is not configured", user.getEmail());
-            return;
-        }
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(user.getEmail());
-        message.setSubject(subject);
-        message.setText("We received a request to reset your password.\n\n"
+        String body = "We received a request to reset your password.\n\n"
             + "Reset link (valid for " + expirationHours + " hours):\n"
             + resetLink + "\n\n"
-            + "If you did not request this, you can ignore this email.");
-
-        mailSender.send(message);
+            + "If you did not request this, you can ignore this email.";
+        mailService.sendEmail(user.getEmail(), subject, body);
     }
 }

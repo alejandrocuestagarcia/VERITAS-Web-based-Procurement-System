@@ -43,6 +43,8 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -63,6 +65,8 @@ import java.util.stream.Collectors;
 import com.veritas.backend.workflow.service.WorkflowEngineService;
 import com.veritas.backend.common.exception.WorkflowStateException;
 import org.springframework.security.access.AccessDeniedException;
+import com.veritas.backend.notification.service.NotificationService;
+import com.veritas.backend.notification.entity.NotificationType;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -82,6 +86,8 @@ import static com.veritas.backend.common.model.AuditActionConstants.*;
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {
 
+    private static final Logger log = LoggerFactory.getLogger(RequisitionServiceImpl.class);
+
     private final RequestRepository requestRepository;
     private final ProjectRepository projectRepository;
     private final WorkflowDefinitionRepository workflowDefinitionRepository;
@@ -100,6 +106,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private final WorkflowEngineService workflowEngineService;
     private final AuditService auditService;
+    private final NotificationService notificationService;
     private final CurrencyConversionService currencyConversionService;
 
     @Lazy
@@ -187,8 +194,14 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (userRole.equals("REQUESTER")) {
             if (user.getTeam() != null) {
                 teamIdFilter = user.getTeam().getTeamId();
+                if (user.getTeam().getLeader() != null && user.getTeam().getLeader().getId().equals(user.getId())) {
+                    userIdFilter = null;
+                } else {
+                    userIdFilter = user.getId();
+                }
+            } else {
+                userIdFilter = user.getId();
             }
-            userIdFilter = user.getId();
         } else if (userRole.equals("PROCUREMENT_OFFICER")) {
             if (user.getDepartment() != null) {
                 departmentIdFilter = user.getDepartment().getDepartmentId();
@@ -309,10 +322,51 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setRevisionRequired(false);
 
+        String stepApprovedAt = request.getCurrentStep() != null ? request.getCurrentStep().getName() : "Unknown";
         workflowEngineService.moveToNextStep(request, actor, nextAssigneeId);
 
 
         Request saved = requestRepository.save(request);
+
+        if (saved.getUser() != null) {
+            notificationService.createNotification(
+                    saved.getUser(),
+                    saved,
+                    NotificationType.APPROVED,
+                    "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
+            );
+        }
+        if (saved.getState() == RequestStatus.FINISHED) {
+            if (saved.getUser() != null) {
+                notificationService.createNotification(
+                        saved.getUser(),
+                        saved,
+                        NotificationType.FINISHED,
+                        "Your request '" + saved.getRequestName() + "' has been completed."
+                );
+            }
+            try {
+                List<User> financeOfficers = userRepository.findAllByRoleAndIsActiveTrue(UserRole.FINANCE_OFFICER);
+                for (User fo : financeOfficers) {
+                    notificationService.createNotification(
+                            fo,
+                            saved,
+                            NotificationType.ASSIGNED,
+                            "Requisition '" + saved.getRequestName() + "' is completed and requires payment processing."
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Failed to notify finance officers for completed requisition {}", saved.getRequestName(), e);
+            }
+        }
+        if (saved.getState() != RequestStatus.FINISHED && saved.getAssignee() != null) {
+            notificationService.createNotification(
+                    saved.getAssignee(),
+                    saved,
+                    NotificationType.ASSIGNED,
+                    "Request '" + saved.getRequestName() + "' requires your action at step '" + saved.getCurrentStep().getName() + "'."
+            );
+        }
 
         return requisitionMapper.toDto(saved);
     }
@@ -336,6 +390,8 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be reverted");
         }
 
+        String stepRevertedFrom = request.getCurrentStep() != null ? request.getCurrentStep().getName() : "Unknown";
+
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
 
         if (rejectionData.getRevisionRequired()!=null && rejectionData.getRevisionRequired()) {
@@ -344,6 +400,24 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request savedRequest = requestRepository.save(request);
 
+        if (savedRequest.getUser() != null) {
+            String message = "Your request '" + savedRequest.getRequestName() + "' was sent back from step '" + stepRevertedFrom + "'" +
+                    (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
+            notificationService.createNotification(
+                    savedRequest.getUser(),
+                    savedRequest,
+                    NotificationType.REVERTED,
+                    message
+            );
+        }
+        if (savedRequest.getAssignee() != null) {
+            notificationService.createNotification(
+                    savedRequest.getAssignee(),
+                    savedRequest,
+                    NotificationType.ASSIGNED,
+                    "Request '" + savedRequest.getRequestName() + "' requires your action after revert."
+            );
+        }
 
         return requisitionMapper.toDto(savedRequest);
     }
@@ -365,6 +439,16 @@ public class RequisitionServiceImpl implements RequisitionService {
         workflowEngineService.startWorkflow(request, actor, nextAssigneeId);
 
         Request savedRequest = requestRepository.save(request);
+
+        if (savedRequest.getAssignee() != null) {
+            notificationService.createNotification(
+                    savedRequest.getAssignee(),
+                    savedRequest,
+                    NotificationType.SUBMITTED,
+                    "New requisition '" + savedRequest.getRequestName() + "' has been submitted and requires your action."
+            );
+        }
+
         return requisitionMapper.toDto(savedRequest);
     }
 
@@ -399,6 +483,17 @@ public class RequisitionServiceImpl implements RequisitionService {
                 "Request was rejected with the following reason: " + rejectionData.getReason());
 
         Request savedRequest = requestRepository.save(request);
+
+        if (savedRequest.getUser() != null) {
+            String message = "Your request '" + savedRequest.getRequestName() + "' was rejected" +
+                    (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
+            notificationService.createNotification(
+                    savedRequest.getUser(),
+                    savedRequest,
+                    NotificationType.REJECTED,
+                    message
+            );
+        }
 
         return requisitionMapper.toDto(savedRequest);
     }
@@ -454,12 +549,28 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new IllegalArgumentException("New assigned user must be a requester from the same team");
         }
 
+        User oldRequester = request.getUser();
         request.setUser(newRequester);
         Request updatedRequest = requestRepository.save(request);
         if (jiraSyncService != null) {
             jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
         }
-        
+
+        if (oldRequester != null) {
+            notificationService.createNotification(
+                    oldRequester,
+                    updatedRequest,
+                    NotificationType.REASSIGNED,
+                    "Request '" + updatedRequest.getRequestName() + "' has been reassigned to " + newRequester.getName() + ". You will no longer receive notifications for this request."
+            );
+        }
+        notificationService.createNotification(
+                newRequester,
+                updatedRequest,
+                NotificationType.ASSIGNED,
+                "Request '" + updatedRequest.getRequestName() + "' has been assigned to you."
+        );
+
         return requisitionMapper.toDto(updatedRequest);
     }
 
@@ -681,6 +792,15 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setState(RequestStatus.FINISHED);
         Request saved = requestRepository.save(request);
+
+        if (saved.getUser() != null) {
+            notificationService.createNotification(
+                    saved.getUser(),
+                    saved,
+                    NotificationType.PAID,
+                    "Payment has been processed for your request '" + saved.getRequestName() + "'."
+            );
+        }
 
         auditService.createWorkflowTransitionLog(
                 actor,
