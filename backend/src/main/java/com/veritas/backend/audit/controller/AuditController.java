@@ -1,6 +1,7 @@
 package com.veritas.backend.audit.controller;
 
 import com.veritas.backend.audit.dto.AuditLogDto;
+import com.veritas.backend.audit.service.AuditPdfService;
 import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.config.annotations.IsRequester;
 
@@ -13,7 +14,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +28,7 @@ import java.util.List;
 public class AuditController {
 
     private final AuditService auditService;
+    private final AuditPdfService auditPdfService;
 
     @Operation(summary = "Get audit logs", description = "Retrieves a chronological list of all actions and state changes for a request.")
     @IsRequester
@@ -40,12 +41,13 @@ public class AuditController {
     @IsRequester
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<Resource> exportAuditPdf(@PathVariable Long requestId) {
-        byte[] pdfContent = new byte[0];
+        byte[] pdfContent = auditPdfService.generateAuditReport(requestId);
         ByteArrayResource resource = new ByteArrayResource(pdfContent);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=audit_report_req_" + requestId + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(pdfContent.length)
                 .body(resource);
     }
 
