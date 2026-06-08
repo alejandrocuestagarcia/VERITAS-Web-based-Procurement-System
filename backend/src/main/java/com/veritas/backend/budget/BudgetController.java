@@ -7,12 +7,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
+import com.veritas.backend.budget.service.BudgetService;
+import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @RestController
 @RequestMapping("/budget")
+@RequiredArgsConstructor
 @Tag(name = "Financial Governance Module", description = "Budgeting, project tracking, and final expenditure processing")
 public class BudgetController {
+
+    private final BudgetService budgetService;
 
     @Operation(summary = "Finance Dashboard", description = "Aggregated statistics including burndown charts and committed spending vs. actual spend.")
     @IsFinanceOfficer
@@ -30,13 +35,13 @@ public class BudgetController {
     @IsFinanceOfficer
     @PostMapping
     public BudgetDto createBudget(@RequestBody BudgetDto budgetDto) {
-        return budgetDto;
+        return budgetService.createBudget(budgetDto);
     }
 
     @Operation(summary = "Edit Budget", description = "Edit the existing company budget")
     @IsFinanceOfficer
     @PatchMapping
     public BudgetDto editBudget(@RequestBody BudgetDto budgetDto) {
-        return budgetDto;
+        return budgetService.editBudget(budgetDto);
     }
 }

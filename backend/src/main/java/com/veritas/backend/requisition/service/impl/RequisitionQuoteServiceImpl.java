@@ -19,6 +19,8 @@ import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -42,6 +44,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final RequestItemRepository requestItemRepository;
     private final QuoteMapper quoteMapper;
     private final CurrencyConversionService currencyConversionService;
+    private final InternalBudgetRepository internalBudgetRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -145,12 +148,26 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         validateAmounts(updateDto);
         
+        BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+        BigDecimal newAmount = updateDto.totalAmount() != null ? updateDto.totalAmount() : BigDecimal.ZERO;
+
         quote.setCurrency(updateDto.currency());
         quote.setBaseAmount(updateDto.baseAmount());
         quote.setShippingCosts(updateDto.shippingCosts());
         quote.setTotalAmount(updateDto.totalAmount());
         
         Quote updatedQuote = quoteRepository.save(quote);
+
+        if (quote.isSelected() && request.getBudget() != null) {
+            BigDecimal difference = newAmount.subtract(oldAmount);
+            InternalBudget budget = request.getBudget();
+            while (budget != null) {
+                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+                budget.setCommittedSpend(currentCommitted.add(difference));
+                internalBudgetRepository.save(budget);
+                budget = budget.getParentBudget();
+            }
+        }
 
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
@@ -192,6 +209,17 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             throw new EntityNotFoundException("Quote does not belong to this request");
         }
 
+        if (quote.isSelected() && request.getBudget() != null) {
+            BigDecimal amountToSubtract = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+            InternalBudget budget = request.getBudget();
+            while (budget != null) {
+                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+                budget.setCommittedSpend(currentCommitted.subtract(amountToSubtract));
+                internalBudgetRepository.save(budget);
+                budget = budget.getParentBudget();
+            }
+        }
+
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
         
@@ -214,14 +242,31 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         }
         
         // Unselect all other quotes for this request
+        BigDecimal oldAmount = BigDecimal.ZERO;
         List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         for (Quote quote : otherQuotes) {
+            if (quote.isSelected()) {
+                oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+            }
             quote.setSelected(false);
             quoteRepository.save(quote);
         }
         
         quoteToSelect.setSelected(true);
         quoteRepository.save(quoteToSelect);
+
+        BigDecimal newAmount = quoteToSelect.getTotalAmount() != null ? quoteToSelect.getTotalAmount() : BigDecimal.ZERO;
+
+        if (request.getBudget() != null) {
+            BigDecimal difference = newAmount.subtract(oldAmount);
+            InternalBudget budget = request.getBudget();
+            while (budget != null) {
+                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+                budget.setCommittedSpend(currentCommitted.add(difference));
+                internalBudgetRepository.save(budget);
+                budget = budget.getParentBudget();
+            }
+        }
     }
 
     private void validateAmounts(QuoteCreateDto dto) {

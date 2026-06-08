@@ -15,6 +15,7 @@ import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
 
@@ -105,8 +106,13 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Initialize budget
         InternalBudget budget = new InternalBudget();
-        budget.setBudgetName("Project: " + project.getName());
+        budget.setBudgetName(project.getName());
         budget.setTotalAmount(projectCreationDto.budget());
+        budget.setBudgetType(BudgetType.PROJECT);
+        if (department != null && department.getInternalBudget() != null) {
+            budget.setParentBudget(department.getInternalBudget());
+        }
+
         project.setInternalBudget(budget);
 
         Project saved = projectRepository.save(project);

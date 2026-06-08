@@ -35,7 +35,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         
         if (request.budget() != null) {
             InternalBudget budget = new InternalBudget();
-            budget.setBudgetName("Department: " + department.getName());
+            budget.setBudgetName(department.getName());
             budget.setTotalAmount(request.budget());
             department.setInternalBudget(budget);
         }

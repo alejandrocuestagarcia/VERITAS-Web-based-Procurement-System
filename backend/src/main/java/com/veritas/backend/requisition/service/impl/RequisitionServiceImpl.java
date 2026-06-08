@@ -37,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.team.entity.Team;
@@ -145,8 +146,9 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         // Initialize Request Budget
         InternalBudget budget = new InternalBudget();
-        budget.setBudgetName("Request: " + createDto.requestName());
+        budget.setBudgetName(createDto.requestName());
         budget.setTotalAmount(BigDecimal.ZERO);
+        budget.setBudgetType(BudgetType.REQUEST);
         budget.setParentBudget(project.getInternalBudget());
         internalBudgetRepository.save(budget);
         
@@ -704,7 +706,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         if (request.getBudget() != null) {
-            request.getBudget().setBudgetName("Request: " + updates.requestName());
+            request.getBudget().setBudgetName(updates.requestName());
             internalBudgetRepository.save(request.getBudget());
         }
 
