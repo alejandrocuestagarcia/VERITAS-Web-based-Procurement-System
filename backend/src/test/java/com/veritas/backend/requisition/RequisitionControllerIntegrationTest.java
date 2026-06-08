@@ -420,6 +420,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
         invoice.setTotalAmount(new BigDecimal("100.00"));
+        invoice.setCurrency(Currency.EUR);
         invoice.setIsPaid(true);
         invoiceRepository.save(invoice);
 
