@@ -753,7 +753,7 @@ class RequisitionServiceUnitTest {
                 () -> assertEquals("Updated Laptop", request.getRequestName(), "Request name should be updated"),
                 () -> assertEquals("Need an updated laptop", request.getDescription(), "Description should be updated"),
                 () -> assertEquals(Priority.HIGH, request.getPriority(), "Priority should be updated to HIGH"),
-                () -> assertEquals("Request: Updated Laptop", budget.getBudgetName(), "Internal budget name should be synchronized with new request name")
+                () -> assertEquals("Updated Laptop", budget.getBudgetName(), "Internal budget name should be synchronized with new request name")
         );
         verify(requestRepository).save(request);
     }

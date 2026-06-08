@@ -4,6 +4,7 @@ import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.vendor.entity.Vendor;
@@ -117,12 +118,13 @@ class WorkflowEngineServiceUnitTest {
         budget.setSafetyBuffer(new BigDecimal("10")); // 10% safety buffer meaning 900 limit
         budget.setActualSpend(new BigDecimal("800"));
         budget.setCommittedSpend(new BigDecimal("150")); // Total 950 > 900
+        budget.setBudgetName("Test Request");
         testRequest.setBudget(budget);
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
-        assertEquals("Budget exhausted including safety buffer.", ex.getMessage());
+        assertEquals("Budget of : Test Request exhausted including safety buffer.", ex.getMessage());
     }
 
     @Test

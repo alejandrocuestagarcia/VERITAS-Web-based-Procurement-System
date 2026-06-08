@@ -21,6 +21,8 @@ import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +71,9 @@ class RequisitionQuoteServiceUnitTest {
 
     @Mock
     private QuoteMapper quoteMapper;
+
+    @Mock
+    private InternalBudgetRepository internalBudgetRepository;
 
     @Mock
     private CurrencyConversionService currencyConversionService;
@@ -492,5 +497,55 @@ class RequisitionQuoteServiceUnitTest {
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
         assertNull(result.getFirst().totalAmountEuro());
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_UpdatesBudgetCommittedSpend() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        // Setup budget hierarchy: Request Budget -> Project Budget
+        InternalBudget projectBudget = new InternalBudget();
+        projectBudget.setTotalAmount(BigDecimal.valueOf(1000));
+        projectBudget.setCommittedSpend(BigDecimal.valueOf(100));
+
+        InternalBudget requestBudget = new InternalBudget();
+        requestBudget.setTotalAmount(BigDecimal.ZERO);
+        requestBudget.setCommittedSpend(BigDecimal.valueOf(100));
+        requestBudget.setParentBudget(projectBudget);
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setBudget(requestBudget);
+
+        Quote quoteToSelect = new Quote();
+        quoteToSelect.setQuoteID(quoteId);
+        quoteToSelect.setRequest(request);
+        quoteToSelect.setSelected(false);
+        quoteToSelect.setTotalAmount(BigDecimal.valueOf(150));
+
+        Quote otherQuote = new Quote();
+        otherQuote.setQuoteID(11L);
+        otherQuote.setRequest(request);
+        otherQuote.setSelected(true);
+        otherQuote.setTotalAmount(BigDecimal.valueOf(100));
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quoteToSelect, otherQuote));
+
+        quoteService.selectQuoteForRequest(requestId, quoteId);
+
+        assertAll("Quote selection committed spend updates",
+                () -> assertThat(quoteToSelect.isSelected()).isTrue(),
+                () -> assertThat(otherQuote.isSelected()).isFalse(),
+                // Difference is 150 - 100 = 50. So committedSpend should go from 100 to 150.
+                () -> assertThat(requestBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150)),
+                () -> assertThat(projectBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150))
+        );
+
+        verify(internalBudgetRepository, times(2)).save(any(InternalBudget.class));
+        verify(quoteRepository, times(3)).save(any(Quote.class));
     }
 }

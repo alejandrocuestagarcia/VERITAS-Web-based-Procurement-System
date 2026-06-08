@@ -37,6 +37,7 @@ import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.team.entity.Team;
@@ -142,8 +143,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setTeam(user.getTeam());
 
         // Initialize Request Budget
-        InternalBudget budget = InternalBudget.builder().budgetName("Request: " + createDto.requestName())
-                .totalAmount(BigDecimal.ZERO).parentBudget(project.getInternalBudget()).build();
+        InternalBudget budget = InternalBudget.builder().budgetName(createDto.requestName())
+                .totalAmount(BigDecimal.ZERO).parentBudget(project.getInternalBudget()).budgetType(BudgetType.REQUEST).build();
         internalBudgetRepository.save(budget);
         
         request.setBudget(budget);
@@ -764,7 +765,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         if (request.getBudget() != null) {
-            request.getBudget().setBudgetName("Request: " + updates.requestName());
+            request.getBudget().setBudgetName(updates.requestName());
             internalBudgetRepository.save(request.getBudget());
         }
 

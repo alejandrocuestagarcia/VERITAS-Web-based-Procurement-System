@@ -25,6 +25,8 @@ import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +74,9 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private ExchangeRateRepository exchangeRateRepository;
+
+    @Autowired
+    private InternalBudgetRepository internalBudgetRepository;
 
     private Request request;
     private Vendor vendor;
@@ -287,5 +292,198 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         quote.setTotalAmount(totalAmount);
         quote.setSelected(false);
         return quoteRepository.save(quote);
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuote_WithBudgetHierarchy_UpdatesCommittedSpendAcrossHierarchy() {
+        InternalBudget globalBudget = InternalBudget.builder()
+                .budgetName("Global Budget")
+                .totalAmount(BigDecimal.valueOf(10000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .build();
+        globalBudget = internalBudgetRepository.save(globalBudget);
+
+        InternalBudget deptBudget = InternalBudget.builder()
+                .budgetName("Department Budget")
+                .totalAmount(BigDecimal.valueOf(5000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .parentBudget(globalBudget)
+                .build();
+        deptBudget = internalBudgetRepository.save(deptBudget);
+
+        InternalBudget projBudget = InternalBudget.builder()
+                .budgetName("Project Budget")
+                .totalAmount(BigDecimal.valueOf(2000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .parentBudget(deptBudget)
+                .build();
+        projBudget = internalBudgetRepository.save(projBudget);
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetName("Request Budget")
+                .totalAmount(BigDecimal.ZERO)
+                .committedSpend(BigDecimal.ZERO)
+                .parentBudget(projBudget)
+                .build();
+        reqBudget = internalBudgetRepository.save(reqBudget);
+
+        // Assign budget to request
+        request.setBudget(reqBudget);
+        request = requestRepository.save(request);
+
+        Quote quote1 = saveTestQuote(Currency.EUR, BigDecimal.valueOf(100));
+        Quote quote2 = saveTestQuote(Currency.EUR, BigDecimal.valueOf(150));
+
+        // Select quote1 (100)
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote1.getQuoteID());
+
+        // Refresh budgets from repository
+        InternalBudget updatedReqBudget = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
+        InternalBudget updatedProjBudget = internalBudgetRepository.findById(projBudget.getId()).orElseThrow();
+        InternalBudget updatedDeptBudget = internalBudgetRepository.findById(deptBudget.getId()).orElseThrow();
+        InternalBudget updatedGlobalBudget = internalBudgetRepository.findById(globalBudget.getId()).orElseThrow();
+
+        // Check committedSpend has increased by 100
+        assertAll("Committed spend increased by 100 across hierarchy",
+                () -> assertThat(updatedReqBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(100)),
+                () -> assertThat(updatedProjBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(300)),
+                () -> assertThat(updatedDeptBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(300)),
+                () -> assertThat(updatedGlobalBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(300))
+        );
+
+        // Select quote2 (150), should subtract quote1 (100) and add quote2 (150), net change +50
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote2.getQuoteID());
+
+        InternalBudget updatedReqBudget2 = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
+        InternalBudget updatedProjBudget2 = internalBudgetRepository.findById(projBudget.getId()).orElseThrow();
+        InternalBudget updatedDeptBudget2 = internalBudgetRepository.findById(deptBudget.getId()).orElseThrow();
+        InternalBudget updatedGlobalBudget2 = internalBudgetRepository.findById(globalBudget.getId()).orElseThrow();
+
+        assertAll("Committed spend updated after selecting another quote",
+                () -> assertThat(updatedReqBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150)),
+                () -> assertThat(updatedProjBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350)),
+                () -> assertThat(updatedDeptBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350)),
+                () -> assertThat(updatedGlobalBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350))
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateSelectedQuote_UpdatesCommittedSpendAcrossHierarchy() {
+        // Create budget hierarchy: Project Budget -> Department Budget
+        InternalBudget deptBudget = InternalBudget.builder()
+                .budgetName("Department Budget")
+                .totalAmount(BigDecimal.valueOf(5000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .build();
+        deptBudget = internalBudgetRepository.save(deptBudget);
+
+        InternalBudget projBudget = InternalBudget.builder()
+                .budgetName("Project Budget")
+                .totalAmount(BigDecimal.valueOf(2000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .parentBudget(deptBudget)
+                .build();
+        projBudget = internalBudgetRepository.save(projBudget);
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetName("Request Budget")
+                .totalAmount(BigDecimal.ZERO)
+                .committedSpend(BigDecimal.ZERO)
+                .parentBudget(projBudget)
+                .build();
+        reqBudget = internalBudgetRepository.save(reqBudget);
+
+        // Assign budget to request
+        request.setBudget(reqBudget);
+        request = requestRepository.save(request);
+
+        Quote quote = saveTestQuote(Currency.EUR, BigDecimal.valueOf(100));
+
+        // Select the quote first (so committedSpend increases by 100)
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote.getQuoteID());
+
+        // Verify initial committedSpend
+        InternalBudget updatedReqBudget = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
+        assertThat(updatedReqBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(100));
+
+        // Update the selected quote to totalAmount 150
+        QuoteCreateDto updateDto = new QuoteCreateDto(
+                vendor.getId(),
+                Currency.EUR,
+                BigDecimal.valueOf(140),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(150),
+                List.of(new QuoteLineItemCreateDto("Some Item", 1, BigDecimal.valueOf(140), null))
+        );
+
+        quoteService.updateQuoteForRequest(request.getRequestID(), quote.getQuoteID(), updateDto);
+
+        // Verify committed spend reflects the updated quote amount (+50 net change)
+        InternalBudget updatedReqBudget2 = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
+        InternalBudget updatedProjBudget = internalBudgetRepository.findById(projBudget.getId()).orElseThrow();
+        InternalBudget updatedDeptBudget = internalBudgetRepository.findById(deptBudget.getId()).orElseThrow();
+
+        assertAll("Committed spend updated after editing selected quote",
+                () -> assertThat(updatedReqBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150)),
+                () -> assertThat(updatedProjBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350)),
+                () -> assertThat(updatedDeptBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350))
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void DeleteSelectedQuote_SubtractsCommittedSpendAcrossHierarchy() {
+        // Create budget hierarchy: Project Budget -> Department Budget
+        InternalBudget deptBudget = InternalBudget.builder()
+                .budgetName("Department Budget")
+                .totalAmount(BigDecimal.valueOf(5000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .build();
+        deptBudget = internalBudgetRepository.save(deptBudget);
+
+        InternalBudget projBudget = InternalBudget.builder()
+                .budgetName("Project Budget")
+                .totalAmount(BigDecimal.valueOf(2000))
+                .committedSpend(BigDecimal.valueOf(200))
+                .parentBudget(deptBudget)
+                .build();
+        projBudget = internalBudgetRepository.save(projBudget);
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetName("Request Budget")
+                .totalAmount(BigDecimal.ZERO)
+                .committedSpend(BigDecimal.ZERO)
+                .parentBudget(projBudget)
+                .build();
+        reqBudget = internalBudgetRepository.save(reqBudget);
+
+        // Assign budget to request
+        request.setBudget(reqBudget);
+        request = requestRepository.save(request);
+
+        Quote quote = saveTestQuote(Currency.EUR, BigDecimal.valueOf(100));
+
+        // Select the quote (committedSpend increases by 100)
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote.getQuoteID());
+
+        // Verify initial committedSpend
+        InternalBudget updatedReqBudget = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
+        assertThat(updatedReqBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(100));
+
+        // Delete the quote
+        quoteService.deleteQuoteForRequest(request.getRequestID(), quote.getQuoteID());
+
+        // Verify committed spend is decremented by the quote's amount (100)
+        InternalBudget updatedReqBudget2 = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
+        InternalBudget updatedProjBudget = internalBudgetRepository.findById(projBudget.getId()).orElseThrow();
+        InternalBudget updatedDeptBudget = internalBudgetRepository.findById(deptBudget.getId()).orElseThrow();
+
+        assertAll("Committed spend decremented after deleting selected quote",
+                () -> assertThat(updatedReqBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(0)),
+                () -> assertThat(updatedProjBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(200)),
+                () -> assertThat(updatedDeptBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(200))
+        );
     }
 }
