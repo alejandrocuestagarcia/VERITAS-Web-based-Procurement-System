@@ -41,4 +41,8 @@ public class InternalBudget {
     @Builder.Default
     @Column(name = "safety_buffer")
     private BigDecimal safetyBuffer = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "budget_type")
+    private BudgetType budgetType;
 }

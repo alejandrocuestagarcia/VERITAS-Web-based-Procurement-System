@@ -23,6 +23,7 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.service.WorkflowService;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.entity.RequestItemUnit;
@@ -67,9 +68,25 @@ public class DatabaseSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("Starting seed data initialization...");
 
+        // 0. Seed Global Budget
+        InternalBudget globalBudget = internalBudgetRepository.findAll().stream()
+                .filter(b -> "Global Budget".equals(b.getBudgetName()) && b.getBudgetType() == BudgetType.GLOBAL)
+                .findFirst()
+                .orElseGet(() -> {
+                    InternalBudget gb = InternalBudget.builder()
+                            .budgetName("Global Budget")
+                            .totalAmount(new BigDecimal("10000000"))
+                            .budgetType(BudgetType.GLOBAL)
+                            .safetyBuffer(new BigDecimal("5"))
+                            .build();
+                    InternalBudget saved = internalBudgetRepository.save(gb);
+                    log.info("Seeded global budget: {}", saved.getBudgetName());
+                    return saved;
+                });
+
         // 1. Seed Essential Departments
-        Department department = seedDepartment("Cloud Platform Engineering", new BigDecimal("900000"));
-        Department department2 = seedDepartment("Talent & People Operations", new BigDecimal("800000"));
+        Department department = seedDepartment("Cloud Platform Engineering", new BigDecimal("900000"), globalBudget);
+        Department department2 = seedDepartment("Talent & People Operations", new BigDecimal("800000"), globalBudget);
 
         // 2. Seed Essential Teams
         Team teamOne = seedTeam("Core Platform Engineering", department,
@@ -158,7 +175,7 @@ public class DatabaseSeeder implements ApplicationRunner {
             String[] extraDeptNames = { "Digital Growth & Marketing", "Global Logistics & Ops" };
             for (String deptName : extraDeptNames) {
                 BigDecimal budgetAmt = new BigDecimal(faker.number().numberBetween(300000, 800000));
-                Department d = seedDepartment(deptName, budgetAmt);
+                Department d = seedDepartment(deptName, budgetAmt, globalBudget);
                 if (d != null && !allDepts.contains(d)) {
                     allDepts.add(d);
                 }
@@ -389,13 +406,21 @@ public class DatabaseSeeder implements ApplicationRunner {
         log.info("Seed data initialization complete.");
     }
 
-    private Department seedDepartment(String name, BigDecimal budgetAmount) {
-        return departmentRepository.findByName(name).orElseGet(() -> {
+    private Department seedDepartment(String name, BigDecimal budgetAmount, InternalBudget globalBudget) {
+        return departmentRepository.findByName(name).map(dept -> {
+            if (dept.getInternalBudget() != null && dept.getInternalBudget().getParentBudget() == null && globalBudget != null) {
+                dept.getInternalBudget().setParentBudget(globalBudget);
+                internalBudgetRepository.save(dept.getInternalBudget());
+            }
+            return dept;
+        }).orElseGet(() -> {
             Department dept = new Department();
             dept.setName(name);
             dept.setInternalBudget(InternalBudget.builder()
-                    .budgetName("Budget: " + name)
+                    .budgetName(name)
                     .totalAmount(budgetAmount)
+                    .budgetType(BudgetType.DEPARTMENT)
+                    .parentBudget(globalBudget)
                     .build());
             Department saved = departmentRepository.save(dept);
             log.info("Seeded department: {}", saved.getName());
@@ -437,12 +462,19 @@ public class DatabaseSeeder implements ApplicationRunner {
     private Project seedProject(String name, String key, BigDecimal budgetAmount, LocalDate startDate,
             LocalDate endDate, Team team) {
         if (!projectRepo.existsByNameOrProjectKey(name, key)) {
+            InternalBudget deptBudget = null;
+            if (team != null && team.getDepartment() != null) {
+                deptBudget = team.getDepartment().getInternalBudget();
+            }
+
             Project p = Project.builder()
                     .name(name)
                     .projectKey(key)
                     .internalBudget(InternalBudget.builder()
-                            .budgetName("Project: " + name)
+                            .budgetName(name)
                             .totalAmount(budgetAmount)
+                            .budgetType(BudgetType.PROJECT)
+                            .parentBudget(deptBudget)
                             .build())
                     .startDate(startDate)
                     .endDate(endDate)
@@ -522,7 +554,8 @@ public class DatabaseSeeder implements ApplicationRunner {
 
         // Initialize and save budget
         InternalBudget budget = new InternalBudget();
-        budget.setBudgetName("Request: " + name);
+        budget.setBudgetName(name);
+        budget.setBudgetType(BudgetType.REQUEST);
         budget.setTotalAmount(budgetAmount != null ? budgetAmount : BigDecimal.ZERO);
         if (project != null && project.getInternalBudget() != null) {
             budget.setParentBudget(project.getInternalBudget());
