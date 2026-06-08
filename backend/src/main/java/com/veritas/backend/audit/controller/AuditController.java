@@ -30,7 +30,7 @@ public class AuditController {
     private final AuditService auditService;
 
     @Operation(summary = "Get audit logs", description = "Retrieves a chronological list of all actions and state changes for a request.")
-    @PreAuthorize("hasAnyRole('REQUESTER', 'PROCUREMENT_OFFICER', 'FINANCE_OFFICER')")
+    @IsRequester
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<AuditLogDto> getAuditLogs(@PathVariable Long requestId) {
         return auditService.getAuditLogsByRequestId(requestId);

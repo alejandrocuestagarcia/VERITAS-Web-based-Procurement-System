@@ -143,7 +143,7 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     public List<AuditLogDto> getAuditLogsByRequestId(Long requestId) {
-        return auditLogRepository.findAllByRequestIdOrderByTimestampAsc(requestId)
+        return auditLogRepository.findAllByRequestIdOrderByTimestampDesc(requestId)
                 .stream()
                 .map(auditLogMapper::toDto)
                 .collect(Collectors.toList());

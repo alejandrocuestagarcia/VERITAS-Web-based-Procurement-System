@@ -109,11 +109,11 @@ class AuditControllerIntegrationTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].action").value("SUBMIT"))
-                .andExpect(jsonPath("$[0].description").value("Request submitted"))
+                .andExpect(jsonPath("$[0].action").value(REQUISITION_EDITED))
+                .andExpect(jsonPath("$[0].description").value("Request edited"))
                 .andExpect(jsonPath("$[0].user").value("req-audit@veritas.com"))
-                .andExpect(jsonPath("$[1].action").value(REQUISITION_EDITED))
-                .andExpect(jsonPath("$[1].description").value("Request edited"))
+                .andExpect(jsonPath("$[1].action").value("SUBMIT"))
+                .andExpect(jsonPath("$[1].description").value("Request submitted"))
                 .andExpect(jsonPath("$[1].user").value("req-audit@veritas.com"));
     }
 

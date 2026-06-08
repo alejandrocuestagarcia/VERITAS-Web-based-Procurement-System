@@ -76,7 +76,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     LEFT JOIN FETCH a.newStep
     LEFT JOIN FETCH a.transition
     WHERE a.request.requestID = :requestId
-    ORDER BY a.timestamp ASC
+    ORDER BY a.timestamp DESC
     """)
-    List<AuditLog> findAllByRequestIdOrderByTimestampAsc(@Param("requestId") Long requestId);
+    List<AuditLog> findAllByRequestIdOrderByTimestampDesc(@Param("requestId") Long requestId);
 }
