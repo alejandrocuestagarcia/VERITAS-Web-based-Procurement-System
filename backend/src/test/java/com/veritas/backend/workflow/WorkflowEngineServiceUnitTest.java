@@ -127,6 +127,120 @@ class WorkflowEngineServiceUnitTest {
         assertEquals("Budget of : Test Request exhausted including safety buffer.", ex.getMessage());
     }
 
+    //AI-GENERATED
+    @Test
+    void moveToNextStep_ProjectBudgetExceeded_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        InternalBudget projectBudget = InternalBudget.builder()
+                .budgetType(BudgetType.PROJECT)
+                .budgetName("Project Budget")
+                .totalAmount(new BigDecimal("1000"))
+                .safetyBuffer(new BigDecimal("10")) // 900 limit
+                .actualSpend(new BigDecimal("800"))
+                .committedSpend(new BigDecimal("150")) // 950 > 900
+                .build();
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetType(BudgetType.REQUEST)
+                .budgetName("Request Budget")
+                .parentBudget(projectBudget)
+                .build();
+
+        testRequest.setBudget(reqBudget);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+
+        assertEquals("Budget of : Project Budget exhausted including safety buffer.", ex.getMessage());
+    }
+
+    //AI-GENERATED
+    @Test
+    void moveToNextStep_DepartmentBudgetExceeded_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        InternalBudget deptBudget = InternalBudget.builder()
+                .budgetType(BudgetType.DEPARTMENT)
+                .budgetName("Department Budget")
+                .totalAmount(new BigDecimal("1000"))
+                .safetyBuffer(new BigDecimal("10")) // 900 limit
+                .actualSpend(new BigDecimal("800"))
+                .committedSpend(new BigDecimal("150")) // 950 > 900
+                .build();
+
+        InternalBudget projectBudget = InternalBudget.builder()
+                .budgetType(BudgetType.PROJECT)
+                .budgetName("Project Budget")
+                .totalAmount(new BigDecimal("1000"))
+                .safetyBuffer(new BigDecimal("10"))
+                .actualSpend(new BigDecimal("500"))
+                .committedSpend(new BigDecimal("100")) // 600 <= 900
+                .parentBudget(deptBudget)
+                .build();
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetType(BudgetType.REQUEST)
+                .budgetName("Request Budget")
+                .parentBudget(projectBudget)
+                .build();
+
+        testRequest.setBudget(reqBudget);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+
+        assertEquals("Budget of : Department Budget exhausted including safety buffer.", ex.getMessage());
+    }
+
+    //AI-GENERATED
+    @Test
+    void moveToNextStep_GlobalBudgetExceeded_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        InternalBudget globalBudget = InternalBudget.builder()
+                .budgetType(BudgetType.GLOBAL)
+                .budgetName("Global Budget")
+                .totalAmount(new BigDecimal("1000"))
+                .safetyBuffer(new BigDecimal("10")) // 900 limit
+                .actualSpend(new BigDecimal("800"))
+                .committedSpend(new BigDecimal("150")) // 950 > 900
+                .build();
+
+        InternalBudget deptBudget = InternalBudget.builder()
+                .budgetType(BudgetType.DEPARTMENT)
+                .budgetName("Department Budget")
+                .totalAmount(new BigDecimal("1000"))
+                .safetyBuffer(new BigDecimal("10"))
+                .actualSpend(new BigDecimal("500"))
+                .committedSpend(new BigDecimal("100")) // 600 <= 900
+                .parentBudget(globalBudget)
+                .build();
+
+        InternalBudget projectBudget = InternalBudget.builder()
+                .budgetType(BudgetType.PROJECT)
+                .budgetName("Project Budget")
+                .totalAmount(new BigDecimal("1000"))
+                .safetyBuffer(new BigDecimal("10"))
+                .actualSpend(new BigDecimal("500"))
+                .committedSpend(new BigDecimal("100")) // 600 <= 900
+                .parentBudget(deptBudget)
+                .build();
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetType(BudgetType.REQUEST)
+                .budgetName("Request Budget")
+                .parentBudget(projectBudget)
+                .build();
+
+        testRequest.setBudget(reqBudget);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+
+        assertEquals("Budget of : Global Budget exhausted including safety buffer.", ex.getMessage());
+    }
+
     @Test
     void moveToNextStep_BudgetNotExceeded_Success() {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
