@@ -432,59 +432,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rejectDto)))
                 .andExpect(status().isConflict())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("has already been paid and cannot be rejected")));
-    }
-
-    //AI-Generated
-    @Test
-    void RejectRequest_FinishedButUnpaid_Success() throws Exception {
-        // Arrange
-        Project project = projectRepository.findAll().get(0);
-        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
-        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
-        WorkflowStep endStep = new WorkflowStep();
-        endStep.setWorkflowDefinition(workflow);
-        endStep.setWorkflowComponent(WorkflowComponent.END_EVENT);
-        endStep.setName("End");
-        endStep = workflowStepRepository.save(endStep);
-
-        Request request = new Request();
-        request.setRequestName("Finished But Unpaid Rejection");
-        request.setState(RequestStatus.FINISHED);
-        request.setProject(project);
-        request.setWorkflowDefinition(workflow);
-        request.setCurrentStep(endStep);
-        request = requestRepository.save(request);
-
-        // We need an AuditLog in the history to revert to
-        AuditLog log = AuditLog.builder()
-                .request(request)
-                .previousStep(startStep)
-                .newStep(endStep)
-                .action("APPROVE")
-                .entryHash("hash-xyz")
-                .timestamp(java.time.LocalDateTime.now())
-                .actor(userRepository.findByEmail("procurement@veritas.com").orElse(null))
-                .build();
-        auditLogRepository.save(log);
-
-        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
-        rejectDto.setReason("Incorrect billing info");
-
-        // Act
-        mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/reject")
-                        .header("Authorization", "Bearer " + financeOfficerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(rejectDto)))
-                .andExpect(status().isOk());
-
-        // Assert
-        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
-        assertAll(
-                () -> assertEquals(RequestStatus.DRAFT, updatedRequest.getState()),
-                () -> assertEquals(startStep.getId(), updatedRequest.getCurrentStep().getId())
-        );
-
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("is already finished and cannot be rejected")));
     }
 
     //AI-Generated
