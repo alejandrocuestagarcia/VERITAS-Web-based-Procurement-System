@@ -303,7 +303,11 @@
     <div class="px-7 py-5 border-b border-slate-100 flex items-center gap-3">
       <mat-icon class="text-slate-400">history</mat-icon>
       <h3 class="text-[14px] font-bold text-slate-800 tracking-tight">Audit Log</h3>
-      <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md ml-auto">{{ auditLogs.length }} Entries</span>
+      <button (click)="exportAuditPdf()" [disabled]="auditLogsLoading || auditLogs.length === 0" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 hover:bg-blue-100 hover:border-blue-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ml-auto shadow-sm">
+        <mat-icon class="scale-[0.65]">picture_as_pdf</mat-icon>
+        Export PDF
+      </button>
+      <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">{{ auditLogs.length }} Entries</span>
     </div>
 
     <div *ngIf="auditLogsLoading" class="px-7 py-12 flex flex-col items-center justify-center">

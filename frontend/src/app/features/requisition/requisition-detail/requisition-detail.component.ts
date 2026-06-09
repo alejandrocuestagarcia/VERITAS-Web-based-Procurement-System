@@ -104,9 +104,22 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load audit logs', err);
-        this.toastService.showError(err.error?.message || err.error || 'Failed to load audit logs');
+        this.showErrorFromResponse(err, 'Failed to load audit logs');
         this.auditLogs = [];
         this.auditLogsLoading = false;
+      }
+    });
+  }
+
+  exportAuditPdf(): void {
+    if (!this.requestId) return;
+    this.auditService.exportAuditPdf(this.requestId).subscribe({
+      next: (blob: Blob) => {
+        this.downloadBlob(blob, `audit_report_req_${this.requestId}.pdf`);
+      },
+      error: (err) => {
+        console.error('Failed to export audit PDF', err);
+        this.showErrorFromResponse(err, 'Failed to export audit report');
       }
     });
   }
@@ -224,7 +237,7 @@ export class RequisitionDetailComponent implements OnInit {
           this.goBack();
         },
         error: (err) => {
-          this.toastService.showError(err.error);
+          this.showErrorFromResponse(err, 'Failed to reject requisition');
           this.loading = false;
         }
       });
@@ -291,7 +304,7 @@ export class RequisitionDetailComponent implements OnInit {
         this.goBack();
       },
       error: (err) => {
-        this.toastService.showError(err.error?.message || err.error || "Approval failed");
+        this.showErrorFromResponse(err, 'Approval failed');
         this.loading = false;
       }
     });
@@ -357,7 +370,7 @@ export class RequisitionDetailComponent implements OnInit {
         this.goBack();
       },
       error: (err) => {
-        this.toastService.showError(err.error?.message || err.error || "Submission failed");
+        this.showErrorFromResponse(err, 'Submission failed');
         this.loading = false;
       }
     });
@@ -380,15 +393,7 @@ export class RequisitionDetailComponent implements OnInit {
     if (!attachment || !attachment.attachmentId) return;
     this.requisitionService.downloadAttachment(attachment.attachmentId).subscribe({
       next: (blob) => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = downloadUrl;
-        a.download = attachment.fileName || 'download';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        document.body.removeChild(a);
+        this.downloadBlob(blob, attachment.fileName || 'download');
       },
       error: (err) => {
         console.error('Failed to download attachment', err);
@@ -532,9 +537,9 @@ export class RequisitionDetailComponent implements OnInit {
       uploadTasks.push(
         this.requisitionService.uploadAttachment(this.request.id, file as any).pipe(
           catchError((err) => {
-            this.toastService.showError(`Failed to upload ${file.name}: ` + (err.error?.message || err.error || 'Unknown error'));
-            return of(null);
-          })
+              this.showErrorFromResponse(err, 'Unknown error', `Failed to upload ${file.name}: `);
+              return of(null);
+            })
         )
       );
     }
@@ -558,5 +563,48 @@ export class RequisitionDetailComponent implements OnInit {
         this.toastService.showError('Upload failed');
       }
     });
+  }
+
+  private showErrorFromResponse(err: any, fallback: string = 'An error occurred', prefix: string = ''): void {
+    try {
+      // If the server returned a Blob (e.g., responseType: 'blob'), read its text
+      if (err?.error && typeof err.error === 'object' && typeof err.error.text === 'function') {
+        err.error.text().then((text: string) => {
+          let msg = text;
+          try {
+            const parsed = JSON.parse(text);
+            msg = parsed?.message || parsed?.error || text;
+          } catch {
+            // not JSON, use raw text
+          }
+          const finalMsg = prefix ? `${prefix}${msg}` : (msg || fallback);
+          this.toastService.showError(finalMsg);
+        }).catch(() => {
+          this.toastService.showError(prefix ? prefix + fallback : fallback);
+        });
+      } else {
+        const msg = err?.error?.message || err?.error || err?.message || fallback;
+        const finalMsg = prefix ? `${prefix}${msg}` : msg;
+        this.toastService.showError(finalMsg);
+      }
+    } catch (e) {
+      this.toastService.showError(fallback);
+    }
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    // Revoke the object URL and remove the temporary link asynchronously
+    // to avoid cancelling the download in some browsers.
+    setTimeout(() => {
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    }, 100);
   }
 }
