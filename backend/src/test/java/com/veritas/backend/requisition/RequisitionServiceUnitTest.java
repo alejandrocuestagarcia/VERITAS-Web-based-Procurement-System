@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -21,6 +22,8 @@ import static org.mockito.Mockito.doAnswer;
 import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import com.veritas.backend.notification.entity.NotificationType;
+import com.veritas.backend.notification.service.NotificationService;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.dto.InvoiceDto;
@@ -124,6 +127,8 @@ class RequisitionServiceUnitTest {
     private QuoteRepository quoteRepository;
     @Mock
     private AuditService auditService;
+    @Mock
+    private NotificationService notificationService;
     @Mock
     private CurrencyConversionService currencyConversionService;
 
@@ -1449,10 +1454,19 @@ class RequisitionServiceUnitTest {
     // AI-Generated
     @Test
     void RevertRequest_RevisionRequiredTrue_RevertsAndSetsRevisionRequired() {
+        User creator = new User();
+        creator.setEmail("creator@veritas.com");
+        User assignee = new User();
+        assignee.setEmail("assignee@veritas.com");
+
         Request request = new Request();
         request.setRequestID(1L);
+        request.setRequestName("Test Request");
         request.setState(RequestStatus.ACTIVE);
         request.setRevisionRequired(false);
+        request.setUser(creator);
+        request.setAssignee(assignee);
+
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -1469,15 +1483,36 @@ class RequisitionServiceUnitTest {
         assertTrue(request.getRevisionRequired());
         verify(workflowEngineService).revertToPreviousStep(request, testUser, "Reason");
         verify(requestRepository).save(request);
+        verify(notificationService).createNotification(
+                eq(creator),
+                eq(request),
+                eq(NotificationType.REVERTED),
+                anyString()
+        );
+        verify(notificationService).createNotification(
+                eq(assignee),
+                eq(request),
+                eq(NotificationType.ASSIGNED),
+                anyString()
+        );
     }
 
     // AI-Generated
     @Test
     void RevertRequest_RevisionRequiredFalse_RevertsWithoutRevisionRequired() {
+        User creator = new User();
+        creator.setEmail("creator@veritas.com");
+        User assignee = new User();
+        assignee.setEmail("assignee@veritas.com");
+
         Request request = new Request();
         request.setRequestID(1L);
+        request.setRequestName("Test Request");
         request.setState(RequestStatus.ACTIVE);
         request.setRevisionRequired(false);
+        request.setUser(creator);
+        request.setAssignee(assignee);
+
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -1494,6 +1529,18 @@ class RequisitionServiceUnitTest {
         assertFalse(request.getRevisionRequired());
         verify(workflowEngineService).revertToPreviousStep(request, testUser, "Reason");
         verify(requestRepository).save(request);
+        verify(notificationService).createNotification(
+                eq(creator),
+                eq(request),
+                eq(NotificationType.REVERTED),
+                anyString()
+        );
+        verify(notificationService).createNotification(
+                eq(assignee),
+                eq(request),
+                eq(NotificationType.ASSIGNED),
+                anyString()
+        );
     }
 
     // AI-Generated
@@ -1560,12 +1607,18 @@ class RequisitionServiceUnitTest {
     // AI-Generated
     @Test
     void RejectRequest_Valid_RejectsSuccessfully() {
+        User creator = new User();
+        creator.setEmail("creator@veritas.com");
+
         Request request = new Request();
         request.setRequestID(1L);
+        request.setRequestName("Test Request");
         request.setState(RequestStatus.ACTIVE);
+        request.setUser(creator);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
         request.setCurrentStep(step);
+
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -1583,6 +1636,12 @@ class RequisitionServiceUnitTest {
         assertEquals("Reason", request.getRejectionReason());
         assertNotNull(request.getDeletedAt());
         verify(requestRepository).save(request);
+        verify(notificationService).createNotification(
+                eq(creator),
+                eq(request),
+                eq(NotificationType.REJECTED),
+                anyString()
+        );
     }
 
     // AI-Generated

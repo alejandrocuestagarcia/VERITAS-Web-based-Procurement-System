@@ -60,9 +60,14 @@
        (click)="closeMenu()"
        class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
               text-on-surface cursor-pointer transition-colors duration-200
-              hover:bg-surface-highest no-underline">
+              hover:bg-surface-highest no-underline relative">
       <mat-icon class="mr-4 w-5 h-5 opacity-60">{{ item.icon }}</mat-icon>
       <span>{{ item.label }}</span>
+      <span *ngIf="item.icon === 'notifications' && unreadCount > 0"
+            class="absolute right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5
+                   text-xs font-bold text-white bg-red-500 rounded-full">
+        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      </span>
     </a>
   </div>
 

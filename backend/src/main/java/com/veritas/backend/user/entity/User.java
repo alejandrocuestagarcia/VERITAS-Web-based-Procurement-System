@@ -76,6 +76,10 @@ public class User implements UserDetails {
     @Builder.Default
     private Boolean requiresPasswordChange = false;
 
+    @Column(name = "notification_email_enabled", nullable = false, columnDefinition = "boolean default true")
+    @Builder.Default
+    private Boolean notificationEmailEnabled = true;
+
 
     @PrePersist
     protected void onCreate() {

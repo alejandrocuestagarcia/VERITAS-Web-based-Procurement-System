@@ -100,6 +100,7 @@ import { RequisitionVendorQuoteViewComponent } from './features/requisition/requ
 import { RequisitionChangeRequesterDialogComponent } from './features/requisition/requisition-change-requester-dialog/requisition-change-requester-dialog.component';
 import { RejectDialogComponent } from './shared/components/reject-dialog/reject-dialog.component';
 import { AssigneeSelectDialogComponent } from './shared/components/assignee-select-dialog/assignee-select-dialog.component';
+import { NotificationLogComponent } from './features/notifications/notification-log/notification-log.component';
 
 @NgModule({
   declarations: [
@@ -154,6 +155,9 @@ import { AssigneeSelectDialogComponent } from './shared/components/assignee-sele
     RequisitionVendorQuoteCreateComponent,
     RequisitionVendorQuoteViewComponent,
     RequisitionChangeRequesterDialogComponent,
+
+    // Notifications
+    NotificationLogComponent,
 
     // Shared
     SharedTableComponent,

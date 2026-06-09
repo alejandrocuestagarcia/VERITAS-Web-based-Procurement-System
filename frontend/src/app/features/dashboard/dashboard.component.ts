@@ -12,6 +12,7 @@ import { ToastService } from "../../core/services/toast.service";
 import { MatDialog } from '@angular/material/dialog';
 import { VendorEvaluationDialogComponent } from '../vendor/vendor-evaluation-dialog/vendor-evaluation-dialog.component';
 
+
 interface DashboardStats {
   total: number;
   openRequisitions: number;
@@ -29,6 +30,7 @@ export class DashboardComponent implements OnInit {
   public pendingRequisitions: RequisitionDto[] = [];
   public inProgressRequisitions: RequisitionDto[] = [];
   public closedRequisitions: RequisitionDto[] = [];
+
   public displayedColumns: string[] = ['requestName', 'projectName', 'vendorName', 'status', 'actions'];
   public loading: boolean = false;
   public userName: string = 'User';
@@ -84,6 +86,7 @@ export class DashboardComponent implements OnInit {
       this.stats.total = data.requisitions.totalElements || 0;
       this.stats.activeProjects = data.projects.length;
 
+
       const recentRequisitions = data.requisitions?.content || [];
 
       const openRequisitions = recentRequisitions.filter(requisition => !requisition.isClosed || !requisition.isPaid);
@@ -93,8 +96,16 @@ export class DashboardComponent implements OnInit {
       this.stats.finishedRequisitions = closedRequisitions.length;
 
       if (isRequester) {
-        this.pendingRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole === 'REQUESTER' || requisition.state === 'DRAFT');
-        this.inProgressRequisitions = openRequisitions.filter(requisition => requisition.responsibleRole !== 'REQUESTER' && requisition.state !== 'DRAFT');
+        const currentUserId = this.authService.getUserId();
+        this.pendingRequisitions = openRequisitions.filter(requisition => 
+          (requisition.state === 'DRAFT' && requisition.requesterId === currentUserId) || 
+          requisition.assigneeId === currentUserId
+        );
+        this.inProgressRequisitions = openRequisitions.filter(requisition => 
+          requisition.state !== 'DRAFT' && 
+          requisition.requesterId === currentUserId && 
+          requisition.assigneeId !== currentUserId
+        );
       } else {
         const currentUserId = this.authService.getUserId();
         this.pendingRequisitions = openRequisitions.filter(requisition => {
@@ -209,4 +220,7 @@ export class DashboardComponent implements OnInit {
       }
     });
   }
+
+
+
 }

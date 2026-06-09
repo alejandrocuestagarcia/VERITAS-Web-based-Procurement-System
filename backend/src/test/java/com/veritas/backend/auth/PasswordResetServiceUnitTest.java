@@ -31,9 +31,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.MailException;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.veritas.backend.mail.MailService;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,7 +54,7 @@ class PasswordResetServiceUnitTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JavaMailSender mailSender;
+    private MailService mailService;
 
     @Mock
     private AuditService auditService;
@@ -66,7 +66,7 @@ class PasswordResetServiceUnitTest {
     void setUp() {
         ReflectionTestUtils.setField(passwordResetService, "expirationHours", 24L);
         ReflectionTestUtils.setField(passwordResetService, "resetLinkBase", "http://localhost:4200/reset-password");
-        ReflectionTestUtils.setField(passwordResetService, "fromAddress", "no-reply@veritas.local");
+
         ReflectionTestUtils.setField(passwordResetService, "subject", "Reset your Veritas password");
     }
 
@@ -82,7 +82,7 @@ class PasswordResetServiceUnitTest {
         ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
         verify(passwordResetTokenRepository).deleteByUser(user);
         verify(passwordResetTokenRepository).save(tokenCaptor.capture());
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        verify(mailService).sendEmail(eq("user@veritas.com"), anyString(), anyString());
 
         PasswordResetToken savedToken = tokenCaptor.getValue();
         assertEquals(user, savedToken.getUser());
@@ -96,7 +96,7 @@ class PasswordResetServiceUnitTest {
 
         passwordResetService.requestReset("missing@veritas.com");
 
-        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
         verify(passwordResetTokenRepository, never()).save(any(PasswordResetToken.class));
     }
 
@@ -109,7 +109,7 @@ class PasswordResetServiceUnitTest {
         verify(userRepository, never()).findByEmail(anyString());
         verify(passwordResetTokenRepository, never()).deleteByExpiresAtBefore(any(Instant.class));
         verify(passwordResetTokenRepository, never()).save(any(PasswordResetToken.class));
-        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -119,7 +119,7 @@ class PasswordResetServiceUnitTest {
         verify(userRepository, never()).findByEmail(anyString());
         verify(passwordResetTokenRepository, never()).deleteByExpiresAtBefore(any(Instant.class));
         verify(passwordResetTokenRepository, never()).save(any(PasswordResetToken.class));
-        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -130,12 +130,12 @@ class PasswordResetServiceUnitTest {
         when(userRepository.findByEmail("user@veritas.com")).thenReturn(Optional.of(user));
         ReflectionTestUtils.setField(passwordResetService, "resetLinkBase", "http://localhost:4200/reset-password?source=mail");
 
-        ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
 
         passwordResetService.requestReset("user@veritas.com");
 
-        verify(mailSender).send(mailCaptor.capture());
-        String messageText = mailCaptor.getValue().getText();
+        verify(mailService).sendEmail(eq("user@veritas.com"), anyString(), bodyCaptor.capture());
+        String messageText = bodyCaptor.getValue();
         assertNotNull(messageText);
         assertTrue(messageText.contains("http://localhost:4200/reset-password?source=mail&token="));
     }
@@ -146,10 +146,10 @@ class PasswordResetServiceUnitTest {
         user.setEmail("user@veritas.com");
 
         when(userRepository.findByEmail("user@veritas.com")).thenReturn(Optional.of(user));
-        org.mockito.Mockito.doThrow(new MailException("SMTP unavailable") {}).when(mailSender)
-            .send(any(SimpleMailMessage.class));
+        doThrow(new RuntimeException("SMTP unavailable")).when(mailService)
+            .sendEmail(anyString(), anyString(), anyString());
 
-        assertThrows(MailException.class,
+        assertThrows(RuntimeException.class,
             () -> passwordResetService.requestReset("user@veritas.com"));
 
         verify(passwordResetTokenRepository).deleteByUser(user);

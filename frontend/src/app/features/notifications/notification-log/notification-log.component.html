@@ -1,0 +1,121 @@
+<!--AI-REFACTORED-->
+<div class="p-8">
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+    <div>
+      <h1 class="font-manrope text-2xl font-bold text-on-surface m-0 mb-1 leading-tight">Notification Log</h1>
+      <p class="text-[13px] text-muted-grey m-0">Stay updated on your procurement requests, approvals, and workflow assignments.</p>
+    </div>
+    
+    <div class="flex items-center gap-4 flex-wrap shrink-0">
+      <div class="flex items-center gap-2">
+        <mat-slide-toggle 
+          [checked]="emailNotificationsEnabled" 
+          (change)="onEmailToggleChange($event)"
+          color="primary">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Email Notifications</span>
+        </mat-slide-toggle>
+      </div>
+      <span *ngIf="unreadCount > 0" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0052cc] text-white shadow-sm">
+        {{ unreadCount }} Unread
+      </span>
+      <button mat-stroked-button color="primary" 
+              [disabled]="unreadCount === 0 || loading" 
+              (click)="markAllAsRead()"
+              class="h-9 border-slate-300 text-slate-700 hover:bg-slate-50 rounded-search transition-all font-semibold flex items-center gap-1.5 border">
+        <mat-icon class="text-[18px] h-4 w-4 leading-4">done_all</mat-icon>
+        Mark All Read
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading && notifications.length === 0" class="flex flex-col items-center justify-center py-20 bg-surface-white border border-border-white rounded-card">
+    <mat-spinner diameter="40" class="text-veritas-blue"></mat-spinner>
+    <p class="text-muted-grey mt-4 font-medium">Loading notifications...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && notifications.length === 0" class="flex flex-col items-center justify-center py-20 bg-surface-white border border-border-white rounded-card text-center px-4">
+    <div class="w-16 h-16 bg-surface-low text-muted-grey rounded-full flex items-center justify-center mb-4">
+      <mat-icon style="font-size: 32px;" class="h-8 w-8 leading-8">notifications_off</mat-icon>
+    </div>
+    <h3 class="text-lg font-bold text-on-surface">All caught up!</h3>
+    <p class="text-muted-grey mt-1 max-w-sm text-sm">You have no notifications at the moment. We will notify you when something important happens.</p>
+  </div>
+
+  <!-- Notifications Card Wrapper -->
+  <div *ngIf="notifications.length > 0" class="bg-surface-white border border-border-white rounded-card overflow-hidden">
+    <!-- List Body -->
+    <div class="divide-y divide-border-white">
+      <div *ngFor="let notification of notifications" 
+           [ngClass]="notification.read ? 'bg-surface-white' : 'bg-[#e0eafd]/15'"
+           class="group flex items-start gap-4 p-5 hover:bg-surface-low transition-colors relative overflow-hidden">
+        
+        <!-- Unread Marker Line -->
+        <div *ngIf="!notification.read" class="absolute left-0 top-0 bottom-0 w-1 bg-veritas-blue"></div>
+  
+        <!-- Icon Indicator -->
+        <div [ngClass]="notificationStateService.getNotificationColorClass(notification.type)"
+             class="w-10 h-10 flex items-center justify-center rounded-search border flex-shrink-0">
+          <mat-icon class="scale-90">{{ notificationStateService.getNotificationIcon(notification.type) }}</mat-icon>
+        </div>
+  
+        <!-- Content -->
+        <div class="flex-grow min-w-0 pr-24">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-bold uppercase tracking-wider" 
+                  [class.text-muted-grey]="notification.read"
+                  [class.text-veritas-blue]="!notification.read">
+              {{ notification.type }}
+            </span>
+            <span class="text-[11px] text-muted-grey font-medium">
+              {{ notification.createdAt | date:'medium' }}
+            </span>
+          </div>
+          
+          <p class="text-on-surface text-[14px] mt-1.5 leading-relaxed font-inter" 
+             [class.font-semibold]="!notification.read">
+            {{ notification.message }}
+          </p>
+  
+          <!-- Clickable Requisition Link -->
+          <div *ngIf="notification.requestId" class="mt-2.5 inline-flex items-center">
+            <button (click)="$event.stopPropagation(); navigateToRequest(notification.requestId)"
+                    class="h-7 px-2.5 rounded-search text-[11px] font-bold bg-surface-low hover:bg-[#e0eafd]/30 text-veritas-blue border border-border-white hover:border-veritas-blue flex items-center gap-1 transition-all">
+              <mat-icon style="font-size: 14px; width: 14px; height: 14px;" class="flex items-center justify-center">open_in_new</mat-icon>
+              View Request {{ notification.requestName || notification.requestKey }}
+            </button>
+          </div>
+        </div>
+  
+        <!-- Action Buttons (Float Right, only show on hover) -->
+        <div class="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button *ngIf="!notification.read" 
+                  mat-icon-button 
+                  matTooltip="Mark as Read" 
+                  (click)="$event.stopPropagation(); markAsRead(notification)"
+                  class="hover:bg-surface-low text-veritas-blue rounded-full">
+            <mat-icon>done</mat-icon>
+          </button>
+          <button mat-icon-button 
+                  matTooltip="Delete Notification" 
+                  (click)="deleteNotification($event, notification.id)"
+                  class="hover:bg-red-50 text-red-500 rounded-full">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paginator -->
+    <div class="border-t border-border-white">
+      <mat-paginator [length]="totalElements"
+                     [pageSize]="size"
+                     [pageIndex]="page"
+                     [pageSizeOptions]="[5, 10, 25, 50]"
+                     (page)="onPageChange($event)">
+      </mat-paginator>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,8 @@
 package com.veritas.backend;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -46,5 +49,39 @@ public abstract class BaseDBIntegrationTest {
 
         registry.add("spring.mail.username", () -> "test@veritas.local");
         registry.add("spring.mail.password", () -> "test-password");
+    }
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    public void clearDatabaseTables() {
+        if (jdbcTemplate != null) {
+            jdbcTemplate.execute("DELETE FROM jira_sync_queue_items");
+            jdbcTemplate.execute("DELETE FROM notifications");
+            jdbcTemplate.execute("DELETE FROM password_reset_tokens");
+            jdbcTemplate.execute("DELETE FROM refresh_tokens");
+            jdbcTemplate.execute("DELETE FROM invoices");
+            jdbcTemplate.execute("DELETE FROM audit_logs");
+            jdbcTemplate.execute("DELETE FROM attachments");
+            jdbcTemplate.execute("DELETE FROM quote_line_items");
+            jdbcTemplate.execute("DELETE FROM quotes");
+            jdbcTemplate.execute("DELETE FROM vendor_evaluations");
+            jdbcTemplate.execute("DELETE FROM request_items");
+            jdbcTemplate.execute("DELETE FROM requests");
+            jdbcTemplate.execute("DELETE FROM transition_rules");
+            jdbcTemplate.execute("DELETE FROM workflow_transitions");
+            jdbcTemplate.execute("DELETE FROM workflow_steps");
+            jdbcTemplate.execute("DELETE FROM workflow_definitions");
+            jdbcTemplate.execute("DELETE FROM jira_configs");
+            jdbcTemplate.execute("DELETE FROM projects");
+            jdbcTemplate.execute("DELETE FROM users");
+            jdbcTemplate.execute("DELETE FROM teams");
+            jdbcTemplate.execute("UPDATE departments SET budget_id = NULL");
+            jdbcTemplate.execute("DELETE FROM internal_budgets");
+            jdbcTemplate.execute("DELETE FROM departments");
+            jdbcTemplate.execute("DELETE FROM vendors");
+            jdbcTemplate.execute("DELETE FROM exchange_rates");
+        }
     }
 }
