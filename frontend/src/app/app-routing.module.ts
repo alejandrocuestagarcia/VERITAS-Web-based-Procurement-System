@@ -183,7 +183,7 @@ const routes: Routes = [
     path: 'requisitions/edit/:id',
     component: RequisitionCreateComponent,
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['REQUESTER'] }
+    data: { roles: ['PROCUREMENT_OFFICER', 'FINANCE_OFFICER', 'REQUESTER', 'ADMINISTRATOR'] }
   },
   {
     path: 'requisitions/:id/vendor-quotes',

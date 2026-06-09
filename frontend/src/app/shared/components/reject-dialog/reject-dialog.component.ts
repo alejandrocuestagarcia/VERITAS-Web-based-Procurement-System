@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import {MatDialogRef} from "@angular/material/dialog";
+import { Component, Inject, Optional } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 
 @Component({
   selector: 'app-reject-dialog',
@@ -9,8 +9,12 @@ import {MatDialogRef} from "@angular/material/dialog";
 })
 export class RejectDialogComponent {
   reason: string = '';
+  revisionRequired: boolean = false;
 
-  constructor(public dialogRef: MatDialogRef<RejectDialogComponent>) {}
+  constructor(
+    public dialogRef: MatDialogRef<RejectDialogComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: { isRevert?: boolean }
+  ) {}
 
   onCancel(): void {
     this.dialogRef.close();
@@ -18,7 +22,10 @@ export class RejectDialogComponent {
 
   onConfirm(): void {
     if (this.reason.trim()) {
-      this.dialogRef.close(this.reason.trim());
+      this.dialogRef.close({
+        reason: this.reason.trim(),
+        revisionRequired: this.revisionRequired
+      });
     }
   }
 }

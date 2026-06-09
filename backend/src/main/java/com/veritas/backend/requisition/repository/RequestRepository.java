@@ -16,7 +16,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     Optional<Request> findByJiraIssueKey(String jiraIssueKey);
     List<Request> findByJiraConfigId(Long jiraConfigId);
 
-    @Query("SELECT r FROM Request r WHERE r.user.id = :userId AND r.state <> 'FINISHED'")
+    @Query("SELECT r FROM Request r WHERE r.user.id = :userId AND r.state <> 'FINISHED' AND r.deletedAt IS NULL")
     List<Request> findActiveRequestsByUserId(@Param("userId") Long userId);
 
     @Query("SELECT r FROM Request r " +
@@ -26,7 +26,8 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "LEFT JOIN r.assignee a " +
             "LEFT JOIN r.team t " +
             "LEFT JOIN t.department d " +
-            "WHERE (:status IS NULL OR " +
+            "WHERE r.deletedAt IS NULL " +
+            "AND (:status IS NULL OR " +
             "      (:status = 'OPEN' AND r.state <> 'FINISHED') OR " +
             "      (:status = 'CLOSED' AND r.state = 'FINISHED')) " +
             "AND (:userId IS NULL OR u.id = :userId) " +

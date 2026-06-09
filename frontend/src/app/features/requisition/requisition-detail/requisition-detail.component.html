@@ -48,14 +48,22 @@
         </button>
 
         <div *ngIf="canAct || (request.state === 'DRAFT' && isRequester())" class="flex items-center gap-2" >
-          <button *ngIf="request.state === 'DRAFT' && isRequester()" (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
+          <button *ngIf="(request.state === 'DRAFT' && isRequester()) || request.revisionRequired " (click)="modifyRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-[#0042d1] hover:bg-blue-800 shadow-sm transition-colors">
             <mat-icon class="scale-90">edit</mat-icon>
             Edit
           </button>
           <div *ngIf="canAct && request.state !== 'DRAFT'" class="flex items-center gap-2" >
-            <button (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+            <button *ngIf="isRequester()" (click)="cancelRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">close</mat-icon>
+              Cancel
+            </button>
+            <button *ngIf="!isRequester()" (click)="rejectRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">close</mat-icon>
               Reject
+            </button>
+            <button (click)="revertRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">undo</mat-icon>
+              Revert
             </button>
             <button *ngIf="request.responsibleRole === role" (click)="approveRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">check</mat-icon>
@@ -63,6 +71,10 @@
             </button>
           </div>
           <div *ngIf= "request.state === 'DRAFT' && isRequester() " class="flex items-center gap-2" >
+            <button (click)="cancelRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+              <mat-icon class="scale-90">close</mat-icon>
+              Cancel
+            </button>
             <button (click)="submitRequest()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
               <mat-icon class="scale-90">upload</mat-icon>
               Submit

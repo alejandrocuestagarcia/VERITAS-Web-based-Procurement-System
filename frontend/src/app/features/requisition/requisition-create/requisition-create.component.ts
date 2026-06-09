@@ -38,6 +38,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   isEditMode = false;
   requestId?: number;
   requestState?: string;
+  revisionRequired = false;
 
   projects: ProjectDto[] = [];
   projectSearch: string = '';
@@ -114,12 +115,13 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
             this.workflows = workflowPage.content || [];
             this.requisitionService.getRequestById(id).subscribe({
               next: (req) => {
-                if (req.state !== 'DRAFT') {
+                if (req.state !== 'DRAFT' && !req.revisionRequired) {
                   this.router.navigate(['/dashboard']);
                   return;
                 }
                 this.loading = false;
                 this.requestState = req.state;
+                this.revisionRequired = req.revisionRequired || false;
 
                 this.existingAttachments = req.attachments || [];
 
