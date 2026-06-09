@@ -7,6 +7,9 @@ import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
+import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -45,6 +48,12 @@ class AuditControllerIntegrationTest extends BaseDBIntegrationTest {
     private RequestRepository requestRepository;
     @Autowired
     private AuditLogRepository auditLogRepository;
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+    @Autowired
+    private AttachmentRepository attachmentRepository;
+    @Autowired
+    private RequestItemRepository requestItemRepository;
 
     private String requesterToken;
     private Request testRequest;
@@ -52,6 +61,9 @@ class AuditControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        invoiceRepository.deleteAllInBatch();
+        attachmentRepository.deleteAllInBatch();
+        requestItemRepository.deleteAllInBatch();
         auditLogRepository.deleteAllInBatch();
         requestRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
