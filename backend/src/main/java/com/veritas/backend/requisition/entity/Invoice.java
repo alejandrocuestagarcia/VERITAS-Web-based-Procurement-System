@@ -4,6 +4,8 @@ import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.vendor.entity.Vendor;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,13 +23,19 @@ public class Invoice {
 
     @OneToOne
     @JoinColumn(name = "request_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Request request;
 
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Attachment> attachments = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Vendor vendor;
 
     @Column(name = "invoice_number")
