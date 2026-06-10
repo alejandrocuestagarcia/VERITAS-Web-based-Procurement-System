@@ -11,6 +11,8 @@ import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,19 +28,29 @@ public class Request {
     private Long requestID;
 
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<RequestItem> items = new ArrayList<>();
 
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Attachment> attachments = new ArrayList<>();
 
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Quote> quotes = new ArrayList<>();
 
     @OneToOne(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private VendorEvaluation vendorEvaluation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user;
 
     @Column(name = "request_key")
@@ -46,28 +58,40 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "budget_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private InternalBudget budget;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Team team;
 
     @Column(name = "request_name", nullable = false)
     private String requestName;
 
     @OneToOne(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflow_definition_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private WorkflowDefinition workflowDefinition;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_step_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private WorkflowStep currentStep;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User assignee;
 
     @Column(name = "total_quantity")
@@ -75,6 +99,8 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Project project;
 
     @Column(name = "created_at", updatable = false)
@@ -85,7 +111,9 @@ public class Request {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -111,6 +139,8 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "jira_config_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private JiraConfig jiraConfig;
 
     @Column(columnDefinition = "TEXT")

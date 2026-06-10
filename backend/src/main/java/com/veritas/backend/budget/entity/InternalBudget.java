@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 
@@ -25,6 +27,8 @@ public class InternalBudget {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_budget_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private InternalBudget parentBudget;
 
     @Column(name = "total_amount")
