@@ -1,5 +1,6 @@
 package com.veritas.backend.budget.service;
 
+import com.veritas.backend.budget.dto.BudgetDashboardDto;
 import com.veritas.backend.budget.dto.BudgetDto;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -23,4 +24,5 @@ public interface BudgetService {
      * @throws EntityNotFoundException if no global budget exists
      */
     BudgetDto editBudget(BudgetDto budgetDto);
+    BudgetDashboardDto getFinanceDashboard(Long departmentId);
 }

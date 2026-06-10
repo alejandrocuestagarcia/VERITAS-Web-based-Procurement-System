@@ -8,10 +8,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import com.veritas.backend.budget.service.BudgetService;
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -24,14 +27,9 @@ public class BudgetController {
 
     @Operation(summary = "Finance Dashboard", description = "Aggregated statistics including burndown charts and committed spending vs. actual spend.")
     @IsFinanceOfficer
-    @GetMapping("/dashboard")
-    public ResponseEntity<BudgetDashboardDto> getFinanceDashboard() {
-        BudgetDashboardDto dto = new BudgetDashboardDto();
-        dto.setTotalBudget(0.0);
-        dto.setCommittedFunds(0.0);
-        dto.setActualSpend(0.0);
-        dto.setBurndownData(List.of());
-        return ResponseEntity.ok(dto);
+    @GetMapping(value = "/dashboard", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BudgetDashboardDto> getFinanceDashboard(@RequestParam(required = false) Long departmentId) {
+        return budgetService.getFinanceDashboard(departmentId);
     }
 
     @Operation(summary = "Create Budget", description = "Create company budget, fails if a budget already exists.")
