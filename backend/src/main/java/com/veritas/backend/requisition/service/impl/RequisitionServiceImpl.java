@@ -685,21 +685,41 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         List<String> changes = new ArrayList<>();
         if (!Objects.equals(request.getRequestName(), updates.requestName())) {
-            changes.add("Field 'requestName' changed from '" + request.getRequestName() + "' to '" + updates.requestName() + "'");
+            changes.add("Request Name changed from '" + request.getRequestName() + "' to '" + updates.requestName() + "'");
         }
         if (!Objects.equals(request.getDescription(), updates.description())) {
-            changes.add("Field 'description' changed from '" + request.getDescription() + "' to '" + updates.description() + "'");
+            String oldDesc = request.getDescription();
+            String newDesc = updates.description();
+            if (oldDesc == null || oldDesc.isEmpty()) {
+                if (newDesc != null && !newDesc.isEmpty()) {
+                    changes.add("Description set to '" + newDesc + "'");
+                }
+            } else {
+                if (newDesc == null || newDesc.isEmpty()) {
+                    changes.add("Description cleared (was '" + oldDesc + "')");
+                } else {
+                    changes.add("Description changed from '" + oldDesc + "' to '" + newDesc + "'");
+                }
+            }
         }
         if (!Objects.equals(request.getPriority(), updates.priority())) {
-            changes.add("Field 'priority' changed from '" + request.getPriority() + "' to '" + updates.priority() + "'");
+            changes.add("Priority changed from '" + request.getPriority() + "' to '" + updates.priority() + "'");
         }
         if (updates.projectId() != null && (request.getProject() == null || !request.getProject().getId().equals(updates.projectId()))) {
-            Long oldId = request.getProject() != null ? request.getProject().getId() : null;
-            changes.add("Field 'projectId' changed from '" + oldId + "' to '" + updates.projectId() + "'");
+            String oldName = request.getProject() != null ? request.getProject().getName() : "None";
+            Project newProject = projectRepository.findById(updates.projectId()).orElse(null);
+            String newName = newProject != null ? newProject.getName() : String.valueOf(updates.projectId());
+            changes.add("Project changed from '" + oldName + "' to '" + newName + "'");
         }
-        if (updates.workflowDefinitionId() != null && (request.getWorkflowDefinition() == null || !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId()))) {
-            Long oldId = request.getWorkflowDefinition() != null ? request.getWorkflowDefinition().getId() : null;
-            changes.add("Field 'workflowDefinitionId' changed from '" + oldId + "' to '" + updates.workflowDefinitionId() + "'");
+        WorkflowDefinition newWorkflow = null;
+        boolean workflowChanged = updates.workflowDefinitionId() != null
+                && (request.getWorkflowDefinition() == null || !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId()));
+        if (workflowChanged) {
+            String oldName = request.getWorkflowDefinition() != null ? request.getWorkflowDefinition().getName() : "None";
+            newWorkflow = workflowDefinitionRepository.findById(updates.workflowDefinitionId())
+                    .orElseThrow(() -> new IllegalArgumentException("Workflow not found with ID: " + updates.workflowDefinitionId()));
+            String newName = newWorkflow.getName();
+            changes.add("Workflow changed from '" + oldName + "' to '" + newName + "'");
         }
 
         boolean itemsChanged = hasLineItemsChanged(request.getItems(), updates.items());
@@ -710,7 +730,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             String newItemsStr = updates.items() == null ? "" : updates.items().stream()
                     .map(item -> item.name() + " (" + item.quantity() + " " + item.unit() + (item.description() != null && !item.description().isEmpty() ? " - " + item.description() : "") + ")")
                             .collect(Collectors.joining(", "));
-            changes.add("Field 'items' changed from '" + oldItemsStr + "' to '" + newItemsStr + "'");
+            changes.add("Line Items changed from '" + oldItemsStr + "' to '" + newItemsStr + "'");
         }
 
         if (!changes.isEmpty()) {
@@ -742,12 +762,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             internalBudgetRepository.save(request.getBudget());
         }
 
-        if (updates.workflowDefinitionId() != null
-                && !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId())) {
-            WorkflowDefinition newWorkflow = workflowDefinitionRepository.findById(updates.workflowDefinitionId())
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Workflow not found with ID: " + updates.workflowDefinitionId()));
-
+        if (workflowChanged) {
             request.setWorkflowDefinition(newWorkflow);
             WorkflowStep startStep = workflowStepRepository
                     .findFirstByWorkflowDefinitionAndWorkflowComponent(newWorkflow, WorkflowComponent.START_EVENT)
@@ -790,10 +805,13 @@ public class RequisitionServiceImpl implements RequisitionService {
             RequestItem current = currentItems.get(i);
             RequisitionItemCreateDto incoming = incomingItems.get(i);
 
+            String currentDesc = current.getDescription() == null ? "" : current.getDescription().trim();
+            String incomingDesc = incoming.description() == null ? "" : incoming.description().trim();
+
             if (!Objects.equals(current.getName(), incoming.name()) ||
                     !Objects.equals(current.getQuantity(), incoming.quantity()) ||
                     !Objects.equals(current.getUnit(), incoming.unit()) ||
-                    !Objects.equals(current.getDescription(), incoming.description())) {
+                    !currentDesc.equals(incomingDesc)) {
                 return true;
             }
         }
