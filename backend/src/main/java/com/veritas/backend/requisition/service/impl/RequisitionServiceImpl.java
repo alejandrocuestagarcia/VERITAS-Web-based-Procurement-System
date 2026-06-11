@@ -538,6 +538,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Finished requests cannot be reassigned");
+        }
+
         if (newRequesterId == null) {
             throw new IllegalArgumentException("New assigned user must be stated");
         }
