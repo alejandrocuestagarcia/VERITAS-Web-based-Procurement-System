@@ -54,8 +54,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,8 +82,6 @@ import static com.veritas.backend.common.model.AuditActionConstants.*;
 @Service
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {
-
-    private static final Logger log = LoggerFactory.getLogger(RequisitionServiceImpl.class);
 
     private final RequestRepository requestRepository;
     private final ProjectRepository projectRepository;
@@ -224,6 +220,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
         checkRequestAccess(request, actor);
+        workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
         storeAttachment(file, request, null);
     }
 
@@ -269,20 +266,14 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public void deleteAttachment(Long attachmentId) {
+    public void deleteAttachment(Long attachmentId, User actor) {
         Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow(() -> new EntityNotFoundException("Attachment not found with id: " + attachmentId));
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
-        if (user.getRole() == UserRole.REQUESTER && !attachment.getRequest().getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Not allowed to access this request");
-        }
-
-        checkProcurementOfficerAccess(attachment.getRequest(), user);
+        checkRequestAccess(attachment.getRequest(), actor);
+        workflowEngineService.checkAuthorization(attachment.getRequest(), actor, attachment.getRequest().getCurrentStep());
 
         if (attachment.getInvoice() != null) {
-            deleteInvoice(attachment.getRequest().getRequestID(), user);
+            deleteInvoice(attachment.getRequest().getRequestID(), actor);
             return;
         }
 
@@ -833,9 +824,12 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file) {
+    public InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        checkRequestAccess(request, actor);
+        workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
 
         if (request.getInvoice() != null) {
             throw new EntityExistsException("Invoice already exists for request with id: " + requestId);
@@ -886,7 +880,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
 
-        checkProcurementOfficerAccess(request, user);
+        checkRequestAccess(request, user);
+        workflowEngineService.checkAuthorization(request, user, request.getCurrentStep());
 
         Invoice invoice = request.getInvoice();
         if (invoice == null) {
@@ -961,19 +956,6 @@ public class RequisitionServiceImpl implements RequisitionService {
             attachmentRepository.save(attachment);
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file. Please try again!", ex);
-        }
-    }
-
-    private void checkProcurementOfficerAccess(Request request, User user) {
-        if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
-            Department userDept = user.getDepartment();
-            Team requestTeam = request.getTeam();
-            Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
-
-            if (userDept == null || requestDept == null
-                    || !userDept.getDepartmentId().equals(requestDept.getDepartmentId())) {
-                throw new AccessDeniedException("Not allowed to access this request");
-            }
         }
     }
 

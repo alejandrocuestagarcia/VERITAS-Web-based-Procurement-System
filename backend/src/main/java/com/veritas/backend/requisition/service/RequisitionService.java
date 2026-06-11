@@ -96,7 +96,7 @@ public interface RequisitionService {
      * @throws EntityNotFoundException if the attachment is not found
      * @throws AccessDeniedException if the user is not permitted to access the request
      */
-    void deleteAttachment(Long attachmentId);
+    void deleteAttachment(Long attachmentId, User actor);
 
     /**
      * Advances a request to its next workflow step and notifies relevant users.
@@ -230,7 +230,7 @@ public interface RequisitionService {
      * @throws EntityExistsException if an invoice already exists for the request
      * @throws IllegalStateException if no vendor quote has been selected
      */
-    InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file);
+    InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file, User actor);
 
     /**
      * Returns the invoice for a given request, including EUR-converted total where available.

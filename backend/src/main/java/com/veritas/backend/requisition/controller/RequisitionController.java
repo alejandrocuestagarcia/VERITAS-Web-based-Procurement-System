@@ -159,8 +159,8 @@ public class RequisitionController {
     @Operation(summary = "Delete attachment", description = "Deletes a specific attachment by its ID.")
     @IsRequester
     @DeleteMapping("/attachments/{attachmentId}")
-    public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId) {
-        requisitionService.deleteAttachment(attachmentId);
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId, @AuthenticationPrincipal User user) {
+        requisitionService.deleteAttachment(attachmentId, user);
         return ResponseEntity.noContent().build();
     }
 
@@ -189,7 +189,7 @@ public class RequisitionController {
             @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal User user) {
         requisitionService.checkRequestAccess(id, user);
-        InvoiceDto invoice = requisitionService.createInvoice(id, invoiceData, file);
+        InvoiceDto invoice = requisitionService.createInvoice(id, invoiceData, file, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice);
     }
 
