@@ -47,7 +47,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     isTeamLeader: false,
     automatedApproval: false
   };
-  public roles = Object.values(UserDtoRoleEnum);
+  public roles = Object.values(UserDtoRoleEnum).filter(r => r !== UserDtoRoleEnum.Administrator);
   public currentRule: any = {
     isPdfRequired: false,
     isCsvRequired: false,
