@@ -160,6 +160,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
                 BigDecimal.valueOf(200),
                 BigDecimal.valueOf(15),
                 BigDecimal.valueOf(215),
+                5,
                 List.of(new QuoteLineItemCreateDto("Integration Item", 2, BigDecimal.valueOf(100), null))
         );
 
@@ -199,6 +200,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
                 BigDecimal.valueOf(120),
                 BigDecimal.valueOf(5),
                 BigDecimal.valueOf(125),
+                5,
                 List.of(new QuoteLineItemCreateDto("Updated Item", 1, BigDecimal.valueOf(120), null))
         );
 
@@ -265,6 +267,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         quote.setBaseAmount(totalAmount);
         quote.setShippingCosts(BigDecimal.ZERO);
         quote.setTotalAmount(totalAmount);
+        quote.setShippingTime(5);
         quote.setSelected(false);
         return quoteRepository.save(quote);
     }

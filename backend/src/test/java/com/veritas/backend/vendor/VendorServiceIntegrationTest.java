@@ -1,10 +1,19 @@
 package com.veritas.backend.vendor;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.requisition.entity.Invoice;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
+import com.veritas.backend.vendor.dto.VendorRatingDto;
+import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteRepository;
+import com.veritas.backend.vendor.repository.VendorEvaluationRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.VendorService;
 import jakarta.persistence.EntityExistsException;
@@ -14,7 +23,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,15 +43,40 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     private QuoteRepository quoteRepository;
 
+    @Autowired
+    private VendorEvaluationRepository vendorEvaluationRepository;
+
+    @Autowired
+    private RequestRepository requestRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
-        quoteRepository.deleteAll();
-        vendorRepository.deleteAll();
+        clearDatabase();
     }
 
     @AfterEach
     void cleanUp() {
-        vendorRepository.deleteAll(); }
+        clearDatabase();
+    }
+
+    private void clearDatabase() {
+        jdbcTemplate.update("DELETE FROM vendor_evaluations");
+        jdbcTemplate.update("DELETE FROM attachments");
+        jdbcTemplate.update("DELETE FROM invoices");
+        jdbcTemplate.update("DELETE FROM quotes");
+        jdbcTemplate.update("DELETE FROM requests");
+        jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update("DELETE FROM vendors");
+    }
 
     @Test
     void VendorCreation_ValidInput_PersistsInDatabase() {
@@ -47,7 +84,7 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
                 null,
                 "Integration Test Vendor",
                 "TAX-INT-456",
-                null, null, null, null,
+                null, null, null, null, null,
                 "Integration test description",
                 "Boban Bobanovic",
                 "boban@example.com",
@@ -137,5 +174,61 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         vendor.setTaxId(taxId);
         vendor.setDescription("Test vendors");
         return vendorRepository.save(vendor);
+    }
+
+    @Test
+    void RateVendor_CalculatesGapAndWeightedOverallScore_PersistsCorrectly() {
+        User evaluator = new User();
+        evaluator.setEmail("evaluator@veritas.com");
+        evaluator.setName("Procurement Officer");
+        evaluator.setPasswordHash("secured_pass");
+        evaluator.setRole(com.veritas.backend.user.entity.UserRole.PROCUREMENT_OFFICER);
+        evaluator.setIsActive(true);
+        evaluator = userRepository.save(evaluator);
+
+        Vendor vendor = new Vendor();
+        vendor.setVendorName("Reliable Logistics");
+        vendor.setTaxId("TAX-REL-789");
+        vendor.setDescription("Logistics vendor description");
+        vendor = vendorRepository.save(vendor);
+
+        Request request = new Request();
+        request.setRequestName("Requisition for Logistics");
+        request = requestRepository.save(request);
+
+        Quote quote = new Quote();
+        quote.setVendorID(vendor);
+        quote.setRequest(request);
+        quote.setSelected(true);
+        quote.setTotalAmount(new BigDecimal("100.00"));
+        quote.setShippingTime(5);
+        quote = quoteRepository.save(quote);
+
+        request.setQuotes(List.of(quote));
+        request = requestRepository.save(request);
+
+        Invoice invoice = new Invoice();
+        invoice.setVendor(vendor);
+        invoice.setRequest(request);
+        invoice.setInvoiceNumber("INV-999");
+        invoice.setTotalAmount(new BigDecimal("110.00"));
+        invoice = invoiceRepository.save(invoice);
+
+        request.setInvoice(invoice);
+        request = requestRepository.save(request);
+
+        VendorRatingDto ratingData = new VendorRatingDto(8, 9, 8, "Satisfactory performance");
+        VendorDto resultDto = vendorService.rateVendor(vendor.getId(), request.getRequestID(), ratingData, evaluator);
+
+        assertThat(resultDto).isNotNull();
+        assertThat(resultDto.gapScore()).isEqualTo(9.0);
+        assertThat(resultDto.overallScore()).isEqualTo(8.6);
+        assertThat(resultDto.communicationScore()).isEqualTo(8.0);
+        assertThat(resultDto.deliveryScore()).isEqualTo(9.0);
+        assertThat(resultDto.qualityScore()).isEqualTo(8.0);
+
+        Vendor persistedVendor = vendorRepository.findById(vendor.getId()).orElseThrow();
+        assertThat(persistedVendor.getGapScore()).isEqualTo(9.0);
+        assertThat(persistedVendor.getOverallScore()).isEqualTo(8.6);
     }
 }

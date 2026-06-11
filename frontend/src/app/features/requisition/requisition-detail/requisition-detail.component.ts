@@ -23,6 +23,7 @@ import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow
 export class RequisitionDetailComponent implements OnInit {
   request: RequisitionDto | null = null;
   selectedQuote: QuoteDto | null = null;
+  allQuotes: QuoteDto[] = [];
   loading = false;
   role: string = this.authService.getRole() ?? '';
   canAct = false;
@@ -189,6 +190,7 @@ export class RequisitionDetailComponent implements OnInit {
   loadSelectedQuote(id: number): void {
     this.quotesService.getQuotesForRequest(id).subscribe({
       next: (quotes) => {
+        this.allQuotes = quotes || [];
         if (quotes && Array.isArray(quotes)) {
           this.selectedQuote = quotes.find(q => q.isSelected) || null;
         } else {
@@ -198,6 +200,7 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load quotes for request', err);
+        this.allQuotes = [];
         this.selectedQuote = null;
         this.loading = false;
       }
@@ -448,6 +451,8 @@ export class RequisitionDetailComponent implements OnInit {
       this.router.navigate([`/requisitions/${this.request.id}/vendor-quotes`]);
     }
   }
+
+
 
   downloadAttachment(attachment: any): void {
     if (!attachment || !attachment.attachmentId) return;

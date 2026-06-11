@@ -1,9 +1,17 @@
 package com.veritas.backend.vendor;
 
+import com.veritas.backend.requisition.entity.Invoice;
+import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.user.entity.User;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
+import com.veritas.backend.vendor.dto.VendorRatingDto;
+import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
+import com.veritas.backend.vendor.entity.VendorEvaluation;
 import com.veritas.backend.vendor.mapper.VendorMapper;
+import com.veritas.backend.vendor.repository.VendorEvaluationRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.impl.VendorServiceImpl;
 import jakarta.persistence.EntityExistsException;
@@ -19,6 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +47,12 @@ public class VendorServiceUnitTest {
     @Mock
     private VendorMapper vendorMapper;
 
+    @Mock
+    private VendorEvaluationRepository vendorEvaluationRepository;
+
+    @Mock
+    private RequestRepository requestRepository;
+
     @InjectMocks
     private VendorServiceImpl vendorService;
 
@@ -47,7 +62,7 @@ public class VendorServiceUnitTest {
                 1L,
                 "Test Vendor",
                 "TAX-123",
-                null, null, null, null,
+                null, null, null, null, null,
                 "A test vendor description",
                 "John Doe",
                 "john@example.com",
@@ -94,7 +109,7 @@ public class VendorServiceUnitTest {
 
         VendorDto dto = new VendorDto(
                 1L, "Test Vendor", "TAX-123",
-                null, null, null, null,
+                null, null, null, null, null,
                 "A test vendor description",
                 "John Doe",
                 "john@example.com",
@@ -178,7 +193,7 @@ public class VendorServiceUnitTest {
             1L,
             "Updated",
             "TAX-001",
-            null, null, null, null,
+            null, null, null, null, null,
             "Updated desc",
             null,
             null,
@@ -218,7 +233,7 @@ public class VendorServiceUnitTest {
             1L,
             "New Vendor",
             "TAX-NEW",
-            null, null, null, null,
+            null, null, null, null, null,
             "New description",
             "New Contact",
             "new@vendor.com",
@@ -270,7 +285,7 @@ public class VendorServiceUnitTest {
             1L,
             vendor.getVendorName(),
             vendor.getTaxId(),
-            null, null, null, null,
+            null, null, null, null, null,
             vendor.getDescription(),
             vendor.getPrimaryContactName(),
             vendor.getPrimaryContactEmail(),
@@ -282,5 +297,114 @@ public class VendorServiceUnitTest {
 
         assertThat(vendor.getPrimaryContactName()).isEqualTo("Existing Contact");
         assertThat(vendor.getPrimaryContactEmail()).isEqualTo("existing@vendor.com");
+    }
+
+    @Test
+    void RateVendor_ExactQuoteAndInvoiceAmount_SavesWithGapScoreTen() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        Quote quote = new Quote();
+        quote.setSelected(true);
+        quote.setTotalAmount(new BigDecimal("150.00"));
+        request.setQuotes(List.of(quote));
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(new BigDecimal("150.00"));
+        request.setInvoice(invoice);
+
+        User evaluator = new User();
+        evaluator.setId(5L);
+
+        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9, "Nice performance");
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(requestRepository.findById(10L)).thenReturn(java.util.Optional.of(request));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        
+        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 10.0, 9.0, "Desc", "Contact", "email@test.com", null, null, null);
+        when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(returnDto);
+
+        VendorDto result = vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
+
+        assertThat(result).isNotNull();
+        ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
+        verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
+        VendorEvaluation savedEval = evaluationCaptor.getValue();
+        assertThat(savedEval.getGapScore()).isEqualTo(10.0);
+        assertThat(savedEval.getCommunicationScore()).isEqualTo(9);
+        assertThat(savedEval.getDeliveryScore()).isEqualTo(8);
+        assertThat(savedEval.getQualityScore()).isEqualTo(9);
+    }
+
+    @Test
+    void RateVendor_InvoiceExceedsQuote_SavesWithReducedGapScore() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        Quote quote = new Quote();
+        quote.setSelected(true);
+        quote.setTotalAmount(new BigDecimal("100.00"));
+        request.setQuotes(List.of(quote));
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(new BigDecimal("120.00"));
+        request.setInvoice(invoice);
+
+        User evaluator = new User();
+        evaluator.setId(5L);
+
+        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9, "Nice performance");
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(requestRepository.findById(10L)).thenReturn(java.util.Optional.of(request));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        
+        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 8.0, 8.5, "Desc", "Contact", "email@test.com", null, null, null);
+        when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(returnDto);
+
+        vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
+
+        ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
+        verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
+        VendorEvaluation savedEval = evaluationCaptor.getValue();
+        assertThat(savedEval.getGapScore()).isEqualTo(8.0);
+    }
+
+    @Test
+    void RateVendor_MissingInvoice_SavesWithDefaultGapScoreTen() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        User evaluator = new User();
+        evaluator.setId(5L);
+
+        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9, "Nice performance");
+
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(requestRepository.findById(10L)).thenReturn(java.util.Optional.of(request));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
+        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        
+        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 10.0, 9.0, "Desc", "Contact", "email@test.com", null, null, null);
+        when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(returnDto);
+
+        vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
+
+        ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
+        verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
+        VendorEvaluation savedEval = evaluationCaptor.getValue();
+        assertThat(savedEval.getGapScore()).isEqualTo(10.0);
     }
 }

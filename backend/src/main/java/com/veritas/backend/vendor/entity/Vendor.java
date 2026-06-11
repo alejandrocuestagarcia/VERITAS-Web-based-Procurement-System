@@ -58,7 +58,10 @@ public class Vendor {
     @Formula("(SELECT AVG(e.delivery_score) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
     private Double deliveryScore;
 
-    @Formula("(SELECT AVG((COALESCE(e.communication_score, 0) + COALESCE(e.delivery_score, 0) + COALESCE(e.quality_score, 0)) / 3.0) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    @Formula("(SELECT AVG(e.gap_score) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    private Double gapScore;
+
+    @Formula("(SELECT AVG(COALESCE(e.gap_score, 0) * 0.4 + COALESCE(e.quality_score, 0) * 0.2 + COALESCE(e.delivery_score, 0) * 0.2 + COALESCE(e.communication_score, 0) * 0.2) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
     private Double overallScore;
 
     @PrePersist

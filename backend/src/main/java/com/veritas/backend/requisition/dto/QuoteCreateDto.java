@@ -28,6 +28,10 @@ public record QuoteCreateDto(
     @NotNull(message = "Total amount is required")
     @Positive(message = "Total amount must be greater than 0")
     BigDecimal totalAmount,
+
+    @NotNull(message = "Shipping time is required")
+    @PositiveOrZero(message = "Shipping time must be greater than or equal to 0")
+    Integer shippingTime,
     
     @Valid
     List<QuoteLineItemCreateDto> items

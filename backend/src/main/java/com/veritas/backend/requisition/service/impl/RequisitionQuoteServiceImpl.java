@@ -103,6 +103,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quote.setBaseAmount(createDto.baseAmount());
         quote.setShippingCosts(createDto.shippingCosts());
         quote.setTotalAmount(createDto.totalAmount());
+        quote.setShippingTime(createDto.shippingTime());
         quote.setSelected(false);
         
         Quote savedQuote = quoteRepository.save(quote);
@@ -131,6 +132,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quote.setBaseAmount(updateDto.baseAmount());
         quote.setShippingCosts(updateDto.shippingCosts());
         quote.setTotalAmount(updateDto.totalAmount());
+        quote.setShippingTime(updateDto.shippingTime());
         
         Quote updatedQuote = quoteRepository.save(quote);
 

@@ -97,6 +97,7 @@ import { RequisitionDetailComponent } from './features/requisition/requisition-d
 import { RequisitionVendorQuotesComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quotes-list/requisition-vendor-quotes.component';
 import { RequisitionVendorQuoteCreateComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component';
 import { RequisitionVendorQuoteViewComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component';
+import { RequisitionVendorComparisonComponent } from './features/requisition/requisition-vendor-quotes/requisition-vendor-comparison/requisition-vendor-comparison.component';
 import { RequisitionChangeRequesterDialogComponent } from './features/requisition/requisition-change-requester-dialog/requisition-change-requester-dialog.component';
 import { RejectDialogComponent } from './shared/components/reject-dialog/reject-dialog.component';
 import { AssigneeSelectDialogComponent } from './shared/components/assignee-select-dialog/assignee-select-dialog.component';
@@ -155,6 +156,7 @@ import { NotificationLogComponent } from './features/notifications/notification-
     RequisitionVendorQuoteCreateComponent,
     RequisitionVendorQuoteViewComponent,
     RequisitionChangeRequesterDialogComponent,
+    RequisitionVendorComparisonComponent,
 
     // Notifications
     NotificationLogComponent,

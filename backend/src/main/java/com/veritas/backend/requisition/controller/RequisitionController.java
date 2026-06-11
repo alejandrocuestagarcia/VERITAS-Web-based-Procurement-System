@@ -39,7 +39,7 @@ public class RequisitionController {
     @PreAuthorize("hasAnyRole('REQUESTER')")
     @PostMapping
     public ResponseEntity<RequisitionDto> createRequest(@Valid @RequestBody RequisitionCreateDto requestBody,
-            @AuthenticationPrincipal User user) {
+                                                        @AuthenticationPrincipal User user) {
         return ResponseEntity.status(HttpStatus.CREATED).body(requisitionService.createRequest(requestBody, user));
     }
 
@@ -67,7 +67,7 @@ public class RequisitionController {
     @IsRequester
     @PatchMapping("/{id}")
     public ResponseEntity<RequisitionDto> updateRequest(@PathVariable Long id, @Valid @RequestBody RequisitionUpdateDto updates,
-            @AuthenticationPrincipal User user) {
+                                                        @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(requisitionService.updateRequest(id, updates, user));
     }
 
@@ -161,14 +161,6 @@ public class RequisitionController {
     public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId, @AuthenticationPrincipal User user) {
         requisitionService.deleteAttachment(attachmentId, user);
         return ResponseEntity.noContent().build();
-    }
-
-    @Operation(summary = "Get quote comparison", description = "Returns a side-by-side comparison of quotes, including external market price data.")
-    @IsRequester
-    @GetMapping("/{id}/comparison")
-    public ResponseEntity<QuoteComparisonDto> getQuoteComparison(@PathVariable Long id, @AuthenticationPrincipal User user) {
-        requisitionService.checkRequestAccess(id, user);
-        return ResponseEntity.ok(null);
     }
 
     @Operation(summary = "Process final payment", description = "Finalizes a request, marks it as paid, and transitions funds from 'committed' to 'actual' in the budget.")
