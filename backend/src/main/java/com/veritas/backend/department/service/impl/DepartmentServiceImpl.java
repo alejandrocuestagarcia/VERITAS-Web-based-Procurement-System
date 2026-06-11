@@ -34,9 +34,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentMapper.toDepartment(request);
         
         if (request.budget() != null) {
-            InternalBudget budget = new InternalBudget();
-            budget.setBudgetName("Department: " + department.getName());
-            budget.setTotalAmount(request.budget());
+            InternalBudget budget = InternalBudget.builder().budgetName("Department: " + department.getName()).totalAmount(request.budget()).build();
             department.setInternalBudget(budget);
         }
         
@@ -62,9 +60,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
         department.setName(request.name());
         if (request.budget() != null) {
-            InternalBudget budget = new InternalBudget();
-            budget.setBudgetName("Department: " + department.getName());
-            budget.setTotalAmount(request.budget());
+            InternalBudget budget = InternalBudget.builder().budgetName("Department: " + department.getName()).totalAmount(request.budget()).build();
             department.setInternalBudget(budget);
         }
         return departmentMapper.toDepartmentDto(departmentRepository.save(department));

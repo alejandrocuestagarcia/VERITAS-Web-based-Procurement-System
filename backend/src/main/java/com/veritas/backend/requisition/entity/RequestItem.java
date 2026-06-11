@@ -1,11 +1,16 @@
 package com.veritas.backend.requisition.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 @Entity
 @Table(name = "request_items")
 @Data
+@Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class RequestItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
