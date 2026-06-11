@@ -167,6 +167,7 @@ class RequisitionServiceUnitTest {
         testProject = new Project();
         testProject.setId(1L);
         testProject.setProjectKey("PRJ");
+        testProject.setName("Test Project");
         testProject.setRequestCounter(10);
 
         testWorkflow = new WorkflowDefinition();
@@ -600,6 +601,12 @@ class RequisitionServiceUnitTest {
         RequisitionDto expectedDto = mock(RequisitionDto.class);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(currentRequester);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+
         RequisitionDto result = requisitionService.changeRequester(1L, 2L);
 
         assertNotNull(result);
@@ -808,6 +815,7 @@ class RequisitionServiceUnitTest {
         Project newProject = new Project();
         newProject.setId(2L);
         newProject.setProjectKey("NEWPRJ");
+        newProject.setName("NEWPRJ");
         newProject.setRequestCounter(5);
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
@@ -826,12 +834,70 @@ class RequisitionServiceUnitTest {
 
         String details = detailsCaptor.getValue();
         assertAll("Audit log details checks",
-                () -> assertTrue(details.contains("Field 'requestName' changed from 'Old Laptop' to 'Updated Laptop'")),
-                () -> assertTrue(details.contains("Field 'description' changed from 'Need old laptop' to 'Need an updated laptop'")),
-                () -> assertTrue(details.contains("Field 'priority' changed from 'LOW' to 'HIGH'")),
-                () -> assertTrue(details.contains("Field 'projectId' changed from '1' to '2'")),
-                () -> assertTrue(details.contains("Field 'items' changed"))
+                () -> assertTrue(details.contains("Request Name changed from 'Old Laptop' to 'Updated Laptop'")),
+                () -> assertTrue(details.contains("Description changed from 'Need old laptop' to 'Need an updated laptop'")),
+                () -> assertTrue(details.contains("Priority changed from 'LOW' to 'HIGH'")),
+                () -> assertTrue(details.contains("Project changed from 'Test Project' to 'NEWPRJ'")),
+                () -> assertTrue(details.contains("Line Items changed"))
         );
+    }
+
+    @Test
+    void UpdateRequest_DescriptionSet_CreatesCorrectAuditLog() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUser(testUser);
+        request.setProject(testProject);
+        request.setWorkflowDefinition(testWorkflow);
+        request.setRequestName("Laptop");
+        request.setDescription(null);
+        request.setPriority(Priority.LOW);
+        request.setItems(new java.util.ArrayList<>());
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.updateRequest(1L, updates, testUser);
+
+        ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).createRequisitionChangeLog(eq(testUser), eq(request), detailsCaptor.capture());
+
+        String details = detailsCaptor.getValue();
+        assertTrue(details.contains("Description set to 'Need laptop'"));
+    }
+
+    @Test
+    void UpdateRequest_DescriptionCleared_CreatesCorrectAuditLog() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUser(testUser);
+        request.setProject(testProject);
+        request.setWorkflowDefinition(testWorkflow);
+        request.setRequestName("Laptop");
+        request.setDescription("Need laptop");
+        request.setPriority(Priority.LOW);
+        request.setItems(new java.util.ArrayList<>());
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", null, 1L, 1L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.updateRequest(1L, updates, testUser);
+
+        ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).createRequisitionChangeLog(eq(testUser), eq(request), detailsCaptor.capture());
+
+        String details = detailsCaptor.getValue();
+        assertTrue(details.contains("Description cleared (was 'Need laptop')"));
     }
 
     //AI-Generated
