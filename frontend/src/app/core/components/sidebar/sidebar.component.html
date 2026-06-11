@@ -34,48 +34,54 @@
      [class.translate-x-0]="isOpen"
      [class.-translate-x-full]="!isOpen">
 
-  <span class="font-manrope font-extrabold text-3xl text-veritas-dark mb-10 pl-4 block">
-    VERITAS
-  </span>
+  <div>
+    <span class="font-manrope font-extrabold text-3xl text-veritas-dark mb-10 pl-4 block">
+      VERITAS
+    </span>
 
-  <button
-    (click)="closeMenu()"
-    class="lg:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center
-           rounded-lg hover:bg-surface-highest bg-transparent border-0 cursor-pointer">
-    <mat-icon class="text-on-surface text-lg">close</mat-icon>
-  </button>
-
-  <div class="flex pb-6" *ngIf="authService.hasRole('REQUESTER')">
-    <button routerLink="/requisitions/create" mat-flat-button class="v-btn-brand w-full"
-            (click)="closeMenu()">
-      <mat-icon>add</mat-icon>
-      <span>New Requisition</span>
+    <button
+      (click)="closeMenu()"
+      class="lg:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center
+             rounded-lg hover:bg-surface-highest bg-transparent border-0 cursor-pointer">
+      <mat-icon class="text-on-surface text-lg">close</mat-icon>
     </button>
+
+    <div *ngIf="!authService.isPasswordChangeRequired() && authService.hasRole('REQUESTER')" class="flex pb-6">
+      <button routerLink="/requisitions/create" mat-flat-button class="v-btn-brand w-full"
+              (click)="closeMenu()">
+        <mat-icon>add</mat-icon>
+        <span>New Requisition</span>
+      </button>
+    </div>
   </div>
 
   <div class="flex-1">
-    <a *ngFor="let item of navLinks"
-       [routerLink]="item.route"
-       routerLinkActive="v-active-link"
-       (click)="closeMenu()"
-       class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
-              text-on-surface cursor-pointer transition-colors duration-200
-              hover:bg-surface-highest no-underline relative">
-      <mat-icon class="mr-4 w-5 h-5 opacity-60">{{ item.icon }}</mat-icon>
-      <span>{{ item.label }}</span>
-      <span *ngIf="item.icon === 'notifications' && unreadCount > 0"
-            class="absolute right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5
-                   text-xs font-bold text-white bg-red-500 rounded-full">
-        {{ unreadCount > 99 ? '99+' : unreadCount }}
-      </span>
-    </a>
+    <div *ngIf="!authService.isPasswordChangeRequired()">
+      <a *ngFor="let item of navLinks"
+         [routerLink]="item.route"
+         routerLinkActive="v-active-link"
+         (click)="closeMenu()"
+         class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
+                text-on-surface cursor-pointer transition-colors duration-200
+                hover:bg-surface-highest no-underline relative">
+        <mat-icon class="mr-4 w-5 h-5 opacity-60">{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+        <span *ngIf="item.icon === 'notifications' && unreadCount > 0"
+              class="absolute right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5
+                     text-xs font-bold text-white bg-red-500 rounded-full">
+          {{ unreadCount > 99 ? '99+' : unreadCount }}
+        </span>
+      </a>
+    </div>
   </div>
 
-  <button (click)="onLogout()"
-          class="flex items-center w-full px-4 py-3 mb-1 rounded-lg
-                 text-on-surface cursor-pointer transition-colors duration-200
-                 hover:bg-surface-highest bg-transparent border-0">
-    <mat-icon class="mr-4 w-5 h-5 opacity-60">logout</mat-icon>
-    <span>Logout</span>
-  </button>
+  <div class="mt-auto">
+    <button (click)="onLogout()"
+            class="flex items-center w-full px-4 py-3 rounded-lg
+                   text-on-surface cursor-pointer transition-colors duration-200
+                   hover:bg-surface-highest bg-transparent border-0">
+      <mat-icon class="mr-4 w-5 h-5 opacity-60">logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </div>
 </nav>
