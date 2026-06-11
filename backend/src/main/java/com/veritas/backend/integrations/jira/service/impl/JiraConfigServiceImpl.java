@@ -7,11 +7,14 @@ import com.veritas.backend.integrations.jira.mapper.JiraConfigMapper;
 import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
 import com.veritas.backend.integrations.jira.service.DynamicJiraScheduler;
 import com.veritas.backend.integrations.jira.service.JiraConfigService;
+import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.integrations.jira.repository.JiraSyncQueueItemRepository;
+import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.user.entity.User;
@@ -41,6 +44,7 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     private final JiraSyncQueueItemRepository queueItemRepository;
     private final RequestRepository requestRepository;
     private final AuditService auditService;
+    private final JiraSyncService jiraSyncService;
 
     @Override
     public Page<JiraConfigResponseDto> getAllConfigs(Pageable pageable, String filter) {
@@ -93,7 +97,23 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         for (Request request : syncedRequests) {
             request.setJiraStatus("NOT_SYNCED");
             request.setJiraConfig(null);
+
+            if (request.getState() == RequestStatus.FINISHED
+                    && request.getInvoice() != null
+                    && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                continue;
+            }
+
             auditService.createJiraUnsyncLog(actor, request, "Unsynced from Jira issue " + request.getJiraIssueKey() + " | Connection deleted");
+
+            String issueKey = request.getJiraIssueKey();
+            if (issueKey != null && !issueKey.isBlank()) {
+                try {
+                    jiraSyncService.postJiraComment(entity, issueKey, "This requisition has been unlinked from Veritas and the Jira connection has been deleted.");
+                } catch (Exception e) {
+                    log.warn("Failed to post unsync comment to Jira for issue {}", issueKey, e);
+                }
+            }
         }
         if (!syncedRequests.isEmpty()) {
             requestRepository.saveAll(syncedRequests);

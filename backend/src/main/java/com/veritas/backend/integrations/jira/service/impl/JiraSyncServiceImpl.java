@@ -964,7 +964,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
     }
 
-    private void postJiraComment(JiraConfig config, String issueKey, String commentText) {
+    @Override
+    public void postJiraComment(JiraConfig config, String issueKey, String commentText) {
         String url = config.getJiraUrl().replaceAll("/+$", "") + "/rest/api/3/issue/" + issueKey + "/comment";
         HttpHeaders headers = createHeaders(config.getUsername(), config.getApiToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
