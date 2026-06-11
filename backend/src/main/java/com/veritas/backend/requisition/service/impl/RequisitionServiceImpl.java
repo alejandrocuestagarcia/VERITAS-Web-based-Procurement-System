@@ -43,8 +43,6 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
