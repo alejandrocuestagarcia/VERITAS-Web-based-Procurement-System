@@ -19,6 +19,7 @@ import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.impl.WorkflowServiceImpl;
+import com.veritas.backend.workflow.validation.BpmnValidationException;
 import com.veritas.backend.workflow.validation.BpmnValidator;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -186,24 +187,15 @@ class WorkflowServiceUnitTest {
     }
 
     @Test
-    void CreateWorkflow_WithAssignee_SetsAssignedPerson() {
+    void CreateWorkflow_WithAdministratorAssignee_ThrowsValidationException() {
         String xml = VALID_BPMN_XML.replace("<bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>",
                 "<bpmn:documentation>[ASSIGNEE]ADMINISTRATOR</bpmn:documentation>");
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
-        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
 
-        workflowService.createWorkflow(saveDto);
-
-        verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
-        verify(workflowStepRepository).saveAll(stepsCaptor.capture());
-        Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
+        BpmnValidationException ex = assertThrows(BpmnValidationException.class, () -> workflowService.createWorkflow(saveDto));
+        assertThat(ex.getErrors()).anyMatch(e -> e.contains("cannot be assigned to ADMINISTRATOR"));
         
-        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
-        savedSteps.forEach(stepsList::add);
-        
-        assertThat(stepsList).hasSize(3);
-        assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getRole())
-                .isEqualTo(UserRole.ADMINISTRATOR);
+        verify(workflowDefinitionRepository, never()).save(any(WorkflowDefinition.class));
     }
 
     @Test
