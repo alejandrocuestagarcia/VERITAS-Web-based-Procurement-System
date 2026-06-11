@@ -59,7 +59,7 @@ export class JiraIssuesSyncHistoryComponent implements OnInit {
     switch (action) {
       case 'JIRA_SYNC': return 'Sync';
       case 'JIRA_UNSYNC': return 'Unsync';
-      case 'JIRA_REQUEST_UPDATED': return 'Request Updated';
+      case 'JIRA_COMMENT_POSTED': return 'Comment Posted';
       default: return action;
     }
   }
@@ -68,7 +68,7 @@ export class JiraIssuesSyncHistoryComponent implements OnInit {
     switch (action) {
       case 'JIRA_SYNC': return 'bg-green-100 text-green-800 border border-green-200';
       case 'JIRA_UNSYNC': return 'bg-rose-100 text-rose-800 border border-rose-200';
-      case 'JIRA_REQUEST_UPDATED': return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'JIRA_COMMENT_POSTED': return 'bg-blue-100 text-blue-800 border border-blue-200';
       default: return 'bg-slate-100 text-slate-800 border border-slate-200';
     }
   }
