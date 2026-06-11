@@ -283,6 +283,11 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     });
   }
 
+  openComparisonPage(): void {
+    if (!this.requisition || this.quotes.length < 2) return;
+    this.router.navigate([`/requisitions/${this.requisitionId}/compare-quotes`]);
+  }
+
   navigateToCreate(): void {
     this.router.navigate([`/requisitions/${this.requisitionId}/vendor-quotes/create`]);
   }

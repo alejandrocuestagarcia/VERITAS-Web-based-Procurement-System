@@ -14,6 +14,7 @@ public record VendorDto (
     Double communicationScore,
     Double deliveryScore,
     Double qualityScore,
+    Double gapScore,
     Double overallScore,
     @NotBlank(message = "Description is required")
     String description,

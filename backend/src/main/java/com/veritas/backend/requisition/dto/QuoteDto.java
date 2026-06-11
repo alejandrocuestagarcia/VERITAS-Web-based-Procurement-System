@@ -19,6 +19,7 @@ public record QuoteDto(
     BigDecimal totalAmountEuro,
     LocalDateTime exchangeRateFetchedAt,
     ExchangeRateSource exchangeRateSource,
+    Integer shippingTime,
     Boolean isSelected,
     List<QuoteLineItemDto> items
 ) {}

@@ -1,7 +1,9 @@
 package com.veritas.backend.vendor.service.impl;
 
+import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import java.math.BigDecimal;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
@@ -15,6 +17,7 @@ import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.VendorService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +33,7 @@ public class VendorServiceImpl implements VendorService {
     private final VendorMapper vendorMapper;
     private final VendorEvaluationRepository vendorEvaluationRepository;
     private final RequestRepository requestRepository;
+    private final EntityManager entityManager;
 
     @Override
     public VendorDto createVendor(VendorDto vendorDto) {
@@ -123,10 +127,39 @@ public class VendorServiceImpl implements VendorService {
         evaluation.setCommunicationScore(ratingData.communicationScore());
         evaluation.setDeliveryScore(ratingData.deliveryScore());
         evaluation.setQualityScore(ratingData.qualityScore());
+        evaluation.setGapScore(calculateGapScore(request));
         evaluation.setNotes(ratingData.notes());
 
         vendorEvaluationRepository.save(evaluation);
+        entityManager.flush();
+        entityManager.refresh(vendor);
 
-        return vendorMapper.toVendorDto(vendorRepository.findById(vendorId).orElseThrow());
+        return vendorMapper.toVendorDto(vendor);
+    }
+
+    private Double calculateGapScore(Request request) {
+        if (request == null) {
+            return 10.0;
+        }
+        BigDecimal quoteTotal = request.getSelectedQuoteTotalAmount();
+        Invoice invoice = request.getInvoice();
+        if (quoteTotal == null || invoice == null || invoice.getTotalAmount() == null) {
+            return 10.0;
+        }
+
+        double quoteVal = quoteTotal.doubleValue();
+        double invoiceVal = invoice.getTotalAmount().doubleValue();
+
+        if (quoteVal <= 0) {
+            return 10.0;
+        }
+
+        double deviation = (invoiceVal - quoteVal) / quoteVal;
+        if (deviation <= 0) {
+            return 10.0;
+        }
+
+        double score = 10.0 - (deviation * 10.0);
+        return Math.max(0.0, Math.min(10.0, score));
     }
 }
