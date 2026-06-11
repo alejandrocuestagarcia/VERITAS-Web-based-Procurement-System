@@ -219,7 +219,6 @@ public class RequisitionServiceImpl implements RequisitionService {
     public void saveAttachment(Long requestId, MultipartFile file, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
-        checkRequestAccess(request, actor);
         workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
         storeAttachment(file, request, null);
     }
@@ -269,7 +268,6 @@ public class RequisitionServiceImpl implements RequisitionService {
     public void deleteAttachment(Long attachmentId, User actor) {
         Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow(() -> new EntityNotFoundException("Attachment not found with id: " + attachmentId));
 
-        checkRequestAccess(attachment.getRequest(), actor);
         workflowEngineService.checkAuthorization(attachment.getRequest(), actor, attachment.getRequest().getCurrentStep());
 
         if (attachment.getInvoice() != null) {
@@ -828,7 +826,6 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
 
-        checkRequestAccess(request, actor);
         workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
 
         if (request.getInvoice() != null) {
@@ -880,7 +877,6 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
 
-        checkRequestAccess(request, user);
         workflowEngineService.checkAuthorization(request, user, request.getCurrentStep());
 
         Invoice invoice = request.getInvoice();

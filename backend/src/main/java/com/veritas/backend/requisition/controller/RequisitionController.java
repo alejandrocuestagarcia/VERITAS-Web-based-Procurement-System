@@ -137,7 +137,6 @@ public class RequisitionController {
     @IsRequester
     @GetMapping("/{id}/can-act")
     public ResponseEntity<Boolean> canAct(@PathVariable Long id, @AuthenticationPrincipal User actor) {
-        requisitionService.checkRequestAccess(id, actor);
         return ResponseEntity.ok(requisitionService.canAct(id, actor));
     }
 
@@ -188,7 +187,6 @@ public class RequisitionController {
             @Valid @RequestPart("invoice") InvoiceCreateDto invoiceData,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal User user) {
-        requisitionService.checkRequestAccess(id, user);
         InvoiceDto invoice = requisitionService.createInvoice(id, invoiceData, file, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice);
     }
