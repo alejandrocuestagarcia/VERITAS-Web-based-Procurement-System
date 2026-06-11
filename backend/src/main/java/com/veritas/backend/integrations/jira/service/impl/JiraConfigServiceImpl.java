@@ -12,6 +12,7 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.integrations.jira.repository.JiraSyncQueueItemRepository;
+import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.RequestRepository;
@@ -97,7 +98,9 @@ public class JiraConfigServiceImpl implements JiraConfigService {
             request.setJiraStatus("NOT_SYNCED");
             request.setJiraConfig(null);
 
-            if (request.getState() == RequestStatus.FINISHED) {
+            if (request.getState() == RequestStatus.FINISHED
+                    && request.getInvoice() != null
+                    && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
                 continue;
             }
 
