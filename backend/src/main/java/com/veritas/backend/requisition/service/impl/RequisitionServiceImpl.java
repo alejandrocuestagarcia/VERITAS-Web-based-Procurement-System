@@ -211,18 +211,19 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public RequisitionDto getRequestById(Long id) {
+    public RequisitionDto getRequestById(Long id, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Procurement Request with id '" + id + "' not found"));
+        checkRequestAccess(request, actor);
         return requisitionMapper.toDto(request);
     }
 
     @Override
     @Transactional
-    public void saveAttachment(Long requestId, MultipartFile file) {
+    public void saveAttachment(Long requestId, MultipartFile file, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
-
+        checkRequestAccess(request, actor);
         storeAttachment(file, request, null);
     }
 
@@ -237,9 +238,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> downloadAttachment(Long attachmentId) {
+    public ResponseEntity<Resource> downloadAttachment(Long attachmentId, User actor) {
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new EntityNotFoundException("Attachment not found with id " + attachmentId));
+        checkRequestAccess(attachment.getRequest(), actor);
 
         try {
             Path file = Paths.get(attachment.getStoragePath());
@@ -573,9 +575,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public String getNextStepRole(Long id) {
+    public String getNextStepRole(Long id, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+        checkRequestAccess(request, actor);
         WorkflowStep nextStep = workflowEngineService.getNextStep(request);
         if (nextStep != null && nextStep.getRole() != null && !nextStep.getIsAutomatedApproval()) {
             return nextStep.getRole().name();
@@ -585,9 +588,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> getEligibleAssignees(Long id, String roleName) {
+    public List<UserDto> getEligibleAssignees(Long id, String roleName, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+        checkRequestAccess(request, actor);
         UserRole requiredRole = UserRole.valueOf(roleName);
 
         Long requestDepartmentId = null;
@@ -863,9 +867,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public InvoiceDto getInvoice(Long requestId) {
+    public InvoiceDto getInvoice(Long requestId, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+        checkRequestAccess(request, actor);
 
         Invoice invoice = request.getInvoice();
         if (invoice == null) {
@@ -965,6 +970,29 @@ public class RequisitionServiceImpl implements RequisitionService {
             Team requestTeam = request.getTeam();
             Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
 
+            if (userDept == null || requestDept == null
+                    || !userDept.getDepartmentId().equals(requestDept.getDepartmentId())) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+        }
+    }
+
+    @Override
+    public void checkRequestAccess(Long requestId, User user) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+        checkRequestAccess(request, user);
+    }
+
+    private void checkRequestAccess(Request request, User user) {
+        if (user.getRole() == UserRole.REQUESTER) {
+            if (request.getUser() == null || !request.getUser().getId().equals(user.getId())) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+        } else if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            Department userDept = user.getDepartment();
+            Team requestTeam = request.getTeam();
+            Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
             if (userDept == null || requestDept == null
                     || !userDept.getDepartmentId().equals(requestDept.getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");

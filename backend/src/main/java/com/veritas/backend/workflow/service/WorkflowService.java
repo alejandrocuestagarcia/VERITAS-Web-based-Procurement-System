@@ -31,7 +31,7 @@ public interface WorkflowService {
      * @return the matching {@link WorkflowDto}
      * @throws EntityNotFoundException if no workflow exists with the given ID
      */
-    public WorkflowDto getWorkflow(Long id);
+    public WorkflowDto getWorkflow(Long id, User user);
 
     /**
      * Replaces an existing workflow definition with a new version parsed from BPMN XML.

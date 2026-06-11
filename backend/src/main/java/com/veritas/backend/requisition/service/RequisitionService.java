@@ -40,7 +40,7 @@ public interface RequisitionService {
      * @param file the uploaded file
      * @throws IllegalArgumentException if the request is not found
      */
-    void saveAttachment(Long requestId, MultipartFile file);
+    void saveAttachment(Long requestId, MultipartFile file, User actor);
 
     /**
      * Stores a file from an input stream as an attachment on the given request.
@@ -76,7 +76,7 @@ public interface RequisitionService {
      * @return the matching {@link RequisitionDto}
      * @throws EntityNotFoundException if no request exists with the given ID
      */
-    RequisitionDto getRequestById(Long id);
+    RequisitionDto getRequestById(Long id, User actor);
 
     /**
      * Returns an attachment file as a downloadable HTTP response.
@@ -86,7 +86,7 @@ public interface RequisitionService {
      * @throws EntityNotFoundException if the attachment is not found
      * @throws RuntimeException if the file cannot be read from disk
      */
-    ResponseEntity<Resource> downloadAttachment(Long attachmentId);
+    ResponseEntity<Resource> downloadAttachment(Long attachmentId, User actor);
 
     /**
      * Deletes an attachment and its file from disk.
@@ -174,7 +174,7 @@ public interface RequisitionService {
      * @param id the request ID
      * @return the role name, or {@code null} if no manual assignee is needed
      */
-    String getNextStepRole(Long id);
+    String getNextStepRole(Long id, User actor);
 
     /**
      * Returns the list of active users eligible to be assigned at the next workflow step,
@@ -184,7 +184,7 @@ public interface RequisitionService {
      * @param roleName the name of the role required at the next step
      * @return a list of eligible {@link UserDto}
      */
-    List<UserDto> getEligibleAssignees(Long id, String roleName);
+    List<UserDto> getEligibleAssignees(Long id, String roleName, User actor);
 
     /**
      * Returns whether the given actor is authorized to act on the request's current workflow step.
@@ -239,7 +239,7 @@ public interface RequisitionService {
      * @return the {@link InvoiceDto}
      * @throws EntityNotFoundException if the request or invoice is not found
      */
-    InvoiceDto getInvoice(Long requestId);
+    InvoiceDto getInvoice(Long requestId, User actor);
 
     /**
      * Deletes an unpaid invoice and its associated attachments from disk and database.
@@ -252,4 +252,5 @@ public interface RequisitionService {
      * @throws AccessDeniedException if the user is not permitted to access the request
      */
     void deleteInvoice(Long requestId, User user);
+    void checkRequestAccess(Long requestId, User user);
 }
