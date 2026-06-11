@@ -1,5 +1,5 @@
 <app-shared-table [title]="title" [subtitle]="subtitle" [dataSource]="dataSource" [displayedColumns]="displayedColumns"
-  [totalElements]="totalPageElements" [loading]="loading" (pageChanged)="onPageChange($event)"
+  [totalElements]="totalPageElements" [loading]="loading" [searchPlaceholder]="'Search vendors...'" (pageChanged)="onPageChange($event)"
   (searchChanged)="onSearchChanged($event)">
 
   <!-- Stats -->

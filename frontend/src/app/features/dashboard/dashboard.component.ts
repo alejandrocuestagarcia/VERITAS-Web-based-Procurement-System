@@ -70,7 +70,13 @@ export class DashboardComponent implements OnInit {
     const isRequester = this.authService.hasRole('REQUESTER');
 
     const dataSources$ = {
-      requisitions: this.requisitionService.getRequests(undefined, undefined, undefined, 0, 50),
+      requisitions: this.requisitionService.getRequests(
+        undefined,
+        undefined,
+        undefined,
+        0,
+        50
+      ),
       projects: this.projectService.getAllProjects()
     };
 
@@ -112,10 +118,10 @@ export class DashboardComponent implements OnInit {
           if (requisition.isClosed && !requisition.isPaid) {
             return this.authService.hasRole('FINANCE_OFFICER');
           }
-          const isRoleMatch = requisition.responsibleRole === this.userRole || 
+          const isRoleMatch = requisition.responsibleRole === this.userRole ||
                              (!requisition.responsibleRole && requisition.state !== 'DRAFT');
           if (!isRoleMatch) return false;
-          
+
           return !requisition.assigneeId || requisition.assigneeId === currentUserId;
         });
         this.inProgressRequisitions = [];

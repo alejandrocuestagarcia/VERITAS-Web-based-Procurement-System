@@ -1,0 +1,81 @@
+<header class="h-16 border-b border-slate-200 bg-white/95 backdrop-blur px-8 flex items-center justify-between sticky top-0 z-[999] shadow-sm font-manrope">
+
+  <!-- Left Side: Global Search & Dropdowns -->
+  <div id="search-container" class="relative flex-1 max-w-xl mr-8">
+    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white w-full">
+
+      <!-- Search Icon -->
+      <button (click)="triggerSearch()" class="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors">
+        <mat-icon class="h-5 w-5">search</mat-icon>
+      </button>
+
+      <!-- Input Field -->
+      <input
+        [formControl]="searchCtrl"
+        (keydown.enter)="triggerSearch()"
+        (focus)="showAutocomplete = (searchCtrl.value?.trim()?.length || 0) >= 1"
+        type="text"
+        placeholder="Search name, key, project..."
+        class="border-0 outline-none bg-transparent font-inter text-[13px] text-slate-800 w-full placeholder:text-slate-400"
+      />
+
+    </div>
+
+    <!-- Autocomplete Suggestions Dropdown -->
+    <div *ngIf="showAutocomplete"
+         class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-50 animate-fade-in max-h-[350px] overflow-y-auto">
+
+      <div *ngIf="loadingAutocomplete" class="p-4 flex items-center justify-center gap-3 text-sm text-slate-500">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>Searching...</span>
+      </div>
+
+      <ng-container *ngIf="!loadingAutocomplete">
+        <div *ngIf="(searchCtrl.value?.trim()?.length || 0) === 1" class="p-4 text-center text-xs text-slate-500">
+          Type at least 2 characters to search
+        </div>
+
+        <div *ngIf="(searchCtrl.value?.trim()?.length || 0) >= 2 && suggestions.length === 0" class="p-4 text-center text-xs text-slate-500">
+          No matching requests found
+        </div>
+
+        <ul *ngIf="(searchCtrl.value?.trim()?.length || 0) >= 2 && suggestions.length > 0" class="divide-y divide-slate-100 m-0 p-0 list-none">
+          <li *ngFor="let req of suggestions">
+            <button (click)="selectSuggestion(req)" class="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center justify-between transition-colors focus:bg-slate-50 focus:outline-none border-none bg-transparent">
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-800">{{ req.requestName }}</span>
+                <span class="text-xs text-slate-400 font-medium mt-0.5">Key: {{ req.requestKey }} • Project: {{ req.projectName || 'None' }}</span>
+              </div>
+
+              <!-- Status Badge -->
+              <span *ngIf="!req.isClosed" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                Open
+              </span>
+              <span *ngIf="req.isClosed && !req.isPaid" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                Awaiting Payment
+              </span>
+              <span *ngIf="req.isClosed && req.isPaid" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                Closed
+              </span>
+            </button>
+          </li>
+        </ul>
+      </ng-container>
+    </div>
+
+  </div>
+
+  <!-- Right Side: User Profile Summary -->
+  <div class="flex items-center gap-4 border-l border-slate-100 pl-6">
+    <div class="flex flex-col text-right">
+      <span class="text-xs font-bold text-slate-800">{{ currentUserName }}</span>
+      <span class="text-[10px] text-slate-400 font-medium mt-0.5">{{ currentUserEmail }}</span>
+    </div>
+
+    <!-- Role Badge -->
+    <span class="px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-100">
+      {{ currentUserRole }}
+    </span>
+  </div>
+
+</header>

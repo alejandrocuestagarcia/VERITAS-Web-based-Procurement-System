@@ -6,7 +6,7 @@ import {
   ProjectDto,
   UserModuleService, UserDtoRoleEnum
 } from 'src/app/core/api';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { PageEvent } from '@angular/material/paginator';
 import {MatDialog} from "@angular/material/dialog";
@@ -34,6 +34,8 @@ export class RequisitionListComponent implements OnInit {
   selectedProjectId: number | '' = '';
   projects: ProjectDto[] = [];
 
+
+
   readonly statuses = [
     { value: 'OPEN', label: 'Open' },
     { value: 'AWAITING_PAYMENT', label: 'Awaiting Payment' },
@@ -49,12 +51,21 @@ export class RequisitionListComponent implements OnInit {
     private authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
     this.loadProjects();
-    this.loadRequests();
+
+    // Subscribe to query parameters to drive filtering
+    this.route.queryParams.subscribe(params => {
+      this.search = params['q'] || '';
+      this.status = params['status'] || '';
+      this.selectedProjectId = params['projectId'] ? Number(params['projectId']) : '';
+
+      this.loadRequests();
+    });
   }
 
   loadProjects(): void {
@@ -77,7 +88,7 @@ export class RequisitionListComponent implements OnInit {
     this.requisitionService.getRequests(
       backendStatus,
       this.search || undefined,
-      this.selectedProjectId !== '' ? this.selectedProjectId : undefined,
+      this.selectedProjectId !== '' ? (this.selectedProjectId as number) : undefined,
       this.page,
       this.size
     ).subscribe({
@@ -102,7 +113,7 @@ export class RequisitionListComponent implements OnInit {
   onSearchChange(searchTerm: string): void {
     this.search = searchTerm;
     this.page = 0;
-    this.loadRequests();
+    this.updateFiltersInUrl();
   }
 
   onPageChange(event: PageEvent): void {
@@ -113,14 +124,35 @@ export class RequisitionListComponent implements OnInit {
 
   onFilterChange(): void {
     this.page = 0;
-    this.loadRequests();
+    this.updateFiltersInUrl();
   }
 
   clearFilters(): void {
     this.status = '';
     this.selectedProjectId = '';
+    this.search = '';
     this.page = 0;
-    this.loadRequests();
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: undefined,
+        status: undefined,
+        projectId: undefined
+      }
+    });
+  }
+
+  updateFiltersInUrl(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: this.search || undefined,
+        status: this.status || undefined,
+        projectId: this.selectedProjectId || undefined
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   getFilteredProjects(): ProjectDto[] {

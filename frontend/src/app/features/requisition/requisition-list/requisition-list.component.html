@@ -6,6 +6,7 @@
   [displayedColumns]="displayedColumns"
   [totalElements]="totalElements"
   [loading]="loading"
+  [searchValue]="search"
   (pageChanged)="onPageChange($event)"
   (searchChanged)="onSearchChange($any($event))">
 
@@ -16,7 +17,7 @@
     </button>
   </div>
 
-  <div filters class="flex items-center gap-3">
+  <div filters class="flex flex-wrap items-center gap-3">
 
     <button mat-icon-button
       *ngIf="status || selectedProjectId !== ''"
