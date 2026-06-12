@@ -15,7 +15,7 @@ import { ConfirmationDialogComponent } from "../../../shared/components/confirma
 })
 export class WorkflowListComponent implements OnInit {
   dataSource = new MatTableDataSource<WorkflowDto>();
-  displayedColumns: string[] = ['name', 'description', 'department', 'status', 'actions'];
+  displayedColumns: string[] = ['name', 'version', 'description', 'department', 'status', 'actions'];
 
   totalElements = 0;
   pageSize = 10;
