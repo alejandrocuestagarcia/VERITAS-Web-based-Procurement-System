@@ -636,6 +636,9 @@ public class BpmnValidator {
                                 .map(Documentation::getTextContent)
                                 .filter(Objects::nonNull)
                                 .anyMatch(text -> text.startsWith(TEAM_LEADER_PREFIX) && text.substring(13).trim().equalsIgnoreCase("true"));
+                        if (r == UserRole.ADMINISTRATOR) {
+                            result.addError("Step '" + getNodeName(task) + "' cannot be assigned to ADMINISTRATOR. Administrators are system supervisors and cannot act as task approvers.");
+                        }
                         if (hasTeamLeaderDoc && r != UserRole.REQUESTER) {
                             result.addError("Step '" + getNodeName(task) + "' cannot have Team Leader option enabled for non-REQUESTER roles.");
                         }
