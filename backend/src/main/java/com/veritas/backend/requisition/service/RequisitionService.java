@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface RequisitionService {
@@ -68,7 +69,7 @@ public interface RequisitionService {
      * @param pageable pagination and sorting parameters
      * @return a page of {@link RequisitionDto}
      */
-    Page<RequisitionDto> getRequests(String status, String search, Long projectId, User authUser, Pageable pageable);
+    Page<RequisitionDto> getRequests(String status, String search, Long projectId, LocalDate createdFrom, LocalDate createdTo, Long creatorId, User authUser, Pageable pageable);
 
     /**
      * Returns a single request by ID.

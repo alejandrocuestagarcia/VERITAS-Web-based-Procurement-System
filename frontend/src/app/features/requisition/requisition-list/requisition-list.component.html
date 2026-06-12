@@ -17,48 +17,166 @@
     </button>
   </div>
 
-  <div filters class="flex flex-wrap items-center gap-3">
+  <div filters id="list-filters-container" class="w-full font-inter">
+    <div class="flex items-center gap-2 flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
-    <button mat-icon-button
-      *ngIf="status || selectedProjectId !== ''"
-      (click)="clearFilters()"
-      matTooltip="Clear All Filters"
-      class="text-muted-grey hover:text-warn transition-colors">
-      <mat-icon>filter_list_off</mat-icon>
-    </button>
+      <div class="shrink-0">
+        <button
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          [class]="status !== '' ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
+          (click)="toggleDropdown('status', $event)">
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="status !== '' ? 'text-blue-500' : 'text-slate-400'">flag</mat-icon>
+          <span>{{ status ? getStatusLabel(status) : 'Status' }}</span>
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="status !== '' ? 'text-blue-300' : 'text-slate-300'">expand_more</mat-icon>
+        </button>
 
-    <div class="flex flex-col" style="min-width: 200px;">
-      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Project</span>
-      <mat-select [(ngModel)]="selectedProjectId" (ngModelChange)="onFilterChange()"
-        class="text-[13px] text-on-surface font-inter" placeholder="All Projects"
-        (openedChange)="onOpenedChange($event)">
-        <div class="px-3 py-2 sticky top-0 bg-white z-10 border-b border-slate-100 mb-1">
-          <div class="relative flex items-center">
-            <mat-icon class="absolute left-2 text-slate-400 text-sm h-4 w-4">search</mat-icon>
-            <input #projectSearchInput
-              class="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
-              placeholder="Search projects..." (input)="projectSearch = projectSearchInput.value"
-              (keydown)="$event.stopPropagation()">
+        <!-- Status dropdown -->
+        <div *ngIf="activeDropdown === 'status'" class="req-dropdown bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+          [style.top.px]="dropdownY" [style.left.px]="dropdownX">
+          <div class="py-1">
+            <button class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="status === '' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setFilter('status', '')">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="status === ''">check</mat-icon>
+              <span class="w-[13px]" *ngIf="status !== ''"></span>
+              All Statuses
+            </button>
+            <button *ngFor="let s of statuses"
+              class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="status === s.value ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setFilter('status', s.value)">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="status === s.value">check</mat-icon>
+              <span class="w-[13px]" *ngIf="status !== s.value"></span>
+              {{ s.label }}
+            </button>
           </div>
         </div>
-        <mat-option value="">All Projects</mat-option>
-        <mat-option *ngFor="let p of getFilteredProjects()" [value]="p.id">{{ p.name }}</mat-option>
-        <div *ngIf="getFilteredProjects().length === 0" class="p-4 text-center text-sm text-slate-500">
-          No projects found
-        </div>
-      </mat-select>
-    </div>
+      </div>
 
-    <div class="flex items-center gap-4 ml-4">
-      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-        Status:
-      </span>
-      <mat-chip-listbox [value]="status" (change)="onStatusFilterChange($event.value)">
-        <mat-chip-option value="" [selected]="status === ''">All</mat-chip-option>
-        <mat-chip-option *ngFor="let s of statuses" [value]="s.value" [selected]="status === s.value">
-          {{ s.label }}
-        </mat-chip-option>
-      </mat-chip-listbox>
+      <div class="shrink-0">
+        <button
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          [class]="selectedProjectId !== '' ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
+          (click)="toggleDropdown('project', $event)">
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="selectedProjectId !== '' ? 'text-blue-500' : 'text-slate-400'">folder_open</mat-icon>
+          <span>{{ selectedProjectId !== '' ? getSelectedProjectName() : 'Project' }}</span>
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="selectedProjectId !== '' ? 'text-blue-300' : 'text-slate-300'">expand_more</mat-icon>
+        </button>
+
+        <div *ngIf="activeDropdown === 'project'" class="req-dropdown bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden w-56"
+          [style.top.px]="dropdownY" [style.left.px]="dropdownX">
+          <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100">
+            <mat-icon class="req-icon-sm text-slate-400">search</mat-icon>
+            <input class="flex-1 bg-transparent border-0 outline-none text-[13px] text-slate-800 placeholder:text-slate-400"
+              placeholder="Search projects…" [(ngModel)]="projectSearch"
+              (keydown)="$event.stopPropagation()" autocomplete="off">
+          </div>
+          <div class="max-h-56 overflow-y-auto py-1">
+            <button class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="selectedProjectId === '' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setProjectFilter('')">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="selectedProjectId === ''">check</mat-icon>
+              <span class="w-[13px]" *ngIf="selectedProjectId !== ''"></span>
+              All Projects
+            </button>
+            <button *ngFor="let p of getFilteredProjects()"
+              class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="selectedProjectId === p.id ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setProjectFilter(p.id)">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="selectedProjectId === p.id">check</mat-icon>
+              <span class="w-[13px]" *ngIf="selectedProjectId !== p.id"></span>
+              {{ p.name }}
+            </button>
+            <div *ngIf="getFilteredProjects().length === 0" class="px-3 py-3 text-center text-[12px] text-slate-400">
+              No projects found
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!isRequester" class="shrink-0">
+        <button
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          [class]="selectedCreatorId !== '' ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
+          (click)="toggleDropdown('creator', $event)">
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="selectedCreatorId !== '' ? 'text-blue-500' : 'text-slate-400'">person_outline</mat-icon>
+          <span>{{ selectedCreatorId !== '' ? getSelectedCreatorName() : 'Creator' }}</span>
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="selectedCreatorId !== '' ? 'text-blue-300' : 'text-slate-300'">expand_more</mat-icon>
+        </button>
+
+        <div *ngIf="activeDropdown === 'creator'" class="req-dropdown bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden w-56"
+          [style.top.px]="dropdownY" [style.left.px]="dropdownX">
+          <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100">
+            <mat-icon class="req-icon-sm text-slate-400">search</mat-icon>
+            <input class="flex-1 bg-transparent border-0 outline-none text-[13px] text-slate-800 placeholder:text-slate-400"
+              placeholder="Search creators…" [(ngModel)]="creatorSearch"
+              (keydown)="$event.stopPropagation()" autocomplete="off">
+          </div>
+          <div class="max-h-56 overflow-y-auto py-1">
+            <button class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="selectedCreatorId === '' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setCreatorFilter('')">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="selectedCreatorId === ''">check</mat-icon>
+              <span class="w-[13px]" *ngIf="selectedCreatorId !== ''"></span>
+              All Creators
+            </button>
+            <button *ngFor="let c of getFilteredCreators()"
+              class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="selectedCreatorId === c.id ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setCreatorFilter(c.id)">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="selectedCreatorId === c.id">check</mat-icon>
+              <span class="w-[13px]" *ngIf="selectedCreatorId !== c.id"></span>
+              {{ c.name }}
+            </button>
+            <div *ngIf="getFilteredCreators().length === 0" class="px-3 py-3 text-center text-[12px] text-slate-400">
+              No creators found
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="shrink-0">
+        <button
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          [class]="(createdFrom || createdTo) ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
+          (click)="toggleDropdown('date', $event)">
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="(createdFrom || createdTo) ? 'text-blue-500' : 'text-slate-400'">calendar_today</mat-icon>
+          <span>{{ getDateLabel() }}</span>
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="(createdFrom || createdTo) ? 'text-blue-300' : 'text-slate-300'">expand_more</mat-icon>
+        </button>
+
+        <!-- Date dropdown — stacked layout, wide enough for native date inputs -->
+        <div *ngIf="activeDropdown === 'date'" class="req-dropdown bg-white border border-slate-200 rounded-xl shadow-lg p-4 w-64"
+          [style.top.px]="dropdownY" [style.left.px]="dropdownX">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">From</label>
+              <input type="date" [(ngModel)]="createdFrom" (ngModelChange)="onFilterChange()"
+                class="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-[13px] text-slate-800 bg-slate-50 outline-none focus:border-blue-400 focus:bg-white transition-colors">
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">To</label>
+              <input type="date" [(ngModel)]="createdTo" (ngModelChange)="onFilterChange()"
+                class="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-[13px] text-slate-800 bg-slate-50 outline-none focus:border-blue-400 focus:bg-white transition-colors">
+            </div>
+          </div>
+          <div *ngIf="createdFrom || createdTo" class="mt-3 pt-3 border-t border-slate-100 text-right">
+            <button (click)="clearDateFilter()"
+              class="text-[12px] font-semibold text-red-400 hover:text-red-600 hover:underline bg-transparent border-0 cursor-pointer p-0">
+              Clear dates
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="getActiveFiltersCount() > 0 || status !== ''" class="w-px h-5 bg-slate-200 mx-1 shrink-0"></div>
+      <button *ngIf="getActiveFiltersCount() > 0 || status !== ''"
+        (click)="clearFilters()" matTooltip="Clear all filters"
+        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border-0 bg-transparent text-[13px] font-medium text-slate-400 hover:text-red-500 hover:bg-red-50 cursor-pointer shrink-0 transition-all">
+        <mat-icon class="text-[16px] w-4 h-4 leading-none">filter_list_off</mat-icon>
+        <span>Clear</span>
+      </button>
+
     </div>
   </div>
 
@@ -81,17 +199,31 @@
     </ng-container>
 
     <ng-container matColumnDef="workflowName">
-      <th mat-header-cell *matHeaderCellDef class="!text-center" >USED WORKFLOW</th>
-      <td mat-cell *matCellDef="let req" class="!text-center" >
+      <th mat-header-cell *matHeaderCellDef class="!text-center">USED WORKFLOW</th>
+      <td mat-cell *matCellDef="let req" class="!text-center">
         <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-manrope font-semibold bg-[#eef2ff] text-[#4338ca] border border-[#e0e7ff] tracking-tight">
           {{ req.workflowName }}
         </span>
       </td>
     </ng-container>
 
+    <ng-container matColumnDef="creator">
+      <th mat-header-cell *matHeaderCellDef>CREATOR</th>
+      <td mat-cell *matCellDef="let req">
+        <span class="text-slate-700 font-medium">{{ req.requesterName }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>CREATED DATE</th>
+      <td mat-cell *matCellDef="let req">
+        <span class="text-slate-600 font-medium">{{ req.createdAt | date:'mediumDate' }}</span>
+      </td>
+    </ng-container>
+
     <ng-container matColumnDef="isClosed">
-      <th mat-header-cell *matHeaderCellDef class="!text-center" >STATUS</th>
-      <td mat-cell *matCellDef="let req" class="!text-center" >
+      <th mat-header-cell *matHeaderCellDef class="!text-center">STATUS</th>
+      <td mat-cell *matCellDef="let req" class="!text-center">
         <span *ngIf="!req?.isClosed" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-700 border border-green-200">
           <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
           Open
@@ -109,14 +241,14 @@
       </td>
     </ng-container>
 
-
     <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef class="!text-center" >ACTIONS</th>
+      <th mat-header-cell *matHeaderCellDef class="!text-center">ACTIONS</th>
       <td mat-cell *matCellDef="let req" class="!text-center">
         <button mat-icon-button (click)="viewDetails(req.id)" matTooltip="View Details" class="text-slate-600">
           <mat-icon>visibility</mat-icon>
         </button>
-        <button mat-icon-button (click)="changeRequester(req)" matTooltip="Change Requester" [disabled]="req.isClosed || (!isAdministrator && !isFinanceOfficer)">
+        <button mat-icon-button (click)="changeRequester(req)" matTooltip="Change Requester"
+          [disabled]="req.isClosed || (!isAdministrator && !isFinanceOfficer)">
           <mat-icon>swap_horiz</mat-icon>
         </button>
       </td>

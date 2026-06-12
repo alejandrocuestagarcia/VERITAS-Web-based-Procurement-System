@@ -70,6 +70,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,7 +167,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RequisitionDto> getRequests(String status, String search, Long projectId, User authUser, Pageable pageable) {
+    public Page<RequisitionDto> getRequests(String status, String search, Long projectId, LocalDate createdFrom, LocalDate createdTo, Long creatorId, User authUser, Pageable pageable) {
         User user = userRepository.findById(authUser.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
 
@@ -199,8 +200,21 @@ public class RequisitionServiceImpl implements RequisitionService {
             }
         }
 
+        if (creatorId != null) {
+            if (userRole.equals("REQUESTER")) {
+                if (userIdFilter == null) {
+                    userIdFilter = creatorId;
+                }
+            } else {
+                userIdFilter = creatorId;
+            }
+        }
+
+        LocalDateTime createdFromLdt = (createdFrom != null) ? createdFrom.atStartOfDay() : null;
+        LocalDateTime createdToLdt = (createdTo != null) ? createdTo.atTime(23, 59, 59, 999999999) : null;
+
         Page<Request> requests = requestRepository.findFilteredRequests(
-                statusFilter, searchFilter, projectId, userIdFilter, assigneeIdFilter, teamIdFilter, departmentIdFilter, pageable);
+                statusFilter, searchFilter, projectId, userIdFilter, assigneeIdFilter, teamIdFilter, departmentIdFilter, createdFromLdt, createdToLdt, pageable);
 
         return requests.map(requisitionMapper::toDto);
     }

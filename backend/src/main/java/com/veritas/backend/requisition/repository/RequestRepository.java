@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +36,8 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "AND (:teamId IS NULL OR t.teamId = :teamId) " +
             "AND (:departmentId IS NULL OR d.departmentId = :departmentId) " +
             "AND (:projectId IS NULL OR p.id = :projectId) " +
+            "AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR r.createdAt >= :createdFrom) " +
+            "AND (CAST(:createdTo AS LocalDateTime) IS NULL OR r.createdAt <= :createdTo) " +
             "AND (:search IS NULL OR LOWER(r.requestName) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')) " +
             "OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')) " +
             "OR LOWER(r.requestKey) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')))")
@@ -45,6 +48,8 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                      @Param("assigneeId") Long assigneeId,
                                      @Param("teamId") Long teamId,
                                      @Param("departmentId") Long departmentId,
+                                     @Param("createdFrom") LocalDateTime createdFrom,
+                                     @Param("createdTo") LocalDateTime createdTo,
                                      Pageable pageable);
 
     boolean existsByProjectId(Long projectId);
