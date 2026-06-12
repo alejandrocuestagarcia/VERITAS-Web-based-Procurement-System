@@ -1,5 +1,6 @@
 package com.veritas.backend.requisition.service.impl;
 
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.project.entity.Project;
@@ -34,7 +35,6 @@ import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
@@ -81,7 +81,6 @@ import java.util.UUID;
 
 import static com.veritas.backend.common.model.AuditActionConstants.*;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {
@@ -815,10 +814,10 @@ public class RequisitionServiceImpl implements RequisitionService {
                 throw new IllegalStateException("Invoice has no Total amount defined");
             }
 
-            BigDecimal totalAmountEuro = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
-            invoice.setPaidAmountEur(totalAmountEuro);
+            CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            invoice.setPaidAmountEur(conversion.convertedAmount());
 
-            BigDecimal newTotalSpend = budget.getActualSpend().add(totalAmountEuro);
+            BigDecimal newTotalSpend = budget.getActualSpend().add(conversion.convertedAmount());
             budget.setActualSpend(newTotalSpend);
 
             budget.setCommittedSpend(budget.getCommittedSpend().subtract(requestCommittedSpent));
@@ -912,7 +911,8 @@ public class RequisitionServiceImpl implements RequisitionService {
     private InvoiceDto mapToInvoiceDtoWithEuro(Invoice invoice) {
         BigDecimal totalAmountEuro;
         try {
-            totalAmountEuro = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            totalAmountEuro = conversion.convertedAmount();
         } catch (IllegalArgumentException | EntityNotFoundException exception) {
             log.warn("Could not convert invoice {} amount {} {} to EUR: {}", invoice.getInvoiceId(), invoice.getTotalAmount(), invoice.getCurrency(), exception.getMessage());
             totalAmountEuro = null;

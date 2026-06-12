@@ -86,7 +86,9 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 
 import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.entity.Currency;
+import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 
 import org.springframework.security.core.Authentication;
@@ -1011,7 +1013,7 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenReturn(request);
-        when(currencyConversionService.convert(any(BigDecimal.class), any())).thenReturn(new BigDecimal("120.00"));
+        when(currencyConversionService.convert(any(BigDecimal.class), any())).thenReturn(new CurrencyConversionResult(new BigDecimal("120.00"), BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
 
         // Act
         requisitionService.processPayment(1L, user);
@@ -1293,7 +1295,7 @@ class RequisitionServiceUnitTest {
         request.setInvoice(invoice);
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
-        when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.EUR)).thenReturn(BigDecimal.valueOf(200));
+        when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.EUR)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(200), BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
 
         InvoiceDto expectedDto = mock(InvoiceDto.class);
         when(invoiceMapper.toDto(eq(invoice), eq(BigDecimal.valueOf(200)))).thenReturn(expectedDto);

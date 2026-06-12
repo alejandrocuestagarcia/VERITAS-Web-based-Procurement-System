@@ -1,7 +1,6 @@
 package com.veritas.backend.department;
 
 import com.veritas.backend.BaseDBIntegrationTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.dto.DepartmentDto;
 import com.veritas.backend.department.entity.Department;

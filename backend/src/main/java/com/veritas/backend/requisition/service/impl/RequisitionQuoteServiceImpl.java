@@ -2,6 +2,7 @@ package com.veritas.backend.requisition.service.impl;
 
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
@@ -210,16 +211,16 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
     private QuoteDto mapToDtoWithEuro(Quote quote) {
         List<QuoteLineItem> items = quoteLineItemRepository.findByQuoteQuoteID(quote.getQuoteID());
-        BigDecimal totalAmountEuro;
+        CurrencyConversionResult conversion = null;
 
         try {
-            totalAmountEuro = currencyConversionService.convert(quote.getTotalAmount(), quote.getCurrency());
+            conversion = currencyConversionService.convert(quote.getTotalAmount(), quote.getCurrency());
         } catch (IllegalArgumentException | EntityNotFoundException exception) {
             log.warn("Could not convert quote {} amount {} {} to EUR: {}", quote.getQuoteID(), quote.getTotalAmount(), quote.getCurrency(), exception.getMessage());
-            totalAmountEuro = null;
+            conversion = null;
         }
 
-        return quoteMapper.toDto(quote, items, totalAmountEuro);
+        return quoteMapper.toDto(quote, items, conversion != null ? conversion.convertedAmount() : null, conversion != null ? conversion.fetchedAt() : null, conversion != null ? conversion.source() : null);
     }
 
     private void canRequesterOrProcurementOfficerAccessRequestDetails(Request request) {

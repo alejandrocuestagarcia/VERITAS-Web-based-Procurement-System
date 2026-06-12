@@ -1,5 +1,6 @@
 package com.veritas.backend.integrations.currency.service;
 
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.integrations.currency.entity.ExchangeRate;
 import com.veritas.backend.integrations.currency.repository.ExchangeRateRepository;
@@ -29,9 +30,9 @@ public class CurrencyConversionServiceUnitTest {
 
     @Test
     void Convert_EUR_ReturnsSameAmount() {
-        BigDecimal result = service.convert(BigDecimal.valueOf(100), Currency.EUR);
+        CurrencyConversionResult result = service.convert(BigDecimal.valueOf(100), Currency.EUR);
 
-        assertThat(result).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertThat(result.convertedAmount()).isEqualByComparingTo(BigDecimal.valueOf(100));
         verifyNoInteractions(exchangeRateRepository);
     }
 
@@ -43,9 +44,9 @@ public class CurrencyConversionServiceUnitTest {
         when(exchangeRateRepository.findTopByTargetCurrencyOrderByFetchedAtDesc(Currency.USD))
                 .thenReturn(Optional.of(rate));
 
-        BigDecimal result = service.convert(BigDecimal.valueOf(100), Currency.USD);
+        CurrencyConversionResult result = service.convert(BigDecimal.valueOf(100), Currency.USD);
 
-        assertThat(result).isEqualByComparingTo(BigDecimal.valueOf(50.00));
+        assertThat(result.convertedAmount()).isEqualByComparingTo(BigDecimal.valueOf(50.00));
     }
 
     @Test

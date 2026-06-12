@@ -6,8 +6,11 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.vendor.entity.Quote;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import java.math.BigDecimal;
 import java.util.List;
@@ -34,7 +37,16 @@ public class WorkflowBranchingContext {
             }
         }
 
-        this.selectedQuoteTotalAmount = selectedQuote != null ? currencyConversionService.convert(selectedQuote.getTotalAmount(), selectedQuote.getCurrency()) : null;
+        BigDecimal quoteAmount = null;
+        if (selectedQuote != null) {
+            try {
+                CurrencyConversionResult conversionResult = currencyConversionService.convert(selectedQuote.getTotalAmount(), selectedQuote.getCurrency());
+                quoteAmount = conversionResult.convertedAmount();
+            } catch (IllegalArgumentException | EntityNotFoundException exception) {
+                quoteAmount = null;
+            }
+        }
+        this.selectedQuoteTotalAmount = quoteAmount;
 
         this.priority = request.getPriority() != null ? request.getPriority().name() : null;
         this.totalQuantity = request.getTotalQuantity();

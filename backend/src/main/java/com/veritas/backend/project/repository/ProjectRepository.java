@@ -3,7 +3,6 @@ package com.veritas.backend.project.repository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.team.entity.Team;
-import com.veritas.backend.department.entity.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

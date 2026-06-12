@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.integrations.currency.entity.ExchangeRate;
 import com.veritas.backend.integrations.currency.repository.ExchangeRateRepository;
@@ -20,7 +21,7 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
     private final ExchangeRateRepository exchangeRateRepository;
 
     @Override
-    public BigDecimal convert(BigDecimal amount, Currency sourceCurrency) {
+    public CurrencyConversionResult convert(BigDecimal amount, Currency sourceCurrency) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Amount must be provided and cannot be negative");
         }
@@ -30,13 +31,14 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
         }
 
         if (Currency.EUR.equals(sourceCurrency)) {
-            return amount;
+            return new CurrencyConversionResult(amount, BigDecimal.ONE, null, null);
         }
 
         ExchangeRate exchangeRate = exchangeRateRepository.findTopByTargetCurrencyOrderByFetchedAtDesc(sourceCurrency)
             .orElseThrow(() -> new EntityNotFoundException("No exchange rate available for " + sourceCurrency + " -> EUR"));
 
-        return amount.divide(exchangeRate.getRate(), 2, RoundingMode.HALF_UP);
+        BigDecimal convertedAmount = amount.divide(exchangeRate.getRate(), 2, RoundingMode.HALF_UP);
+        return new CurrencyConversionResult(convertedAmount, exchangeRate.getRate(), exchangeRate.getFetchedAt(), exchangeRate.getSource());
     }
 
 }
