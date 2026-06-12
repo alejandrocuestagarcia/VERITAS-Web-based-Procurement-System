@@ -98,6 +98,8 @@ class RequisitionQuoteServiceUnitTest {
     @Test
     void GetQuotesForRequest_ValidRequestId_ReturnsQuotesList() {
         Long requestId = 1L;
+        LocalDateTime fixedTime = LocalDateTime.of(2026, 6, 12, 19, 57);
+
         Request request = new Request();
         request.setRequestID(requestId);
 
@@ -108,13 +110,18 @@ class RequisitionQuoteServiceUnitTest {
         quote.setCurrency(Currency.EUR);
 
         List<QuoteLineItem> items = new ArrayList<>();
-        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100),  LocalDateTime.now(), ExchangeRateSource.FRANKFURTER, false, List.of());
+
+        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), fixedTime, ExchangeRateSource.FRANKFURTER, false, List.of());
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
-        when(quoteMapper.toDto(quote, items, BigDecimal.valueOf(100),  LocalDateTime.now(), ExchangeRateSource.FRANKFURTER)).thenReturn(expectedDto);
-        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(100),  BigDecimal.valueOf(0.90), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+
+        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR))
+                .thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(100), BigDecimal.valueOf(0.90), fixedTime, ExchangeRateSource.FRANKFURTER));
+
+        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(100)), any(LocalDateTime.class), eq(ExchangeRateSource.FRANKFURTER)))
+                .thenReturn(expectedDto);
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
@@ -141,6 +148,8 @@ class RequisitionQuoteServiceUnitTest {
         Long requestId = 1L;
         Long quoteId = 10L;
 
+        LocalDateTime fixedTime = LocalDateTime.of(2026, 6, 12, 19, 57);
+
         Request request = new Request();
         request.setRequestID(requestId);
 
@@ -151,13 +160,41 @@ class RequisitionQuoteServiceUnitTest {
         quote.setCurrency(Currency.EUR);
 
         List<QuoteLineItem> items = new ArrayList<>();
-        QuoteDto expectedDto = new QuoteDto(quoteId, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100),  LocalDateTime.now(), ExchangeRateSource.FRANKFURTER,false, List.of());
+
+        QuoteDto expectedDto = new QuoteDto(
+                quoteId,
+                2L,
+                null,
+                Currency.EUR,
+                BigDecimal.valueOf(100),
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(100),
+                fixedTime,
+                ExchangeRateSource.FRANKFURTER,
+                false,
+                List.of()
+        );
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(items);
-        when(quoteMapper.toDto(quote, items, BigDecimal.valueOf(100),  LocalDateTime.now(), ExchangeRateSource.FRANKFURTER)).thenReturn(expectedDto);
-        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(100),  BigDecimal.valueOf(0.90), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+        when(currencyConversionService.convert(BigDecimal.valueOf(100),Currency.EUR)).thenReturn(
+                new CurrencyConversionResult(
+                        BigDecimal.valueOf(100),
+                        BigDecimal.valueOf(0.90),
+                        fixedTime,
+                        ExchangeRateSource.FRANKFURTER
+                )
+        );
+
+        when(quoteMapper.toDto(
+                eq(quote),
+                eq(items),
+                eq(BigDecimal.valueOf(100)),
+                any(LocalDateTime.class),
+                eq(ExchangeRateSource.FRANKFURTER)
+        )).thenReturn(expectedDto);
 
         QuoteDto result = quoteService.getQuoteById(requestId, quoteId);
 
