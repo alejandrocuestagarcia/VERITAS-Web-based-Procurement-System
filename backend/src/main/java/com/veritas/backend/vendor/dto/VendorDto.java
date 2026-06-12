@@ -2,9 +2,6 @@ package com.veritas.backend.vendor.dto;
 
 import java.time.LocalDateTime;
 
-import org.springframework.cglib.core.Local;
-
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 

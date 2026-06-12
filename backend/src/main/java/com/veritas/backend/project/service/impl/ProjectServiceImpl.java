@@ -1,6 +1,5 @@
 package com.veritas.backend.project.service.impl;
 
-import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
 import com.veritas.backend.project.dto.ProjectEditDto;

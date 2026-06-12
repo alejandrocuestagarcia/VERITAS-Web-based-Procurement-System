@@ -18,7 +18,6 @@ import com.veritas.backend.integrations.jira.service.impl.JiraConfigServiceImpl;
 import com.veritas.backend.integrations.jira.repository.JiraSyncQueueItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.audit.service.AuditService;
-import com.veritas.backend.integrations.jira.service.JiraSyncService;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;

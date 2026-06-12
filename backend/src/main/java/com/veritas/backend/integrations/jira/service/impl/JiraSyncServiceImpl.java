@@ -9,6 +9,7 @@ import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.integrations.jira.dto.*;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
@@ -761,8 +762,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                     stepNameForComment = "Finished and Awaiting Payment";
                 }
                 if (request.getInvoice().getTotalAmount() != null) {
-                    BigDecimal totalAmountEuro = currencyConversionService.convert(request.getInvoice().getTotalAmount(), request.getInvoice().getCurrency());
-                    extraContext = "Invoice Total: EUR " + totalAmountEuro.toPlainString();
+                    CurrencyConversionResult conversion = currencyConversionService.convert(request.getInvoice().getTotalAmount(), request.getInvoice().getCurrency());
+                    extraContext = "Invoice Total: EUR " + conversion.convertedAmount().toPlainString();
                 }
             } else {
                 stepNameForComment = "Finished";

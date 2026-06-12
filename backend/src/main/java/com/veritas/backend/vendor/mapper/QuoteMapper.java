@@ -1,5 +1,6 @@
 package com.veritas.backend.vendor.mapper;
 
+import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.requisition.dto.QuoteDto;
 import com.veritas.backend.requisition.dto.QuoteLineItemDto;
 import com.veritas.backend.vendor.dto.VendorDto;
@@ -10,6 +11,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -25,7 +27,9 @@ public interface QuoteMapper {
     @Mapping(target = "totalAmountEuro", source = "totalAmountEuro")
     @Mapping(target = "isSelected", source = "quote.selected")
     @Mapping(target = "items", source = "items")
-    QuoteDto toDto(Quote quote, List<QuoteLineItem> items, BigDecimal totalAmountEuro);
+    @Mapping(target = "exchangeRateFetchedAt", source = "exchangeRateFetchedAt")
+    @Mapping(target = "exchangeRateSource", source = "exchangeRateSource")
+    QuoteDto toDto(Quote quote, List<QuoteLineItem> items, BigDecimal totalAmountEuro, LocalDateTime exchangeRateFetchedAt, ExchangeRateSource exchangeRateSource);
 
     @Mapping(target = "lineItemId", source = "lineItemId")
     @Mapping(target = "productDescription", source = "productDescription")

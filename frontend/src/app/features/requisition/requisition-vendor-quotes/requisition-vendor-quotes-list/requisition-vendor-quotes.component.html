@@ -78,10 +78,17 @@
     <ng-container matColumnDef="totalAmountEuro">
       <th mat-header-cell *matHeaderCellDef>EURO CONVERTED</th>
       <td mat-cell *matCellDef="let row">
-        <div *ngIf="row.currency !== 'EUR'" class="flex flex-col py-2">
-            <span class="font-extrabold text-[#0042d1] text-[15px]">
-              {{ row.totalAmountEuro | currency:'EUR' }}
-            </span>
+        <div *ngIf="row.currency !== 'EUR'" class="flex items-center gap-1.5 py-2">
+          <span class="font-extrabold text-[#0042d1] text-[15px]">
+            {{ row.totalAmountEuro | currency:'EUR' }}
+          </span>
+          <mat-icon class="text-slate-400 scale-75 cursor-help"
+            [matTooltip]="
+              'Euro conversion is an approximation based on current exchange rates and may vary.'
+              + ' Source: ' + (row.exchangeRateSource === 'FRANKFURTER' ? 'Frankfurter API' : 'ExchangeRate API') +
+              '. Fetched: ' + (row.exchangeRateFetchedAt | date:'dd.MM.yyyy HH:mm')">
+            info_outline
+          </mat-icon>
         </div>
       </td>
     </ng-container>
