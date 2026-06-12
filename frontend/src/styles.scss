@@ -258,6 +258,11 @@ textarea.help-code-block {
   }
 }
 
+.cdk-overlay-container {
+  position: fixed !important;
+  z-index: 1050 !important;
+}
+
 
 
 
