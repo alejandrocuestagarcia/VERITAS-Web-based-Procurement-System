@@ -1,6 +1,7 @@
 package com.veritas.backend.workflow;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -101,7 +102,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
         WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, null);
         WorkflowDto created = workflowService.createWorkflow(saveDto);
 
-        WorkflowDto fetched = workflowService.getWorkflow(created.id());
+        WorkflowDto fetched = workflowService.getWorkflow(created.id(), null);
 
         assertNotNull(fetched);
         assertEquals(created.id(), fetched.id());
@@ -110,7 +111,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void WorkflowRetrieval_NonExistingId_ThrowsEntityNotFoundException() {
-        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(99999L));
+        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(99999L, null));
     }
 
     @Test
@@ -144,7 +145,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
         assertTrue(updated.isActive());
 
         // The old workflow is deactivated
-        WorkflowDto oldWorkflow = workflowService.getWorkflow(created.id());
+        WorkflowDto oldWorkflow = workflowService.getWorkflow(created.id(), null);
         assertFalse(oldWorkflow.isActive());
     }
 
@@ -184,7 +185,7 @@ class WorkflowServiceIntegrationTest extends BaseDBIntegrationTest {
                 .orElse(null);
 
         assertNotNull(teamLeaderStep);
-        assertEquals(com.veritas.backend.user.entity.UserRole.REQUESTER, teamLeaderStep.getRole());
+        assertEquals(UserRole.REQUESTER, teamLeaderStep.getRole());
         assertTrue(teamLeaderStep.getIsTeamLeader());
     }
 }

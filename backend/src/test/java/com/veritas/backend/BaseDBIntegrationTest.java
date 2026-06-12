@@ -61,9 +61,9 @@ public abstract class BaseDBIntegrationTest {
             jdbcTemplate.execute("DELETE FROM notifications");
             jdbcTemplate.execute("DELETE FROM password_reset_tokens");
             jdbcTemplate.execute("DELETE FROM refresh_tokens");
+            jdbcTemplate.execute("DELETE FROM attachments");
             jdbcTemplate.execute("DELETE FROM invoices");
             jdbcTemplate.execute("DELETE FROM audit_logs");
-            jdbcTemplate.execute("DELETE FROM attachments");
             jdbcTemplate.execute("DELETE FROM quote_line_items");
             jdbcTemplate.execute("DELETE FROM quotes");
             jdbcTemplate.execute("DELETE FROM vendor_evaluations");

@@ -111,7 +111,7 @@ class WorkflowServiceUnitTest {
         when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
         when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
 
-        WorkflowDto result = workflowService.getWorkflow(1L);
+        WorkflowDto result = workflowService.getWorkflow(1L, null);
 
         assertThat(result).isEqualTo(dto);
         verify(workflowDefinitionRepository).findById(1L);
@@ -121,7 +121,7 @@ class WorkflowServiceUnitTest {
     void GetWorkflow_NonExistingId_ThrowsEntityNotFoundException() {
         when(workflowDefinitionRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(99L));
+        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(99L, null));
     }
 
     @Test

@@ -87,6 +87,7 @@ class AuditControllerIntegrationTest extends BaseDBIntegrationTest {
 
         testRequest = new Request();
         testRequest.setRequestName("Audit Test Request");
+        testRequest.setUser(requester);
         testRequest = requestRepository.save(testRequest);
     }
 

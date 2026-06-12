@@ -162,6 +162,7 @@ class RequisitionServiceUnitTest {
         testUser.setId(1L);
         testUser.setName("Test User");
         testUser.setTeam(testTeam);
+        testUser.setRole(UserRole.FINANCE_OFFICER);
 
         testProject = new Project();
         testProject.setId(1L);
@@ -355,7 +356,7 @@ class RequisitionServiceUnitTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "quote.pdf", "application/pdf", "PDF content".getBytes());
 
-        requisitionService.saveAttachment(1L, file);
+        requisitionService.saveAttachment(1L, file, testUser);
 
         verify(attachmentRepository).save(attachmentCaptor.capture());
         Attachment saved = attachmentCaptor.getValue();
@@ -376,7 +377,7 @@ class RequisitionServiceUnitTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "README", "text/plain", "content".getBytes());
 
-        requisitionService.saveAttachment(2L, file);
+        requisitionService.saveAttachment(2L, file, testUser);
 
         verify(attachmentRepository).save(attachmentCaptor.capture());
         assertEquals("README", attachmentCaptor.getValue().getFileName());
@@ -390,7 +391,7 @@ class RequisitionServiceUnitTest {
                 "file", "test.txt", "text/plain", "Hello".getBytes());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> requisitionService.saveAttachment(999L, file));
+                () -> requisitionService.saveAttachment(999L, file, testUser));
         assertTrue(ex.getMessage().contains("Request not found"));
         verify(attachmentRepository, never()).save(any());
     }
@@ -405,7 +406,7 @@ class RequisitionServiceUnitTest {
         when(file.getInputStream()).thenThrow(new IOException("Disk full"));
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> requisitionService.saveAttachment(1L, file));
+                () -> requisitionService.saveAttachment(1L, file, testUser));
         assertTrue(ex.getMessage().contains("Could not store file"));
         verify(attachmentRepository, never()).save(any());
     }
@@ -447,7 +448,7 @@ class RequisitionServiceUnitTest {
         RequisitionDto expectedDto = mock(RequisitionDto.class);
         when(requisitionMapper.toDto(request)).thenReturn(expectedDto);
 
-        RequisitionDto result = requisitionService.getRequestById(1L);
+        RequisitionDto result = requisitionService.getRequestById(1L, testUser);
 
         assertNotNull(result);
         assertEquals(expectedDto, result);
@@ -458,7 +459,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(999L)).thenReturn(Optional.empty());
 
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> requisitionService.getRequestById(999L));
+                () -> requisitionService.getRequestById(999L, testUser));
         assertTrue(ex.getMessage().contains("not found"));
     }
 
@@ -474,7 +475,7 @@ class RequisitionServiceUnitTest {
 
         when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
 
-        ResponseEntity<Resource> response = requisitionService.downloadAttachment(1L);
+        ResponseEntity<Resource> response = requisitionService.downloadAttachment(1L, testUser);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -489,7 +490,7 @@ class RequisitionServiceUnitTest {
         when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
 
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> requisitionService.downloadAttachment(999L));
+                () -> requisitionService.downloadAttachment(999L, testUser));
         assertTrue(ex.getMessage().contains("Attachment not found"));
     }
 
@@ -1071,20 +1072,17 @@ class RequisitionServiceUnitTest {
         attachment.setFileName("invoice.pdf");
         attachment.setStoragePath(tempFile.toString());
 
-        User mockUser = new User();
-        mockUser.setId(99L);
-        mockUser.setRole(UserRole.FINANCE_OFFICER);
-
-        Authentication auth = mock(Authentication.class);
-        when(auth.getPrincipal()).thenReturn(mockUser);
-
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(securityContext);
+        Request request = new Request();
+        request.setRequestID(100L);
+        WorkflowStep step = new WorkflowStep();
+        step.setWorkflowComponent(WorkflowComponent.STEP);
+        step.setRole(UserRole.FINANCE_OFFICER);
+        request.setCurrentStep(step);
+        attachment.setRequest(request);
 
         when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
 
-        requisitionService.deleteAttachment(1L);
+        requisitionService.deleteAttachment(1L, testUser);
 
         verify(attachmentRepository).delete(attachment);
         assertFalse(Files.exists(tempFile));
@@ -1102,6 +1100,10 @@ class RequisitionServiceUnitTest {
 
         Request request = new Request();
         request.setUser(owner);
+        WorkflowStep step = new WorkflowStep();
+        step.setWorkflowComponent(WorkflowComponent.STEP);
+        step.setRole(UserRole.REQUESTER);
+        request.setCurrentStep(step);
 
         Attachment attachment = new Attachment();
         attachment.setAttachmentId(10L);
@@ -1109,16 +1111,10 @@ class RequisitionServiceUnitTest {
         attachment.setStoragePath("/tmp/secret.pdf");
         attachment.setRequest(request);
 
-        Authentication auth = mock(Authentication.class);
-        when(auth.getPrincipal()).thenReturn(caller);
-
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(securityContext);
-
         when(attachmentRepository.findById(10L)).thenReturn(Optional.of(attachment));
+        doThrow(new AccessDeniedException("Not allowed")).when(workflowEngineService).checkAuthorization(any(), eq(caller), any());
 
-        assertThrows(AccessDeniedException.class, () -> requisitionService.deleteAttachment(10L));
+        assertThrows(AccessDeniedException.class, () -> requisitionService.deleteAttachment(10L, caller));
         verify(attachmentRepository, never()).delete(any());
     }
 
@@ -1127,7 +1123,7 @@ class RequisitionServiceUnitTest {
         when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
 
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> requisitionService.deleteAttachment(999L));
+                () -> requisitionService.deleteAttachment(999L, testUser));
 
         assertTrue(ex.getMessage().contains("Attachment not found with id: 999"));
         verify(attachmentRepository, never()).delete(any());
@@ -1143,7 +1139,7 @@ class RequisitionServiceUnitTest {
         when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
 
         assertThrows(RuntimeException.class,
-                () -> requisitionService.deleteAttachment(1L));
+                () -> requisitionService.deleteAttachment(1L, testUser));
 
         verify(attachmentRepository, never()).delete(any());
     }
@@ -1162,7 +1158,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(workflowEngineService.getNextStep(request)).thenReturn(nextStep);
 
-        String result = requisitionService.getNextStepRole(1L);
+        String result = requisitionService.getNextStepRole(1L, testUser);
 
         assertNull(result);
     }
@@ -1179,7 +1175,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(workflowEngineService.getNextStep(request)).thenReturn(nextStep);
 
-        String result = requisitionService.getNextStepRole(1L);
+        String result = requisitionService.getNextStepRole(1L, testUser);
 
         assertEquals("ADMINISTRATOR", result);
     }
@@ -1300,7 +1296,7 @@ class RequisitionServiceUnitTest {
         InvoiceDto expectedDto = mock(InvoiceDto.class);
         when(invoiceMapper.toDto(eq(invoice), eq(BigDecimal.valueOf(200)))).thenReturn(expectedDto);
 
-        InvoiceDto result = requisitionService.getInvoice(requestId);
+        InvoiceDto result = requisitionService.getInvoice(requestId, testUser);
 
         assertNotNull(result);
         verify(currencyConversionService).convert(BigDecimal.valueOf(200), Currency.EUR);
@@ -1327,7 +1323,7 @@ class RequisitionServiceUnitTest {
         InvoiceDto expectedDto = mock(InvoiceDto.class);
         when(invoiceMapper.toDto(eq(invoice), isNull())).thenReturn(expectedDto);
 
-        InvoiceDto result = requisitionService.getInvoice(requestId);
+        InvoiceDto result = requisitionService.getInvoice(requestId, testUser);
 
         assertNotNull(result);
         verify(invoiceMapper).toDto(eq(invoice), isNull());
