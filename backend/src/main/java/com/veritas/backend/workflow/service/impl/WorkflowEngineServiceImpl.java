@@ -336,16 +336,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         " is not authorized for this step. Required: " + currentStep.getRole());
             }
             if (currentStep.getRole() == UserRole.PROCUREMENT_OFFICER) {
-                Long reqDept = null;
-                if (request.getUser() != null && request.getUser().getTeam() != null
-                        && request.getUser().getTeam().getDepartment() != null) {
-                    reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
-                }
-                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
-                        : null;
-                if (reqDept != null && !reqDept.equals(actorDept)) {
-                    throw new AccessDeniedException("You are not in the same department as the request.");
-                }
+                checkReqDeptMatchesUser(request, attachedActor);
             }
         } else {
             if (currentStep.getWorkflowComponent() == WorkflowComponent.START_EVENT) {
@@ -363,17 +354,21 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 throw new AccessDeniedException("Requesters are not authorized to act on unassigned steps.");
             }
             if (attachedActor.getRole() == UserRole.PROCUREMENT_OFFICER) {
-                Long reqDept = null;
-                if (request.getUser() != null && request.getUser().getTeam() != null
-                        && request.getUser().getTeam().getDepartment() != null) {
-                    reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
-                }
-                Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
-                        : null;
-                if (reqDept != null && !reqDept.equals(actorDept)) {
-                    throw new AccessDeniedException("You must be in the same department to act on unassigned steps.");
-                }
+                checkReqDeptMatchesUser(request, attachedActor);
             }
+        }
+    }
+
+    private void checkReqDeptMatchesUser(Request request, User attachedActor) {
+        Long reqDept = null;
+        if (request.getUser() != null && request.getUser().getTeam() != null
+                && request.getUser().getTeam().getDepartment() != null) {
+            reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
+        }
+        Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()
+                : null;
+        if (reqDept != null && !reqDept.equals(actorDept)) {
+            throw new AccessDeniedException("You are not in the same department as the request.");
         }
     }
 

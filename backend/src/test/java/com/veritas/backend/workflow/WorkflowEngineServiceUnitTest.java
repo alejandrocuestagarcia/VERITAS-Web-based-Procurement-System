@@ -290,7 +290,7 @@ class WorkflowEngineServiceUnitTest {
                 AccessDeniedException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null)
         );
-        assertEquals("You must be in the same department to act on unassigned steps.", ex.getMessage());
+        assertEquals("You are not in the same department as the request.", ex.getMessage());
     }
 
     //AI-GENERATED

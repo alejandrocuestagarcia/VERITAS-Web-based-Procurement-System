@@ -61,19 +61,25 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional(readOnly = true)
     public QuoteDto getQuoteById(Long requestId, Long quoteId) {
+        Quote quote = getQuoteForRequest(requestId, quoteId);
+            
+        return mapToDtoWithEuro(quote);
+    }
+
+    private Quote getQuoteForRequest(Long requestId, Long quoteId) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
 
         canRequesterOrProcurementOfficerAccessRequestDetails(request);
 
         Quote quote = quoteRepository.findById(quoteId)
-            .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
-            
+                .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
+
         if (!quote.getRequest().getRequestID().equals(requestId)) {
             throw new EntityNotFoundException("Quote does not belong to this request");
         }
-            
-        return mapToDtoWithEuro(quote);
+
+        return quote;
     }
 
     @Override
@@ -101,22 +107,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote savedQuote = quoteRepository.save(quote);
         
         if (createDto.items() != null && !createDto.items().isEmpty()) {
-            for (QuoteLineItemCreateDto itemDto : createDto.items()) {
-                QuoteLineItem item = new QuoteLineItem();
-                item.setQuote(savedQuote);
-                item.setProductDescription(itemDto.productDescription());
-                item.setQuantity(itemDto.quantity());
-                item.setUnitPrice(itemDto.unitPrice());
-                item.setSubtotal(itemDto.unitPrice().multiply(java.math.BigDecimal.valueOf(itemDto.quantity())));
-                
-                if (itemDto.requestItemId() != null) {
-                    RequestItem reqItem = requestItemRepository.findById(itemDto.requestItemId())
-                        .orElse(null);
-                    item.setRequestItem(reqItem);
-                }
-                
-                quoteLineItemRepository.save(item);
-            }
+            saveQuoteLineItems(createDto.items(), savedQuote);
         }
         
         return mapToDtoWithEuro(savedQuote);
@@ -125,17 +116,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional
     public QuoteDto updateQuoteForRequest(Long requestId, Long quoteId, QuoteCreateDto updateDto) {
-        Request request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
-
-        canRequesterOrProcurementOfficerAccessRequestDetails(request);
-
-        Quote quote = quoteRepository.findById(quoteId)
-            .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
-            
-        if (!quote.getRequest().getRequestID().equals(requestId)) {
-            throw new EntityNotFoundException("Quote does not belong to this request");
-        }
+        Quote quote = getQuoteForRequest(requestId, quoteId);
         
         if (!quote.getVendorID().getId().equals(updateDto.vendorId())) {
             Vendor vendor = vendorRepository.findById(updateDto.vendorId())
@@ -156,41 +137,35 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quoteLineItemRepository.deleteAll(existingItems);
         
         if (updateDto.items() != null && !updateDto.items().isEmpty()) {
-            for (QuoteLineItemCreateDto itemDto : updateDto.items()) {
-                QuoteLineItem item = new QuoteLineItem();
-                item.setQuote(quote);
-                item.setProductDescription(itemDto.productDescription());
-                item.setQuantity(itemDto.quantity());
-                item.setUnitPrice(itemDto.unitPrice());
-                item.setSubtotal(itemDto.unitPrice().multiply(java.math.BigDecimal.valueOf(itemDto.quantity())));
-                
-                if (itemDto.requestItemId() != null) {
-                    RequestItem reqItem = requestItemRepository.findById(itemDto.requestItemId())
-                        .orElse(null);
-                    item.setRequestItem(reqItem);
-                }
-                
-                quoteLineItemRepository.save(item);
-            }
+            saveQuoteLineItems(updateDto.items(), quote);
         }
         
         return mapToDtoWithEuro(updatedQuote);
     }
 
+    private void saveQuoteLineItems(List<QuoteLineItemCreateDto> items, Quote quote) {
+        for (QuoteLineItemCreateDto itemDto : items) {
+            QuoteLineItem item = new QuoteLineItem();
+            item.setQuote(quote);
+            item.setProductDescription(itemDto.productDescription());
+            item.setQuantity(itemDto.quantity());
+            item.setUnitPrice(itemDto.unitPrice());
+            item.setSubtotal(itemDto.unitPrice().multiply(java.math.BigDecimal.valueOf(itemDto.quantity())));
+
+            if (itemDto.requestItemId() != null) {
+                RequestItem reqItem = requestItemRepository.findById(itemDto.requestItemId())
+                        .orElse(null);
+                item.setRequestItem(reqItem);
+            }
+
+            quoteLineItemRepository.save(item);
+        }
+    }
+
     @Override
     @Transactional
     public void deleteQuoteForRequest(Long requestId, Long quoteId) {
-        Request request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
-
-        canRequesterOrProcurementOfficerAccessRequestDetails(request);
-
-        Quote quote = quoteRepository.findById(quoteId)
-            .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
-
-        if (!quote.getRequest().getRequestID().equals(requestId)) {
-            throw new EntityNotFoundException("Quote does not belong to this request");
-        }
+        Quote quote = getQuoteForRequest(requestId, quoteId);
 
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
@@ -201,17 +176,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Override
     @Transactional
     public void selectQuoteForRequest(Long requestId, Long quoteId) {
-        Request request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
-
-        canRequesterOrProcurementOfficerAccessRequestDetails(request);
-
-        Quote quoteToSelect = quoteRepository.findById(quoteId)
-            .orElseThrow(() -> new EntityNotFoundException("Quote not found with id: " + quoteId));
-
-        if (!quoteToSelect.getRequest().getRequestID().equals(requestId)) {
-            throw new EntityNotFoundException("Quote does not belong to this request");
-        }
+        Quote quoteToSelect = getQuoteForRequest(requestId, quoteId);
         
         // Unselect all other quotes for this request
         List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
@@ -219,7 +184,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             quote.setSelected(false);
             quoteRepository.save(quote);
         }
-        
+
         quoteToSelect.setSelected(true);
         quoteRepository.save(quoteToSelect);
     }

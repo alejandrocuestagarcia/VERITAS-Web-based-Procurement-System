@@ -144,10 +144,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setTeam(user.getTeam());
 
         // Initialize Request Budget
-        InternalBudget budget = new InternalBudget();
-        budget.setBudgetName("Request: " + createDto.requestName());
-        budget.setTotalAmount(BigDecimal.ZERO);
-        budget.setParentBudget(project.getInternalBudget());
+        InternalBudget budget = InternalBudget.builder().budgetName("Request: " + createDto.requestName())
+                .totalAmount(BigDecimal.ZERO).parentBudget(project.getInternalBudget()).build();
         internalBudgetRepository.save(budget);
         
         request.setBudget(budget);
@@ -161,12 +159,8 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         if (createDto.items() != null && !createDto.items().isEmpty()) {
             createDto.items().forEach(itemDto -> {
-                RequestItem item = new RequestItem();
-                item.setRequest(savedRequest);
-                item.setName(itemDto.name());
-                item.setQuantity(itemDto.quantity());
-                item.setUnit(itemDto.unit());
-                item.setDescription(itemDto.description());
+                RequestItem item = RequestItem.builder().request(savedRequest).name(itemDto.name())
+                        .quantity(itemDto.quantity()).unit(itemDto.unit()).description(itemDto.description()).build();
                 requestItemRepository.save(item);
                 savedRequest.getItems().add(item);
             });
@@ -736,12 +730,8 @@ public class RequisitionServiceImpl implements RequisitionService {
 
             if (updates.items() != null && !updates.items().isEmpty()) {
                 updates.items().forEach(itemDto -> {
-                    RequestItem item = new RequestItem();
-                    item.setRequest(request);
-                    item.setName(itemDto.name());
-                    item.setQuantity(itemDto.quantity());
-                    item.setUnit(itemDto.unit());
-                    item.setDescription(itemDto.description());
+                    RequestItem item = RequestItem.builder().request(request).name(itemDto.name())
+                            .quantity(itemDto.quantity()).unit(itemDto.unit()).description(itemDto.description()).build();
                     requestItemRepository.save(item);
                     request.getItems().add(item);
                 });
