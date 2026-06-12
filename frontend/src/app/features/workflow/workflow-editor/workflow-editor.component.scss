@@ -12,3 +12,10 @@
 ::ng-deep .bg-disabled-field .mat-mdc-text-field-wrapper {
   background-color: #f1f5f9 !important;
 }
+
+::ng-deep .highlight-current-step circle,
+::ng-deep .highlight-current-step rect {
+  stroke-width: 8px !important;
+  paint-order: stroke fill !important;
+  filter: drop-shadow(0px 0px 8px rgba(0, 66, 209, 0.5)) !important;
+}

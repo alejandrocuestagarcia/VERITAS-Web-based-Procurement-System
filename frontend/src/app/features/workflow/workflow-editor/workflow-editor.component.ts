@@ -181,6 +181,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.fitDiagram();
         this.canvas.nativeElement.style.visibility = 'visible';
+        this.highlightCurrentStep();
       }, 1);
       this.applyTransitionRuleCss();
     } catch (err) {
@@ -602,6 +603,24 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           canvas.addMarker(element.id, 'highlight');
         } else {
           canvas.removeMarker(element.id, 'highlight');
+        }
+      }
+    });
+  }
+
+  private highlightCurrentStep(): void {
+    const currentStatus = this.data?.currentStatus;
+    if (!currentStatus || !this.bpmnInstance) return;
+
+    const elementRegistry = this.bpmnInstance.get('elementRegistry');
+
+    elementRegistry.forEach((element: any) => {
+      if (element.type === 'bpmn:Task' || element.type === 'bpmn:EndEvent' || element.type === 'bpmn:StartEvent') {
+        const name = element.businessObject?.name || '';
+        const isDraft = currentStatus === 'DRAFT' && element.type === 'bpmn:StartEvent';
+        if (isDraft || name.trim().toLowerCase() === currentStatus.trim().toLowerCase()) {
+          const gfx = elementRegistry.getGraphics(element.id);
+          gfx?.classList.add('highlight-current-step');
         }
       }
     });

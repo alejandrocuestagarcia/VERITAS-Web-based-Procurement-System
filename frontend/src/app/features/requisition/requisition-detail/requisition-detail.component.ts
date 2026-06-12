@@ -14,6 +14,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   ConfirmationDialogComponent
 } from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
+import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
 
 @Component({
   selector: 'app-requisition-detail',
@@ -665,5 +666,17 @@ export class RequisitionDetailComponent implements OnInit {
       window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
     }, 100);
+  }
+
+  viewWorkflow(id: number | undefined): void {
+    if (id) {
+      this.dialog.open(WorkflowEditorComponent, {
+        width: '90vw',
+        height: '90vh',
+        maxWidth: '1200px',
+        panelClass: 'overflow-hidden',
+        data: { mode: 'view', id: id, currentStatus: this.request?.status }
+      });
+    }
   }
 }
