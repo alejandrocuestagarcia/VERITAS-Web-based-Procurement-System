@@ -78,7 +78,7 @@
     <ng-container matColumnDef="totalAmountEuro">
       <th mat-header-cell *matHeaderCellDef>EURO CONVERTED</th>
       <td mat-cell *matCellDef="let row">
-        <div *ngIf="row.currency !== 'EUR'" class="flex items-center gap-1.5 py-2">
+        <div *ngIf="row.currency !== 'EUR' && row.totalAmountEuro" class="flex items-center gap-1.5 py-2">
           <span class="font-extrabold text-[#0042d1] text-[15px]">
             {{ row.totalAmountEuro | currency:'EUR' }}
           </span>
