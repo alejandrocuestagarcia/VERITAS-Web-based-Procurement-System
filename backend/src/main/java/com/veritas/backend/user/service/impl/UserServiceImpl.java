@@ -105,8 +105,14 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public UserDto editUser(Long id, UserEditDto edits) {
+  public UserDto editUser(Long id, UserEditDto edits, User currentUser) {
     User user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+    if (currentUser != null && currentUser.getId().equals(id) && user.getRole() == UserRole.ADMINISTRATOR) {
+      if (edits.role() != null && edits.role() != UserRole.ADMINISTRATOR) {
+        throw new IllegalArgumentException("Administrators cannot change their own role");
+      }
+    }
 
     boolean changingTeam = edits.teamId() != null
         && (user.getTeam() == null || !edits.teamId().equals(user.getTeam().getTeamId()));

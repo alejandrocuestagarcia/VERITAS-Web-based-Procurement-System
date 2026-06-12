@@ -431,7 +431,7 @@ class UserServiceUnitTest {
     void EditUser_UserNotFound_ThrowsEntityNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null, null, null)));
+        assertThrows(EntityNotFoundException.class, () -> userService.editUser(99L, new UserEditDto(null, null, null, null, null, null), null));
         verify(userRepository, never()).save(any());
     }
 
@@ -453,7 +453,7 @@ class UserServiceUnitTest {
         when(teamRepository.findById(2L)).thenReturn(Optional.of(newTeam));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, 2L, null, null));
+        userService.editUser(1L, new UserEditDto(null, null, null, 2L, null, null), null);
 
         assertEquals(newTeam, user.getTeam());
     }
@@ -478,7 +478,7 @@ class UserServiceUnitTest {
             new SimpleGrantedAuthority("ROLE_REQUESTER")
         )).when(roleHierarchy).getReachableGrantedAuthorities(any());
 
-        userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null));
+        userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null), null);
 
         assertNull(user.getTeam());
         assertNull(user.getDepartment());
@@ -497,7 +497,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, true));
+        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, true), null);
 
         assertEquals(user, team.getLeader());
         verify(teamRepository).save(team);
@@ -516,7 +516,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, false));
+        userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, false), null);
 
         assertNull(team.getLeader());
         verify(teamRepository).save(team);
@@ -538,7 +538,7 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, null, null, null, false));
+        userService.editUser(1L, new UserEditDto(null, null, null, null, null, false), null);
 
         assertEquals(leader, team.getLeader());
         verify(teamRepository, never()).save(any());
@@ -665,7 +665,7 @@ class UserServiceUnitTest {
             new SimpleGrantedAuthority("ROLE_REQUESTER")
         )).when(roleHierarchy).getReachableGrantedAuthorities(any());
 
-        userService.editUser(1L, new UserEditDto(null, null, UserRole.REQUESTER, null, null, null));
+        userService.editUser(1L, new UserEditDto(null, null, UserRole.REQUESTER, null, null, null), null);
 
         assertEquals(UserRole.REQUESTER, user.getRole());
         verify(refreshTokenRepository, times(1)).deleteByUserId(1L);
@@ -685,7 +685,7 @@ class UserServiceUnitTest {
             new SimpleGrantedAuthority("ROLE_REQUESTER")
         )).when(roleHierarchy).getReachableGrantedAuthorities(any());
 
-        userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null));
+        userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null), null);
 
         assertEquals(UserRole.ADMINISTRATOR, user.getRole());
         verify(refreshTokenRepository, never()).deleteByUserId(anyLong());
@@ -701,11 +701,52 @@ class UserServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
-        userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null));
+        userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null), null);
 
         assertEquals(UserRole.ADMINISTRATOR, user.getRole());
         verify(roleHierarchy, never()).getReachableGrantedAuthorities(any());
         verify(refreshTokenRepository, never()).deleteByUserId(anyLong());
+    }
+
+    @Test
+    void EditUser_AdminAttemptsToChangeOwnRole_ThrowsIllegalArgumentException() {
+        User adminUser = new User();
+        adminUser.setId(1L);
+        adminUser.setEmail("admin@test.com");
+        adminUser.setRole(UserRole.ADMINISTRATOR);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(adminUser));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            userService.editUser(1L, new UserEditDto(null, null, UserRole.REQUESTER, null, null, null), adminUser);
+        });
+
+        assertEquals("Administrators cannot change their own role", exception.getMessage());
+    }
+
+    @Test
+    void EditUser_AdminChangesOtherAdminRole_SavesSuccessfully() {
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setEmail("admin@test.com");
+        currentUser.setRole(UserRole.ADMINISTRATOR);
+
+        User userToEdit = new User();
+        userToEdit.setId(2L);
+        userToEdit.setEmail("otheradmin@test.com");
+        userToEdit.setRole(UserRole.ADMINISTRATOR);
+        userToEdit.setTeam(testTeam);
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(userToEdit));
+        when(userRepository.save(userToEdit)).thenReturn(userToEdit);
+        doReturn(List.of(
+            new SimpleGrantedAuthority("ROLE_REQUESTER")
+        )).when(roleHierarchy).getReachableGrantedAuthorities(any());
+
+        userService.editUser(2L, new UserEditDto(null, null, UserRole.REQUESTER, null, null, null), currentUser);
+
+        assertEquals(UserRole.REQUESTER, userToEdit.getRole());
+        verify(refreshTokenRepository, times(1)).deleteByUserId(2L);
     }
 
 }
