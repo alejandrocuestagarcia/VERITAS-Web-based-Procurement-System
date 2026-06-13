@@ -62,9 +62,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   };
 
   readonly spelFields: { label: string; insert: string; type: string }[] = [
-    { label: 'selectedQuoteTotalAmount', insert: 'selectedQuoteTotalAmount', type: 'number' },
-    { label: 'priority', insert: 'priority', type: 'string' },
-    { label: 'totalQuantity', insert: 'totalQuantity', type: 'number' },
+    { label: 'selectedQuoteTotalAmount', insert: 'selectedQuoteTotalAmount ', type: 'number' },
+    { label: 'priority', insert: 'priority ', type: 'string' },
+    { label: 'totalQuantity', insert: 'totalQuantity ', type: 'number' },
     { label: 'department', insert: 'department.', type: 'object' },
     { label: 'project', insert: 'project.', type: 'object' },
     { label: 'requester', insert: 'requester.', type: 'object' },
@@ -74,54 +74,54 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private readonly spelNested: Record<string, { label: string; insert: string; type: string }[]> = {
     'department': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
       { label: 'budget', insert: 'budget.', type: 'object' },
     ],
     'project': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
-      { label: 'key', insert: 'key', type: 'string' }, { label: 'budget', insert: 'budget.', type: 'object' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
+      { label: 'key', insert: 'key ', type: 'string' }, { label: 'budget', insert: 'budget.', type: 'object' },
     ],
     'requester': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
-      { label: 'email', insert: 'email', type: 'string' }, { label: 'role', insert: 'role', type: 'string' },
-      { label: 'isTeamLeader', insert: 'isTeamLeader', type: 'boolean' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
+      { label: 'email', insert: 'email ', type: 'string' }, { label: 'role', insert: 'role ', type: 'string' },
+      { label: 'isTeamLeader', insert: 'isTeamLeader ', type: 'boolean' },
     ],
     'budget': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
     ],
     'globalBudget': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
     ],
     'department.budget': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
     ],
     'project.budget': [
-      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
     ],
   };
 
   private readonly spelOperators = [
-    { label: 'and', insert: ' and ' },
-    { label: 'or', insert: ' or ' },
+    { label: 'and', insert: 'and ' },
+    { label: 'or', insert: 'or ' },
     { label: 'not', insert: 'not ' },
-    { label: '==', insert: ' == ' },
-    { label: '!=', insert: ' != ' },
-    { label: '>=', insert: ' >= ' },
-    { label: '<=', insert: ' <= ' },
-    { label: '>', insert: ' > ' },
-    { label: '<', insert: ' < ' },
+    { label: '==', insert: '== ' },
+    { label: '!=', insert: '!= ' },
+    { label: '>=', insert: '>= ' },
+    { label: '<=', insert: '<= ' },
+    { label: '>', insert: '> ' },
+    { label: '<', insert: '< ' },
   ];
 
   autocompleteVisible = false;
@@ -207,9 +207,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
 
     this.autocompleteVisible = false;
-    if (token.insert.endsWith('.')) {
-      setTimeout(() => this.showAutocomplete(el), 0);
-    }
+    setTimeout(() => this.showAutocomplete(el), 0);
   }
 
   onAutocompleteKeydown(event: KeyboardEvent, textarea: HTMLTextAreaElement): void {
