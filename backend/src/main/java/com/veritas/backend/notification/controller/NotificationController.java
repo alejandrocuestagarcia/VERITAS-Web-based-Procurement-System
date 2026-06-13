@@ -1,4 +1,4 @@
-package com.veritas.backend.notification;
+package com.veritas.backend.notification.controller;
 
 import com.veritas.backend.notification.dto.NotificationDto;
 import com.veritas.backend.notification.service.NotificationService;

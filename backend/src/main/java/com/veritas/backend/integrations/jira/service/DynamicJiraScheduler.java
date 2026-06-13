@@ -14,6 +14,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+
+/**
+ * Manages dynamic per-config Jira sync schedules at runtime.
+ * On startup, schedules a recurring sync job for each existing {@link JiraConfig}
+ * at its configured interval, and starts a fixed 15-second queue processor for
+ * pending sync tasks. Schedules can be added or cancelled individually as configs
+ * are created or removed.
+ */
 @Configuration
 @Slf4j
 public class DynamicJiraScheduler {

@@ -5,6 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Scheduled job that periodically syncs exchange rates via {@link ExchangeRateSyncService}.
+ * Runs at a fixed delay controlled by {@code currency.scheduler-interval-ms} (default: 1 hour),
+ * with an initial delay of 10 seconds on startup.
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
