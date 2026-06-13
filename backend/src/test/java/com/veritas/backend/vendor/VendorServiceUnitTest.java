@@ -18,6 +18,7 @@ import com.veritas.backend.vendor.repository.VendorEvaluationRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.service.impl.VendorServiceImpl;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +55,9 @@ class VendorServiceUnitTest {
 
     @Mock
     private RequestRepository requestRepository;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private VendorServiceImpl vendorService;

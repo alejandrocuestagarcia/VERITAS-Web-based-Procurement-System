@@ -76,6 +76,17 @@ class RequisitionQuoteServiceUnitTest {
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;
 
+    /** A reusable EUR conversion result (rate = 1, no metadata). */
+    private static CurrencyConversionResult eurResult(BigDecimal amount) {
+        return new CurrencyConversionResult(amount, BigDecimal.ONE, null, null);
+    }
+
+    /** A reusable non-EUR conversion result with a fixed test timestamp/source. */
+    private static CurrencyConversionResult foreignResult(BigDecimal converted) {
+        return new CurrencyConversionResult(converted, new BigDecimal("1.0870"),
+                LocalDateTime.of(2024, 1, 1, 0, 0), ExchangeRateSource.FRANKFURTER);
+    }
+
     @BeforeEach
     void setupSecurity() {
         User user = new User();
@@ -97,8 +108,6 @@ class RequisitionQuoteServiceUnitTest {
     @Test
     void GetQuotesForRequest_ValidRequestId_ReturnsQuotesList() {
         Long requestId = 1L;
-        LocalDateTime fixedTime = LocalDateTime.of(2026, 6, 12, 19, 57);
-
         Request request = new Request();
         request.setRequestID(requestId);
 
@@ -109,18 +118,24 @@ class RequisitionQuoteServiceUnitTest {
         quote.setCurrency(Currency.EUR);
 
         List<QuoteLineItem> items = new ArrayList<>();
-
-        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.valueOf(100), fixedTime, ExchangeRateSource.FRANKFURTER, false, List.of());
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(10L)
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.valueOf(100))
+                .totalAmountEuro(BigDecimal.valueOf(100))
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
-
-        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR))
-                .thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(100), BigDecimal.valueOf(0.90), fixedTime, ExchangeRateSource.FRANKFURTER));
-
-        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(100)), any(LocalDateTime.class), eq(ExchangeRateSource.FRANKFURTER)))
-                .thenReturn(expectedDto);
+        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(100)), isNull(), isNull())).thenReturn(expectedDto);
+        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR)).thenReturn(eurResult(BigDecimal.valueOf(100)));
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
@@ -148,8 +163,6 @@ class RequisitionQuoteServiceUnitTest {
         Long requestId = 1L;
         Long quoteId = 10L;
 
-        LocalDateTime fixedTime = LocalDateTime.of(2026, 6, 12, 19, 57);
-
         Request request = new Request();
         request.setRequestID(requestId);
 
@@ -160,41 +173,24 @@ class RequisitionQuoteServiceUnitTest {
         quote.setCurrency(Currency.EUR);
 
         List<QuoteLineItem> items = new ArrayList<>();
-
-        QuoteDto expectedDto = new QuoteDto(
-                quoteId,
-                2L,
-                null,
-                Currency.EUR,
-                BigDecimal.valueOf(100),
-                BigDecimal.ZERO,
-                BigDecimal.valueOf(100),
-                BigDecimal.valueOf(100),
-                fixedTime,
-                ExchangeRateSource.FRANKFURTER,
-                false,
-                List.of()
-        );
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(quoteId)
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.valueOf(100))
+                .totalAmountEuro(BigDecimal.valueOf(100))
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(items);
-        when(currencyConversionService.convert(BigDecimal.valueOf(100),Currency.EUR)).thenReturn(
-                new CurrencyConversionResult(
-                        BigDecimal.valueOf(100),
-                        BigDecimal.valueOf(0.90),
-                        fixedTime,
-                        ExchangeRateSource.FRANKFURTER
-                )
-        );
-
-        when(quoteMapper.toDto(
-                eq(quote),
-                eq(items),
-                eq(BigDecimal.valueOf(100)),
-                any(LocalDateTime.class),
-                eq(ExchangeRateSource.FRANKFURTER)
-        )).thenReturn(expectedDto);
+        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(100)), isNull(), isNull())).thenReturn(expectedDto);
+        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR)).thenReturn(eurResult(BigDecimal.valueOf(100)));
 
         QuoteDto result = quoteService.getQuoteById(requestId, quoteId);
 
@@ -245,14 +241,15 @@ class RequisitionQuoteServiceUnitTest {
         Vendor vendor = new Vendor();
         vendor.setId(2L);
 
-        QuoteCreateDto createDto = new QuoteCreateDto(
-                2L,
-                Currency.EUR,
-                BigDecimal.valueOf(100),
-                BigDecimal.valueOf(10),
-                BigDecimal.valueOf(110),
-                List.of(new QuoteLineItemCreateDto("Product A", 2, BigDecimal.valueOf(50), 3L))
-        );
+        QuoteCreateDto createDto = QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.valueOf(10))
+                .totalAmount(BigDecimal.valueOf(110))
+                .shippingTime(5)
+                .items(List.of(new QuoteLineItemCreateDto("Product A", 2, BigDecimal.valueOf(50), 3L)))
+                .build();
 
         Quote quote = new Quote();
         quote.setQuoteID(10L);
@@ -264,14 +261,25 @@ class RequisitionQuoteServiceUnitTest {
         RequestItem requestItem = new RequestItem();
         requestItem.setId(3L);
 
-        QuoteDto expectedDto = new QuoteDto(10L, 2L, null, Currency.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(10), BigDecimal.valueOf(110), BigDecimal.valueOf(100),  LocalDateTime.now(), ExchangeRateSource.FRANKFURTER,false, List.of());
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(10L)
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.valueOf(10))
+                .totalAmount(BigDecimal.valueOf(110))
+                .totalAmountEuro(BigDecimal.valueOf(100))
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(vendorRepository.findById(2L)).thenReturn(Optional.of(vendor));
         when(quoteRepository.save(any(Quote.class))).thenReturn(quote);
         when(requestItemRepository.findById(3L)).thenReturn(Optional.of(requestItem));
-        when(quoteMapper.toDto(eq(quote), anyList(), any(BigDecimal.class), any(LocalDateTime.class), any(ExchangeRateSource.class))).thenReturn(expectedDto);
-        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(100),  BigDecimal.valueOf(0.90), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+        when(quoteMapper.toDto(eq(quote), anyList(), any(BigDecimal.class), any(), any())).thenReturn(expectedDto);
+        when(currencyConversionService.convert(BigDecimal.valueOf(100), Currency.EUR)).thenReturn(eurResult(BigDecimal.valueOf(100)));
 
         QuoteDto result = quoteService.createQuoteForRequest(requestId, createDto);
 
@@ -284,7 +292,15 @@ class RequisitionQuoteServiceUnitTest {
     void CreateQuoteForRequest_RequestNotFound_ThrowsEntityNotFoundException() {
         when(requestRepository.findById(1L)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.createQuoteForRequest(1L, new QuoteCreateDto(2L, Currency.EUR, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of())));
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.createQuoteForRequest(1L, QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.ZERO)
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.ZERO)
+                .shippingTime(0)
+                .items(List.of())
+                .build()));
         assertTrue(ex.getMessage().contains("Request not found"));
     }
 
@@ -296,7 +312,14 @@ class RequisitionQuoteServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(vendorRepository.findById(2L)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.createQuoteForRequest(1L, new QuoteCreateDto(2L, Currency.EUR, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of())));
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.createQuoteForRequest(1L, QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.ZERO)
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.ZERO)
+                .shippingTime(0)
+                .items(List.of()).build()));
         assertTrue(ex.getMessage().contains("Vendor not found"));
     }
 
@@ -321,28 +344,41 @@ class RequisitionQuoteServiceUnitTest {
         quote.setTotalAmount(BigDecimal.valueOf(215));
         quote.setCurrency(Currency.USD);
 
-        QuoteCreateDto updateDto = new QuoteCreateDto(
-                3L,
-                Currency.USD,
-                BigDecimal.valueOf(200),
-                BigDecimal.valueOf(15),
-                BigDecimal.valueOf(215),
-                List.of(new QuoteLineItemCreateDto("Product B", 1, BigDecimal.valueOf(200), null))
-        );
+        QuoteCreateDto updateDto = QuoteCreateDto.builder()
+                .vendorId(3L)
+                .currency(Currency.USD)
+                .baseAmount(BigDecimal.valueOf(200))
+                .shippingCosts(BigDecimal.valueOf(15))
+                .totalAmount(BigDecimal.valueOf(215))
+                .shippingTime(5)
+                .items(List.of(new QuoteLineItemCreateDto("Product B", 1, BigDecimal.valueOf(200), null)))
+                .build();
 
         QuoteLineItem existingItem = new QuoteLineItem();
         existingItem.setLineItemId(5L);
         existingItem.setQuote(quote);
 
-        QuoteDto expectedDto = new QuoteDto(quoteId, 3L, null, Currency.USD, BigDecimal.valueOf(200), BigDecimal.valueOf(15), BigDecimal.valueOf(215), BigDecimal.valueOf(100),  LocalDateTime.now(), ExchangeRateSource.FRANKFURTER,false, List.of());
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(quoteId)
+                .vendorId(3L)
+                .currency(Currency.USD)
+                .baseAmount(BigDecimal.valueOf(200))
+                .shippingCosts(BigDecimal.valueOf(15))
+                .totalAmount(BigDecimal.valueOf(215))
+                .totalAmountEuro(BigDecimal.valueOf(100))
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
 
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
         when(vendorRepository.findById(3L)).thenReturn(Optional.of(newVendor));
         when(quoteRepository.save(quote)).thenReturn(quote);
         when(quoteLineItemRepository.findByQuoteQuoteID(quoteId)).thenReturn(List.of(existingItem));
-        when(quoteMapper.toDto(eq(quote), anyList(), any(BigDecimal.class), any(LocalDateTime.class), any(ExchangeRateSource.class))).thenReturn(expectedDto);
-        when(currencyConversionService.convert(BigDecimal.valueOf(215), Currency.USD)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(100),  BigDecimal.valueOf(0.90), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+        when(quoteMapper.toDto(eq(quote), anyList(), any(BigDecimal.class), any(), any())).thenReturn(expectedDto);
+        when(currencyConversionService.convert(BigDecimal.valueOf(215), Currency.USD))
+                .thenReturn(foreignResult(BigDecimal.valueOf(100)));
 
         QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
 
@@ -426,25 +462,32 @@ class RequisitionQuoteServiceUnitTest {
 
         List<QuoteLineItem> items = List.of(new QuoteLineItem());
 
+        LocalDateTime fetchedAt = LocalDateTime.of(2024, 1, 1, 0, 0);
+        CurrencyConversionResult conversionResult = new CurrencyConversionResult(
+                BigDecimal.valueOf(180), new BigDecimal("1.0870"), fetchedAt, ExchangeRateSource.FRANKFURTER);
+
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quote));
         when(quoteLineItemRepository.findByQuoteQuoteID(10L)).thenReturn(items);
-        when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.USD)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(180),  BigDecimal.valueOf(0.90), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+        when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.USD)).thenReturn(conversionResult);
 
-        QuoteDto expectedDto = new QuoteDto(
-                10L, 2L, null,
-                Currency.USD,
-                BigDecimal.valueOf(200),
-                BigDecimal.ZERO,
-                BigDecimal.valueOf(200),
-                BigDecimal.valueOf(180),
-                LocalDateTime.now(),
-                ExchangeRateSource.FRANKFURTER,
-                false,
-                List.of()
-        );
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(10L)
+                .vendorId(2L)
+                .currency(Currency.USD)
+                .baseAmount(BigDecimal.valueOf(200))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.valueOf(200))
+                .totalAmountEuro(BigDecimal.valueOf(180))
+                .exchangeRateFetchedAt(fetchedAt)
+                .exchangeRateSource(ExchangeRateSource.FRANKFURTER)
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
 
-        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(180)), any(LocalDateTime.class), any(ExchangeRateSource.class))).thenReturn(expectedDto);
+        when(quoteMapper.toDto(eq(quote), eq(items), eq(BigDecimal.valueOf(180)),
+                eq(fetchedAt), eq(ExchangeRateSource.FRANKFURTER))).thenReturn(expectedDto);
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
@@ -474,20 +517,20 @@ class RequisitionQuoteServiceUnitTest {
 
         when(currencyConversionService.convert(any(), any())).thenThrow(new IllegalArgumentException("Illegal input"));
 
-        QuoteDto expectedDto = new QuoteDto(
-                10L, 2L, null,
-                Currency.USD,
-                BigDecimal.valueOf(200),
-                BigDecimal.ZERO,
-                BigDecimal.valueOf(200),
-                null,
-                LocalDateTime.now(),
-                ExchangeRateSource.FRANKFURTER,
-                false,
-                List.of()
-        );
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(10L)
+                .vendorId(2L)
+                .currency(Currency.USD)
+                .baseAmount(BigDecimal.valueOf(200))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.valueOf(200))
+                .totalAmountEuro(null)
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
 
-        when(quoteMapper.toDto(eq(quote), eq(items), isNull(), any(), any())).thenReturn(expectedDto);
+        when(quoteMapper.toDto(eq(quote), eq(items), isNull(), isNull(), isNull())).thenReturn(expectedDto);
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
