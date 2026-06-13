@@ -108,6 +108,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       const q = params['q'] || '';
       this.searchCtrl.setValue(q, { emitEvent: false });
+      this.status = params['status'] || '';
+      this.selectedProjectId = params['projectId'] ? Number(params['projectId']) : '';
+      this.createdFrom = params['createdFrom'] || '';
+      this.createdTo = params['createdTo'] || '';
+      this.selectedCreatorId = params['creatorId'] ? Number(params['creatorId']) : '';
     });
   }
 
@@ -119,7 +124,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   triggerSearch(): void {
     const queryParams: any = {
-      q: this.searchCtrl.value?.trim() || undefined
+      q: this.searchCtrl.value?.trim() || undefined,
+      status: this.status || undefined,
+      projectId: this.selectedProjectId || undefined,
+      createdFrom: this.createdFrom || undefined,
+      createdTo: this.createdTo || undefined,
+      creatorId: this.selectedCreatorId || undefined
     };
     this.showAutocomplete = false;
     this.showFilterPopup = false;
