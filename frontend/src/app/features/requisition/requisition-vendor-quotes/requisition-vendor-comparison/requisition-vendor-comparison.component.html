@@ -20,21 +20,32 @@
   </div>
 
   <!-- Info Text & Score Explanation -->
-  <div class="bg-blue-50/40 rounded-2xl p-6 border border-blue-100/60 mb-8 mt-0 flex flex-col gap-3">
+  <div class="bg-blue-50/40 rounded-2xl p-6 border border-blue-100/60 mb-8 mt-0 flex flex-col gap-4">
     <p class="text-sm text-slate-600 font-medium leading-relaxed m-0">
       Compare all vendor quote details side-by-side. Review pricing, shipping times, and vendor reliability scores to select the preferred vendor for this requisition.
     </p>
-    <div class="h-px bg-blue-100/40 my-1"></div>
-    <div class="flex flex-col gap-1.5">
-      <span class="text-xs font-bold text-blue-800 uppercase tracking-wider">Reliability Score Calculation:</span>
-      <p class="text-xs text-slate-500 font-medium leading-relaxed m-0">
-        The score is a weighted average of historical evaluations for the vendor: 
-        <strong>40% Quote-to-Invoice Gap</strong> (price accuracy), 
-        <strong>20% Quality</strong>, 
-        <strong>20% Delivery</strong>, and 
-        <strong>20% Communication</strong>.
-        Hover over the score bar of any vendor card to see their specific metric breakdown.
-      </p>
+    <div class="h-px bg-blue-100/40 my-0.5"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-xs font-bold text-blue-800 uppercase tracking-wider">Reliability Score Calculation:</span>
+        <p class="text-xs text-slate-500 font-medium leading-relaxed m-0">
+          The score is a weighted average of evaluations: 
+          <strong>40% Invoice Gap</strong>, 
+          <strong>20% Quality</strong>, 
+          <strong>20% Delivery</strong>, and 
+          <strong>20% Communication</strong>.
+          Hover over any card's score bar to view details.
+        </p>
+      </div>
+      <div class="flex flex-col gap-1.5 border-l border-blue-100/60 pl-0 md:pl-4">
+        <span class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
+          <mat-icon class="text-amber-500 scale-75 -ml-1 -my-1">info_outline</mat-icon>
+          Currency Conversion Notice
+        </span>
+        <p class="text-xs text-slate-500 font-medium leading-relaxed m-0">
+          Converted prices are based on official live exchange rates. Because rates fluctuate, please confirm final order prices with the vendor.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -43,9 +54,9 @@
     <div class="flex flex-row gap-6 min-w-[750px]">
       <!-- Left Labels Column -->
       <div class="flex flex-col justify-end min-w-[200px] pb-24 text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">
-        <div class="h-16 flex items-center">Base Amount</div>
+        <div class="h-16 flex items-center">Subtotal</div>
         <div class="h-16 flex items-center border-t border-slate-100">Shipping Costs</div>
-        <div class="h-20 flex items-center border-t border-slate-100">Total Amount</div>
+        <div class="h-32 flex items-center border-t border-slate-100">Total (EUR)</div>
         <div class="h-16 flex items-center border-t border-slate-100">Shipping Time</div>
         <div class="h-20 flex items-center border-t border-slate-100">Reliability Score</div>
       </div>
@@ -87,36 +98,54 @@
           <!-- Comparison Rows -->
           <div class="flex-1 flex flex-col px-6 pb-6 text-slate-700">
 
-            <!-- Unit Price Row -->
+            <!-- Base Amount Row -->
             <div class="h-16 flex flex-col justify-center border-t border-slate-100">
-              <span class="text-sm font-extrabold text-slate-800">
-                {{ convertAmount(quote.baseAmount, quote.currency) | currency:'EUR' }}
+              <span class="text-base font-bold text-slate-800">
+                {{ quote.baseAmount | currency:quote.currency }}
+                <span class="text-xs font-semibold text-slate-500 ml-1">{{ quote.currency }}</span>
               </span>
-              <span *ngIf="quote.currency !== 'EUR'" class="text-[10px] text-slate-400 font-semibold mt-0.5">
-                {{ quote.baseAmount | currency:quote.currency }} original
+              <span *ngIf="quote.currency !== 'EUR' && getBaseAmountEuro(quote) as baseEuro" class="text-sm font-semibold text-slate-500 mt-0.5">
+                ≈ {{ baseEuro | currency:'EUR' }}
               </span>
             </div>
 
             <!-- Shipping Row -->
             <div class="h-16 flex flex-col justify-center border-t border-slate-100">
-              <span class="text-sm font-bold text-slate-700">
-                {{ convertAmount(quote.shippingCosts, quote.currency) | currency:'EUR' }}
+              <span class="text-base font-medium text-slate-700">
+                {{ quote.shippingCosts | currency:quote.currency }}
+                <span class="text-xs font-medium text-slate-500 ml-1">{{ quote.currency }}</span>
               </span>
-              <span *ngIf="quote.currency !== 'EUR'" class="text-[10px] text-slate-400 font-semibold mt-0.5">
-                {{ quote.shippingCosts | currency:quote.currency }} original
+              <span *ngIf="quote.currency !== 'EUR' && getShippingCostsEuro(quote) as shippingEuro" class="text-sm font-medium text-slate-500 mt-0.5">
+                ≈ {{ shippingEuro | currency:'EUR' }}
               </span>
             </div>
 
-            <!-- Total Amount Row -->
-            <div class="h-20 flex flex-col justify-center border-t border-slate-100">
-              <span class="text-lg font-black"
+            <!-- Total Amount Row (EUR, backend-converted) -->
+            <div class="h-32 flex flex-col justify-center border-t border-slate-100">
+              <!-- Primary: large EUR value from backend -->
+              <span *ngIf="quote.totalAmountEuro != null"
+                    class="text-2xl font-black"
                     [class.text-blue-600]="quote === recommendedQuote"
-                    [class.text-slate-800]="quote !== recommendedQuote">
-                {{ convertAmount(quote.totalAmount, quote.currency) | currency:'EUR' }}
+                    [class.text-slate-900]="quote !== recommendedQuote">
+                {{ quote.totalAmountEuro | currency:'EUR' }}
               </span>
-              <span *ngIf="quote.currency !== 'EUR'" class="text-[10px] font-bold text-slate-400 mt-0.5">
-                {{ quote.totalAmount | currency:quote.currency }} original
+              <!-- Fallback if backend couldn't convert -->
+              <span *ngIf="quote.totalAmountEuro == null"
+                    class="text-xl font-black text-slate-500">
+                {{ quote.totalAmount | currency:quote.currency }}
+                <span class="text-xs font-medium text-slate-600 ml-1">{{ quote.currency }}</span>
               </span>
+
+              <!-- For converted foreign currency quotes, show original details -->
+              <ng-container *ngIf="quote.currency !== 'EUR' && quote.totalAmountEuro != null">
+                <span class="text-xs font-bold text-slate-600 mt-1">
+                  Original: {{ quote.totalAmount | currency:quote.currency }} {{ quote.currency }}
+                </span>
+                <span *ngIf="getExchangeRateLabel(quote) as rateLabel"
+                      class="text-xs font-semibold text-slate-500 mt-0.5">
+                  {{ rateLabel }}
+                </span>
+              </ng-container>
             </div>
 
             <!-- Lead Time Row -->

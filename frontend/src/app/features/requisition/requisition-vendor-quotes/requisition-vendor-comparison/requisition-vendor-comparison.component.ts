@@ -56,7 +56,7 @@ export class RequisitionVendorComparisonComponent implements OnInit {
         this.quotes = quotes || [];
         if (this.quotes.length > 0) {
           this.recommendedQuote = this.getRecommendedQuote();
-          const maxQuoteAmount = Math.max(...this.quotes.map(q => this.convertAmount(q.totalAmount, q.currency)));
+          const maxQuoteAmount = Math.max(...this.quotes.map(q => q.totalAmountEuro ?? q.totalAmount ?? 0));
           this.budgetCeiling = Math.round(maxQuoteAmount * 1.15 / 1000) * 1000;
         }
         this.loading = false;
@@ -69,32 +69,37 @@ export class RequisitionVendorComparisonComponent implements OnInit {
     });
   }
 
-  convertAmount(amount: number | undefined, currency: string | undefined): number {
-    if (amount === undefined) return 0;
-    if (!currency || currency === 'EUR') return amount;
-
-    const rates: Record<string, number> = {
-      'USD': 0.92,
-      'GBP': 1.17,
-      'CHF': 1.03,
-      'JPY': 0.006
-    };
-
-    const rate = rates[currency.toUpperCase()] || 1.0;
-    return amount * rate;
-  }
-
   getRecommendedQuote(): QuoteDto | null {
     if (!this.quotes || this.quotes.length === 0) return null;
     return this.quotes.reduce((prev, curr) => {
-      const prevConverted = this.convertAmount(prev.totalAmount, prev.currency);
-      const currConverted = this.convertAmount(curr.totalAmount, curr.currency);
-      return prevConverted < currConverted ? prev : curr;
+      const prevEuro = prev.totalAmountEuro ?? prev.totalAmount ?? 0;
+      const currEuro = curr.totalAmountEuro ?? curr.totalAmount ?? 0;
+      return prevEuro < currEuro ? prev : curr;
     });
   }
 
-  get totalQuantity(): number {
-    return this.requisition?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  getExchangeRateLabel(quote: QuoteDto): string | null {
+    if (!quote.currency || quote.currency === 'EUR') return null;
+    if (!quote.totalAmountEuro || !quote.totalAmount || quote.totalAmountEuro === 0) return null;
+    const rate = (quote.totalAmount / quote.totalAmountEuro).toFixed(4);
+    const source = (quote as any).exchangeRateSource ? ` · ${(quote as any).exchangeRateSource}` : '';
+    return `Rate: 1 EUR = ${rate} ${quote.currency}${source}`;
+  }
+
+  getBaseAmountEuro(quote: QuoteDto): number | null {
+    if (quote.baseAmount === undefined || quote.baseAmount === null) return null;
+    if (quote.currency === 'EUR') return quote.baseAmount;
+    if (!quote.totalAmountEuro || !quote.totalAmount || quote.totalAmountEuro === 0) return null;
+    const rate = quote.totalAmount / quote.totalAmountEuro;
+    return quote.baseAmount / rate;
+  }
+
+  getShippingCostsEuro(quote: QuoteDto): number | null {
+    if (quote.shippingCosts === undefined || quote.shippingCosts === null) return null;
+    if (quote.currency === 'EUR') return quote.shippingCosts;
+    if (!quote.totalAmountEuro || !quote.totalAmount || quote.totalAmountEuro === 0) return null;
+    const rate = quote.totalAmount / quote.totalAmountEuro;
+    return quote.shippingCosts / rate;
   }
 
   getRatingColor(score: number | undefined): string {
