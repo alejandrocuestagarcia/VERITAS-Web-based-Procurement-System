@@ -20,6 +20,8 @@ export type WorkflowMode = 'create' | 'edit' | 'view';
 })
 export class WorkflowEditorComponent implements OnInit, OnDestroy {
   @ViewChild('canvas', { static: true }) private canvas!: ElementRef;
+  @ViewChild('routingEl') private routingEl!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('advancedRuleEl') private advancedRuleEl!: ElementRef<HTMLTextAreaElement>;
 
   private bpmnInstance: any;
 
@@ -58,6 +60,177 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     description: '',
     conditionExpression: ''
   };
+
+  readonly spelFields: { label: string; insert: string; type: string }[] = [
+    { label: 'selectedQuoteTotalAmount', insert: 'selectedQuoteTotalAmount', type: 'number' },
+    { label: 'priority', insert: 'priority', type: 'string' },
+    { label: 'totalQuantity', insert: 'totalQuantity', type: 'number' },
+    { label: 'department', insert: 'department.', type: 'object' },
+    { label: 'project', insert: 'project.', type: 'object' },
+    { label: 'requester', insert: 'requester.', type: 'object' },
+    { label: 'budget', insert: 'budget.', type: 'object' },
+    { label: 'globalBudget', insert: 'globalBudget.', type: 'object' },
+  ];
+
+  private readonly spelNested: Record<string, { label: string; insert: string; type: string }[]> = {
+    'department': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'budget', insert: 'budget.', type: 'object' },
+    ],
+    'project': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'key', insert: 'key', type: 'string' }, { label: 'budget', insert: 'budget.', type: 'object' },
+    ],
+    'requester': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'email', insert: 'email', type: 'string' }, { label: 'role', insert: 'role', type: 'string' },
+      { label: 'isTeamLeader', insert: 'isTeamLeader', type: 'boolean' },
+    ],
+    'budget': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+    ],
+    'globalBudget': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+    ],
+    'department.budget': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+    ],
+    'project.budget': [
+      { label: 'id', insert: 'id', type: 'number' }, { label: 'name', insert: 'name', type: 'string' },
+      { label: 'totalAmount', insert: 'totalAmount', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend', type: 'number' },
+      { label: 'actualSpend', insert: 'actualSpend', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer', type: 'number' },
+      { label: 'remainingAmount', insert: 'remainingAmount', type: 'number' },
+    ],
+  };
+
+  private readonly spelOperators = [
+    { label: 'and', insert: ' and ' },
+    { label: 'or', insert: ' or ' },
+    { label: 'not', insert: 'not ' },
+    { label: '==', insert: ' == ' },
+    { label: '!=', insert: ' != ' },
+    { label: '>=', insert: ' >= ' },
+    { label: '<=', insert: ' <= ' },
+    { label: '>', insert: ' > ' },
+    { label: '<', insert: ' < ' },
+  ];
+
+  autocompleteVisible = false;
+  autocompleteOptions: { label: string; insert: string; type?: string }[] = [];
+  activeAutocompleteIndex = 0;
+  autocompleteTop = 0;
+  autocompleteLeft = 0;
+  autocompleteWidth = 0;
+  private autocompleteTextarea: HTMLTextAreaElement | null = null;
+  private autocompleteBlurTimer: any = null;
+
+  onTextareaFocus(textarea: HTMLTextAreaElement): void {
+    clearTimeout(this.autocompleteBlurTimer);
+    this.showAutocomplete(textarea);
+  }
+
+  onTextareaInput(textarea: HTMLTextAreaElement): void {
+    this.showAutocomplete(textarea);
+  }
+
+  private showAutocomplete(textarea: HTMLTextAreaElement): void {
+    const pos = textarea.selectionStart;
+    const text = textarea.value;
+
+    let wordStart = pos;
+    while (wordStart > 0 && !/[\s()><=!]/.test(text[wordStart - 1])) wordStart--;
+    const currentWord = text.substring(wordStart, pos);
+
+    const lastDot = currentWord.lastIndexOf('.');
+    const parentPath = lastDot >= 0 ? currentWord.substring(0, lastDot).toLowerCase() : '';
+    const partial = lastDot >= 0 ? currentWord.substring(lastDot + 1) : currentWord;
+
+    let candidates: { label: string; insert: string; type?: string }[];
+
+    if (lastDot >= 0 && this.spelNested[parentPath]) {
+      candidates = this.spelNested[parentPath];
+    } else if (lastDot >= 0) {
+      candidates = [];
+    } else {
+      candidates = [...this.spelFields, ...this.spelOperators];
+    }
+
+    const lower = partial.toLowerCase();
+    if (partial.length > 0) {
+      candidates = candidates.filter(t => t.label.toLowerCase().startsWith(lower));
+    }
+
+    if (candidates.length === 0) { this.autocompleteVisible = false; return; }
+
+    this.autocompleteOptions = candidates;
+    this.activeAutocompleteIndex = 0;
+    this.autocompleteTextarea = textarea;
+    const r = textarea.getBoundingClientRect();
+    this.autocompleteTop = r.bottom + window.scrollY;
+    this.autocompleteLeft = r.left + window.scrollX;
+    this.autocompleteWidth = r.width;
+    this.autocompleteVisible = true;
+  }
+
+  selectAutocomplete(token: { label: string; insert: string; type?: string }): void {
+    const el = this.autocompleteTextarea!;
+    const pos = el.selectionStart;
+    const text = el.value;
+
+    let wordStart = pos;
+    while (wordStart > 0 && !/[\s()><=!]/.test(text[wordStart - 1])) wordStart--;
+    const currentWord = text.substring(wordStart, pos);
+    const lastDot = currentWord.lastIndexOf('.');
+    const replaceStart = lastDot >= 0 ? wordStart + lastDot + 1 : wordStart;
+
+    el.value = text.substring(0, replaceStart) + token.insert + text.substring(pos);
+    const cursor = replaceStart + token.insert.length;
+    el.selectionStart = cursor;
+    el.selectionEnd = cursor;
+    el.focus();
+
+    const isRouting = el === this.routingEl?.nativeElement;
+    if (isRouting) {
+      this.updateConditionExpression(el.value);
+    } else {
+      this.currentRule.advancedRule = el.value;
+      this.updateRuleProperty('advancedRule', el.value);
+    }
+
+    this.autocompleteVisible = false;
+    if (token.insert.endsWith('.')) {
+      setTimeout(() => this.showAutocomplete(el), 0);
+    }
+  }
+
+  onAutocompleteKeydown(event: KeyboardEvent, textarea: HTMLTextAreaElement): void {
+    if (!this.autocompleteVisible) return;
+    const len = this.autocompleteOptions.length;
+    if (event.key === 'ArrowDown') { event.preventDefault(); this.activeAutocompleteIndex = (this.activeAutocompleteIndex + 1) % len; this.scrollAutocompleteIntoView(); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); this.activeAutocompleteIndex = (this.activeAutocompleteIndex - 1 + len) % len; this.scrollAutocompleteIntoView(); }
+    else if (event.key === 'Enter' || event.key === 'Tab') { event.preventDefault(); this.selectAutocomplete(this.autocompleteOptions[this.activeAutocompleteIndex]); }
+    else if (event.key === 'Escape') { this.autocompleteVisible = false; }
+  }
+
+  private scrollAutocompleteIntoView(): void {
+    setTimeout(() => {
+      const dd = document.querySelector('.spel-dropdown');
+      if (dd) (dd.children[this.activeAutocompleteIndex] as HTMLElement)?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  onTextareaBlur(): void {
+    this.autocompleteBlurTimer = setTimeout(() => this.autocompleteVisible = false, 150);
+  }
 
   get isEditable(): boolean {
     return this.mode !== 'view';
