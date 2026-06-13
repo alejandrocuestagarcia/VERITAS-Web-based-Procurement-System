@@ -15,6 +15,13 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Read-only evaluation context passed to SpEL expressions in workflow transition conditions and rules.
+ * Exposes a flattened, serialization-friendly view of a {@link Request}
+ * — including the selected quote total (converted to EUR), priority, quantity, requester, department,
+ * project, and budget hierarchy, so BPMN condition expressions can branch on request data without
+ * direct entity access. Use {@link #createDummyContext()} for validation-time expression dry-runs.
+ */
 @Getter
 public class WorkflowBranchingContext {
     private final BigDecimal selectedQuoteTotalAmount;

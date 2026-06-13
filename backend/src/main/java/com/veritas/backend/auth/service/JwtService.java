@@ -13,6 +13,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service responsible for generating and validating JWT access tokens.
+ * Tokens are signed with a Base64URL-encoded secret key and carry the user's
+ * email (subject), ID, role, and name as claims.
+ */
 @Service
 public class JwtService {
   @Value("${security.jwt.secret-key}")
