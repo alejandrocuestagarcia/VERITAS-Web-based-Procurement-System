@@ -8,6 +8,9 @@ import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.vendor.dto.VendorDto;
 
+import lombok.Builder;
+
+@Builder
 public record QuoteDto(
     Long quoteId,
     Long vendorId,

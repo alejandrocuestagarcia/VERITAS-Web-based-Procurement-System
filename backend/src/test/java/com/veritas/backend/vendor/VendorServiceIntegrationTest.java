@@ -1,6 +1,7 @@
 package com.veritas.backend.vendor;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.InvoiceRepository;
@@ -201,6 +202,7 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         quote.setRequest(request);
         quote.setSelected(true);
         quote.setTotalAmount(new BigDecimal("100.00"));
+        quote.setCurrency(Currency.EUR);
         quote.setShippingTime(5);
         quote = quoteRepository.save(quote);
 
@@ -212,6 +214,7 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         invoice.setRequest(request);
         invoice.setInvoiceNumber("INV-999");
         invoice.setTotalAmount(new BigDecimal("110.00"));
+        invoice.setCurrency(Currency.EUR);
         invoice = invoiceRepository.save(invoice);
 
         request.setInvoice(invoice);
