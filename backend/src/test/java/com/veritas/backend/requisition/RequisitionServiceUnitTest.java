@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
 
 import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.notification.entity.NotificationType;
@@ -1073,6 +1074,7 @@ class RequisitionServiceUnitTest {
         BigDecimal actualSpend = new BigDecimal("50.00");
 
         InternalBudget budget = new InternalBudget();
+        budget.setBudgetType(BudgetType.REQUEST);
         budget.setCommittedSpend(committedSpend);
         budget.setActualSpend(actualSpend);
         request.setBudget(budget);

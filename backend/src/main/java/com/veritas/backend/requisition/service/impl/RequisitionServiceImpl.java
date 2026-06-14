@@ -503,6 +503,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                 REJECT,
                 "Request was rejected with the following reason: " + rejectionData.getReason());
 
+        freeRequestBudget(request);
+
         Request savedRequest = requestRepository.save(request);
 
         if (savedRequest.getJiraIssueKey() != null && !savedRequest.getJiraIssueKey().isBlank()) {
@@ -553,6 +555,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                 null,
                 CANCEL,
                 "Request was canceled by " + actor.getName());
+
+        freeRequestBudget(request);
 
         Request savedRequest = requestRepository.save(request);
 
@@ -872,22 +876,78 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     private void addToBudgets(InternalBudget budget, Invoice invoice) {
-        BigDecimal requestCommittedSpent = budget.getCommittedSpend();
+        BigDecimal requestCommittedSpent = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+        if (invoice.getTotalAmount() == null) {
+            throw new IllegalStateException("Invoice has no Total amount defined");
+        }
+
+        CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+        BigDecimal invoiceAmountEur = conversion.convertedAmount();
+        invoice.setPaidAmountEur(invoiceAmountEur);
+
+        validatePaymentBudget(budget, invoiceAmountEur, requestCommittedSpent);
+
         while (budget != null) {
-            if (invoice.getTotalAmount() == null) {
-                throw new IllegalStateException("Invoice has no Total amount defined");
-            }
-
-            CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
-            invoice.setPaidAmountEur(conversion.convertedAmount());
-
-            BigDecimal newTotalSpend = budget.getActualSpend().add(conversion.convertedAmount());
+            BigDecimal newTotalSpend = budget.getActualSpend().add(invoiceAmountEur);
             budget.setActualSpend(newTotalSpend);
 
             budget.setCommittedSpend(budget.getCommittedSpend().subtract(requestCommittedSpent));
 
             internalBudgetRepository.save(budget);
             budget = budget.getParentBudget();
+        }
+    }
+
+    private void validatePaymentBudget(InternalBudget budget, BigDecimal invoiceAmountEur, BigDecimal requestCommittedSpent) {
+        InternalBudget currentBudget = budget;
+        while (currentBudget != null) {
+            if (currentBudget.getBudgetType() == BudgetType.REQUEST) {
+                currentBudget = currentBudget.getParentBudget();
+                continue;
+            }
+
+            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend()
+                    : BigDecimal.ZERO;
+            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend()
+                    : BigDecimal.ZERO;
+            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount()
+                    : BigDecimal.ZERO;
+
+            BigDecimal simulatedActual = actual.add(invoiceAmountEur);
+            BigDecimal simulatedCommitted = committed.subtract(requestCommittedSpent);
+            BigDecimal simulatedTotal = simulatedActual.add(simulatedCommitted);
+
+            if (simulatedTotal.compareTo(total) > 0) {
+                String budgetIdentifier = currentBudget.getBudgetName();
+                if (budgetIdentifier == null || budgetIdentifier.isBlank()) {
+                    if (currentBudget.getBudgetType() == BudgetType.PROJECT) {
+                        budgetIdentifier = "Project budget";
+                    } else if (currentBudget.getBudgetType() == BudgetType.DEPARTMENT) {
+                        budgetIdentifier = "Department budget";
+                    } else if (currentBudget.getBudgetType() == BudgetType.GLOBAL) {
+                        budgetIdentifier = "Global budget";
+                    } else {
+                        budgetIdentifier = "Budget";
+                    }
+                }
+                throw new WorkflowStateException("Budget of : " + budgetIdentifier + " exhausted.");
+            }
+
+            currentBudget = currentBudget.getParentBudget();
+        }
+    }
+
+    private void freeRequestBudget(Request request) {
+        if (request.getBudget() != null) {
+            BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend() != null 
+                    ? request.getBudget().getCommittedSpend() : BigDecimal.ZERO;
+            InternalBudget budget = request.getBudget();
+            while (budget != null) {
+                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+                budget.setCommittedSpend(currentCommitted.subtract(requestCommittedSpent));
+                internalBudgetRepository.save(budget);
+                budget = budget.getParentBudget();
+            }
         }
     }
 

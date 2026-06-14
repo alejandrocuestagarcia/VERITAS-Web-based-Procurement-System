@@ -29,7 +29,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.integrations.currency.entity.Currency;
+import java.math.RoundingMode;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -131,6 +134,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         validateAmounts(updateDto);
         
         BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+        Currency oldCurrency = quote.getCurrency();
         BigDecimal newAmount = updateDto.totalAmount() != null ? updateDto.totalAmount() : BigDecimal.ZERO;
 
         quote.setCurrency(updateDto.currency());
@@ -140,8 +144,14 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         
         Quote updatedQuote = quoteRepository.save(quote);
 
+        Request request = quote.getRequest();
         if (quote.isSelected() && request.getBudget() != null) {
-            BigDecimal difference = newAmount.subtract(oldAmount);
+            BigDecimal oldAmountEur = currencyConversionService.convert(oldAmount, oldCurrency).convertedAmount();
+            BigDecimal newAmountEur = currencyConversionService.convert(newAmount, updateDto.currency()).convertedAmount();
+            BigDecimal difference = newAmountEur.subtract(oldAmountEur);
+            
+            validateBudgetAfterSelection(request.getBudget(), difference);
+
             InternalBudget budget = request.getBudget();
             while (budget != null) {
                 BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
@@ -185,12 +195,14 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     public void deleteQuoteForRequest(Long requestId, Long quoteId) {
         Quote quote = getQuoteForRequest(requestId, quoteId);
 
+        Request request = quote.getRequest();
         if (quote.isSelected() && request.getBudget() != null) {
             BigDecimal amountToSubtract = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal amountToSubtractEur = currencyConversionService.convert(amountToSubtract, quote.getCurrency()).convertedAmount();
             InternalBudget budget = request.getBudget();
             while (budget != null) {
                 BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
-                budget.setCommittedSpend(currentCommitted.subtract(amountToSubtract));
+                budget.setCommittedSpend(currentCommitted.subtract(amountToSubtractEur));
                 internalBudgetRepository.save(budget);
                 budget = budget.getParentBudget();
             }
@@ -206,13 +218,15 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Transactional
     public void selectQuoteForRequest(Long requestId, Long quoteId) {
         Quote quoteToSelect = getQuoteForRequest(requestId, quoteId);
+        Request request = quoteToSelect.getRequest();
         
         // Unselect all other quotes for this request
-        BigDecimal oldAmount = BigDecimal.ZERO;
+        BigDecimal oldAmountEur = BigDecimal.ZERO;
         List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         for (Quote quote : otherQuotes) {
             if (quote.isSelected()) {
-                oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+                BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+                oldAmountEur = currencyConversionService.convert(oldAmount, quote.getCurrency()).convertedAmount();
             }
             quote.setSelected(false);
             quoteRepository.save(quote);
@@ -222,9 +236,11 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quoteRepository.save(quoteToSelect);
 
         BigDecimal newAmount = quoteToSelect.getTotalAmount() != null ? quoteToSelect.getTotalAmount() : BigDecimal.ZERO;
+        BigDecimal newAmountEur = currencyConversionService.convert(newAmount, quoteToSelect.getCurrency()).convertedAmount();
 
         if (request.getBudget() != null) {
-            BigDecimal difference = newAmount.subtract(oldAmount);
+            BigDecimal difference = newAmountEur.subtract(oldAmountEur);
+            validateBudgetAfterSelection(request.getBudget(), difference);
             InternalBudget budget = request.getBudget();
             while (budget != null) {
                 BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
@@ -251,6 +267,48 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         if (dto.totalAmount().compareTo(computedTotalAmount) != 0) {
             throw new IllegalArgumentException("Total amount is incorrect");
+        }
+    }
+
+    private void validateBudgetAfterSelection(InternalBudget budget, BigDecimal difference) {
+        InternalBudget currentBudget = budget;
+        while (currentBudget != null) {
+            if (currentBudget.getBudgetType() == BudgetType.REQUEST) {
+                currentBudget = currentBudget.getParentBudget();
+                continue;
+            }
+
+            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend()
+                    : BigDecimal.ZERO;
+            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend()
+                    : BigDecimal.ZERO;
+            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount()
+                    : BigDecimal.ZERO;
+            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer() != null ? currentBudget.getSafetyBuffer()
+                    : BigDecimal.ZERO;
+
+            BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+            BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
+
+            BigDecimal simulatedCommitted = committed.add(difference);
+
+            if (actual.add(simulatedCommitted).compareTo(totalWithBuffer) > 0) {
+                String budgetIdentifier = currentBudget.getBudgetName();
+                if (budgetIdentifier == null || budgetIdentifier.isBlank()) {
+                    if (currentBudget.getBudgetType() == BudgetType.PROJECT) {
+                        budgetIdentifier = "Project budget";
+                    } else if (currentBudget.getBudgetType() == BudgetType.DEPARTMENT) {
+                        budgetIdentifier = "Department budget";
+                    } else if (currentBudget.getBudgetType() == BudgetType.GLOBAL) {
+                        budgetIdentifier = "Global budget";
+                    } else {
+                        budgetIdentifier = "Budget";
+                    }
+                }
+                throw new WorkflowStateException("Budget of : " + budgetIdentifier + " exhausted including safety buffer.");
+            }
+
+            currentBudget = currentBudget.getParentBudget();
         }
     }
 
