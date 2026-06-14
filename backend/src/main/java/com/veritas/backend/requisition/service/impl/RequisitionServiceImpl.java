@@ -964,7 +964,17 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private void checkRequestAccess(Request request, User user) {
         if (user.getRole() == UserRole.REQUESTER) {
-            if (request.getUser() == null || !request.getUser().getId().equals(user.getId())) {
+            if (request.getUser() == null) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+            if (user.getTeam() != null && user.getTeam().getLeader() != null
+                    && user.getTeam().getLeader().getId().equals(user.getId())) {
+                if (request.getTeam() == null || !request.getTeam().getTeamId().equals(user.getTeam().getTeamId())) {
+                    throw new AccessDeniedException("Not allowed to access this request");
+                }
+                return;
+            }
+            if (!request.getUser().getId().equals(user.getId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         } else if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
