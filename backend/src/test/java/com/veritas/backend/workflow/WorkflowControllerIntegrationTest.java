@@ -85,8 +85,6 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     private static final String BLANK_BPMN_XML = "   ";
 
     private static final String INVALID_BPMN_XML = "iNvAlId";
-    
-    private static final User MOCKED_FINANCE_OFFICER = User.builder().role(UserRole.FINANCE_OFFICER).build();
 
     private void clearDatabase() {
         jdbcTemplate.update("DELETE FROM invoices");
