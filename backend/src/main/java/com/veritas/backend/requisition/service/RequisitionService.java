@@ -237,8 +237,10 @@ public interface RequisitionService {
      * Returns the invoice for a given request, including EUR-converted total where available.
      *
      * @param requestId the request ID
+     * @param actor the authenticated user (must have request access)
      * @return the {@link InvoiceDto}
      * @throws EntityNotFoundException if the request or invoice is not found
+     * @throws AccessDeniedException if the user is not authorized to access the request
      */
     InvoiceDto getInvoice(Long requestId, User actor);
 
@@ -257,7 +259,8 @@ public interface RequisitionService {
     /**
      * Verifies that the given user is authorized to access the specified request.
      * Requesters may only access their own requests; procurement officers are
-     * restricted to requests within their department. Finance officers and
+     * restricted to requests within their department. Team leaders may access all requests
+     * within their team. Finance officers and administrators have unrestricted access.
      * administrators have unrestricted access.
      *
      * @param requestId the request ID
