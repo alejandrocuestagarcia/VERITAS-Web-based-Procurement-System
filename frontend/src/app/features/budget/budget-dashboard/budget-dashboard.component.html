@@ -89,8 +89,9 @@
             <div class="flex items-baseline gap-2 mt-0.5">
               <span class="text-2xl font-extrabold text-gray-900">{{ dashboardStats.safetyBuffer || 0 }}%</span>
               <span
-                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 uppercase">
-                Healthy
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
+                [ngClass]="[getSafetyBufferStatus().bgClass, getSafetyBufferStatus().textClass]">
+                {{ getSafetyBufferStatus().text }}
               </span>
             </div>
             <p class="text-[10px] text-gray-400 font-medium mt-0.5">
@@ -185,7 +186,8 @@
             </div>
 
             <div class="space-y-4 overflow-y-auto max-h-[360px] pr-1">
-              <div *ngIf="alerts.length === 0" class="flex flex-col items-center justify-center py-12 text-center h-full">
+              <div *ngIf="alerts.length === 0"
+                class="flex flex-col items-center justify-center py-12 text-center h-full">
                 <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-500 mb-3">
                   <mat-icon>check_circle</mat-icon>
                 </div>
@@ -248,11 +250,65 @@
         <div class="flex justify-center items-center flex-1">
           <div class="w-full font-sans"
             *ngIf="barChartOptions && barChartOptions.series && barChartOptions.series.length > 0">
-            <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart"
-              [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis"
-              [colors]="barChartOptions.colors" [legend]="barChartOptions.legend"
+            <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [xaxis]="barChartOptions.xaxis"
+              [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [legend]="barChartOptions.legend"
               [dataLabels]="barChartOptions.dataLabels" [stroke]="barChartOptions.stroke"
               [plotOptions]="barChartOptions.plotOptions" [tooltip]="barChartOptions.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      <!-- Spend by Project Chart Card -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-blue-500">donut_large</mat-icon>
+            <h3 class="text-lg font-bold text-gray-900">Spend by Project</h3>
+          </div>
+          <mat-form-field appearance="outline" class="w-40" style="margin-bottom: -1.25rem;">
+            <mat-select [(value)]="selectedProjectDeptId" (selectionChange)="updateProjectChartData()">
+              <mat-option [value]="0">All Departments</mat-option>
+              <mat-option *ngFor="let dept of departments" [value]="dept.id">
+                {{ dept.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="flex justify-center items-center flex-1">
+          <div class="w-full font-sans"
+            *ngIf="projectDonutChartOptions && projectDonutChartOptions.series && projectDonutChartOptions.series.length > 0 && hasProjectSpend()">
+            <apx-chart [series]="projectDonutChartOptions.series" [chart]="projectDonutChartOptions.chart"
+              [labels]="projectDonutChartOptions.labels" [colors]="projectDonutChartOptions.colors"
+              [legend]="projectDonutChartOptions.legend" [dataLabels]="projectDonutChartOptions.dataLabels"
+              [tooltip]="projectDonutChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          <div
+            *ngIf="!projectDonutChartOptions || !projectDonutChartOptions.series || projectDonutChartOptions.series.length === 0 || !hasProjectSpend()"
+            class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+            <mat-icon class="text-4xl mb-2">bubble_chart</mat-icon>
+            <p class="text-sm font-medium">No projects with spend found</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Month-over-Month Trend Chart Card -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+        <div class="flex items-center gap-2 mb-4">
+          <mat-icon class="text-emerald-500">trending_up</mat-icon>
+          <h3 class="text-lg font-bold text-gray-900">Month-over-Month Trend</h3>
+        </div>
+        <div class="flex justify-center items-center flex-1">
+          <div class="w-full font-sans"
+            *ngIf="trendChartOptions && trendChartOptions.series && trendChartOptions.series.length > 0">
+            <apx-chart [series]="trendChartOptions.series" [chart]="trendChartOptions.chart"
+              [xaxis]="trendChartOptions.xaxis" [yaxis]="trendChartOptions.yaxis" [colors]="trendChartOptions.colors"
+              [legend]="trendChartOptions.legend" [dataLabels]="trendChartOptions.dataLabels"
+              [stroke]="trendChartOptions.stroke" [plotOptions]="trendChartOptions.plotOptions"
+              [tooltip]="trendChartOptions.tooltip">
             </apx-chart>
           </div>
         </div>

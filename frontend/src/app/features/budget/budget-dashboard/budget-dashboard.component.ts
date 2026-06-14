@@ -5,9 +5,11 @@ import {
   FinancialGovernanceModuleService,
   DepartmentsModuleService,
   TeamsModuleService,
+  ProjectModuleService,
   BudgetDashboardDto,
   DepartmentDto,
-  TeamDto
+  TeamDto,
+  ProjectDto
 } from '../../../core/api';
 import { EditBudgetDialogComponent } from '../edit-budget-dialog/edit-budget-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
@@ -78,6 +80,29 @@ export class BudgetDashboardComponent implements OnInit {
   selectedPeriod = 'all';
   selectedYear = new Date().getFullYear();
   selectedDepartmentId = 0;
+  allProjects: ProjectDto[] = [];
+  selectedProjectDeptId = 0;
+
+  projectDonutChartOptions: any = {
+    series: [],
+    chart: { type: 'donut' },
+    labels: [],
+    colors: [],
+    legend: { show: false },
+    dataLabels: { enabled: false },
+    tooltip: {}
+  };
+
+  trendChartOptions: any = {
+    series: [],
+    chart: { type: 'bar' },
+    xaxis: {},
+    yaxis: {},
+    colors: [],
+    legend: { show: false },
+    dataLabels: { enabled: false },
+    tooltip: {}
+  };
 
   chartOptions: ChartOptions = {
     series: [],
@@ -121,9 +146,10 @@ export class BudgetDashboardComponent implements OnInit {
     private financialService: FinancialGovernanceModuleService,
     private departmentService: DepartmentsModuleService,
     private teamsService: TeamsModuleService,
+    private projectService: ProjectModuleService,
     private dialog: MatDialog,
     private toastService: ToastService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadData();
@@ -135,15 +161,19 @@ export class BudgetDashboardComponent implements OnInit {
     forkJoin({
       stats: this.financialService.getFinanceDashboard(this.selectedDepartmentId || undefined),
       depts: this.departmentService.getAllDepartments(),
-      teams: this.teamsService.getAllTeams()
+      teams: this.teamsService.getAllTeams(),
+      projects: this.projectService.getAllProjects()
     }).subscribe({
       next: (data) => {
         console.log('Dashboard stats from server:', data.stats);
         this.dashboardStats = data.stats;
+        this.allProjects = data.projects;
         this.processDepartmentsAndTeams(data.depts, data.teams);
         this.calculateSecondaryMetrics();
         this.generateAlerts();
         this.generateChartData();
+        this.generateTrendChartData();
+        this.updateProjectChartData();
         this.loading = false;
       },
       error: (err) => {
@@ -156,6 +186,7 @@ export class BudgetDashboardComponent implements OnInit {
 
   onPeriodChange(): void {
     this.generateChartData();
+    this.generateTrendChartData();
   }
 
   onYearChange(): void {
@@ -346,6 +377,26 @@ export class BudgetDashboardComponent implements OnInit {
     const currentMonth = new Date().getMonth() + 1;
     const targetSpentPercent = (currentMonth / 12) * 100;
 
+    const globalBudget = this.dashboardStats.totalBudget || 0;
+    const globalSpent = (this.dashboardStats.actualSpend || 0) + (this.dashboardStats.committedFunds || 0);
+    const globalUtilizationRate = globalBudget > 0 ? (globalSpent / globalBudget) * 100 : 0;
+    const globalSafetyBufferPercent = this.dashboardStats.safetyBuffer || 0;
+
+    if (globalUtilizationRate > 100) {
+      this.alerts.push({
+        departmentName: 'GLOBAL',
+        type: 'CRITICAL',
+        message: `Exceeded Global Budget Limit (${Math.round(globalUtilizationRate * 10) / 10}%)`,
+        details: 'Immediate global spending freeze or budget expansion required.'
+      });
+    } else if (globalUtilizationRate > (100 - globalSafetyBufferPercent)) {
+      this.alerts.push({
+        departmentName: 'GLOBAL',
+        type: 'WARNING',
+        message: 'Global Safety Buffer Breached',
+        details: `Global spending is at ${Math.round(globalUtilizationRate)}% of total capacity.`
+      });
+    }
 
     this.departments.forEach(d => {
       const budget = d.budget || 0;
@@ -360,7 +411,7 @@ export class BudgetDashboardComponent implements OnInit {
           message: `Exceeded Budget Limit (${Math.round(utilizationRate * 10) / 10}%)`,
           details: 'Immediate reallocation or freeze required for upcoming requisitions.'
         });
-      }else if(utilizationRate > (100-safetyBufferPercent)) {
+      } else if (utilizationRate > (100 - safetyBufferPercent)) {
         this.alerts.push({
           departmentName: d.name,
           type: 'WARNING',
@@ -565,5 +616,189 @@ export class BudgetDashboardComponent implements OnInit {
         this.loadData();
       }
     });
+  }
+
+  getMonthlySpend(): number[] {
+    const burndown = this.dashboardStats.burndownData || [];
+    let startBudget = this.dashboardStats.totalBudget || 0;
+
+    if (this.selectedDepartmentId !== 0) {
+      const selectedDept = this.departments.find(d => d.id === this.selectedDepartmentId);
+      if (selectedDept) {
+        startBudget = selectedDept.budget || 0;
+      }
+    }
+
+    const monthlySpend: number[] = [];
+    let previousRemaining = startBudget;
+
+    for (let i = 0; i < 12; i++) {
+      const remaining = burndown[i];
+      if (remaining !== null && remaining !== undefined) {
+        const spent = previousRemaining - remaining;
+        monthlySpend.push(spent > 0 ? Math.round(spent * 100) / 100 : 0);
+        previousRemaining = remaining;
+      } else {
+        monthlySpend.push(0);
+      }
+    }
+    return monthlySpend;
+  }
+
+  generateTrendChartData(): void {
+    const monthlySpend = this.getMonthlySpend();
+    const categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    let filteredCategories = [...categories];
+    let filteredData = [...monthlySpend];
+
+    if (this.selectedPeriod === 'q1') {
+      filteredCategories = ['Jan', 'Feb', 'Mar'];
+      filteredData = monthlySpend.slice(0, 3);
+    } else if (this.selectedPeriod === 'q2') {
+      filteredCategories = ['Apr', 'May', 'Jun'];
+      filteredData = monthlySpend.slice(3, 6);
+    } else if (this.selectedPeriod === 'q3') {
+      filteredCategories = ['Jul', 'Aug', 'Sep'];
+      filteredData = monthlySpend.slice(6, 9);
+    } else if (this.selectedPeriod === 'q4') {
+      filteredCategories = ['Oct', 'Nov', 'Dec'];
+      filteredData = monthlySpend.slice(9, 12);
+    }
+
+    this.trendChartOptions = {
+      series: [
+        {
+          name: 'Actual Spend',
+          data: filteredData
+        }
+      ],
+      chart: {
+        type: 'bar',
+        height: 220,
+        toolbar: { show: false },
+        fontFamily: 'Inter, Roboto, Helvetica, Arial, sans-serif'
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          columnWidth: '50%'
+        }
+      },
+      colors: ['#10b981'], // Emerald-500
+      dataLabels: {
+        enabled: false
+      },
+      xaxis: {
+        categories: filteredCategories,
+        labels: {
+          style: {
+            colors: '#9ca3af',
+            fontSize: '10px',
+            fontWeight: 600
+          }
+        }
+      },
+      yaxis: {
+        labels: {
+          formatter: (val: number) => {
+            return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+          },
+          style: {
+            colors: '#9ca3af',
+            fontSize: '10px',
+            fontWeight: 600
+          }
+        }
+      },
+      grid: {
+        borderColor: '#f3f4f6',
+        strokeDashArray: 4,
+        yaxis: {
+          lines: { show: true }
+        }
+      },
+      tooltip: {
+        y: {
+          formatter: (val: number) => {
+            return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+          }
+        }
+      }
+    };
+  }
+
+  updateProjectChartData(): void {
+    const filteredProjects = this.selectedProjectDeptId === 0
+      ? this.allProjects
+      : this.allProjects.filter(p => p.departmentId === this.selectedProjectDeptId);
+
+    const projectSpends = filteredProjects.map(p => {
+      const spent = (p.actualSpend || 0) + (p.committedSpend || 0);
+      return {
+        name: p.name || 'Unnamed Project',
+        spend: spent
+      };
+    });
+
+    this.projectDonutChartOptions = {
+      series: projectSpends.map(p => p.spend),
+      chart: {
+        type: 'donut',
+        height: 220,
+        fontFamily: 'Inter, Roboto, Helvetica, Arial, sans-serif'
+      },
+      labels: projectSpends.map(p => p.name),
+      colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e', '#14b8a6'],
+      legend: {
+        position: 'bottom',
+        fontSize: '11px',
+        fontWeight: 500,
+        labels: {
+          colors: '#4b5563'
+        }
+      },
+      dataLabels: {
+        enabled: false
+      },
+      tooltip: {
+        y: {
+          formatter: (val: number) => {
+            return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+          }
+        }
+      }
+    };
+  }
+
+  hasProjectSpend(): boolean {
+    return this.projectDonutChartOptions && this.projectDonutChartOptions.series && this.projectDonutChartOptions.series.some((val: number) => val > 0);
+  }
+
+  getSafetyBufferStatus(): { text: string; bgClass: string; textClass: string } {
+    const spent = (this.dashboardStats.actualSpend || 0) + (this.dashboardStats.committedFunds || 0);
+    const budget = this.dashboardStats.totalBudget || 0;
+    const utilizationRate = budget > 0 ? (spent / budget) * 100 : 0;
+    const safetyBufferPercent = this.dashboardStats.safetyBuffer || 0;
+
+    if (utilizationRate >= 100) {
+      return {
+        text: 'Depleted',
+        bgClass: 'bg-rose-50 border border-rose-100',
+        textClass: 'text-rose-700'
+      };
+    } else if (utilizationRate > (100 - safetyBufferPercent)) {
+      return {
+        text: 'Warning',
+        bgClass: 'bg-amber-50 border border-amber-100',
+        textClass: 'text-amber-700'
+      };
+    } else {
+      return {
+        text: 'Healthy',
+        bgClass: 'bg-green-50 border border-green-100',
+        textClass: 'text-green-700'
+      };
+    }
   }
 }
