@@ -86,6 +86,8 @@ class WorkflowServiceUnitTest {
     @InjectMocks
     private WorkflowServiceImpl workflowService;
 
+    private final User financeUser = User.builder().role(UserRole.FINANCE_OFFICER).build();
+
     private static final String VALID_BPMN_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
             "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
@@ -111,7 +113,7 @@ class WorkflowServiceUnitTest {
         when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
         when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
 
-        WorkflowDto result = workflowService.getWorkflow(1L);
+        WorkflowDto result = workflowService.getWorkflow(1L, financeUser);
 
         assertThat(result).isEqualTo(dto);
         verify(workflowDefinitionRepository).findById(1L);
@@ -121,7 +123,7 @@ class WorkflowServiceUnitTest {
     void GetWorkflow_NonExistingId_ThrowsEntityNotFoundException() {
         when(workflowDefinitionRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(99L));
+        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(99L, financeUser));
     }
 
     @Test

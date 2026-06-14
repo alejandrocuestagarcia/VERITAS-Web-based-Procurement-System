@@ -43,8 +43,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -54,8 +53,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -81,11 +78,10 @@ import java.util.UUID;
 
 import static com.veritas.backend.common.model.AuditActionConstants.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {
-
-    private static final Logger log = LoggerFactory.getLogger(RequisitionServiceImpl.class);
 
     private final RequestRepository requestRepository;
     private final ProjectRepository projectRepository;
@@ -211,18 +207,19 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public RequisitionDto getRequestById(Long id) {
+    public RequisitionDto getRequestById(Long id, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Procurement Request with id '" + id + "' not found"));
+        checkRequestAccess(request, actor);
         return requisitionMapper.toDto(request);
     }
 
     @Override
     @Transactional
-    public void saveAttachment(Long requestId, MultipartFile file) {
+    public void saveAttachment(Long requestId, MultipartFile file, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
-
+        workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
         storeAttachment(file, request, null);
     }
 
@@ -237,9 +234,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> downloadAttachment(Long attachmentId) {
+    public ResponseEntity<Resource> downloadAttachment(Long attachmentId, User actor) {
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new EntityNotFoundException("Attachment not found with id " + attachmentId));
+        checkRequestAccess(attachment.getRequest(), actor);
 
         try {
             Path file = Paths.get(attachment.getStoragePath());
@@ -267,20 +265,13 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public void deleteAttachment(Long attachmentId) {
+    public void deleteAttachment(Long attachmentId, User actor) {
         Attachment attachment = attachmentRepository.findById(attachmentId).orElseThrow(() -> new EntityNotFoundException("Attachment not found with id: " + attachmentId));
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
-        if (user.getRole() == UserRole.REQUESTER && !attachment.getRequest().getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Not allowed to access this request");
-        }
-
-        checkProcurementOfficerAccess(attachment.getRequest(), user);
+        workflowEngineService.checkAuthorization(attachment.getRequest(), actor, attachment.getRequest().getCurrentStep());
 
         if (attachment.getInvoice() != null) {
-            deleteInvoice(attachment.getRequest().getRequestID(), user);
+            deleteInvoice(attachment.getRequest().getRequestID(), actor);
             return;
         }
 
@@ -573,9 +564,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public String getNextStepRole(Long id) {
+    public String getNextStepRole(Long id, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+        checkRequestAccess(request, actor);
         WorkflowStep nextStep = workflowEngineService.getNextStep(request);
         if (nextStep != null && nextStep.getRole() != null && !nextStep.getIsAutomatedApproval()) {
             return nextStep.getRole().name();
@@ -585,9 +577,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> getEligibleAssignees(Long id, String roleName) {
+    public List<UserDto> getEligibleAssignees(Long id, String roleName, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
+        checkRequestAccess(request, actor);
         UserRole requiredRole = UserRole.valueOf(roleName);
 
         Long requestDepartmentId = null;
@@ -829,9 +822,11 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file) {
+    public InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+
+        workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
 
         if (request.getInvoice() != null) {
             throw new EntityExistsException("Invoice already exists for request with id: " + requestId);
@@ -863,9 +858,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public InvoiceDto getInvoice(Long requestId) {
+    public InvoiceDto getInvoice(Long requestId, User actor) {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+        checkRequestAccess(request, actor);
 
         Invoice invoice = request.getInvoice();
         if (invoice == null) {
@@ -881,7 +877,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
 
-        checkProcurementOfficerAccess(request, user);
+        workflowEngineService.checkAuthorization(request, user, request.getCurrentStep());
 
         Invoice invoice = request.getInvoice();
         if (invoice == null) {
@@ -959,14 +955,30 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
     }
 
-    private void checkProcurementOfficerAccess(Request request, User user) {
-        if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
-            Department userDept = user.getDepartment();
-            Team requestTeam = request.getTeam();
-            Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
+    @Override
+    public void checkRequestAccess(Long requestId, User user) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
+        checkRequestAccess(request, user);
+    }
 
-            if (userDept == null || requestDept == null
-                    || !userDept.getDepartmentId().equals(requestDept.getDepartmentId())) {
+    private void checkRequestAccess(Request request, User user) {
+        if (user.getRole() == UserRole.REQUESTER) {
+            if (request.getUser() == null) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+            User fullUser = userRepository.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException("User not found with id: " + user.getId()));
+            if (fullUser.equals(fullUser.getTeam().getLeader())) {
+                if (!request.getTeam().getTeamId().equals(fullUser.getTeam().getTeamId())) {
+                    throw new AccessDeniedException("Not allowed to access this request");
+                }
+                return;
+            }
+            if (!request.getUser().getId().equals(fullUser.getId())) {
+                throw new AccessDeniedException("Not allowed to access this request");
+            }
+        } else if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            if (request.getTeam().getDepartment() == null || !user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         }

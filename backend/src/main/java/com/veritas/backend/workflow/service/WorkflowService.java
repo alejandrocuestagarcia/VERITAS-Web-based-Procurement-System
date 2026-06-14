@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 
 public interface WorkflowService {
 
@@ -25,13 +26,16 @@ public interface WorkflowService {
     public WorkflowDto createWorkflow(WorkflowSaveDto workflowSaveDto);
 
     /**
-     * Returns a single workflow definition by ID.
+     * Returns a single workflow definition by ID. Requesters and procurement officers
+     * can only access global workflows or those scoped to their department.
      *
      * @param id the workflow ID
+     * @param user the authenticated user determining visibility scope
      * @return the matching {@link WorkflowDto}
      * @throws EntityNotFoundException if no workflow exists with the given ID
+     * @throws AccessDeniedException if the user is not authorized to access this workflow
      */
-    public WorkflowDto getWorkflow(Long id);
+    public WorkflowDto getWorkflow(Long id, User user);
 
     /**
      * Replaces an existing workflow definition with a new version parsed from BPMN XML.

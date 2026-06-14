@@ -29,6 +29,7 @@ import org.camunda.bpm.model.bpmn.instance.*;
 import org.camunda.bpm.model.xml.instance.DomElement;
 import org.camunda.bpm.model.bpmn.instance.Process;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,10 +64,20 @@ public class WorkflowServiceImpl implements WorkflowService {
 
     @Override
     @Transactional(readOnly = true)
-    public WorkflowDto getWorkflow(Long id) {
-        return workflowDefinitionRepository.findById(id)
-                .map(workflowMapper::toWorkflowDto)
+    public WorkflowDto getWorkflow(Long id, User user) {
+        WorkflowDefinition workflow = workflowDefinitionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
+
+        if (user.getRole() == UserRole.REQUESTER || user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            Long deptId = user.getDepartment() != null
+                    ? user.getDepartment().getDepartmentId()
+                    : user.getTeam().getDepartment().getDepartmentId();
+            if (workflow.getDepartment() != null && !workflow.getDepartment().getDepartmentId().equals(deptId)) {
+                throw new AccessDeniedException("Not allowed to access this workflow");
+            }
+        }
+
+        return workflowMapper.toWorkflowDto(workflow);
     }
 
     @Override

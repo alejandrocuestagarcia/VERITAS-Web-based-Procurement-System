@@ -50,9 +50,9 @@ public class WorkflowController {
     @IsRequester
     @Operation(summary = "Get workflow", description = "Retrieves a workflow.")
     @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id) {
+    public ResponseEntity<WorkflowDto> getWorkflow(@PathVariable Long id, @AuthenticationPrincipal User user) {
         log.info("GET /workflows/{}", id);
-        return ResponseEntity.ok(workflowService.getWorkflow(id));
+        return ResponseEntity.ok(workflowService.getWorkflow(id, user));
     }
 
     @IsFinanceOfficer

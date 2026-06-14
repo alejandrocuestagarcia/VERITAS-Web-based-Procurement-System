@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 
@@ -40,7 +41,7 @@ public interface RequisitionService {
      * @param file the uploaded file
      * @throws IllegalArgumentException if the request is not found
      */
-    void saveAttachment(Long requestId, MultipartFile file);
+    void saveAttachment(Long requestId, MultipartFile file, User actor);
 
     /**
      * Stores a file from an input stream as an attachment on the given request.
@@ -76,7 +77,7 @@ public interface RequisitionService {
      * @return the matching {@link RequisitionDto}
      * @throws EntityNotFoundException if no request exists with the given ID
      */
-    RequisitionDto getRequestById(Long id);
+    RequisitionDto getRequestById(Long id, User actor);
 
     /**
      * Returns an attachment file as a downloadable HTTP response.
@@ -86,7 +87,7 @@ public interface RequisitionService {
      * @throws EntityNotFoundException if the attachment is not found
      * @throws RuntimeException if the file cannot be read from disk
      */
-    ResponseEntity<Resource> downloadAttachment(Long attachmentId);
+    ResponseEntity<Resource> downloadAttachment(Long attachmentId, User actor);
 
     /**
      * Deletes an attachment and its file from disk.
@@ -96,7 +97,7 @@ public interface RequisitionService {
      * @throws EntityNotFoundException if the attachment is not found
      * @throws AccessDeniedException if the user is not permitted to access the request
      */
-    void deleteAttachment(Long attachmentId);
+    void deleteAttachment(Long attachmentId, User actor);
 
     /**
      * Advances a request to its next workflow step and notifies relevant users.
@@ -174,7 +175,7 @@ public interface RequisitionService {
      * @param id the request ID
      * @return the role name, or {@code null} if no manual assignee is needed
      */
-    String getNextStepRole(Long id);
+    String getNextStepRole(Long id, User actor);
 
     /**
      * Returns the list of active users eligible to be assigned at the next workflow step,
@@ -184,7 +185,7 @@ public interface RequisitionService {
      * @param roleName the name of the role required at the next step
      * @return a list of eligible {@link UserDto}
      */
-    List<UserDto> getEligibleAssignees(Long id, String roleName);
+    List<UserDto> getEligibleAssignees(Long id, String roleName, User actor);
 
     /**
      * Returns whether the given actor is authorized to act on the request's current workflow step.
@@ -230,16 +231,18 @@ public interface RequisitionService {
      * @throws EntityExistsException if an invoice already exists for the request
      * @throws IllegalStateException if no vendor quote has been selected
      */
-    InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file);
+    InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file, User actor);
 
     /**
      * Returns the invoice for a given request, including EUR-converted total where available.
      *
      * @param requestId the request ID
+     * @param actor the authenticated user (must have request access)
      * @return the {@link InvoiceDto}
      * @throws EntityNotFoundException if the request or invoice is not found
+     * @throws AccessDeniedException if the user is not authorized to access the request
      */
-    InvoiceDto getInvoice(Long requestId);
+    InvoiceDto getInvoice(Long requestId, User actor);
 
     /**
      * Deletes an unpaid invoice and its associated attachments from disk and database.
@@ -252,4 +255,18 @@ public interface RequisitionService {
      * @throws AccessDeniedException if the user is not permitted to access the request
      */
     void deleteInvoice(Long requestId, User user);
+
+    /**
+     * Verifies that the given user is authorized to access the specified request.
+     * Requesters may only access their own requests; procurement officers are
+     * restricted to requests within their department. Team leaders may access all requests
+     * within their team. Finance officers and administrators have unrestricted access.
+     * administrators have unrestricted access.
+     *
+     * @param requestId the request ID
+     * @param user the authenticated user to check
+     * @throws EntityNotFoundException if the request does not exist
+     * @throws AccessDeniedException if the user is not authorized to access the request
+     */
+    void checkRequestAccess(Long requestId, User user);
 }

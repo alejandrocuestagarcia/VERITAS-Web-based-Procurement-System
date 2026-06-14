@@ -36,6 +36,7 @@ public class VendorController {
     }
 
     @Operation(summary = "Get vendor stats", description = "Retrieves stats about the vendors of Veritas")
+    @IsRequester
     @GetMapping(path = "/stats", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<VendorStatsDto> getVendorStats() {
         return ResponseEntity.ok(vendorService.getVendorStats());

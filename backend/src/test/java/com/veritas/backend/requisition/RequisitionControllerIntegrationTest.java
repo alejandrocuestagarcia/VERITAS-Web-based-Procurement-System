@@ -969,6 +969,18 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .andExpect(status().isCreated());
 
         Long requestId = requestRepository.findAll().getFirst().getRequestID();
+
+        Request request = requestRepository.findById(requestId).orElseThrow();
+        WorkflowStep procStep = new WorkflowStep();
+        procStep.setWorkflowDefinition(request.getWorkflowDefinition());
+        procStep.setWorkflowComponent(WorkflowComponent.STEP);
+        procStep.setName("Procurement Review");
+        procStep.setRole(UserRole.PROCUREMENT_OFFICER);
+        procStep = workflowStepRepository.save(procStep);
+        request.setCurrentStep(procStep);
+        request.setAssignee(userRepository.findByEmail("procurement-integration@veritas.com").orElseThrow());
+        requestRepository.save(request);
+
         Path tempFile = Files.createTempFile("proc-same-dept", ".pdf");
 
         Attachment attachment = new Attachment();
@@ -1110,12 +1122,12 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     // AI-GENERATED
     @Test
     void DeleteInvoice_AsProcurementOfficer_ReturnsNoContentAndDeletesInvoice() throws Exception {
-            Project project = projectRepository.findAll().get(0);
             Request request = new Request();
             request.setRequestName("Delete Invoice Test");
             request.setState(RequestStatus.ACTIVE);
-            request.setProject(project);
+            request.setProject(projectRepository.findAll().get(0));
             request.setTeam(teamRepository.findAll().get(0));
+            request.setCurrentStep(workflowStepRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();
@@ -1164,11 +1176,21 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void DeleteInvoice_PaidInvoice_ReturnsConflict() throws Exception {
             Project project = projectRepository.findAll().get(0);
+            WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+            WorkflowStep procStep = new WorkflowStep();
+            procStep.setWorkflowDefinition(workflow);
+            procStep.setWorkflowComponent(WorkflowComponent.STEP);
+            procStep.setName("Procurement Review");
+            procStep.setRole(UserRole.PROCUREMENT_OFFICER);
+            procStep = workflowStepRepository.save(procStep);
+
             Request request = new Request();
             request.setRequestName("Delete Paid Invoice");
             request.setState(RequestStatus.ACTIVE);
             request.setProject(project);
             request.setTeam(teamRepository.findAll().get(0));
+            request.setWorkflowDefinition(workflow);
+            request.setCurrentStep(procStep);
             request = requestRepository.save(request);
 
             Invoice invoice = new Invoice();

@@ -59,8 +59,8 @@ public class RequisitionController {
     @Operation(summary = "Get request details", description = "Returns all details for a single requisition.")
     @IsRequester
     @GetMapping("/{id}")
-    public RequisitionDto getRequestById(@PathVariable Long id) {
-        return requisitionService.getRequestById(id);
+    public RequisitionDto getRequestById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        return requisitionService.getRequestById(id, user);
     }
 
     @Operation(summary = "Update/Edit request", description = "Edit draft details.")
@@ -121,16 +121,16 @@ public class RequisitionController {
     @Operation(summary = "Get next step role", description = "Determines the role required for the next workflow step.")
     @IsRequester
     @GetMapping("/{id}/next-step-role")
-    public ResponseEntity<String> getNextStepRole(@PathVariable Long id) {
-        String role = requisitionService.getNextStepRole(id);
+    public ResponseEntity<String> getNextStepRole(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        String role = requisitionService.getNextStepRole(id, user);
         return ResponseEntity.ok(role != null ? "\"" + role + "\"" : "\"\"");
     }
 
     @Operation(summary = "Get eligible assignees", description = "Fetches eligible users for the given role and request's department.")
     @IsRequester
     @GetMapping("/{id}/eligible-assignees")
-    public ResponseEntity<List<UserDto>> getEligibleAssignees(@PathVariable Long id, @RequestParam String role) {
-        return ResponseEntity.ok(requisitionService.getEligibleAssignees(id, role));
+    public ResponseEntity<List<UserDto>> getEligibleAssignees(@PathVariable Long id, @RequestParam String role, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(requisitionService.getEligibleAssignees(id, role, user));
     }
 
     @Operation(summary = "Check if user can act", description = "Checks if the logged-in user can approve or reject the request.")
@@ -143,30 +143,31 @@ public class RequisitionController {
     @Operation(summary = "Upload an attachment", description = "Uploads an attachment")
     @IsRequester
     @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> uploadAttachment(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        requisitionService.saveAttachment(id, file);
+    public ResponseEntity<String> uploadAttachment(@PathVariable Long id, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal User user) {
+        requisitionService.saveAttachment(id, file, user);
         return ResponseEntity.ok("\"File " + file.getOriginalFilename() + " uploaded for request " + id + "\"");
     }
 
     @Operation(summary = "Download attachment", description = "Downloads a specific attachment by its ID.")
     @IsRequester
     @GetMapping("/attachments/{attachmentId}")
-    public ResponseEntity<Resource> downloadAttachment(@PathVariable Long attachmentId) {
-        return requisitionService.downloadAttachment(attachmentId);
+    public ResponseEntity<Resource> downloadAttachment(@PathVariable Long attachmentId, @AuthenticationPrincipal User user) {
+        return requisitionService.downloadAttachment(attachmentId, user);
     }
 
     @Operation(summary = "Delete attachment", description = "Deletes a specific attachment by its ID.")
     @IsRequester
     @DeleteMapping("/attachments/{attachmentId}")
-    public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId) {
-        requisitionService.deleteAttachment(attachmentId);
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId, @AuthenticationPrincipal User user) {
+        requisitionService.deleteAttachment(attachmentId, user);
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get quote comparison", description = "Returns a side-by-side comparison of quotes, including external market price data.")
     @IsRequester
     @GetMapping("/{id}/comparison")
-    public ResponseEntity<QuoteComparisonDto> getQuoteComparison(@PathVariable Long id) {
+    public ResponseEntity<QuoteComparisonDto> getQuoteComparison(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        requisitionService.checkRequestAccess(id, user);
         return ResponseEntity.ok(null);
     }
 
@@ -184,16 +185,17 @@ public class RequisitionController {
     public ResponseEntity<InvoiceDto> createInvoice(
             @PathVariable Long id,
             @Valid @RequestPart("invoice") InvoiceCreateDto invoiceData,
-            @RequestPart(value = "file", required = false) MultipartFile file) {
-        InvoiceDto invoice = requisitionService.createInvoice(id, invoiceData, file);
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @AuthenticationPrincipal User user) {
+        InvoiceDto invoice = requisitionService.createInvoice(id, invoiceData, file, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice);
     }
 
     @Operation(summary = "Get invoice", description = "Returns the invoice details for a requisition.")
     @IsRequester
     @GetMapping("/{id}/invoice")
-    public ResponseEntity<InvoiceDto> getInvoice(@PathVariable Long id) {
-        InvoiceDto invoice = requisitionService.getInvoice(id);
+    public ResponseEntity<InvoiceDto> getInvoice(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        InvoiceDto invoice = requisitionService.getInvoice(id, user);
         return ResponseEntity.ok(invoice);
     }
 
