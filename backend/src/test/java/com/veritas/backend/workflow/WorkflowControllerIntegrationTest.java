@@ -2,6 +2,10 @@ package com.veritas.backend.workflow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.auth.service.JwtService;
+import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -17,9 +21,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,6 +44,9 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
+    UserRepository userRepository;
+
+    @Autowired
     private WorkflowDefinitionRepository workflowDefinitionRepository;
 
     @Autowired
@@ -49,7 +59,13 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     private WorkflowService workflowService;
 
     @Autowired
+    JwtService jwtService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    PasswordEncoder encoder;
 
 
     private static final String VALID_BPMN_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -69,6 +85,8 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     private static final String BLANK_BPMN_XML = "   ";
 
     private static final String INVALID_BPMN_XML = "iNvAlId";
+    
+    private static final User MOCKED_FINANCE_OFFICER = User.builder().role(UserRole.FINANCE_OFFICER).build();
 
     private void clearDatabase() {
         jdbcTemplate.update("DELETE FROM invoices");
@@ -146,11 +164,12 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "FINANCE_OFFICER")
     void WorkflowRetrieval_AsFinanceOfficer_ReturnsWorkflow() throws Exception {
         WorkflowDto created = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
-        mockMvc.perform(get("/api/v1/workflows/" + created.id()))
+        String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
+        mockMvc.perform(get("/api/v1/workflows/" + created.id()).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(created.id()))
                 .andExpect(jsonPath("$.name").value("Test Workflow"));
@@ -225,14 +244,15 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
      }
 
     @Test
-    @WithMockUser(roles = "FINANCE_OFFICER")
     void DeleteWorkflow_AsFinanceOfficer_DeactivatesAndReturnsNoContent() throws Exception {
+        String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+
         WorkflowDto dto = workflowService.createWorkflow(new WorkflowSaveDto(VALID_BPMN_XML, null));
 
-        mockMvc.perform(delete("/api/v1/workflows/" + dto.id()))
+        mockMvc.perform(delete("/api/v1/workflows/" + dto.id()).header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/v1/workflows/" + dto.id()))
+        mockMvc.perform(get("/api/v1/workflows/" + dto.id()).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isActive").value(false));
     }
@@ -251,5 +271,17 @@ class WorkflowControllerIntegrationTest extends BaseDBIntegrationTest {
     void DeleteWorkflow_NonExistingId_ReturnsNotFound() throws Exception {
         mockMvc.perform(delete("/api/v1/workflows/99"))
                 .andExpect(status().isNotFound());
+    }
+
+    private String createTokenForRole(UserRole role) {
+        User user = userRepository.save(User.builder()
+                .name("Test " + role.name())
+                .email(role.name().toLowerCase() + "-" + UUID.randomUUID() + "@veritas.com")
+                .passwordHash(encoder.encode("password123"))
+                .role(role)
+                .isActive(true)
+                .build());
+
+        return jwtService.generateAccessToken(user);
     }
 }

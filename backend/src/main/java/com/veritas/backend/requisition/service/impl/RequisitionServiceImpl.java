@@ -967,22 +967,18 @@ public class RequisitionServiceImpl implements RequisitionService {
             if (request.getUser() == null) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
-            if (user.getTeam() != null && user.getTeam().getLeader() != null
-                    && user.getTeam().getLeader().getId().equals(user.getId())) {
-                if (request.getTeam() == null || !request.getTeam().getTeamId().equals(user.getTeam().getTeamId())) {
+            User fullUser = userRepository.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException("User not found with id: " + user.getId()));
+            if (fullUser.equals(fullUser.getTeam().getLeader())) {
+                if (!request.getTeam().getTeamId().equals(fullUser.getTeam().getTeamId())) {
                     throw new AccessDeniedException("Not allowed to access this request");
                 }
                 return;
             }
-            if (!request.getUser().getId().equals(user.getId())) {
+            if (!request.getUser().getId().equals(fullUser.getId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         } else if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
-            Department userDept = user.getDepartment();
-            Team requestTeam = request.getTeam();
-            Department requestDept = requestTeam != null ? requestTeam.getDepartment() : null;
-            if (userDept == null || requestDept == null
-                    || !userDept.getDepartmentId().equals(requestDept.getDepartmentId())) {
+            if (request.getTeam().getDepartment() == null || !user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         }
