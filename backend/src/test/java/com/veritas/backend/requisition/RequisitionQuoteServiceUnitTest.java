@@ -21,6 +21,7 @@ import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -94,6 +95,12 @@ class RequisitionQuoteServiceUnitTest {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
+
+        lenient().when(currencyConversionService.convert(any(), any()))
+                .thenAnswer(invocation -> {
+                    BigDecimal amt = invocation.getArgument(0);
+                    return new CurrencyConversionResult(amt != null ? amt : BigDecimal.ZERO, BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER);
+                });
     }
 
     @AfterEach
@@ -506,10 +513,12 @@ class RequisitionQuoteServiceUnitTest {
 
         // Setup budget hierarchy: Request Budget -> Project Budget
         InternalBudget projectBudget = new InternalBudget();
+        projectBudget.setBudgetType(BudgetType.PROJECT);
         projectBudget.setTotalAmount(BigDecimal.valueOf(1000));
         projectBudget.setCommittedSpend(BigDecimal.valueOf(100));
 
         InternalBudget requestBudget = new InternalBudget();
+        requestBudget.setBudgetType(BudgetType.REQUEST);
         requestBudget.setTotalAmount(BigDecimal.ZERO);
         requestBudget.setCommittedSpend(BigDecimal.valueOf(100));
         requestBudget.setParentBudget(projectBudget);

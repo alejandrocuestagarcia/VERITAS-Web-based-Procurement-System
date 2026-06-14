@@ -1,5 +1,6 @@
 package com.veritas.backend.department.service.impl;
 
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.dto.DepartmentDto;
 import com.veritas.backend.department.entity.Department;
@@ -34,7 +35,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentMapper.toDepartment(request);
         
         if (request.budget() != null) {
-            InternalBudget budget = InternalBudget.builder().budgetName(department.getName()).totalAmount(request.budget()).build();
+            InternalBudget budget = InternalBudget.builder().budgetName(department.getName()).budgetType(BudgetType.DEPARTMENT).totalAmount(request.budget()).build();
             department.setInternalBudget(budget);
         }
         

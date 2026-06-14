@@ -25,6 +25,7 @@ import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -280,6 +281,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
     void SelectQuote_WithBudgetHierarchy_UpdatesCommittedSpendAcrossHierarchy() {
         InternalBudget globalBudget = InternalBudget.builder()
                 .budgetName("Global Budget")
+                .budgetType(BudgetType.GLOBAL)
                 .totalAmount(BigDecimal.valueOf(10000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .build();
@@ -287,6 +289,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget deptBudget = InternalBudget.builder()
                 .budgetName("Department Budget")
+                .budgetType(BudgetType.DEPARTMENT)
                 .totalAmount(BigDecimal.valueOf(5000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .parentBudget(globalBudget)
@@ -295,6 +298,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget projBudget = InternalBudget.builder()
                 .budgetName("Project Budget")
+                .budgetType(BudgetType.PROJECT)
                 .totalAmount(BigDecimal.valueOf(2000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .parentBudget(deptBudget)
@@ -303,6 +307,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget reqBudget = InternalBudget.builder()
                 .budgetName("Request Budget")
+                .budgetType(BudgetType.REQUEST)
                 .totalAmount(BigDecimal.ZERO)
                 .committedSpend(BigDecimal.ZERO)
                 .parentBudget(projBudget)
@@ -355,6 +360,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         // Create budget hierarchy: Project Budget -> Department Budget
         InternalBudget deptBudget = InternalBudget.builder()
                 .budgetName("Department Budget")
+                .budgetType(BudgetType.DEPARTMENT)
                 .totalAmount(BigDecimal.valueOf(5000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .build();
@@ -362,6 +368,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget projBudget = InternalBudget.builder()
                 .budgetName("Project Budget")
+                .budgetType(BudgetType.PROJECT)
                 .totalAmount(BigDecimal.valueOf(2000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .parentBudget(deptBudget)
@@ -370,6 +377,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget reqBudget = InternalBudget.builder()
                 .budgetName("Request Budget")
+                .budgetType(BudgetType.REQUEST)
                 .totalAmount(BigDecimal.ZERO)
                 .committedSpend(BigDecimal.ZERO)
                 .parentBudget(projBudget)
@@ -419,6 +427,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         // Create budget hierarchy: Project Budget -> Department Budget
         InternalBudget deptBudget = InternalBudget.builder()
                 .budgetName("Department Budget")
+                .budgetType(BudgetType.DEPARTMENT)
                 .totalAmount(BigDecimal.valueOf(5000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .build();
@@ -426,6 +435,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget projBudget = InternalBudget.builder()
                 .budgetName("Project Budget")
+                .budgetType(BudgetType.PROJECT)
                 .totalAmount(BigDecimal.valueOf(2000))
                 .committedSpend(BigDecimal.valueOf(200))
                 .parentBudget(deptBudget)
@@ -434,6 +444,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         InternalBudget reqBudget = InternalBudget.builder()
                 .budgetName("Request Budget")
+                .budgetType(BudgetType.REQUEST)
                 .totalAmount(BigDecimal.ZERO)
                 .committedSpend(BigDecimal.ZERO)
                 .parentBudget(projBudget)
