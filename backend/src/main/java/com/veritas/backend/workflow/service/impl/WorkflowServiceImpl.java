@@ -68,16 +68,11 @@ public class WorkflowServiceImpl implements WorkflowService {
         WorkflowDefinition workflow = workflowDefinitionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Workflow with id '" + id + "' not found"));
 
-        if (user != null && (user.getRole() == UserRole.REQUESTER || user.getRole() == UserRole.PROCUREMENT_OFFICER)) {
-            User fullUser = userRepository.findById(user.getId()).orElse(user);
-            Long departmentId = null;
-            if (fullUser.getDepartment() != null) {
-                departmentId = fullUser.getDepartment().getDepartmentId();
-            } else if (fullUser.getTeam() != null && fullUser.getTeam().getDepartment() != null) {
-                departmentId = fullUser.getTeam().getDepartment().getDepartmentId();
-            }
-            if (workflow.getDepartment() != null && departmentId != null
-                    && !workflow.getDepartment().getDepartmentId().equals(departmentId)) {
+        if (user.getRole() == UserRole.REQUESTER || user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            Long deptId = user.getDepartment() != null
+                    ? user.getDepartment().getDepartmentId()
+                    : user.getTeam().getDepartment().getDepartmentId();
+            if (workflow.getDepartment() != null && !workflow.getDepartment().getDepartmentId().equals(deptId)) {
                 throw new AccessDeniedException("Not allowed to access this workflow");
             }
         }
