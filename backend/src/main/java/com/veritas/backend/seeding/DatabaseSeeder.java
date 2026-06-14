@@ -434,6 +434,20 @@ public class DatabaseSeeder implements ApplicationRunner {
                     int day = random.nextInt(1, 28);
                     BigDecimal amount = new BigDecimal(random.nextInt(5000, 20000));
 
+                    if (userProject != null && userProject.getInternalBudget() != null) {
+                        InternalBudget projectBudget = internalBudgetRepository.findById(userProject.getInternalBudget().getId()).orElse(null);
+                        if (projectBudget != null) {
+                            BigDecimal totalAmount = projectBudget.getTotalAmount() != null ? projectBudget.getTotalAmount() : BigDecimal.ZERO;
+                            BigDecimal currentActual = projectBudget.getActualSpend() != null ? projectBudget.getActualSpend() : BigDecimal.ZERO;
+                            BigDecimal currentCommitted = projectBudget.getCommittedSpend() != null ? projectBudget.getCommittedSpend() : BigDecimal.ZERO;
+                            BigDecimal totalSpendAfter = currentActual.add(currentCommitted).add(amount);
+                            BigDecimal limit = totalAmount.multiply(new BigDecimal("0.60"));
+                            if (totalSpendAfter.compareTo(limit) > 0) {
+                                continue;
+                            }
+                        }
+                    }
+
                     String reqName = faker.commerce().productName() + " Acquisition";
                     String reqDesc = "Dynamic procurement request for " + reqName.toLowerCase() + " to support business operations.";
 
