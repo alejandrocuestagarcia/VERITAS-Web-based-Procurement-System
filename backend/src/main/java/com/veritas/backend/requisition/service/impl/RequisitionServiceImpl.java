@@ -43,6 +43,7 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -77,6 +78,7 @@ import java.util.UUID;
 
 import static com.veritas.backend.common.model.AuditActionConstants.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequisitionServiceImpl implements RequisitionService {

@@ -252,5 +252,17 @@ public interface RequisitionService {
      * @throws AccessDeniedException if the user is not permitted to access the request
      */
     void deleteInvoice(Long requestId, User user);
+
+    /**
+     * Verifies that the given user is authorized to access the specified request.
+     * Requesters may only access their own requests; procurement officers are
+     * restricted to requests within their department. Finance officers and
+     * administrators have unrestricted access.
+     *
+     * @param requestId the request ID
+     * @param user the authenticated user to check
+     * @throws EntityNotFoundException if the request does not exist
+     * @throws AccessDeniedException if the user is not authorized to access the request
+     */
     void checkRequestAccess(Long requestId, User user);
 }
