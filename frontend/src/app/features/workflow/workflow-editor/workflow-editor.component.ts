@@ -122,6 +122,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     { label: '<=', insert: '<= ' },
     { label: '>', insert: '> ' },
     { label: '<', insert: '< ' },
+    { label: '(', insert: '( ' },
+    { label: ')', insert: ') ' },
   ];
 
   autocompleteVisible = false;
@@ -147,11 +149,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const text = textarea.value;
 
     let wordStart = pos;
-    while (wordStart > 0 && !/[\s()><=!]/.test(text[wordStart - 1])) wordStart--;
+    while (wordStart > 0 && !/[\s]/.test(text[wordStart - 1])) wordStart--;
     const currentWord = text.substring(wordStart, pos);
 
     const lastDot = currentWord.lastIndexOf('.');
-    const parentPath = lastDot >= 0 ? currentWord.substring(0, lastDot).toLowerCase() : '';
+    const parentPath = lastDot >= 0 ? currentWord.substring(0, lastDot) : '';
     const partial = lastDot >= 0 ? currentWord.substring(lastDot + 1) : currentWord;
 
     let candidates: { label: string; insert: string; type?: string }[];
@@ -187,7 +189,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const text = el.value;
 
     let wordStart = pos;
-    while (wordStart > 0 && !/[\s()><=!]/.test(text[wordStart - 1])) wordStart--;
+    while (wordStart > 0 && !/[\s]/.test(text[wordStart - 1])) wordStart--;
     const currentWord = text.substring(wordStart, pos);
     const lastDot = currentWord.lastIndexOf('.');
     const replaceStart = lastDot >= 0 ? wordStart + lastDot + 1 : wordStart;
@@ -198,16 +200,19 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     el.selectionEnd = cursor;
     el.focus();
 
-    const isRouting = el === this.routingEl?.nativeElement;
-    if (isRouting) {
-      this.updateConditionExpression(el.value);
-    } else {
-      this.currentRule.advancedRule = el.value;
-      this.updateRuleProperty('advancedRule', el.value);
-    }
+    this.updateConditionExpression(el.value);
 
     this.autocompleteVisible = false;
-    setTimeout(() => this.showAutocomplete(el), 0);
+    const savedValue = el.value;
+    //AI GENERATED
+    setTimeout(() => {
+      if (el.value !== savedValue) {
+        el.value = savedValue;
+        el.selectionStart = savedValue.length;
+        el.selectionEnd = savedValue.length;
+      }
+      this.showAutocomplete(el);
+    }, 0);
   }
 
   onAutocompleteKeydown(event: KeyboardEvent, textarea: HTMLTextAreaElement): void {
