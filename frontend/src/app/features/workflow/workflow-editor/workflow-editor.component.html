@@ -161,10 +161,33 @@
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Condition</label>
 
             <div *ngIf="isEditable">
-              <textarea rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+              <textarea #routingEl rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+                (focus)="onTextareaFocus(routingEl)"
+                (input)="onTextareaInput(routingEl)"
+                (keydown)="onAutocompleteKeydown($event, routingEl)"
+                (blur)="onTextareaBlur()"
                 [ngModelOptions]="{standalone: true}"
                 [ngModel]="currentRule.conditionExpression" (ngModelChange)="updateConditionExpression($event)"
                 placeholder="e.g. selectedQuoteTotalAmount >= 5000&#10;and priority == 'HIGH'"></textarea>
+              <div *ngIf="autocompleteVisible"
+                class="spel-dropdown fixed z-50 bg-white border border-blue-200 rounded-lg shadow-lg max-h-44 overflow-y-auto text-xs font-mono"
+                [style.top.px]="autocompleteTop"
+                [style.left.px]="autocompleteLeft"
+                [style.width.px]="autocompleteWidth">
+                <div *ngFor="let o of autocompleteOptions; let i = index"
+                  class="px-3 py-1.5 cursor-pointer flex items-center gap-2 transition-colors"
+                  [class.bg-blue-50]="i === activeAutocompleteIndex"
+                  (click)="selectAutocomplete(o)"
+                  (mouseenter)="activeAutocompleteIndex = i">
+                  <span class="text-[10px] w-11 px-1 py-0.5 rounded text-center font-medium shrink-0"
+                    [class.bg-blue-100]="o.type === 'number'" [class.text-blue-600]="o.type === 'number'"
+                    [class.bg-purple-100]="o.type === 'string'" [class.text-purple-600]="o.type === 'string'"
+                    [class.bg-emerald-100]="o.type === 'object'" [class.text-emerald-600]="o.type === 'object'"
+                    [class.bg-amber-100]="o.type === 'boolean'" [class.text-amber-600]="o.type === 'boolean'"
+                    [class.bg-slate-100]="!o.type" [class.text-slate-500]="!o.type">{{ o.type || 'op' }}</span>
+                  <span>{{ o.label }}</span>
+                </div>
+              </div>
             </div>
             <div *ngIf="!isEditable && currentRule.conditionExpression" class="p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm font-mono whitespace-pre-wrap break-all">{{ currentRule.conditionExpression }}</div>
             <div *ngIf="!isEditable && !currentRule.conditionExpression" class="p-3 bg-slate-50 border border-dashed border-[#e4e7ef] rounded-xl">
@@ -223,10 +246,33 @@
             </button>
             <div *ngIf="isAdvancedRuleExpanded" class="space-y-2 animate-in fade-in duration-200">
               <div *ngIf="isEditable">
-                <textarea rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+                <textarea #advancedRuleEl rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+                  (focus)="onTextareaFocus(advancedRuleEl)"
+                  (input)="onTextareaInput(advancedRuleEl)"
+                  (keydown)="onAutocompleteKeydown($event, advancedRuleEl)"
+                  (blur)="onTextareaBlur()"
                   [ngModelOptions]="{standalone: true}"
                   [ngModel]="currentRule.advancedRule" (ngModelChange)="updateRuleProperty('advancedRule', $event)"
                   placeholder="e.g. selectedQuoteTotalAmount &lt; 5000&#10;and totalQuantity &lt; 100"></textarea>
+                <div *ngIf="autocompleteVisible"
+                  class="spel-dropdown fixed z-50 bg-white border border-blue-200 rounded-lg shadow-lg max-h-44 overflow-y-auto text-xs font-mono"
+                  [style.top.px]="autocompleteTop"
+                  [style.left.px]="autocompleteLeft"
+                  [style.width.px]="autocompleteWidth">
+                  <div *ngFor="let o of autocompleteOptions; let i = index"
+                    class="px-3 py-1.5 cursor-pointer flex items-center gap-2 transition-colors"
+                    [class.bg-blue-50]="i === activeAutocompleteIndex"
+                    (click)="selectAutocomplete(o)"
+                    (mouseenter)="activeAutocompleteIndex = i">
+                    <span class="text-[10px] w-11 px-1 py-0.5 rounded text-center font-medium shrink-0"
+                      [class.bg-blue-100]="o.type === 'number'" [class.text-blue-600]="o.type === 'number'"
+                      [class.bg-purple-100]="o.type === 'string'" [class.text-purple-600]="o.type === 'string'"
+                      [class.bg-emerald-100]="o.type === 'object'" [class.text-emerald-600]="o.type === 'object'"
+                      [class.bg-amber-100]="o.type === 'boolean'" [class.text-amber-600]="o.type === 'boolean'"
+                      [class.bg-slate-100]="!o.type" [class.text-slate-500]="!o.type">{{ o.type || 'op' }}</span>
+                    <span>{{ o.label }}</span>
+                  </div>
+                </div>
               </div>
               <div *ngIf="!isEditable && currentRule.advancedRule" class="p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm font-mono whitespace-pre-wrap break-all">{{ currentRule.advancedRule }}</div>
               <div *ngIf="!isEditable && !currentRule.advancedRule" class="p-3 bg-slate-50 border border-dashed border-[#e4e7ef] rounded-xl">
