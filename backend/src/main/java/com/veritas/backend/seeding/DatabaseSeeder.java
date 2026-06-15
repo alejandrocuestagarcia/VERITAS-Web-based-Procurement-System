@@ -292,7 +292,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                         BigDecimal.ZERO,
                         List.of(draftItem));
 
-                // 2. Active Request - Requester Review
+                // 2. Active Request - Team Leader Confirmation
                 RequestItem requesterReviewItem = new RequestItem();
                 requesterReviewItem.setName("AWS Dev Sandbox Credits");
                 requesterReviewItem.setQuantity(1);
@@ -307,7 +307,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                         primaryProject,
                         standardWorkflowDef,
                         WorkflowComponent.STEP,
-                        "Add reason for needed Purchase",
+                        "Team Leader Confirmation",
                         RequestStatus.ACTIVE,
                         primaryRequester,
                         new BigDecimal("300.00"),
@@ -334,7 +334,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                         primaryProject,
                         standardWorkflowDef,
                         WorkflowComponent.STEP,
-                        "Add & Select Vendor Quotes",
+                        "Vendor Quote Selection",
                         RequestStatus.ACTIVE,
                         primaryProcurement,
                         new BigDecimal("1200.00"),
@@ -355,7 +355,7 @@ public class DatabaseSeeder implements ApplicationRunner {
                         primaryProject,
                         standardWorkflowDef,
                         WorkflowComponent.STEP,
-                        "Standard Finance Check",
+                        "Standard Finance Review",
                         RequestStatus.ACTIVE,
                         primaryFinance,
                         new BigDecimal("4500.00"),

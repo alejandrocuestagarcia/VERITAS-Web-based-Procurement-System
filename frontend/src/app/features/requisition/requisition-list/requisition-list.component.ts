@@ -53,6 +53,10 @@ export class RequisitionListComponent implements OnInit {
     return this.authService.hasRole('REQUESTER');
   }
 
+  get isProcurementOfficer(): boolean {
+    return this.authService.hasRole('PROCUREMENT_OFFICER');
+  }
+
   get displayedColumns(): string[] {
     const columns = ['requestName', 'projectName', 'workflowName'];
     if (!this.isRequester) {
@@ -102,7 +106,7 @@ export class RequisitionListComponent implements OnInit {
   loadCreators(): void {
     if (!this.isRequester) {
       this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
-        next: (response) => this.creators = response.content || [],
+        next: (response) => this.creators = (response.content || []).filter(u => u.role === UserDtoRoleEnum.Requester),
         error: (err) => console.error('Failed to load creators', err)
       });
     }
