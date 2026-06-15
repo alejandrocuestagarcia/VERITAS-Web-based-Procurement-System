@@ -33,6 +33,7 @@
           <mat-select formControlName="role" placeholder="Select an access level">
             <mat-option *ngFor="let role of roles" [value]="role">{{ role | formatEnum }}</mat-option>
           </mat-select>
+          <mat-hint *ngIf="isSelfAdmin">You cannot change your own Administrator role.</mat-hint>
           <mat-error *ngIf="userForm.get('role')?.hasError('required') && userForm.get('role')?.touched">
             User role is required
           </mat-error>

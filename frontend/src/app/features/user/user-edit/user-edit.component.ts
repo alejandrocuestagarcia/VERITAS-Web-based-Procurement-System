@@ -24,6 +24,10 @@ export class UserEditComponent implements OnInit {
   loading = false;
   userId!: number;
 
+  get isSelfAdmin(): boolean {
+    return this.userId === this.authService.getUserId() && this.userForm?.get('role')?.value === 'ADMINISTRATOR';
+  }
+
   roles = Object.values(UserDtoRoleEnum);
   teams: TeamDto[] = [];
   departments: DepartmentDto[] = [];
@@ -134,6 +138,10 @@ export class UserEditComponent implements OnInit {
 
         if (user.isTeamLeader) {
           this.userForm.get('teamId')?.disable();
+        }
+
+        if (this.isSelfAdmin) {
+          this.userForm.get('role')?.disable();
         }
 
 
