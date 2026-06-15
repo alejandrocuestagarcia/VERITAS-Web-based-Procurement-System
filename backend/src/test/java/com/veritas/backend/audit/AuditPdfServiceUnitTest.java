@@ -27,8 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 // AI-GENERATED
@@ -89,23 +88,27 @@ class AuditPdfServiceUnitTest {
 
         byte[] pdfBytes = auditPdfService.generateAuditReport(requestId);
 
-        assertThat(pdfBytes).isNotNull();
-        assertThat(pdfBytes.length).isGreaterThan(0);
+        assertAll(
+            () -> assertNotNull(pdfBytes),
+            () -> assertTrue(pdfBytes.length > 0)
+        );
 
         // Verify it's a valid PDF by loading it
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            assertThat(doc.getNumberOfPages()).isGreaterThanOrEqualTo(1);
+            assertTrue(doc.getNumberOfPages() >= 1);
 
             PDFTextStripper stripper = new PDFTextStripper();
             String text = stripper.getText(doc);
 
-            assertThat(text).contains("Audit Report");
-            assertThat(text).contains("Office Supplies Order");
-            assertThat(text).contains("REQ-001");
-            assertThat(text).contains("Printer Paper");
-            assertThat(text).contains("Submit");
-            assertThat(text).contains("Approve");
-            assertThat(text).contains("test@veritas.com");
+            assertAll(
+                () -> assertTrue(text.contains("Audit Report")),
+                () -> assertTrue(text.contains("Office Supplies Order")),
+                () -> assertTrue(text.contains("REQ-001")),
+                () -> assertTrue(text.contains("Printer Paper")),
+                () -> assertTrue(text.contains("Submit")),
+                () -> assertTrue(text.contains("Approve")),
+                () -> assertTrue(text.contains("test@veritas.com"))
+            );
         }
     }
 
@@ -118,17 +121,21 @@ class AuditPdfServiceUnitTest {
 
         byte[] pdfBytes = auditPdfService.generateAuditReport(requestId);
 
-        assertThat(pdfBytes).isNotNull();
-        assertThat(pdfBytes.length).isGreaterThan(0);
+        assertAll(
+            () -> assertNotNull(pdfBytes),
+            () -> assertTrue(pdfBytes.length > 0)
+        );
 
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            assertThat(doc.getNumberOfPages()).isGreaterThanOrEqualTo(1);
+            assertTrue(doc.getNumberOfPages() >= 1);
 
             PDFTextStripper stripper = new PDFTextStripper();
             String text = stripper.getText(doc);
 
-            assertThat(text).contains("Audit Report");
-            assertThat(text).contains("No audit entries found");
+            assertAll(
+                () -> assertTrue(text.contains("Audit Report")),
+                () -> assertTrue(text.contains("No audit entries found"))
+            );
         }
     }
 
@@ -146,8 +153,10 @@ class AuditPdfServiceUnitTest {
             PDFTextStripper stripper = new PDFTextStripper();
             String text = stripper.getText(doc);
 
-            assertThat(text).doesNotContain("Line Items");
-            assertThat(text).contains("Audit Report");
+            assertAll(
+                () -> assertFalse(text.contains("Line Items")),
+                () -> assertTrue(text.contains("Audit Report"))
+            );
         }
     }
 
@@ -156,9 +165,8 @@ class AuditPdfServiceUnitTest {
         Long requestId = 999L;
         when(requestRepository.findById(requestId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> auditPdfService.generateAuditReport(requestId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Request not found");
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> auditPdfService.generateAuditReport(requestId));
+        assertTrue(ex.getMessage().contains("Request not found"));
     }
 
     @Test
@@ -182,7 +190,7 @@ class AuditPdfServiceUnitTest {
         byte[] pdfBytes = auditPdfService.generateAuditReport(requestId);
 
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            assertThat(doc.getNumberOfPages()).isGreaterThan(1);
+            assertTrue(doc.getNumberOfPages() > 1);
         }
     }
 
@@ -226,11 +234,13 @@ class AuditPdfServiceUnitTest {
 
         byte[] pdfBytes = auditPdfService.generateAuditReport(requestId);
 
-        assertThat(pdfBytes).isNotNull();
-        assertThat(pdfBytes.length).isGreaterThan(0);
+        assertAll(
+            () -> assertNotNull(pdfBytes),
+            () -> assertTrue(pdfBytes.length > 0)
+        );
 
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            assertThat(doc.getNumberOfPages()).isGreaterThanOrEqualTo(1);
+            assertTrue(doc.getNumberOfPages() >= 1);
         }
     }
 
@@ -281,11 +291,13 @@ class AuditPdfServiceUnitTest {
 
         byte[] pdfBytes = auditPdfService.generateAuditReport(requestId);
 
-        assertThat(pdfBytes).isNotNull();
-        assertThat(pdfBytes.length).isGreaterThan(0);
+        assertAll(
+            () -> assertNotNull(pdfBytes),
+            () -> assertTrue(pdfBytes.length > 0)
+        );
 
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            assertThat(doc.getNumberOfPages()).isGreaterThanOrEqualTo(1);
+            assertTrue(doc.getNumberOfPages() >= 1);
         }
     }
 
@@ -306,11 +318,13 @@ class AuditPdfServiceUnitTest {
 
         byte[] pdfBytes = auditPdfService.generateAuditReport(requestId);
 
-        assertThat(pdfBytes).isNotNull();
-        assertThat(pdfBytes.length).isGreaterThan(0);
+        assertAll(
+            () -> assertNotNull(pdfBytes),
+            () -> assertTrue(pdfBytes.length > 0)
+        );
 
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
-            assertThat(doc.getNumberOfPages()).isGreaterThanOrEqualTo(1);
+            assertTrue(doc.getNumberOfPages() >= 1);
         }
     }
 
@@ -328,8 +342,10 @@ class AuditPdfServiceUnitTest {
             PDFTextStripper stripper = new PDFTextStripper();
             String text = stripper.getText(doc);
 
-            assertThat(text).doesNotContain("Line Items");
-            assertThat(text).contains("Audit Report");
+            assertAll(
+                () -> assertFalse(text.contains("Line Items")),
+                () -> assertTrue(text.contains("Audit Report"))
+            );
         }
     }
 }

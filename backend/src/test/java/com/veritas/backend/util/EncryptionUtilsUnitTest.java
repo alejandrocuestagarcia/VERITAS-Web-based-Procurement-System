@@ -4,8 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
+
 //AI-GENERATED
 
 class EncryptionUtilsUnitTest {
@@ -25,17 +25,21 @@ class EncryptionUtilsUnitTest {
         String original = "my-secret-token";
         String encrypted = encryptionUtils.encrypt(original);
         
-        assertThat(encrypted).isNotNull();
-        assertThat(encrypted).isNotEqualTo(original);
+        assertAll(
+            () -> assertNotNull(encrypted),
+            () -> assertNotEquals(original, encrypted)
+        );
         
         String decrypted = encryptionUtils.decrypt(encrypted);
-        assertThat(decrypted).isEqualTo(original);
+        assertEquals(original, decrypted);
     }
 
     @Test
     void EncryptAndDecrypt_NullInput_ReturnsNull() {
-        assertThat(encryptionUtils.encrypt(null)).isNull();
-        assertThat(encryptionUtils.decrypt(null)).isNull();
+        assertAll(
+            () -> assertNull(encryptionUtils.encrypt(null)),
+            () -> assertNull(encryptionUtils.decrypt(null))
+        );
     }
 
     @Test

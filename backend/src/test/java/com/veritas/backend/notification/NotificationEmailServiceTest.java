@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -71,15 +71,21 @@ class NotificationEmailServiceTest {
 
         verify(mailService).sendEmail(toCaptor.capture(), subjectCaptor.capture(), bodyCaptor.capture());
 
-        assertThat(toCaptor.getValue()).isEqualTo("alice@veritas.com");
-        assertThat(subjectCaptor.getValue()).isEqualTo("VERITAS — Request 'Office Supplies' Approved");
-        assertThat(bodyCaptor.getValue()).contains("Hello Alice,")
-                .contains("Your request was approved")
-                .contains("Request Details:")
-                .doesNotContain("Key:")
-                .contains("Name: Office Supplies")
-                .contains("Current Step: Approval Step")
-                .contains("http://localhost:4200/requisitions/42");
+        String to = toCaptor.getValue();
+        String subject = subjectCaptor.getValue();
+        String body = bodyCaptor.getValue();
+
+        assertAll(
+            () -> assertEquals("alice@veritas.com", to),
+            () -> assertEquals("VERITAS — Request 'Office Supplies' Approved", subject),
+            () -> assertTrue(body.contains("Hello Alice,")),
+            () -> assertTrue(body.contains("Your request was approved")),
+            () -> assertTrue(body.contains("Request Details:")),
+            () -> assertFalse(body.contains("Key:")),
+            () -> assertTrue(body.contains("Name: Office Supplies")),
+            () -> assertTrue(body.contains("Current Step: Approval Step")),
+            () -> assertTrue(body.contains("http://localhost:4200/requisitions/42"))
+        );
     }
 
     @Test
@@ -92,12 +98,18 @@ class NotificationEmailServiceTest {
 
         verify(mailService).sendEmail(toCaptor.capture(), subjectCaptor.capture(), bodyCaptor.capture());
 
-        assertThat(toCaptor.getValue()).isEqualTo("alice@veritas.com");
-        assertThat(subjectCaptor.getValue()).isEqualTo("VERITAS — Request 'N/A' Completed");
-        assertThat(bodyCaptor.getValue()).contains("Hello Alice,")
-                .contains("Requisition completed")
-                .doesNotContain("Request Details:")
-                .doesNotContain("http://localhost:4200/requisitions/");
+        String to = toCaptor.getValue();
+        String subject = subjectCaptor.getValue();
+        String body = bodyCaptor.getValue();
+
+        assertAll(
+            () -> assertEquals("alice@veritas.com", to),
+            () -> assertEquals("VERITAS — Request 'N/A' Completed", subject),
+            () -> assertTrue(body.contains("Hello Alice,")),
+            () -> assertTrue(body.contains("Requisition completed")),
+            () -> assertFalse(body.contains("Request Details:")),
+            () -> assertFalse(body.contains("http://localhost:4200/requisitions/"))
+        );
     }
 
     @Test
@@ -108,7 +120,7 @@ class NotificationEmailServiceTest {
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
         verify(mailService).sendEmail(anyString(), subjectCaptor.capture(), anyString());
 
-        assertThat(subjectCaptor.getValue()).isEqualTo("VERITAS — Request 'REQ-42' Completed");
+        assertEquals("VERITAS — Request 'REQ-42' Completed", subjectCaptor.getValue());
     }
 
     @Test

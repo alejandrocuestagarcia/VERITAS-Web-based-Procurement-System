@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -115,7 +114,7 @@ class WorkflowServiceUnitTest {
 
         WorkflowDto result = workflowService.getWorkflow(1L, financeUser);
 
-        assertThat(result).isEqualTo(dto);
+        assertEquals(dto, result);
         verify(workflowDefinitionRepository).findById(1L);
     }
 
@@ -137,8 +136,10 @@ class WorkflowServiceUnitTest {
 
         workflowService.deleteWorkflow(1L);
 
-        assertFalse(wd.getIsActive());
-        assertNotNull(wd.getDeactivatedAt());
+        assertAll("WorkflowDefinition deactivation state",
+                () -> assertFalse(wd.getIsActive()),
+                () -> assertNotNull(wd.getDeactivatedAt())
+        );
         verify(workflowDefinitionRepository).save(wd);
     }
 
@@ -164,7 +165,7 @@ class WorkflowServiceUnitTest {
 
         WorkflowDto result = workflowService.createWorkflow(saveDto);
 
-        assertThat(result).isEqualTo(dto);
+        assertEquals(dto, result);
         verify(workflowDefinitionRepository).save(any(WorkflowDefinition.class));
     }
 
@@ -184,7 +185,7 @@ class WorkflowServiceUnitTest {
 
         WorkflowDto result = workflowService.editWorkflow(1L, editDto);
 
-        assertThat(result).isEqualTo(dto);
+        assertEquals(dto, result);
         verify(workflowDefinitionRepository, times(2)).save(any(WorkflowDefinition.class));
     }
 
@@ -195,7 +196,7 @@ class WorkflowServiceUnitTest {
         WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
 
         BpmnValidationException ex = assertThrows(BpmnValidationException.class, () -> workflowService.createWorkflow(saveDto));
-        assertThat(ex.getErrors()).anyMatch(e -> e.contains("cannot be assigned to ADMINISTRATOR"));
+        assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("cannot be assigned to ADMINISTRATOR")));
         
         verify(workflowDefinitionRepository, never()).save(any(WorkflowDefinition.class));
     }
@@ -214,11 +215,10 @@ class WorkflowServiceUnitTest {
         verify(workflowStepRepository).saveAll(stepsCaptor.capture());
         Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
         
-        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
+        List<WorkflowStep> stepsList = new ArrayList<>();
         savedSteps.forEach(stepsList::add);
         
-        assertThat(stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getDescription())
-                .isEqualTo("Task Description Text");
+        assertEquals("Task Description Text", stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get().getDescription());
     }
 
     @Test
@@ -256,11 +256,14 @@ class WorkflowServiceUnitTest {
         List<TransitionRule> rulesList = new ArrayList<>();
         savedRules.forEach(rulesList::add);
 
-        assertThat(rulesList).hasSize(1);
-        assertThat(rulesList.getFirst().getMinRequiredVendors()).isEqualTo(3);
-        assertThat(rulesList.getFirst().getIsPdfRequired()).isTrue();
-        assertThat(rulesList.getFirst().getIsCsvRequired()).isTrue();
-        assertThat(rulesList.getFirst().getIsImageRequired()).isFalse();
+        assertEquals(1, rulesList.size());
+        TransitionRule rule = rulesList.getFirst();
+        assertAll("TransitionRule fields",
+                () -> assertEquals(3, rule.getMinRequiredVendors()),
+                () -> assertTrue(rule.getIsPdfRequired()),
+                () -> assertTrue(rule.getIsCsvRequired()),
+                () -> assertFalse(rule.getIsImageRequired())
+        );
     }
 
     @Test
@@ -276,7 +279,7 @@ class WorkflowServiceUnitTest {
         List<TransitionRule> rulesList = new ArrayList<>();
         savedRules.forEach(rulesList::add);
 
-        assertThat(rulesList).isEmpty();
+        assertTrue(rulesList.isEmpty());
     }
 
     //AI GENERATED
@@ -303,8 +306,10 @@ class WorkflowServiceUnitTest {
         Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, search, isActive, null);
 
         // 4. Verification
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Test Workflow");
+        assertAll("Workflow page contents",
+                () -> assertEquals(1, result.getContent().size()),
+                () -> assertEquals("Test Workflow", result.getContent().get(0).name())
+        );
         verify(workflowDefinitionRepository).findAllFiltered(any(), any(), any(), any(), eq(pageable));
     }
 
@@ -316,7 +321,7 @@ class WorkflowServiceUnitTest {
 
         Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null, null);
 
-        assertThat(result).isEmpty();
+        assertTrue(result.isEmpty());
         verify(workflowMapper, never()).toWorkflowDto(any());
     }
 
@@ -348,8 +353,10 @@ class WorkflowServiceUnitTest {
         
         Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null, requester);
         
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Department Workflow");
+        assertAll("Workflow page contents by requester",
+                () -> assertEquals(1, result.getContent().size()),
+                () -> assertEquals("Department Workflow", result.getContent().get(0).name())
+        );
         verify(workflowDefinitionRepository).findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable));
     }
 
@@ -370,10 +377,10 @@ class WorkflowServiceUnitTest {
         verify(workflowStepRepository).saveAll(stepsCaptor.capture());
         Iterable<WorkflowStep> savedSteps = stepsCaptor.getValue();
         
-        java.util.List<WorkflowStep> stepsList = new java.util.ArrayList<>();
+        List<WorkflowStep> stepsList = new ArrayList<>();
         savedSteps.forEach(stepsList::add);
         
-        assertThat(stepsList).hasSize(3);
+        assertEquals(3, stepsList.size());
         WorkflowStep step = stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get();
         assertTrue(step.getIsAutomatedApproval());
     }

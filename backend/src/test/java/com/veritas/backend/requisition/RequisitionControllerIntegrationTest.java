@@ -1,5 +1,7 @@
 package com.veritas.backend.requisition;
 
+import java.util.ArrayList;
+
 import static com.veritas.backend.common.model.AuditActionConstants.APPROVE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -1265,7 +1267,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         request.setWorkflowDefinition(workflow);
         request.setCurrentStep(startStep);
         request.setProject(project);
-        request.setItems(new java.util.ArrayList<>());
+        request.setItems(new ArrayList<>());
         request.setRevisionRequired(true);
         request.setUser(owner); // Owner
         request = requestRepository.save(request);

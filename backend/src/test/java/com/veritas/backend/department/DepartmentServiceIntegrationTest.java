@@ -20,8 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
@@ -55,13 +54,15 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
         DepartmentDto result = departmentService.createDepartment(request);
 
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isNotNull();
-        assertThat(result.name()).isEqualTo("Engineering");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertNotNull(result.id()),
+            () -> assertEquals("Engineering", result.name())
+        );
 
         List<Department> departments = departmentRepository.findAll();
-        assertThat(departments).hasSize(1);
-        assertThat(departments.get(0).getName()).isEqualTo("Engineering");
+        assertEquals(1, departments.size());
+        assertEquals("Engineering", departments.get(0).getName());
     }
 
     @Test
@@ -79,8 +80,12 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
         List<DepartmentDto> result = departmentService.getAllDepartments();
 
-        assertThat(result).hasSize(2);
-        assertThat(result).extracting(DepartmentDto::name).containsExactlyInAnyOrder("Engineering", "Marketing");
+        assertEquals(2, result.size());
+        List<String> names = result.stream().map(DepartmentDto::name).toList();
+        assertAll(
+            () -> assertTrue(names.contains("Engineering")),
+            () -> assertTrue(names.contains("Marketing"))
+        );
     }
 
     @Test
@@ -89,9 +94,11 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
         DepartmentDto result = departmentService.getDepartmentById(saved.getDepartmentId());
 
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(saved.getDepartmentId());
-        assertThat(result.name()).isEqualTo("Engineering");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(saved.getDepartmentId(), result.id()),
+            () -> assertEquals("Engineering", result.name())
+        );
     }
 
     @Test
@@ -101,11 +108,13 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
         DepartmentDto result = departmentService.updateDepartment(saved.getDepartmentId(), request);
 
-        assertThat(result).isNotNull();
-        assertThat(result.name()).isEqualTo("R&D");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals("R&D", result.name())
+        );
 
         Department updated = departmentRepository.findById(saved.getDepartmentId()).orElseThrow();
-        assertThat(updated.getName()).isEqualTo("R&D");
+        assertEquals("R&D", updated.getName());
     }
 
     @Test
@@ -125,7 +134,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
         departmentService.deleteDepartment(saved.getDepartmentId());
 
-        assertThat(departmentRepository.existsById(saved.getDepartmentId())).isFalse();
+        assertFalse(departmentRepository.existsById(saved.getDepartmentId()));
     }
 
     @Test

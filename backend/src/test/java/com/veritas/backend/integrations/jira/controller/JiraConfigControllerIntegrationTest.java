@@ -1,5 +1,7 @@
 package com.veritas.backend.integrations.jira.controller;
 
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -25,7 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 //AI-GENERATED
 
 @AutoConfigureMockMvc
-public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
+public 
+class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -143,7 +146,7 @@ public class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
         JiraConfig existing = repository.findAll().get(0);
         Long id = existing.getId();
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/jira-configs/" + id))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/jira-configs/" + id))
                 .andExpect(status().isNoContent());
 
         org.junit.jupiter.api.Assertions.assertTrue(repository.findById(id).isEmpty());

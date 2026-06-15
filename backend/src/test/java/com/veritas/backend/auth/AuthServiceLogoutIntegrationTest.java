@@ -15,9 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class AuthServiceLogoutIntegrationTest extends BaseDBIntegrationTest {
@@ -58,11 +56,11 @@ class AuthServiceLogoutIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void Logout_ValidToken_DeletesRefreshTokenFromDatabase() {
-        assertThat(refreshTokenRepository.findByToken(refreshToken)).isPresent();
+        assertTrue(refreshTokenRepository.findByToken(refreshToken).isPresent());
 
         authService.logout(new RefreshTokenDto(refreshToken));
 
-        assertThat(refreshTokenRepository.findByToken(refreshToken)).isEmpty();
+        assertTrue(refreshTokenRepository.findByToken(refreshToken).isEmpty());
     }
 
     @Test

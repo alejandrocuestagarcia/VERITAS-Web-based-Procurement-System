@@ -1,5 +1,7 @@
 package com.veritas.backend.vendor;
 
+import java.util.Optional;
+
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.entity.Vendor;
@@ -21,8 +23,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class VendorServiceUnitTest {
+class VendorServiceUnitTest {
 
     @Mock
     private VendorRepository vendorRepository;
@@ -72,18 +73,22 @@ public class VendorServiceUnitTest {
 
         VendorDto result = vendorService.createVendor(inputDto);
 
-        assertThat(result).isNotNull();
-        assertThat(result.vendorName()).isEqualTo(inputDto.vendorName());
-        assertThat(result.taxId()).isEqualTo(inputDto.taxId());
-        assertThat(result.description()).isEqualTo(inputDto.description());
-        assertThat(result.primaryContactName()).isEqualTo(inputDto.primaryContactName());
-        assertThat(result.primaryContactEmail()).isEqualTo(inputDto.primaryContactEmail());
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(inputDto.vendorName(), result.vendorName()),
+            () -> assertEquals(inputDto.taxId(), result.taxId()),
+            () -> assertEquals(inputDto.description(), result.description()),
+            () -> assertEquals(inputDto.primaryContactName(), result.primaryContactName()),
+            () -> assertEquals(inputDto.primaryContactEmail(), result.primaryContactEmail())
+        );
 
         ArgumentCaptor<Vendor> vendorCaptor = ArgumentCaptor.forClass(Vendor.class);
         verify(vendorRepository).save(vendorCaptor.capture());
         Vendor capturedVendor = vendorCaptor.getValue();
-        assertThat(capturedVendor.getVendorName()).isEqualTo(inputDto.vendorName());
-        assertThat(capturedVendor.getTaxId()).isEqualTo(inputDto.taxId());
+        assertAll(
+            () -> assertEquals(inputDto.vendorName(), capturedVendor.getVendorName()),
+            () -> assertEquals(inputDto.taxId(), capturedVendor.getTaxId())
+        );
     }
 
     @Test
@@ -106,31 +111,30 @@ public class VendorServiceUnitTest {
 
         Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", 5.0);
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).vendorName()).isEqualTo("Test Vendor");
+        assertAll(
+            () -> assertEquals(1, result.getContent().size()),
+            () -> assertEquals("Test Vendor", result.getContent().get(0).vendorName())
+        );
         verify(vendorRepository).findByRating(eq("test"), eq(5.0), any(Pageable.class));
     }
 
     @Test
     void FindVendors_ByStringAndRating_WithInvalidRating_ShouldThrowException() {
-        assertThatThrownBy(() -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", 11.0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Rating must be between 0.0 and 10.0");
+        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", 11.0));
+        assertEquals("Rating must be between 0.0 and 10.0", ex1.getMessage());
 
-        assertThatThrownBy(() -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", -1.0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Rating must be between 0.0 and 10.0");
+        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () -> vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", -1.0));
+        assertEquals("Rating must be between 0.0 and 10.0", ex2.getMessage());
     }
 
     // AI-GENERATED
     @Test
     void EditVendor_VendorNotFound_ThrowsEntityNotFoundException() {
-        when(vendorRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+        when(vendorRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> vendorService.editVendor(99L, new VendorEditDto(
-            "Vendor", "TAX-001", "Description", null, null)))
-            .isInstanceOf(EntityNotFoundException.class)
-            .hasMessage("Vendor not found with id: 99");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> vendorService.editVendor(99L, new VendorEditDto(
+            "Vendor", "TAX-001", "Description", null, null)));
+        assertEquals("Vendor not found with id: 99", ex.getMessage());
 
         verify(vendorRepository, never()).save(any(Vendor.class));
     }
@@ -148,13 +152,12 @@ public class VendorServiceUnitTest {
         existing.setId(2L);
         existing.setTaxId("TAX-NEW");
 
-        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
-        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(java.util.Optional.of(existing));
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> vendorService.editVendor(1L, new VendorEditDto(
-            "Updated", "TAX-NEW", "Updated desc", null, null)))
-            .isInstanceOf(EntityExistsException.class)
-            .hasMessage("Vendor with tax ID 'TAX-NEW' already exists");
+        EntityExistsException ex = assertThrows(EntityExistsException.class, () -> vendorService.editVendor(1L, new VendorEditDto(
+            "Updated", "TAX-NEW", "Updated desc", null, null)));
+        assertEquals("Vendor with tax ID 'TAX-NEW' already exists", ex.getMessage());
 
         verify(vendorRepository, never()).save(any(Vendor.class));
     }
@@ -171,7 +174,7 @@ public class VendorServiceUnitTest {
         VendorEditDto edits = new VendorEditDto(
             "Updated", "TAX-001", "Updated desc", null, null);
 
-        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
         when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         VendorDto dto = new VendorDto(
@@ -210,8 +213,8 @@ public class VendorServiceUnitTest {
             "new@vendor.com"
         );
 
-        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
-        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(java.util.Optional.empty());
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(Optional.empty());
         when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         VendorDto dto = new VendorDto(
@@ -228,20 +231,24 @@ public class VendorServiceUnitTest {
 
         VendorDto result = vendorService.editVendor(1L, edits);
 
-        assertThat(result.vendorName()).isEqualTo("New Vendor");
-        assertThat(result.taxId()).isEqualTo("TAX-NEW");
-        assertThat(result.description()).isEqualTo("New description");
-        assertThat(result.primaryContactName()).isEqualTo("New Contact");
-        assertThat(result.primaryContactEmail()).isEqualTo("new@vendor.com");
+        assertAll(
+            () -> assertEquals("New Vendor", result.vendorName()),
+            () -> assertEquals("TAX-NEW", result.taxId()),
+            () -> assertEquals("New description", result.description()),
+            () -> assertEquals("New Contact", result.primaryContactName()),
+            () -> assertEquals("new@vendor.com", result.primaryContactEmail())
+        );
 
         ArgumentCaptor<Vendor> vendorCaptor = ArgumentCaptor.forClass(Vendor.class);
         verify(vendorRepository).save(vendorCaptor.capture());
         Vendor savedVendor = vendorCaptor.getValue();
-        assertThat(savedVendor.getVendorName()).isEqualTo("New Vendor");
-        assertThat(savedVendor.getTaxId()).isEqualTo("TAX-NEW");
-        assertThat(savedVendor.getDescription()).isEqualTo("New description");
-        assertThat(savedVendor.getPrimaryContactName()).isEqualTo("New Contact");
-        assertThat(savedVendor.getPrimaryContactEmail()).isEqualTo("new@vendor.com");
+        assertAll(
+            () -> assertEquals("New Vendor", savedVendor.getVendorName()),
+            () -> assertEquals("TAX-NEW", savedVendor.getTaxId()),
+            () -> assertEquals("New description", savedVendor.getDescription()),
+            () -> assertEquals("New Contact", savedVendor.getPrimaryContactName()),
+            () -> assertEquals("new@vendor.com", savedVendor.getPrimaryContactEmail())
+        );
     }
 
     // AI-GENERATED
@@ -263,7 +270,7 @@ public class VendorServiceUnitTest {
             ""
         );
 
-        when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
         when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         VendorDto dto = new VendorDto(
@@ -280,7 +287,9 @@ public class VendorServiceUnitTest {
 
         vendorService.editVendor(1L, edits);
 
-        assertThat(vendor.getPrimaryContactName()).isEqualTo("Existing Contact");
-        assertThat(vendor.getPrimaryContactEmail()).isEqualTo("existing@vendor.com");
+        assertAll(
+            () -> assertEquals("Existing Contact", vendor.getPrimaryContactName()),
+            () -> assertEquals("existing@vendor.com", vendor.getPrimaryContactEmail())
+        );
     }
 }

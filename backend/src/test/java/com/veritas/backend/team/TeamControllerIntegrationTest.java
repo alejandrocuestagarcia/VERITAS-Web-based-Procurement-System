@@ -1,5 +1,7 @@
 package com.veritas.backend.team;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
@@ -269,7 +271,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 edits.setName("Modernized Team");
                 edits.setDescription("Updated mission brief");
                 edits.setDepartmentId(departmentHR.getDepartmentId());
-                edits.setMemberIds(java.util.List.of(memberToKeep.getId()));
+                edits.setMemberIds(List.of(memberToKeep.getId()));
 
                 mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token)
@@ -351,7 +353,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 User assignedUser = createUser("Assigned User", teamB);
 
                 TeamEditDto edits = new TeamEditDto();
-                edits.setMemberIds(java.util.List.of(assignedUser.getId()));
+                edits.setMemberIds(List.of(assignedUser.getId()));
 
                 mockMvc.perform(patch("/api/v1/teams/" + teamA.getTeamId())
                                 .header("Authorization", "Bearer " + token)
@@ -660,7 +662,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 User member2 = createUser("Member Beta", null);
 
                 TeamCreateDto request = createTeamRequest("Members Only Team");
-                request.setMemberIds(java.util.List.of(member1.getId(), member2.getId()));
+                request.setMemberIds(List.of(member1.getId(), member2.getId()));
 
                 MvcResult result = mockMvc.perform(post("/api/v1/teams")
                                 .header("Authorization", "Bearer " + token)
@@ -686,7 +688,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 User assignedMember = createUser("Busy Member", existingTeam);
 
                 TeamCreateDto request = createTeamRequest("New Team With Busy Member");
-                request.setMemberIds(java.util.List.of(assignedMember.getId()));
+                request.setMemberIds(List.of(assignedMember.getId()));
 
                 mockMvc.perform(post("/api/v1/teams")
                                 .header("Authorization", "Bearer " + token)
@@ -705,7 +707,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 teamRepository.save(existingTeam);
 
                 TeamCreateDto request = createTeamRequest("New Team Needing Members");
-                request.setMemberIds(java.util.List.of(otherLeader.getId()));
+                request.setMemberIds(List.of(otherLeader.getId()));
 
                 mockMvc.perform(post("/api/v1/teams")
                                 .header("Authorization", "Bearer " + token)
@@ -735,7 +737,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 Team team = createTeam("Sync Team", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
-                edits.setMemberIds(java.util.List.of(999999L));
+                edits.setMemberIds(List.of(999999L));
 
                 mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token)
@@ -757,7 +759,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 Team teamB = createTeam("Team B Sync", departmentIT);
 
                 TeamEditDto edits = new TeamEditDto();
-                edits.setMemberIds(java.util.List.of(leaderA.getId()));
+                edits.setMemberIds(List.of(leaderA.getId()));
 
                 mockMvc.perform(patch("/api/v1/teams/" + teamB.getTeamId())
                                 .header("Authorization", "Bearer " + token)
@@ -774,7 +776,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 User member = createUser("Removable Member", team);
 
                 TeamEditDto edits = new TeamEditDto();
-                edits.setMemberIds(java.util.List.of()); // empty list
+                edits.setMemberIds(List.of()); // empty list
 
                 mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token)
@@ -798,7 +800,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 TeamEditDto edits = new TeamEditDto();
                 // Only include new member, but leader should still be assigned
-                edits.setMemberIds(java.util.List.of(newMember.getId()));
+                edits.setMemberIds(List.of(newMember.getId()));
 
                 mockMvc.perform(patch("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token)

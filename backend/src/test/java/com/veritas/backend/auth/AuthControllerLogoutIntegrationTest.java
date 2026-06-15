@@ -18,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -71,14 +71,14 @@ class AuthControllerLogoutIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void Logout_ValidToken_ReturnsNoContentAndDeletesToken() throws Exception {
-        assertThat(refreshTokenRepository.findByToken(refreshToken)).isPresent();
+        assertTrue(refreshTokenRepository.findByToken(refreshToken).isPresent());
 
         mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshTokenDto(refreshToken))))
                 .andExpect(status().isNoContent());
 
-        assertThat(refreshTokenRepository.findByToken(refreshToken)).isEmpty();
+        assertTrue(refreshTokenRepository.findByToken(refreshToken).isEmpty());
     }
 
     @Test

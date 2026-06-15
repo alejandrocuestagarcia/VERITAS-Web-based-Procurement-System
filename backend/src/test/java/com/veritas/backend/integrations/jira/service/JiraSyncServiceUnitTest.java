@@ -52,7 +52,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
-public class JiraSyncServiceUnitTest {
+class JiraSyncServiceUnitTest {
 
     @Mock
     private JiraConfigRepository configRepository;

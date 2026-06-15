@@ -12,7 +12,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -56,10 +56,12 @@ class MailServiceImplTest {
         verify(mailSender).send(captor.capture());
 
         SimpleMailMessage sentMessage = captor.getValue();
-        assertThat(sentMessage.getFrom()).isEqualTo("no-reply@veritas.com");
-        assertThat(sentMessage.getTo()).containsExactly("test@example.com");
-        assertThat(sentMessage.getSubject()).isEqualTo("Subject");
-        assertThat(sentMessage.getText()).isEqualTo("Body");
+        assertAll(
+            () -> assertEquals("no-reply@veritas.com", sentMessage.getFrom()),
+            () -> assertArrayEquals(new String[]{"test@example.com"}, sentMessage.getTo()),
+            () -> assertEquals("Subject", sentMessage.getSubject()),
+            () -> assertEquals("Body", sentMessage.getText())
+        );
     }
 
     @Test

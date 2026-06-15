@@ -1,5 +1,7 @@
 package com.veritas.backend.user;
 
+import java.util.List;
+
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
@@ -132,7 +134,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             User.builder().name("John Doe").email("john@test.com").team(testTeam).isActive(true)
                     .passwordHash(encoder.encode("password123")).role(UserRole.REQUESTER).build();
 
-    userRepository.saveAll(java.util.List.of(alex, john));
+    userRepository.saveAll(List.of(alex, john));
 
 
     Long userId = alex.getId();
@@ -162,7 +164,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             User.builder().name("John Doe").email("john@test.com").team(testTeam).isActive(true)
                     .passwordHash(encoder.encode("password123")).role(UserRole.FINANCE_OFFICER).build();
 
-    userRepository.saveAll(java.util.List.of(alex, john));
+    userRepository.saveAll(List.of(alex, john));
 
 
     Long userId = alex.getId();
@@ -255,7 +257,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
         .build();
     User john = User.builder().name("John Doe").email("john@test.com").team(testTeam).isActive(true)
         .passwordHash(encoder.encode("password123")).role(UserRole.FINANCE_OFFICER).build();
-    userRepository.saveAll(java.util.List.of(alex, john));
+    userRepository.saveAll(List.of(alex, john));
 
     mockMvc.perform(
             get("/api/v1/users").param("search", "Alexander").param("page", "0").param("size", "10"))
@@ -325,7 +327,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .isActive(true).passwordHash("hash").build();
     User john = User.builder().name("John").email("john@test.com").team(testTeam)
         .role(UserRole.FINANCE_OFFICER).isActive(true).passwordHash("hash").build();
-    userRepository.saveAll(java.util.List.of(alex, john));
+    userRepository.saveAll(List.of(alex, john));
 
     mockMvc.perform(
             get("/api/v1/users").param("userRole", "REQUESTER").param("page", "0").param("size", "10"))
@@ -513,7 +515,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .role(UserRole.REQUESTER)
             .build();
 
-    userRepository.saveAll(java.util.List.of(admin, requester));
+    userRepository.saveAll(List.of(admin, requester));
 
     mockMvc.perform(
             delete("/api/v1/users/" + requester.getId())

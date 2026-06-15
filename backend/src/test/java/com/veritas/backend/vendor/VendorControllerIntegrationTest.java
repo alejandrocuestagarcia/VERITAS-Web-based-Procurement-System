@@ -1,5 +1,7 @@
 package com.veritas.backend.vendor;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.vendor.dto.VendorDto;
@@ -156,7 +158,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
                 null, null, null
         );
 
-        Page<VendorDto> page = new PageImpl<>(java.util.List.of(vendor1, vendor2));
+        Page<VendorDto> page = new PageImpl<>(List.of(vendor1, vendor2));
 
         when(vendorService.findVendorsByStringAndRating(any(Pageable.class), any(), any()))
                 .thenReturn(page);
@@ -173,7 +175,7 @@ class VendorControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     @WithMockUser(roles = "REQUESTER")
     void FindVendors_WithSearchAndRating_ShouldReturnFilteredVendors() throws Exception {
-        Page<VendorDto> emptyPage = new PageImpl<>(java.util.List.of());
+        Page<VendorDto> emptyPage = new PageImpl<>(List.of());
 
         when(vendorService.findVendorsByStringAndRating(any(Pageable.class), any(String.class), any(Double.class)))
                 .thenReturn(emptyPage);

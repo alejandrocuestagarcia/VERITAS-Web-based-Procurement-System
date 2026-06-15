@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.veritas.backend.notification.service.NotificationEmailService;
@@ -71,11 +71,13 @@ class NotificationServiceTest {
         verify(notificationRepository).save(captor.capture());
 
         Notification saved = captor.getValue();
-        assertThat(saved.getUser()).isEqualTo(testUser);
-        assertThat(saved.getMessage()).isEqualTo("Test message");
-        assertThat(saved.getType()).isEqualTo(NotificationType.SUBMITTED);
-        assertThat(saved.getRequest()).isEqualTo(testRequest);
-        assertThat(saved.getIsRead()).isFalse();
+        assertAll(
+            () -> assertEquals(testUser, saved.getUser()),
+            () -> assertEquals("Test message", saved.getMessage()),
+            () -> assertEquals(NotificationType.SUBMITTED, saved.getType()),
+            () -> assertEquals(testRequest, saved.getRequest()),
+            () -> assertFalse(saved.getIsRead())
+        );
 
         verify(notificationEmailService).sendNotificationEmail(testUser, testRequest, NotificationType.SUBMITTED, "Test message");
     }
@@ -88,7 +90,7 @@ class NotificationServiceTest {
         verify(notificationRepository).save(captor.capture());
 
         Notification saved = captor.getValue();
-        assertThat(saved.getRequest()).isNull();
+        assertNull(saved.getRequest());
 
         verify(notificationEmailService).sendNotificationEmail(testUser, null, NotificationType.ASSIGNED, "Generic message");
     }
@@ -116,8 +118,10 @@ class NotificationServiceTest {
 
         Page<NotificationDto> result = notificationService.getNotificationsForUser(1L, pageable);
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getType()).isEqualTo("APPROVED");
+        assertAll(
+            () -> assertEquals(1, result.getContent().size()),
+            () -> assertEquals("APPROVED", result.getContent().get(0).getType())
+        );
     }
 
     @Test
@@ -126,7 +130,7 @@ class NotificationServiceTest {
 
         long count = notificationService.getUnreadCount(1L);
 
-        assertThat(count).isEqualTo(5L);
+        assertEquals(5L, count);
     }
 
     @Test
@@ -141,7 +145,7 @@ class NotificationServiceTest {
 
         notificationService.markAsRead(1L, 1L);
 
-        assertThat(notification.getIsRead()).isTrue();
+        assertTrue(notification.getIsRead());
         verify(notificationRepository).save(notification);
     }
 
@@ -155,16 +159,14 @@ class NotificationServiceTest {
 
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
 
-        assertThatThrownBy(() -> notificationService.markAsRead(1L, 1L))
-                .isInstanceOf(AccessDeniedException.class);
+        assertThrows(AccessDeniedException.class, () -> notificationService.markAsRead(1L, 1L));
     }
 
     @Test
     void markAsRead_NotificationNotFound_ThrowsEntityNotFound() {
         when(notificationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> notificationService.markAsRead(99L, 1L))
-                .isInstanceOf(EntityNotFoundException.class);
+        assertThrows(EntityNotFoundException.class, () -> notificationService.markAsRead(99L, 1L));
     }
 
     @Test
@@ -198,7 +200,6 @@ class NotificationServiceTest {
 
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
 
-        assertThatThrownBy(() -> notificationService.deleteNotification(1L, 1L))
-                .isInstanceOf(AccessDeniedException.class);
+        assertThrows(AccessDeniedException.class, () -> notificationService.deleteNotification(1L, 1L));
     }
 }

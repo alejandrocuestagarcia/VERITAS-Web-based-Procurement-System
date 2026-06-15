@@ -1,5 +1,7 @@
 package com.veritas.backend.auth;
 
+import com.veritas.backend.auth.repository.RefreshTokenRepository;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.audit.repository.AuditLogRepository;
@@ -47,7 +49,7 @@ class AuthControllerIntegrationTest extends BaseDBIntegrationTest {
     ObjectMapper objectMapper;
 
     @Autowired
-    com.veritas.backend.auth.repository.RefreshTokenRepository refreshTokenRepository;
+    RefreshTokenRepository refreshTokenRepository;
 
     @BeforeEach
     void setup() {

@@ -27,9 +27,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,7 +70,7 @@ class ProjectServiceUnitTest {
 
         var result = projectService.getProjectsForUser(financeOfficer);
 
-        assertThat(result).hasSize(2);
+        assertEquals(2, result.size());
         verify(projectRepository).findAll();
     }
 
@@ -93,7 +91,7 @@ class ProjectServiceUnitTest {
 
         var result = projectService.getProjectsForUser(user);
 
-        assertThat(result).hasSize(1);
+        assertEquals(1, result.size());
         verify(projectRepository).findByTeam(team);
     }
 
@@ -115,7 +113,7 @@ class ProjectServiceUnitTest {
 
         var result = projectService.getProjectsForUser(user);
 
-        assertThat(result).hasSize(1);
+        assertEquals(1, result.size());
         verify(projectRepository).findByTeamDepartment(department);
     }
 
@@ -137,7 +135,7 @@ class ProjectServiceUnitTest {
         when(projectMapper.toProjectDto(saved)).thenReturn(mapped);
 
         var result = projectService.createProject(dto);
-        assertThat(result).isEqualTo(mapped);
+        assertEquals(mapped, result);
 
         verify(projectRepository).save(project);
     }
@@ -163,7 +161,6 @@ class ProjectServiceUnitTest {
         assertThrows(EntityNotFoundException.class, () -> projectService.createProject(dto));
     }
 
-    //AI-Generated
     @Test
     void GetProjectById_RequesterSameTeam_ReturnsProjectDto() {
 
@@ -178,13 +175,12 @@ class ProjectServiceUnitTest {
         ProjectDto result = projectService.getProjectById(1L, requester);
 
         assertAll(
-                ()->assertThat(result).isNotNull(),
-                ()->assertThat(result.name()).isEqualTo("Secret Project")
+                () -> assertNotNull(result),
+                () -> assertEquals("Secret Project", result.name())
         );
         verify(projectRepository).findByIdAndTeam(1L, team);
     }
 
-    //AI-Generated
     @Test
     void GetProjectById_RequesterDifferentTeam_ThrowsEntityNotFoundException() {
 
@@ -200,7 +196,6 @@ class ProjectServiceUnitTest {
         verify(projectMapper, never()).toProjectDto(any());
     }
 
-    //AI-Generated
     @Test
     void GetProjectById_ProcurementOfficerSameDepartment_ReturnsProjectDto() {
 
@@ -215,11 +210,10 @@ class ProjectServiceUnitTest {
 
         ProjectDto result = projectService.getProjectById(1L, procurementOfficer);
 
-        assertThat(result).isNotNull();
+        assertNotNull(result);
         verify(projectRepository).findByIdAndTeamDepartment(1L, department);
     }
 
-    //AI-Generated
     @Test
     void GetProjectById_ProcurementOfficerDifferentDepartment_ThrowsEntityNotFoundException() {
         Department wrongDepartment = Department.builder().departmentId(9L).name("HR").build();
@@ -232,7 +226,6 @@ class ProjectServiceUnitTest {
         );
     }
 
-    //AI-Generated
     @Test
     void EditProject_ProjectExists_UpdatesFieldsAndReturnsDto() {
 
@@ -261,13 +254,11 @@ class ProjectServiceUnitTest {
 
         ProjectDto result = projectService.editProject(projectId, editDto);
         assertAll(
-                () -> assertThat(result).isNotNull(),
-                () -> assertThat(result.name()).isEqualTo("Updated Project Name"),
-                () -> assertThat(result.budget()).isLessThanOrEqualTo(BigDecimal.valueOf(50000.00)),
-
-
-                () -> assertThat(existingProject.getName()).isEqualTo("Updated Project Name"),
-                () -> assertThat(existingProject.getInternalBudget().getTotalAmount()).isEqualTo(BigDecimal.valueOf(50000.00))
+                () -> assertNotNull(result),
+                () -> assertEquals("Updated Project Name", result.name()),
+                () -> assertTrue(result.budget().compareTo(BigDecimal.valueOf(50000.00)) <= 0),
+                () -> assertEquals("Updated Project Name", existingProject.getName()),
+                () -> assertEquals(BigDecimal.valueOf(50000.00), existingProject.getInternalBudget().getTotalAmount())
         );
 
 
@@ -275,7 +266,6 @@ class ProjectServiceUnitTest {
         verify(projectRepository).save(existingProject);
     }
 
-    //AI-Generated
     @Test
     void EditProject_ProjectDoesNotExist_ThrowsEntityNotFoundException() {
 
