@@ -1,6 +1,6 @@
 <app-shared-table title="Project Management"
   subtitle="Configure Projects of Company Teams and set Start and End dates."
-  entity="projects" searchPlaceholder="Search..."
+  entity="projects" searchPlaceholder="Search projects..."
   [dataSource]="dataSource" [displayedColumns]="displayedColumns"
   [totalElements]="dataSource.data.length" [loading]="loading"
   (searchChanged)="applyFilter($event)">

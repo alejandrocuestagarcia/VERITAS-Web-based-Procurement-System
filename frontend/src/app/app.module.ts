@@ -44,6 +44,7 @@ import { SearchFilterPipe } from './shared/pipes/search-filter.pipe';
 
 // Core Components
 import { SidebarComponent } from './core/components/sidebar/sidebar.component';
+import { HeaderComponent } from './core/components/header/header.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { LoginComponent } from './features/login/login/login.component';
 import { ForcePasswordResetComponent } from './features/login/force-password-reset/force-password-reset.component';
@@ -111,6 +112,7 @@ import { NotificationLogComponent } from './features/notifications/notification-
     ResetPasswordComponent,
     DashboardComponent,
     SidebarComponent,
+    HeaderComponent,
 
     // User
     UserCreateComponent,

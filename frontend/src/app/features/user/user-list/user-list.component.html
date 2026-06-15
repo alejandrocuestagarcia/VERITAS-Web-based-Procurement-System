@@ -1,4 +1,5 @@
 <app-shared-table [title]="title" [subtitle]="subtitle" entity="users"
+  [searchPlaceholder]="'Search users...'"
   [dataSource]="dataSource" [displayedColumns]="displayedColumns"
   [totalElements]="totalPageElements" [loading]="loading"
   (pageChanged)="onPageChange($event)" (searchChanged)="onSearchChanged($event)">

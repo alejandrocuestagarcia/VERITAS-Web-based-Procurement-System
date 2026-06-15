@@ -417,12 +417,12 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         Pageable pageable = PageRequest.of(0, 10);
-        when(requestRepository.findFilteredRequests("OPEN", "search", 1L, null, null, null, null, pageable))
+        when(requestRepository.findFilteredRequests("OPEN", "search", 1L, null, null, null, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        requisitionService.getRequests("open", "search", 1L, testUser, pageable);
+        requisitionService.getRequests("open", "search", 1L, null, null, null, testUser, pageable);
 
-        verify(requestRepository).findFilteredRequests("OPEN", "search", 1L, null, null, null, null, pageable);
+        verify(requestRepository).findFilteredRequests("OPEN", "search", 1L, null, null, null, null, null, null, pageable);
     }
 
     @Test
@@ -431,12 +431,12 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         Pageable pageable = PageRequest.of(0, 10);
-        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, null, pageable))
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        requisitionService.getRequests("", "", null, testUser, pageable);
+        requisitionService.getRequests("", "", null, null, null, null, testUser, pageable);
 
-        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, null, pageable);
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, null, null, null, pageable);
     }
 
     @Test

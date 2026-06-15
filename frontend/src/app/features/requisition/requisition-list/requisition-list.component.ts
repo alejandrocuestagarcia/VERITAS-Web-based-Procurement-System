@@ -1,12 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import {
   RequisitionModuleService,
   RequisitionDto,
   ProjectModuleService,
   ProjectDto,
-  UserModuleService, UserDtoRoleEnum
+  UserModuleService, UserDtoRoleEnum, UserDto
 } from 'src/app/core/api';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { PageEvent } from '@angular/material/paginator';
 import {MatDialog} from "@angular/material/dialog";
@@ -31,8 +31,17 @@ export class RequisitionListComponent implements OnInit {
   status = '';
   search = '';
   projectSearch = '';
+  creatorSearch = '';
   selectedProjectId: number | '' = '';
   projects: ProjectDto[] = [];
+  createdFrom = '';
+  createdTo = '';
+  selectedCreatorId: number | '' = '';
+  creators: UserDto[] = [];
+
+  activeDropdown: string | null = null;
+  dropdownX = 0;
+  dropdownY = 0;
 
   readonly statuses = [
     { value: 'OPEN', label: 'Open' },
@@ -40,7 +49,20 @@ export class RequisitionListComponent implements OnInit {
     { value: 'CLOSED', label: 'Closed' },
   ];
 
-  displayedColumns = ['requestName', 'projectName', 'workflowName', 'isClosed', 'actions'];
+  get isRequester(): boolean {
+    return this.authService.hasRole('REQUESTER');
+  }
+
+  get displayedColumns(): string[] {
+    const columns = ['requestName', 'projectName', 'workflowName'];
+    if (!this.isRequester) {
+      columns.push('creator');
+    }
+    columns.push('createdAt');
+    columns.push('isClosed');
+    columns.push('actions');
+    return columns;
+  }
 
   constructor(
     private requisitionService: RequisitionModuleService,
@@ -49,12 +71,25 @@ export class RequisitionListComponent implements OnInit {
     private authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
     this.loadProjects();
-    this.loadRequests();
+    this.loadCreators();
+
+    // Subscribe to query parameters to drive filtering
+    this.route.queryParams.subscribe(params => {
+      this.search = params['q'] || '';
+      this.status = params['status'] || '';
+      this.selectedProjectId = params['projectId'] ? Number(params['projectId']) : '';
+      this.createdFrom = params['createdFrom'] || '';
+      this.createdTo = params['createdTo'] || '';
+      this.selectedCreatorId = params['creatorId'] ? Number(params['creatorId']) : '';
+
+      this.loadRequests();
+    });
   }
 
   loadProjects(): void {
@@ -62,6 +97,15 @@ export class RequisitionListComponent implements OnInit {
       next: (projects) => this.projects = projects,
       error: (err) => console.error('Failed to load projects', err)
     });
+  }
+
+  loadCreators(): void {
+    if (!this.isRequester) {
+      this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
+        next: (response) => this.creators = response.content || [],
+        error: (err) => console.error('Failed to load creators', err)
+      });
+    }
   }
 
   loadRequests(): void {
@@ -77,7 +121,10 @@ export class RequisitionListComponent implements OnInit {
     this.requisitionService.getRequests(
       backendStatus,
       this.search || undefined,
-      this.selectedProjectId !== '' ? this.selectedProjectId : undefined,
+      this.selectedProjectId !== '' ? (this.selectedProjectId as number) : undefined,
+      this.createdFrom || undefined,
+      this.createdTo || undefined,
+      this.selectedCreatorId !== '' ? (this.selectedCreatorId as number) : undefined,
       this.page,
       this.size
     ).subscribe({
@@ -102,7 +149,7 @@ export class RequisitionListComponent implements OnInit {
   onSearchChange(searchTerm: string): void {
     this.search = searchTerm;
     this.page = 0;
-    this.loadRequests();
+    this.updateFiltersInUrl();
   }
 
   onPageChange(event: PageEvent): void {
@@ -113,14 +160,110 @@ export class RequisitionListComponent implements OnInit {
 
   onFilterChange(): void {
     this.page = 0;
-    this.loadRequests();
+    this.updateFiltersInUrl();
   }
 
   clearFilters(): void {
     this.status = '';
     this.selectedProjectId = '';
+    this.search = '';
+    this.createdFrom = '';
+    this.createdTo = '';
+    this.selectedCreatorId = '';
     this.page = 0;
-    this.loadRequests();
+    this.activeDropdown = null;
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: undefined,
+        status: undefined,
+        projectId: undefined,
+        createdFrom: undefined,
+        createdTo: undefined,
+        creatorId: undefined
+      }
+    });
+  }
+
+  clearDateFilter(): void {
+    this.createdFrom = '';
+    this.createdTo = '';
+    this.onFilterChange();
+  }
+
+  updateFiltersInUrl(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: this.search || undefined,
+        status: this.status || undefined,
+        projectId: this.selectedProjectId || undefined,
+        createdFrom: this.createdFrom || undefined,
+        createdTo: this.createdTo || undefined,
+        creatorId: this.selectedCreatorId || undefined
+      },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+
+  toggleDropdown(name: string, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.activeDropdown === name) {
+      this.activeDropdown = null;
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+
+    const estimatedHeights: Record<string, number> = {
+      status: 140,
+      project: 300,
+      creator: 300,
+      date: 200,
+    };
+    const estimatedWidths: Record<string, number> = {
+      status: 160,
+      project: 224,
+      creator: 224,
+      date: 256,
+    };
+
+    const estH = estimatedHeights[name] ?? 200;
+    const estW = estimatedWidths[name] ?? 224;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+
+    this.dropdownY = spaceBelow >= estH
+      ? rect.bottom + 6
+      : Math.max(8, rect.top - estH - 6);
+
+    this.dropdownX = Math.min(rect.left, window.innerWidth - estW - 8);
+
+    this.activeDropdown = name;
+    if (name === 'project') this.projectSearch = '';
+    if (name === 'creator') this.creatorSearch = '';
+  }
+  setFilter(type: 'status', value: string): void {
+    if (type === 'status') {
+      this.status = value;
+    }
+    this.activeDropdown = null;
+    this.onFilterChange();
+  }
+
+  setProjectFilter(id: number | string | undefined): void {
+    this.selectedProjectId = (id !== undefined && id !== '') ? Number(id) : '';
+    this.projectSearch = '';
+    this.activeDropdown = null;
+    this.onFilterChange();
+  }
+
+  setCreatorFilter(id: number | string | undefined): void {
+    this.selectedCreatorId = (id !== undefined && id !== '') ? Number(id) : '';
+    this.creatorSearch = '';
+    this.activeDropdown = null;
+    this.onFilterChange();
   }
 
   getFilteredProjects(): ProjectDto[] {
@@ -129,18 +272,64 @@ export class RequisitionListComponent implements OnInit {
     return this.projects.filter(p => p.name?.toLowerCase().includes(search));
   }
 
-  onOpenedChange(opened: boolean): void {
-    if (!opened) {
-      this.projectSearch = '';
+  getFilteredCreators(): UserDto[] {
+    if (!this.creatorSearch) return this.creators;
+    const search = this.creatorSearch.toLowerCase();
+    return this.creators.filter(c => c.name?.toLowerCase().includes(search));
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.req-filter-pill-wrapper') && !target.closest('.req-dropdown')) {
+      this.activeDropdown = null;
     }
   }
 
-  onStatusFilterChange(value: string | undefined): void {
-    const newStatus = value || '';
-    if (this.status !== newStatus) {
-      this.status = newStatus;
-      this.onFilterChange();
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    this.activeDropdown = null;
+  }
+
+  // ── Label helpers ──────────────────────────────────────────────────────────
+
+  getStatusLabel(value: string): string {
+    return this.statuses.find(s => s.value === value)?.label ?? value;
+  }
+
+  getDateLabel(): string {
+    if (this.createdFrom && this.createdTo) {
+      return `${this.formatShortDate(this.createdFrom)} – ${this.formatShortDate(this.createdTo)}`;
     }
+    if (this.createdFrom) return `From ${this.formatShortDate(this.createdFrom)}`;
+    if (this.createdTo)   return `Until ${this.formatShortDate(this.createdTo)}`;
+    return 'Date';
+  }
+
+  private formatShortDate(dateStr: string): string {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  }
+
+  getActiveFiltersCount(): number {
+    let count = 0;
+    if (this.selectedProjectId !== '') count++;
+    if (this.selectedCreatorId !== '') count++;
+    if (this.createdFrom) count++;
+    if (this.createdTo) count++;
+    return count;
+  }
+
+  getSelectedProjectName(): string {
+    if (this.selectedProjectId === '') return '';
+    const p = this.projects.find(proj => proj.id === this.selectedProjectId);
+    return p ? (p.name || '') : '';
+  }
+
+  getSelectedCreatorName(): string {
+    if (this.selectedCreatorId === '') return '';
+    const c = this.creators.find(user => user.id === this.selectedCreatorId);
+    return c ? (c.name || '') : '';
   }
 
   viewDetails(id: number): void {

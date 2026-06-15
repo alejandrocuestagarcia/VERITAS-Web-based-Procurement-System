@@ -264,5 +264,31 @@ textarea.help-code-block {
 }
 
 
+//AI-GENERATED
+//// ─── Requisition Filter Bar — minimal, Tailwind-first ─────────────────────────
 
+.req-dropdown {
+  position: fixed;
+  z-index: 9999;
+  animation: reqDropdownIn 0.1s ease;
+}
 
+@keyframes reqDropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// mat-icon sizing inside dropdowns (can't target with Tailwind)
+.req-icon-sm {
+  font-size: 15px !important;
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.req-icon-check {
+  font-size: 13px !important;
+  width: 13px !important;
+  height: 13px !important;
+}
+
+// ─── end Requisition Filter Bar ───────────────────────────────────────────────

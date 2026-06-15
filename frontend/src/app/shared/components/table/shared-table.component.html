@@ -28,6 +28,7 @@
         <mat-icon>search</mat-icon>
         <input class="border-0 outline-none bg-transparent font-inter text-[13px]
                  text-on-surface w-full placeholder:text-[#9ca3af]" [placeholder]="searchPlaceholder"
+          [value]="searchValue"
           (input)="onSearch($event)" />
       </div>
 

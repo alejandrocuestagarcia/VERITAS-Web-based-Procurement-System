@@ -22,8 +22,9 @@ export class SharedTableComponent implements AfterContentInit, OnDestroy {
   @Input() title: string = '';
   @Input() subtitle: string = '';
   @Input() entity: string = '';
-  @Input() searchPlaceholder: string = 'Search...';
+  @Input() searchPlaceholder: string = 'Search name, key, project...';
   @Input() loading: boolean = false;
+  @Input() searchValue: string = '';
 
   @Input() dataSource = new MatTableDataSource<any>();
   @Input() displayedColumns: string[] = [];
