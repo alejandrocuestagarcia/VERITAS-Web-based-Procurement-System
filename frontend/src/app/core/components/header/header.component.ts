@@ -9,7 +9,8 @@ import {
   ProjectModuleService,
   UserModuleService,
   ProjectDto,
-  UserDto
+  UserDto,
+  UserDtoRoleEnum
 } from 'src/app/core/api';
 import { AuthService } from '../../services/auth.service';
 
@@ -162,7 +163,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   loadCreators(): void {
     if (this.creators.length === 0 && !this.isRequester) {
       this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
-        next: (response) => this.creators = response.content || [],
+        next: (response) => this.creators = (response.content || []).filter(u => u.role === UserDtoRoleEnum.Requester),
         error: (err) => console.error('Failed to load creators', err)
       });
     }
@@ -170,6 +171,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   get isRequester(): boolean {
     return this.authService.hasRole('REQUESTER');
+  }
+
+  get isProcurementOfficer(): boolean {
+    return this.authService.hasRole('PROCUREMENT_OFFICER');
   }
 
   applyFilters(): void {

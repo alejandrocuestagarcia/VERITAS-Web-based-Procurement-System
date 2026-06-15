@@ -94,7 +94,7 @@
         </div>
       </div>
 
-      <div *ngIf="!isRequester" class="shrink-0">
+      <div *ngIf="!isRequester && !isProcurementOfficer" class="shrink-0">
         <button
           class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           [class]="selectedCreatorId !== '' ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
