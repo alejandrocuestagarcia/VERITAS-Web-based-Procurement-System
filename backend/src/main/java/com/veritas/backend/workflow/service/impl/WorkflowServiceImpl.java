@@ -210,6 +210,10 @@ public class WorkflowServiceImpl implements WorkflowService {
                         if (minVendors != null && !minVendors.isBlank()) {
                             rule.setMinRequiredVendors(Integer.parseInt(minVendors));
                         }
+                        String minReliability = child.getAttribute("minVendorReliabilityScore");
+                        if (minReliability != null && !minReliability.isBlank()) {
+                            rule.setMinVendorReliabilityScore(Double.parseDouble(minReliability));
+                        }
                         String pdfRequired = child.getAttribute("isPdfRequired");
                         if (pdfRequired != null) {
                             rule.setIsPdfRequired(Boolean.parseBoolean(pdfRequired));

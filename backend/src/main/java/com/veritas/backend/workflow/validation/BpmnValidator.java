@@ -801,6 +801,22 @@ public class BpmnValidator {
                                     + "' has non-numeric minRequiredVendors: '" + minVendors + "'");
                         }
                     }
+                    String minReliability = child.getAttribute("minVendorReliabilityScore");
+                    if (minReliability != null && !minReliability.isBlank()) {
+                        try {
+                            double value = Double.parseDouble(minReliability);
+                            if (value < 0) {
+                                result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
+                                        + "' has negative minVendorReliabilityScore (" + value + ")");
+                            } else if (value > 10.0) {
+                                result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
+                                        + "' has minVendorReliabilityScore exceeding the maximum of 10.0 (" + value + ")");
+                            }
+                        } catch (NumberFormatException e) {
+                            result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
+                                    + "' has non-numeric minVendorReliabilityScore: '" + minReliability + "'");
+                        }
+                    }
                     String advancedRule = child.getAttribute("advancedRule");
                     if (advancedRule != null && !advancedRule.isBlank()) {
                         validateSpelExpression(advancedRule, flow.getSource(), flow.getTarget(), result, "Advanced rule");

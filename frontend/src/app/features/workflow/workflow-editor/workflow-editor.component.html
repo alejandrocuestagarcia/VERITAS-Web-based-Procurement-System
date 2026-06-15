@@ -236,6 +236,21 @@
           </div>
 
           <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Min Vendor Reliability Score</label>
+            <div *ngIf="isEditable">
+              <input type="number" step="0.01" min="0" max="10" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                [ngModelOptions]="{standalone: true}"
+                [ngModel]="currentRule.minVendorReliabilityScore" (ngModelChange)="updateRuleProperty('minVendorReliabilityScore', $event)"
+                (input)="validateVendorReliabilityInput($event)"
+                placeholder="e.g. 7.0">
+            </div>
+            <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">
+              <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minVendorReliabilityScore != null ? currentRule.minVendorReliabilityScore : 'N/A' }}</span>
+              <span class="text-xs text-slate-500 uppercase font-semibold">Score</span>
+            </div>
+          </div>
+
+          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
             <button type="button"
                     (click)="isAdvancedRuleExpanded = !isAdvancedRuleExpanded"
                     class="flex items-center justify-between w-full text-left focus:outline-none py-1 group">
