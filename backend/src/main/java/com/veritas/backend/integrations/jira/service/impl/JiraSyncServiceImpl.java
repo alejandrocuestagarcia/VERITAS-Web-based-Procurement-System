@@ -787,9 +787,14 @@ public class JiraSyncServiceImpl implements JiraSyncService {
                 actor = paymentLog.get().getActor();
             }
         } else if (request.getRejectionReason() != null && !request.getRejectionReason().isBlank()) {
-            Optional<AuditLog> rejectionLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT);
+            Optional<AuditLog> rejectionLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REJECT);
             if (rejectionLog.isPresent()) {
                 actor = rejectionLog.get().getActor();
+            } else {
+                Optional<AuditLog> revertLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT);
+                if (revertLog.isPresent()) {
+                    actor = revertLog.get().getActor();
+                }
             }
         } else {
             Optional<AuditLog> approvalLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, APPROVE);
@@ -798,10 +803,14 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             }
         }
 
+        // A revert moves back to a previous step; a reject terminates the request
+        boolean isRevert = request.getRejectionReason() != null && !request.getRejectionReason().isBlank()
+                && !RequestStatus.FINISHED.equals(request.getState());
+
         String requestName = request.getRequestName() != null && !request.getRequestName().isBlank() ? request.getRequestName() : request.getRequestKey();
         String actorName = actor != null ? actor.getName() : "System";
         try {
-            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actorName);
+            postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actorName, isRevert);
             auditService.createJiraCommentLog(actor, request,
                     "Posted comment to Jira issue '" + key + "' for transition to step '" + stepNameForComment + "'");
         } catch (RestClientException e) {
@@ -991,7 +1000,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
     }
 
-    private void postTransitionComment(JiraConfig config, String issueKey, String requestName, String stepName, String rejectionReason, String extraContext, String actor) {
+    private void postTransitionComment(JiraConfig config, String issueKey, String requestName, String stepName, String rejectionReason, String extraContext, String actor, boolean isRevert) {
         String url = config.getJiraUrl().replaceAll("/+$", "") + "/rest/api/3/issue/" + issueKey + "/comment";
         HttpHeaders headers = createHeaders(config.getUsername(), config.getApiToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1005,28 +1014,51 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             String cleanReason = rejectionReason.replace("\"", "\\\"").replace("\r", "");
             String reasonWithBreaks = cleanReason.replace("\n", "\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"text\":\"");
 
-            String actorNode = !cleanActor.isBlank()
-                    ? ",{\"type\": \"hardBreak\"}," +
-                    "{\"type\": \"text\", \"text\": \"Rejected by " + cleanActor + "\", \"marks\": [{\"type\": \"em\"}]}"
-                    : "";
+            if (isRevert) {
+                // Revert: request was sent back to a previous step
+                String actorNode = !cleanActor.isBlank()
+                        ? ",{\"type\": \"hardBreak\"}," +
+                        "{\"type\": \"text\", \"text\": \"Reverted by " + cleanActor + "\", \"marks\": [{\"type\": \"em\"}]}"
+                        : "";
 
-            jsonPayload = String.format(
-                    "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [" +
-                            "{\"type\": \"paragraph\", \"content\": [" +
-                            "{\"type\": \"text\", \"text\": \"Request \"}, " +
-                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
-                            "{\"type\": \"text\", \"text\": \" was rejected with reason:\"}," +
-                            "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
-                            "{\"type\": \"text\", \"text\": \"%s\"}," +
-                            "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
-                            "{\"type\": \"text\", \"text\": \"and moved back to step \"}, " +
-                            "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}," +
-                            "{\"type\": \"text\", \"text\": \".\"}" +
-                            "%s" +
-                            "]}" +
-                            "]}}",
-                    cleanReqName, reasonWithBreaks, cleanStepName, actorNode
-            );
+                jsonPayload = String.format(
+                        "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [" +
+                                "{\"type\": \"paragraph\", \"content\": [" +
+                                "{\"type\": \"text\", \"text\": \"Request \"}, " +
+                                "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
+                                "{\"type\": \"text\", \"text\": \" was reverted with reason:\"}," +
+                                "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                                "{\"type\": \"text\", \"text\": \"%s\"}," +
+                                "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                                "{\"type\": \"text\", \"text\": \"and moved back to step \"}, " +
+                                "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}," +
+                                "{\"type\": \"text\", \"text\": \".\"}" +
+                                "%s" +
+                                "]}" +
+                                "]}}",
+                        cleanReqName, reasonWithBreaks, cleanStepName, actorNode
+                );
+            } else {
+                // Reject: request was terminated
+                String actorNode = !cleanActor.isBlank()
+                        ? ",{\"type\": \"hardBreak\"}," +
+                        "{\"type\": \"text\", \"text\": \"Rejected by " + cleanActor + "\", \"marks\": [{\"type\": \"em\"}]}"
+                        : "";
+
+                jsonPayload = String.format(
+                        "{\"body\": {\"type\": \"doc\", \"version\": 1, \"content\": [" +
+                                "{\"type\": \"paragraph\", \"content\": [" +
+                                "{\"type\": \"text\", \"text\": \"Request \"}, " +
+                                "{\"type\": \"text\", \"text\": \"%s\", \"marks\": [{\"type\": \"strong\"}]}, " +
+                                "{\"type\": \"text\", \"text\": \" was rejected with reason:\"}," +
+                                "{\"type\": \"hardBreak\"},{\"type\": \"hardBreak\"}," +
+                                "{\"type\": \"text\", \"text\": \"%s\"}" +
+                                "%s" +
+                                "]}" +
+                                "]}}",
+                        cleanReqName, reasonWithBreaks, actorNode
+                );
+            }
         } else {
             String extraContextNodes = "";
             if (extraContext != null && !extraContext.isBlank()) {

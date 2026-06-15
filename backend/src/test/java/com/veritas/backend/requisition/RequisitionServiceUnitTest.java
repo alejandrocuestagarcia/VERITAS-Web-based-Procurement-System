@@ -90,6 +90,7 @@ import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
+import com.veritas.backend.integrations.jira.service.JiraSyncService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -133,6 +134,8 @@ class RequisitionServiceUnitTest {
     private NotificationService notificationService;
     @Mock
     private CurrencyConversionService currencyConversionService;
+    @Mock
+    private JiraSyncService jiraSyncService;
 
     @InjectMocks
     private RequisitionServiceImpl requisitionService;
@@ -1706,6 +1709,67 @@ class RequisitionServiceUnitTest {
                 eq(NotificationType.REJECTED),
                 anyString()
         );
+    }
+
+    // AI-Generated
+    @Test
+    void RejectRequest_JiraLinkedRequest_TriggersJiraSync() {
+        User creator = new User();
+        creator.setEmail("creator@veritas.com");
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setRequestName("Jira Request");
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(creator);
+        request.setJiraIssueKey("TEST-42");
+        WorkflowStep step = new WorkflowStep();
+        step.setId(10L);
+        request.setCurrentStep(step);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Budget exceeded");
+        dto.setRevisionRequired(false);
+        RequisitionDto result = requisitionService.rejectRequest(1L, testUser, dto);
+
+        assertNotNull(result);
+        assertEquals(RequestStatus.FINISHED, request.getState());
+        verify(jiraSyncService).handleVeritasWorkflowChange(request);
+    }
+
+    @Test
+    void RejectRequest_NonJiraRequest_DoesNotTriggerJiraSync() {
+        User creator = new User();
+        creator.setEmail("creator@veritas.com");
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setRequestName("Non-Jira Request");
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(creator);
+        // jiraIssueKey is null
+        WorkflowStep step = new WorkflowStep();
+        step.setId(10L);
+        request.setCurrentStep(step);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RequisitionDto expectedDto = mock(RequisitionDto.class);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
+
+        RequisitionRejectDto dto = new RequisitionRejectDto();
+        dto.setReason("Not needed");
+        dto.setRevisionRequired(false);
+        requisitionService.rejectRequest(1L, testUser, dto);
+
+        verify(jiraSyncService, never()).handleVeritasWorkflowChange(any());
     }
 
     // AI-Generated
