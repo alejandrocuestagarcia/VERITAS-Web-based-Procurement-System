@@ -40,8 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -125,8 +124,10 @@ class RequisitionQuoteServiceUnitTest {
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().quoteId()).isEqualTo(10L);
+        assertAll(
+            () -> assertEquals(1, result.size()),
+            () -> assertEquals(10L, result.getFirst().quoteId())
+        );
         verify(requestRepository).findById(requestId);
         verify(quoteRepository).findByRequestRequestIDOrderByQuoteIDAsc(requestId);
     }
@@ -136,9 +137,8 @@ class RequisitionQuoteServiceUnitTest {
         Long requestId = 1L;
         when(requestRepository.findById(requestId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> quoteService.getQuotesForRequest(requestId))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Request not found");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.getQuotesForRequest(requestId));
+        assertTrue(ex.getMessage().contains("Request not found"));
 
         verify(quoteRepository, never()).findByRequestRequestIDOrderByQuoteIDAsc(any());
     }
@@ -198,8 +198,10 @@ class RequisitionQuoteServiceUnitTest {
 
         QuoteDto result = quoteService.getQuoteById(requestId, quoteId);
 
-        assertThat(result).isNotNull();
-        assertThat(result.quoteId()).isEqualTo(quoteId);
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(quoteId, result.quoteId())
+        );
     }
 
     @Test
@@ -210,9 +212,8 @@ class RequisitionQuoteServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> quoteService.getQuoteById(1L, 99L))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Quote not found");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.getQuoteById(1L, 99L));
+        assertTrue(ex.getMessage().contains("Quote not found"));
     }
 
     @Test
@@ -231,9 +232,8 @@ class RequisitionQuoteServiceUnitTest {
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
 
-        assertThatThrownBy(() -> quoteService.getQuoteById(requestId, quoteId))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Quote does not belong to this request");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.getQuoteById(requestId, quoteId));
+        assertTrue(ex.getMessage().contains("Quote does not belong to this request"));
     }
 
     @Test
@@ -275,7 +275,7 @@ class RequisitionQuoteServiceUnitTest {
 
         QuoteDto result = quoteService.createQuoteForRequest(requestId, createDto);
 
-        assertThat(result).isNotNull();
+        assertNotNull(result);
         verify(quoteRepository).save(any(Quote.class));
         verify(quoteLineItemRepository).save(any(QuoteLineItem.class));
     }
@@ -284,9 +284,8 @@ class RequisitionQuoteServiceUnitTest {
     void CreateQuoteForRequest_RequestNotFound_ThrowsEntityNotFoundException() {
         when(requestRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> quoteService.createQuoteForRequest(1L, new QuoteCreateDto(2L, Currency.EUR, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of())))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Request not found");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.createQuoteForRequest(1L, new QuoteCreateDto(2L, Currency.EUR, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of())));
+        assertTrue(ex.getMessage().contains("Request not found"));
     }
 
     @Test
@@ -297,9 +296,8 @@ class RequisitionQuoteServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(vendorRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> quoteService.createQuoteForRequest(1L, new QuoteCreateDto(2L, Currency.EUR, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of())))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Vendor not found");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> quoteService.createQuoteForRequest(1L, new QuoteCreateDto(2L, Currency.EUR, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of())));
+        assertTrue(ex.getMessage().contains("Vendor not found"));
     }
 
     @Test
@@ -348,9 +346,11 @@ class RequisitionQuoteServiceUnitTest {
 
         QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
 
-        assertThat(result).isNotNull();
-        assertThat(quote.getVendorID().getId()).isEqualTo(3L);
-        assertThat(quote.getCurrency()).isEqualTo(Currency.USD);
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(3L, quote.getVendorID().getId()),
+            () -> assertEquals(Currency.USD, quote.getCurrency())
+        );
         verify(quoteLineItemRepository).deleteAll(anyList());
         verify(quoteLineItemRepository).save(any(QuoteLineItem.class));
     }
@@ -405,12 +405,13 @@ class RequisitionQuoteServiceUnitTest {
 
         quoteService.selectQuoteForRequest(requestId, quoteId);
 
-        assertThat(quoteToSelect.isSelected()).isTrue();
-        assertThat(otherQuote.isSelected()).isFalse();
+        assertAll(
+            () -> assertTrue(quoteToSelect.isSelected()),
+            () -> assertFalse(otherQuote.isSelected())
+        );
         verify(quoteRepository, times(3)).save(any(Quote.class)); // 2 for otherQuotes loop + 1 for quoteToSelect save
     }
 
-    //AI-GENERATED
     @Test
     void GetQuotesForRequest_ConversionSuccess_MapsEuroValue() {
         Long requestId = 1L;
@@ -447,11 +448,12 @@ class RequisitionQuoteServiceUnitTest {
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().totalAmountEuro()).isEqualByComparingTo(BigDecimal.valueOf(180));
+        assertAll(
+            () -> assertEquals(1, result.size()),
+            () -> assertEquals(0, result.getFirst().totalAmountEuro().compareTo(BigDecimal.valueOf(180)))
+        );
     }
 
-    //AI-GENERATED
     @Test
     void GetQuotesForRequest_ConversionIllegalArgument_ReturnsNullEuro() {
         Long requestId = 1L;
@@ -489,6 +491,6 @@ class RequisitionQuoteServiceUnitTest {
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
-        assertThat(result.getFirst().totalAmountEuro()).isNull();
+        assertNull(result.getFirst().totalAmountEuro());
     }
 }

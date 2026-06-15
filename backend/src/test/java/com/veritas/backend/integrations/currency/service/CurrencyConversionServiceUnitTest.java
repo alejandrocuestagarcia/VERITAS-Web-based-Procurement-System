@@ -16,11 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CurrencyConversionServiceUnitTest {
+class CurrencyConversionServiceUnitTest {
 
     @Mock
     private ExchangeRateRepository exchangeRateRepository;
@@ -32,7 +32,7 @@ public class CurrencyConversionServiceUnitTest {
     void Convert_EUR_ReturnsSameAmount() {
         CurrencyConversionResult result = service.convert(BigDecimal.valueOf(100), Currency.EUR);
 
-        assertThat(result.convertedAmount()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertEquals(0, result.convertedAmount().compareTo(BigDecimal.valueOf(100)));
         verifyNoInteractions(exchangeRateRepository);
     }
 
@@ -46,28 +46,25 @@ public class CurrencyConversionServiceUnitTest {
 
         CurrencyConversionResult result = service.convert(BigDecimal.valueOf(100), Currency.USD);
 
-        assertThat(result.convertedAmount()).isEqualByComparingTo(BigDecimal.valueOf(50.00));
+        assertEquals(0, result.convertedAmount().compareTo(BigDecimal.valueOf(50.00)));
     }
 
     @Test
     void Convert_NullAmount_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> service.convert(null, Currency.USD))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Amount must be provided and cannot be negative");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.convert(null, Currency.USD));
+        assertTrue(ex.getMessage().contains("Amount must be provided and cannot be negative"));
     }
 
     @Test
     void Convert_NegativeAmount_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> service.convert(BigDecimal.valueOf(-1), Currency.USD))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Amount must be provided and cannot be negative");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.convert(BigDecimal.valueOf(-1), Currency.USD));
+        assertTrue(ex.getMessage().contains("Amount must be provided and cannot be negative"));
     }
 
     @Test
     void Convert_NullCurrency_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> service.convert(BigDecimal.valueOf(100), null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Source currency is required");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.convert(BigDecimal.valueOf(100), null));
+        assertTrue(ex.getMessage().contains("Source currency is required"));
     }
 
     @Test
@@ -75,9 +72,8 @@ public class CurrencyConversionServiceUnitTest {
         when(exchangeRateRepository.findTopByTargetCurrencyOrderByFetchedAtDesc(Currency.USD))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() ->
-                service.convert(BigDecimal.valueOf(100), Currency.USD))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("No exchange rate available");
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () ->
+                service.convert(BigDecimal.valueOf(100), Currency.USD));
+        assertTrue(ex.getMessage().contains("No exchange rate available"));
     }
 }

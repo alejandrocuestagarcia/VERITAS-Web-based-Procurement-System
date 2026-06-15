@@ -23,7 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 
 import static com.veritas.backend.common.model.AuditActionConstants.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.data.domain.Sort;
 
 @SpringBootTest
@@ -79,15 +79,17 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         auditService.createJiraSyncLog(testActor, testRequest, details);
 
         List<AuditLog> logs = auditLogRepository.findAll();
-        assertThat(logs).hasSize(1);
+        assertEquals(1, logs.size());
 
         AuditLog saved = logs.getFirst();
-        assertThat(saved.getAction()).isEqualTo(JIRA_SYNC);
-        assertThat(saved.getDescription()).isEqualTo(details);
-        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
-        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
-        assertThat(saved.getEntryHash()).isNotNull();
-        assertThat(saved.getTimestamp()).isNotNull();
+        assertAll(
+            () -> assertEquals(JIRA_SYNC, saved.getAction()),
+            () -> assertEquals(details, saved.getDescription()),
+            () -> assertEquals(testActor.getId(), saved.getActor().getId()),
+            () -> assertEquals(testRequest.getRequestID(), saved.getRequest().getRequestID()),
+            () -> assertNotNull(saved.getEntryHash()),
+            () -> assertNotNull(saved.getTimestamp())
+        );
     }
 
     @Test
@@ -96,8 +98,8 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         auditService.createJiraSyncLog(testActor, testRequest, "Second sync");
 
         List<AuditLog> logs = auditLogRepository.findAll();
-        assertThat(logs).hasSize(2);
-        assertThat(logs.get(0).getEntryHash()).isNotEqualTo(logs.get(1).getEntryHash());
+        assertEquals(2, logs.size());
+        assertNotEquals(logs.get(0).getEntryHash(), logs.get(1).getEntryHash());
     }
 
     @Test
@@ -107,14 +109,14 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
 
         Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction(JIRA_SYNC, PageRequest.of(0, 10), "");
 
-        assertThat(result.getContent()).hasSize(2);
+        assertEquals(2, result.getContent().size());
     }
 
     @Test
     void GetJiraIssueLogsByAction_NoLogsExist_ReturnsEmptyList() {
         Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction(JIRA_SYNC, PageRequest.of(0, 10), "");
 
-        assertThat(result.getContent()).isEmpty();
+        assertTrue(result.getContent().isEmpty());
     }
 
     @Test
@@ -123,7 +125,7 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
 
         Page<AuditLogDto> result = auditService.getJiraIssueLogsByAction("SOME_OTHER_ACTION", PageRequest.of(0, 10), "");
 
-        assertThat(result.getContent()).isEmpty();
+        assertTrue(result.getContent().isEmpty());
     }
 
     @Test
@@ -133,15 +135,17 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         auditService.createRequisitionChangeLog(testActor, testRequest, details);
 
         List<AuditLog> logs = auditLogRepository.findAll();
-        assertThat(logs).hasSize(1);
+        assertEquals(1, logs.size());
 
         AuditLog saved = logs.getFirst();
-        assertThat(saved.getAction()).isEqualTo(REQUISITION_EDITED);
-        assertThat(saved.getDescription()).isEqualTo(details);
-        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
-        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
-        assertThat(saved.getEntryHash()).isNotNull();
-        assertThat(saved.getTimestamp()).isNotNull();
+        assertAll(
+            () -> assertEquals(REQUISITION_EDITED, saved.getAction()),
+            () -> assertEquals(details, saved.getDescription()),
+            () -> assertEquals(testActor.getId(), saved.getActor().getId()),
+            () -> assertEquals(testRequest.getRequestID(), saved.getRequest().getRequestID()),
+            () -> assertNotNull(saved.getEntryHash()),
+            () -> assertNotNull(saved.getTimestamp())
+        );
     }
 
     @Test
@@ -155,7 +159,7 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
                 ""
         );
 
-        assertThat(result.getContent()).hasSize(2);
+        assertEquals(2, result.getContent().size());
     }
 
     // AI-GENERATED
@@ -166,15 +170,17 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         auditService.createNotificationLog(testActor, testRequest, details);
 
         List<AuditLog> logs = auditLogRepository.findAll();
-        assertThat(logs).hasSize(1);
+        assertEquals(1, logs.size());
 
         AuditLog saved = logs.getFirst();
-        assertThat(saved.getAction()).isEqualTo(NOTIFICATION_SENT);
-        assertThat(saved.getDescription()).isEqualTo(details);
-        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
-        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
-        assertThat(saved.getEntryHash()).isNotNull();
-        assertThat(saved.getTimestamp()).isNotNull();
+        assertAll(
+            () -> assertEquals(NOTIFICATION_SENT, saved.getAction()),
+            () -> assertEquals(details, saved.getDescription()),
+            () -> assertEquals(testActor.getId(), saved.getActor().getId()),
+            () -> assertEquals(testRequest.getRequestID(), saved.getRequest().getRequestID()),
+            () -> assertNotNull(saved.getEntryHash()),
+            () -> assertNotNull(saved.getTimestamp())
+        );
     }
 
     @Test
@@ -184,14 +190,16 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
         auditService.createJiraCommentLog(testActor, testRequest, details);
 
         List<AuditLog> logs = auditLogRepository.findAll();
-        assertThat(logs).hasSize(1);
+        assertEquals(1, logs.size());
 
         AuditLog saved = logs.getFirst();
-        assertThat(saved.getAction()).isEqualTo(JIRA_COMMENT_POSTED);
-        assertThat(saved.getDescription()).isEqualTo(details);
-        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
-        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
-        assertThat(saved.getEntryHash()).isNotNull();
-        assertThat(saved.getTimestamp()).isNotNull();
+        assertAll(
+            () -> assertEquals(JIRA_COMMENT_POSTED, saved.getAction()),
+            () -> assertEquals(details, saved.getDescription()),
+            () -> assertEquals(testActor.getId(), saved.getActor().getId()),
+            () -> assertEquals(testRequest.getRequestID(), saved.getRequest().getRequestID()),
+            () -> assertNotNull(saved.getEntryHash()),
+            () -> assertNotNull(saved.getTimestamp())
+        );
     }
 }

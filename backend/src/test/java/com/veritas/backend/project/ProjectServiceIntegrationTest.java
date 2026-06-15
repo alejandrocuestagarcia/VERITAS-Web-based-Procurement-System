@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
@@ -109,8 +109,10 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         var result = projectService.getProjectsForUser(financeOfficer);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().name()).isEqualTo(project.getName());
+        assertAll(
+            () -> assertEquals(1, result.size()),
+            () -> assertEquals(project.getName(), result.getFirst().name())
+        );
     }
 
     @Test
@@ -126,8 +128,10 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         var result = projectService.getProjectsForUser(requester);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().name()).isEqualTo(project.getName());
+        assertAll(
+            () -> assertEquals(1, result.size()),
+            () -> assertEquals(project.getName(), result.getFirst().name())
+        );
     }
 
     @Test
@@ -143,8 +147,10 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         var result = projectService.getProjectsForUser(procurementOfficer);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().name()).isEqualTo(project.getName());
+        assertAll(
+            () -> assertEquals(1, result.size()),
+            () -> assertEquals(project.getName(), result.getFirst().name())
+        );
     }
 
     @Test
@@ -160,7 +166,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         var result = projectService.getProjectsForUser(procurementOfficer);
 
-        assertThat(result).isEmpty();
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -169,10 +175,12 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         var result = projectService.createProject(dto);
 
-        assertThat(result).isNotNull();
-        assertThat(result.name()).isEqualTo("Integration Project");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals("Integration Project", result.name())
+        );
 
         var projects = projectRepository.findAll();
-        assertThat(projects).hasSize(2);
+        assertEquals(2, projects.size());
     }
 }

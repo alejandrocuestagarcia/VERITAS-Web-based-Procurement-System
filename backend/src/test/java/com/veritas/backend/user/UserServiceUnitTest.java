@@ -1,12 +1,6 @@
 package com.veritas.backend.user;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -162,7 +156,7 @@ class UserServiceUnitTest {
         List<RequisitionDto> result = userService.getPendingRequisitionsForUser(1L);
 
         assertNotNull(result);
-        assertThat(result).hasSize(1);
+        assertEquals(1, result.size());
         assertEquals("Test Request", result.getFirst().requestName());
 
 
@@ -302,7 +296,7 @@ class UserServiceUnitTest {
         UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.corp", true, UserRole.REQUESTER, "IT Team", 1L, null, null, LocalDateTime.now());
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
-        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.of(mockTeam));
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(mockTeam));
         when(userMapper.toUser(request)).thenReturn(mappedUser);
         when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
         when(userRepository.save(mappedUser)).thenReturn(savedUser);
@@ -398,7 +392,7 @@ class UserServiceUnitTest {
                 UserRole.REQUESTER, 1L, null, false);
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
-        when(teamRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+        when(teamRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(jakarta.persistence.EntityNotFoundException.class, () -> userService.createUser(request));
         verify(userRepository, never()).save(any());
@@ -422,9 +416,10 @@ class UserServiceUnitTest {
 
         UserStatsDto stats = userService.getUserStats();
 
-        assertThat(stats.total()).isEqualTo(100);
-        assertThat(stats.inactive()).isEqualTo(15);
-        //assertThat(stats.activeSessions()).isZero();
+        assertAll(
+            () -> assertEquals(100L, stats.total()),
+            () -> assertEquals(15L, stats.inactive())
+        );
     }
 
     @Test
@@ -613,9 +608,6 @@ class UserServiceUnitTest {
         assertTrue(user.getRequiresPasswordChange());
     }
 
-    //AI-GENERATED
-
-
     @Test
     void DeleteUser_CurrentUserAttemptsToDeleteSelf_ThrowsIllegalArgumentException() {
         User currentUser = new User();
@@ -748,5 +740,4 @@ class UserServiceUnitTest {
         assertEquals(UserRole.REQUESTER, userToEdit.getRole());
         verify(refreshTokenRepository, times(1)).deleteByUserId(2L);
     }
-
 }

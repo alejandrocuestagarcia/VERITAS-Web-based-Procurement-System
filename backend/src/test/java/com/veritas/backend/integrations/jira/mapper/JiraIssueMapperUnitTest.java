@@ -16,7 +16,7 @@ import org.mapstruct.factory.Mappers;
 
 // AI-GENERATED
 
-public class JiraIssueMapperUnitTest {
+class JiraIssueMapperUnitTest {
 
     private JiraIssueMapper mapper;
     private ObjectMapper objectMapper;

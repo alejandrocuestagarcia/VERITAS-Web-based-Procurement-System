@@ -17,10 +17,9 @@ import org.springframework.data.domain.PageRequest;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
+class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private VendorService vendorService;
@@ -56,12 +55,14 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
         VendorDto result = vendorService.createVendor(inputDto);
 
-        assertThat(result).isNotNull();
+        assertNotNull(result);
         
         Optional<Vendor> persistedVendor = vendorRepository.findByTaxId(inputDto.taxId());
-        assertThat(persistedVendor).isPresent();
-        assertThat(persistedVendor.get().getVendorName()).isEqualTo(inputDto.vendorName());
-        assertThat(persistedVendor.get().getPrimaryContactEmail()).isEqualTo(inputDto.primaryContactEmail());
+        assertTrue(persistedVendor.isPresent());
+        assertAll(
+            () -> assertEquals(inputDto.vendorName(), persistedVendor.get().getVendorName()),
+            () -> assertEquals(inputDto.primaryContactEmail(), persistedVendor.get().getPrimaryContactEmail())
+        );
     }
 
     @Test
@@ -71,8 +72,10 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
         Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "Apple", 0.0);
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).vendorName()).isEqualTo("Apple Inc.");
+        assertAll(
+            () -> assertEquals(1, result.getContent().size()),
+            () -> assertEquals("Apple Inc.", result.getContent().get(0).vendorName())
+        );
     }
 
     @Test
@@ -82,8 +85,10 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
         Page<VendorDto> result = vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "MSFT", 0.0);
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).taxId()).isEqualTo("TAX-MSFT");
+        assertAll(
+            () -> assertEquals(1, result.getContent().size()),
+            () -> assertEquals("TAX-MSFT", result.getContent().get(0).taxId())
+        );
     }
 
     // AI-GENERATED
@@ -101,15 +106,19 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
         VendorDto result = vendorService.editVendor(vendor.getId(), edits);
 
-        assertThat(result.vendorName()).isEqualTo("Updated Vendor");
-        assertThat(result.taxId()).isEqualTo("TAX-UPDATED");
-        assertThat(result.description()).isEqualTo("Updated description");
-        assertThat(result.primaryContactName()).isEqualTo("Updated Contact");
-        assertThat(result.primaryContactEmail()).isEqualTo("updated@vendor.com");
+        assertAll(
+            () -> assertEquals("Updated Vendor", result.vendorName()),
+            () -> assertEquals("TAX-UPDATED", result.taxId()),
+            () -> assertEquals("Updated description", result.description()),
+            () -> assertEquals("Updated Contact", result.primaryContactName()),
+            () -> assertEquals("updated@vendor.com", result.primaryContactEmail())
+        );
 
         Vendor persisted = vendorRepository.findById(vendor.getId()).orElseThrow();
-        assertThat(persisted.getVendorName()).isEqualTo("Updated Vendor");
-        assertThat(persisted.getTaxId()).isEqualTo("TAX-UPDATED");
+        assertAll(
+            () -> assertEquals("Updated Vendor", persisted.getVendorName()),
+            () -> assertEquals("TAX-UPDATED", persisted.getTaxId())
+        );
     }
 
     // AI-GENERATED
@@ -126,9 +135,8 @@ public class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
                 null
         );
 
-        assertThatThrownBy(() -> vendorService.editVendor(vendor.getId(), edits))
-                .isInstanceOf(EntityExistsException.class)
-                .hasMessage("Vendor with tax ID 'TAX-002' already exists");
+        EntityExistsException ex = assertThrows(EntityExistsException.class, () -> vendorService.editVendor(vendor.getId(), edits));
+        assertEquals("Vendor with tax ID 'TAX-002' already exists", ex.getMessage());
     }
 
     private Vendor saveVendor(String name, String taxId) {

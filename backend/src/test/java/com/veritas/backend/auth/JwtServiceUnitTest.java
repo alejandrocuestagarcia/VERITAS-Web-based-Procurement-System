@@ -1,6 +1,7 @@
 package com.veritas.backend.auth;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.core.userdetails.User.withUsername;
 
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.user.entity.User;
@@ -31,7 +32,7 @@ class JwtServiceUnitTest {
     adminUser.setRole(UserRole.ADMINISTRATOR);
 
     adminUserDetails =
-        org.springframework.security.core.userdetails.User.withUsername("dev@veritas.com")
+        withUsername("dev@veritas.com")
             .password("password").authorities("ROLE_ADMINISTRATOR").build();
 
   }

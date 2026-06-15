@@ -39,7 +39,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
@@ -165,17 +165,21 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         QuoteDto result = quoteService.createQuoteForRequest(request.getRequestID(), createDto);
 
-        assertThat(result).isNotNull();
-        assertThat(result.quoteId()).isNotNull();
-        assertThat(result.totalAmount()).isEqualByComparingTo(BigDecimal.valueOf(215));
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertNotNull(result.quoteId()),
+            () -> assertEquals(0, result.totalAmount().compareTo(BigDecimal.valueOf(215)))
+        );
 
         Optional<Quote> persistedQuote = quoteRepository.findById(result.quoteId());
-        assertThat(persistedQuote).isPresent();
-        assertThat(persistedQuote.get().getCurrency()).isEqualTo(Currency.EUR);
+        assertTrue(persistedQuote.isPresent());
+        assertEquals(Currency.EUR, persistedQuote.get().getCurrency());
 
         List<QuoteLineItem> persistedItems = quoteLineItemRepository.findByQuoteQuoteID(result.quoteId());
-        assertThat(persistedItems).hasSize(1);
-        assertThat(persistedItems.getFirst().getProductDescription()).isEqualTo("Integration Item");
+        assertAll(
+            () -> assertEquals(1, persistedItems.size()),
+            () -> assertEquals("Integration Item", persistedItems.getFirst().getProductDescription())
+        );
     }
 
     @Test
@@ -185,8 +189,12 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         List<QuoteDto> result = quoteService.getQuotesForRequest(request.getRequestID());
 
-        assertThat(result).hasSize(2);
-        assertThat(result.stream().map(QuoteDto::quoteId)).containsExactlyInAnyOrder(quote1.getQuoteID(), quote2.getQuoteID());
+        assertEquals(2, result.size());
+        List<Long> ids = result.stream().map(QuoteDto::quoteId).toList();
+        assertAll(
+            () -> assertTrue(ids.contains(quote1.getQuoteID())),
+            () -> assertTrue(ids.contains(quote2.getQuoteID()))
+        );
     }
 
     @Test
@@ -204,16 +212,22 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         QuoteDto result = quoteService.updateQuoteForRequest(request.getRequestID(), quote.getQuoteID(), updateDto);
 
-        assertThat(result.currency()).isEqualTo(Currency.USD);
-        assertThat(result.totalAmount()).isEqualByComparingTo(BigDecimal.valueOf(125));
+        assertAll(
+            () -> assertEquals(Currency.USD, result.currency()),
+            () -> assertEquals(0, result.totalAmount().compareTo(BigDecimal.valueOf(125)))
+        );
 
         Quote persisted = quoteRepository.findById(quote.getQuoteID()).orElseThrow();
-        assertThat(persisted.getCurrency()).isEqualTo(Currency.USD);
-        assertThat(persisted.getTotalAmount()).isEqualByComparingTo(BigDecimal.valueOf(125));
+        assertAll(
+            () -> assertEquals(Currency.USD, persisted.getCurrency()),
+            () -> assertEquals(0, persisted.getTotalAmount().compareTo(BigDecimal.valueOf(125)))
+        );
 
         List<QuoteLineItem> persistedItems = quoteLineItemRepository.findByQuoteQuoteID(quote.getQuoteID());
-        assertThat(persistedItems).hasSize(1);
-        assertThat(persistedItems.getFirst().getProductDescription()).isEqualTo("Updated Item");
+        assertAll(
+            () -> assertEquals(1, persistedItems.size()),
+            () -> assertEquals("Updated Item", persistedItems.getFirst().getProductDescription())
+        );
     }
 
     @Test
@@ -223,20 +237,24 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         quoteService.selectQuoteForRequest(request.getRequestID(), quote1.getQuoteID());
 
-        Quote persisted1 = quoteRepository.findById(quote1.getQuoteID()).orElseThrow();
-        Quote persisted2 = quoteRepository.findById(quote2.getQuoteID()).orElseThrow();
+        final Quote persisted1 = quoteRepository.findById(quote1.getQuoteID()).orElseThrow();
+        final Quote persisted2 = quoteRepository.findById(quote2.getQuoteID()).orElseThrow();
 
-        assertThat(persisted1.isSelected()).isTrue();
-        assertThat(persisted2.isSelected()).isFalse();
+        assertAll(
+            () -> assertTrue(persisted1.isSelected()),
+            () -> assertFalse(persisted2.isSelected())
+        );
 
         // Select the second one, should clear the first
         quoteService.selectQuoteForRequest(request.getRequestID(), quote2.getQuoteID());
 
-        persisted1 = quoteRepository.findById(quote1.getQuoteID()).orElseThrow();
-        persisted2 = quoteRepository.findById(quote2.getQuoteID()).orElseThrow();
+        final Quote persisted1After = quoteRepository.findById(quote1.getQuoteID()).orElseThrow();
+        final Quote persisted2After = quoteRepository.findById(quote2.getQuoteID()).orElseThrow();
 
-        assertThat(persisted1.isSelected()).isFalse();
-        assertThat(persisted2.isSelected()).isTrue();
+        assertAll(
+            () -> assertFalse(persisted1After.isSelected()),
+            () -> assertTrue(persisted2After.isSelected())
+        );
     }
 
     @Test
@@ -253,8 +271,10 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         quoteService.deleteQuoteForRequest(request.getRequestID(), quote.getQuoteID());
 
-        assertThat(quoteRepository.findById(quote.getQuoteID())).isEmpty();
-        assertThat(quoteLineItemRepository.findByQuoteQuoteID(quote.getQuoteID())).isEmpty();
+        assertAll(
+            () -> assertTrue(quoteRepository.findById(quote.getQuoteID()).isEmpty()),
+            () -> assertTrue(quoteLineItemRepository.findByQuoteQuoteID(quote.getQuoteID()).isEmpty())
+        );
     }
 
     private Quote saveTestQuote(Currency currency, BigDecimal totalAmount) {

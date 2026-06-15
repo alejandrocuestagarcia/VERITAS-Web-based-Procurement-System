@@ -1,5 +1,7 @@
 package com.veritas.backend.project;
 
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
@@ -341,7 +343,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
         ProjectEditDto editDto =
                 new ProjectEditDto("Hack Attempt Name", BigDecimal.valueOf(0),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/projects/" + project.getId())
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/projects/" + project.getId())
                         .header("Authorization", "Bearer " + token)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(editDto)))

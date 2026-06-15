@@ -1,6 +1,5 @@
 package com.veritas.backend.auth;
 
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -21,14 +20,12 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.security.core.Authentication;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.never;
 
@@ -72,10 +69,10 @@ class AuthServiceUnitTest {
     testUser.setRole(UserRole.REQUESTER);
   }
 
-    @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
+  @AfterEach
+  void tearDown() {
+      SecurityContextHolder.clearContext();
+  }
 
   @Test
   void Login_ValidCredentials_ReturnsAuthResponse() {
@@ -91,11 +88,11 @@ class AuthServiceUnitTest {
 
     AuthResponseDto authResponseDto = authService.login(requestDto);
 
-    assertThat(authResponseDto).isNotNull();
-
-    assertThat(authResponseDto.accessToken()).isEqualTo("mock_access_token");
-    assertThat(authResponseDto.role()).isEqualTo(UserRole.ADMINISTRATOR.name());
-
+    assertAll(
+        () -> assertNotNull(authResponseDto),
+        () -> assertEquals("mock_access_token", authResponseDto.accessToken()),
+        () -> assertEquals(UserRole.ADMINISTRATOR.name(), authResponseDto.role())
+    );
 
     verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
 
@@ -112,7 +109,6 @@ class AuthServiceUnitTest {
 
     assertThrows(BadCredentialsException.class, () -> authService.login(requestDto));
 
-
   }
 
   @Test
@@ -125,7 +121,6 @@ class AuthServiceUnitTest {
     when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
     assertThrows(BadCredentialsException.class, () -> authService.login(requestDto));
-
 
   }
 
@@ -144,7 +139,7 @@ class AuthServiceUnitTest {
 
     AuthResponseDto response = authService.refreshToken(new RefreshTokenDto("valid_token"));
 
-    assertThat(response.accessToken()).isEqualTo("new_access_token");
+    assertEquals("new_access_token", response.accessToken());
 
   }
 
@@ -176,10 +171,12 @@ class AuthServiceUnitTest {
 
     AuthResponseDto response = authService.login(request);
 
-    assertNotNull(response);
-    assertEquals("mocked-jwt-token", response.accessToken());
-    assertNotNull(response.refreshToken());
-    assertEquals(UserRole.REQUESTER.name(), response.role());
+    assertAll(
+        () -> assertNotNull(response),
+        () -> assertEquals("mocked-jwt-token", response.accessToken()),
+        () -> assertNotNull(response.refreshToken()),
+        () -> assertEquals(UserRole.REQUESTER.name(), response.role())
+    );
 
     verify(userRepository).findByEmail(CORRECT_EMAIL);
     verify(passwordEncoder).matches(CORRECT_PASSWORD, HASHED_PASSWORD);
@@ -192,7 +189,7 @@ class AuthServiceUnitTest {
     LoginRequestDto request = new LoginRequestDto(FALSE_EMAIL, CORRECT_PASSWORD);
     when(userRepository.findByEmail(FALSE_EMAIL)).thenReturn(Optional.empty());
 
-    Assertions.assertThrows(BadCredentialsException.class, () -> authService.login(request));
+    assertThrows(BadCredentialsException.class, () -> authService.login(request));
 
     verify(userRepository).findByEmail(FALSE_EMAIL);
     verify(passwordEncoder, never()).matches(anyString(), anyString());
@@ -207,7 +204,7 @@ class AuthServiceUnitTest {
     when(userRepository.findByEmail(CORRECT_EMAIL)).thenReturn(Optional.of(testUser));
     when(passwordEncoder.matches(FALSE_PASSWORD, HASHED_PASSWORD)).thenReturn(false);
 
-    Assertions.assertThrows(BadCredentialsException.class, () -> authService.login(request));
+    assertThrows(BadCredentialsException.class, () -> authService.login(request));
 
     verify(userRepository).findByEmail(CORRECT_EMAIL);
     verify(passwordEncoder).matches(FALSE_PASSWORD, HASHED_PASSWORD);

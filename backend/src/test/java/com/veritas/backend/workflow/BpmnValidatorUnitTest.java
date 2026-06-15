@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 // AI-GENERATED
@@ -88,7 +87,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(null, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("BPMN XML is null"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("BPMN XML is null")));
         }
 
         @Test
@@ -96,7 +95,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(VALID_SIMPLE_XML, null));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("BPMN model is null"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("BPMN model is null")));
         }
 
         // ========================================================================
@@ -109,7 +108,7 @@ class BpmnValidatorUnitTest {
 
                 BpmnValidationResult result = validator.validate(VALID_SIMPLE_XML, model);
 
-                assertThat(result.hasErrors()).isFalse();
+                assertFalse(result.hasErrors());
         }
 
         @Test
@@ -118,7 +117,7 @@ class BpmnValidatorUnitTest {
 
                 BpmnValidationResult result = validator.validate(VALID_XOR_XML, model);
 
-                assertThat(result.hasErrors()).isFalse();
+                assertFalse(result.hasErrors());
         }
 
         // ========================================================================
@@ -146,7 +145,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Workflow name must not be blank"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Workflow name must not be blank")));
         }
 
         @Test
@@ -172,7 +171,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("not supported"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("not supported")));
         }
 
         @Test
@@ -198,7 +197,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Duplicate transition"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Duplicate transition")));
         }
 
         @Test
@@ -231,7 +230,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("non-existent target step"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-existent target step")));
         }
 
         @Test
@@ -252,7 +251,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Start Event") && e.contains("none was found"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Start Event") && e.contains("none was found")));
         }
 
         @Test
@@ -279,8 +278,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors())
-                                .anyMatch(e -> e.contains("exactly one Start Event") && e.contains("2 were found"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("exactly one Start Event") && e.contains("2 were found")));
         }
 
         @Test
@@ -301,7 +299,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("End Event") && e.contains("none was found"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("End Event") && e.contains("none was found")));
         }
 
         @Test
@@ -322,7 +320,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("at least one Task"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("at least one Task")));
         }
 
         @Test
@@ -345,7 +343,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Start Event") && e.contains("no outgoing"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Start Event") && e.contains("no outgoing")));
         }
 
         @Test
@@ -371,7 +369,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Start Event must not have incoming"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Start Event must not have incoming")));
         }
 
         @Test
@@ -397,8 +395,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors())
-                                .anyMatch(e -> e.contains("End Event") && e.contains("must not have outgoing"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("End Event") && e.contains("must not have outgoing")));
         }
 
         @Test
@@ -423,7 +420,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Isolated Step") && e.contains("isolated"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Isolated Step") && e.contains("isolated")));
         }
 
         @Test
@@ -459,7 +456,7 @@ class BpmnValidatorUnitTest {
  
                 // Should NOT throw — cycles through tasks are allowed
                 BpmnValidationResult result = validator.validate(xml, model);
-                assertThat(result.hasErrors()).isFalse();
+                assertFalse(result.hasErrors());
         }
 
         @Test
@@ -496,7 +493,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("cycle") && e.contains("gateways or events"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("cycle") && e.contains("gateways or events")));
         }
 
         @Test
@@ -546,7 +543,7 @@ class BpmnValidatorUnitTest {
 
                 // Should NOT throw — the loop goes through Task_Fill, a human step
                 BpmnValidationResult result = validator.validate(xml, model);
-                assertThat(result.hasErrors()).isFalse();
+                assertFalse(result.hasErrors());
         }
 
         @Test
@@ -573,7 +570,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("not reachable from the Start Event"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("not reachable from the Start Event")));
         }
 
         @Test
@@ -600,8 +597,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors())
-                                .anyMatch(e -> e.contains("no path to any End Event") || e.contains("dead end"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("no path to any End Event") || e.contains("dead end")));
         }
 
         // ========================================================================
@@ -638,7 +634,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Only Exclusive (XOR) Gateways are supported"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Only Exclusive (XOR) Gateways are supported")));
         }
 
         @Test
@@ -671,7 +667,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("outgoing transitions without conditions"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("XOR Gateway") && e.contains("outgoing transitions without conditions")));
         }
 
         // AI-GENERATED
@@ -710,7 +706,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("XOR Gateway") && e.contains("has no default fallback transition"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("XOR Gateway") && e.contains("has no default fallback transition")));
         }
 
         // ========================================================================
@@ -738,7 +734,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("non-blank name"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-blank name")));
         }
 
         @Test
@@ -765,7 +761,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Approval") && e.contains("2 times"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Approval") && e.contains("2 times")));
         }
 
         @Test
@@ -791,7 +787,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Invalid role assigned in BPMN"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Invalid role assigned in BPMN")));
         }
 
         //AI-GENERATED
@@ -817,7 +813,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must have a responsible role selected"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("must have a responsible role selected")));
         }
 
         @Test
@@ -843,7 +839,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must have a responsible role selected"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("must have a responsible role selected")));
         }
 
         @Test
@@ -870,7 +866,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("has multiple assignees defined"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("has multiple assignees defined")));
         }
 
         // ========================================================================
@@ -911,7 +907,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("invalid syntax"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("invalid syntax")));
         }
 
         @Test
@@ -948,7 +944,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("unsafe"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("unsafe")));
         }
 
         @Test
@@ -986,8 +982,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("nonExistentField") && e.contains("not an allowed field"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("nonExistentField") && e.contains("not an allowed field")));
         }
 
         // AI-GENERATED
@@ -1071,8 +1066,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("team.department.id") && e.contains("not an allowed field"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("team.department.id") && e.contains("not an allowed field")));
         }
 
         // AI-GENERATED
@@ -1116,8 +1110,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("amount") && e.contains("not an allowed field"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("amount") && e.contains("not an allowed field")));
         }
 
         // AI-GENERATED
@@ -1161,8 +1154,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("user.name") && e.contains("not an allowed field"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("user.name") && e.contains("not an allowed field")));
         }
 
         // AI-GENERATED
@@ -1206,8 +1198,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(
-                                e -> e.contains("must evaluate to a boolean"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("must evaluate to a boolean")));
         }
 
         // ========================================================================
@@ -1243,7 +1234,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("negative minRequiredVendors") && e.contains("-1"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("negative minRequiredVendors") && e.contains("-1")));
         }
 
         @Test
@@ -1275,7 +1266,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("non-numeric minRequiredVendors"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-numeric minRequiredVendors")));
         }
 
         @Test
@@ -1311,7 +1302,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Transition rules cannot be added after XOR gateways"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Transition rules cannot be added after XOR gateways")));
         }
 
         @Test
@@ -1340,7 +1331,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Transition rules cannot be added on the first transition leaving the Start Event"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Transition rules cannot be added on the first transition leaving the Start Event")));
         }
 
         @Test
@@ -1369,7 +1360,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("Transition rules cannot be added on the last transition entering the End Event"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Transition rules cannot be added on the last transition entering the End Event")));
         }
 
         // AI-GENERATED
@@ -1409,7 +1400,7 @@ class BpmnValidatorUnitTest {
                 String xml = getXmlWithAdvancedRule("selectedQuoteTotalAmount &lt; 5000");
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationResult result = validator.validate(xml, model);
-                assertThat(result.hasErrors()).isFalse();
+                assertFalse(result.hasErrors());
         }
 
         // AI-GENERATED
@@ -1419,7 +1410,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("contains potentially unsafe expressions"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("contains potentially unsafe expressions")));
         }
 
         // AI-GENERATED
@@ -1429,7 +1420,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("has invalid syntax"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("has invalid syntax")));
         }
 
         // AI-GENERATED
@@ -1439,7 +1430,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("references property 'unknownProperty' which is not an allowed field"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("references property 'unknownProperty' which is not an allowed field")));
         }
 
         // AI-GENERATED
@@ -1449,7 +1440,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("must evaluate to a boolean, but returned type: String"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("must evaluate to a boolean, but returned type: String")));
         }
 
         // ========================================================================
@@ -1470,7 +1461,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("exceeds maximum allowed size"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("exceeds maximum allowed size")));
         }
 
         @Test
@@ -1512,7 +1503,7 @@ class BpmnValidatorUnitTest {
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
 
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("exceeds the maximum of 100"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("exceeds the maximum of 100")));
         }
 
         // Removed Process description test

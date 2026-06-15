@@ -1,5 +1,7 @@
 package com.veritas.backend.integrations.currency.service;
 
+import java.util.Map;
+
 import com.veritas.backend.integrations.currency.dto.ExchangeRateApiResponse;
 import com.veritas.backend.integrations.currency.dto.FrankfurterApiResponse;
 import com.veritas.backend.integrations.currency.entity.Currency;
@@ -20,12 +22,12 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ExchangeRateSyncServiceUnitTest {
+class ExchangeRateSyncServiceUnitTest {
 
     @Mock
     private ExchangeRateRepository exchangeRateRepository;
@@ -64,12 +66,17 @@ public class ExchangeRateSyncServiceUnitTest {
         verify(exchangeRateRepository, times(1)).saveAll(captor.capture());
 
         List<ExchangeRate> saved = captor.getValue();
-        assertThat(saved).hasSize(4);
-        assertThat(saved).extracting(ExchangeRate::getTargetCurrency)
-                .containsExactlyInAnyOrder(Currency.USD, Currency.GBP, Currency.CHF, Currency.JPY);
+        assertEquals(4, saved.size());
 
-        assertThat(saved).allMatch(e -> e.getRate().compareTo(BigDecimal.ZERO) > 0);
-        assertThat(saved).allMatch(e -> e.getSource() == ExchangeRateSource.FRANKFURTER);
+        List<Currency> currencies = saved.stream().map(ExchangeRate::getTargetCurrency).toList();
+        assertAll(
+            () -> assertTrue(currencies.contains(Currency.USD)),
+            () -> assertTrue(currencies.contains(Currency.GBP)),
+            () -> assertTrue(currencies.contains(Currency.CHF)),
+            () -> assertTrue(currencies.contains(Currency.JPY)),
+            () -> assertTrue(saved.stream().allMatch(e -> e.getRate().compareTo(BigDecimal.ZERO) > 0)),
+            () -> assertTrue(saved.stream().allMatch(e -> e.getSource() == ExchangeRateSource.FRANKFURTER))
+        );
     }
 
     @Test
@@ -80,7 +87,7 @@ public class ExchangeRateSyncServiceUnitTest {
                 "success",
                 "EUR",
                 null,
-                java.util.Map.of(
+                Map.of(
                         "USD", BigDecimal.valueOf(1.2),
                         "GBP", BigDecimal.valueOf(0.8),
                         "CHF", BigDecimal.valueOf(0.9),
@@ -96,12 +103,17 @@ public class ExchangeRateSyncServiceUnitTest {
         verify(exchangeRateRepository, times(1)).saveAll(captor.capture());
 
         List<ExchangeRate> saved = captor.getValue();
-        assertThat(saved).hasSize(4);
-        assertThat(saved).extracting(ExchangeRate::getTargetCurrency)
-                .containsExactlyInAnyOrder(Currency.USD, Currency.GBP, Currency.CHF, Currency.JPY);
+        assertEquals(4, saved.size());
 
-        assertThat(saved).allMatch(e -> e.getRate().compareTo(BigDecimal.ZERO) > 0);
-        assertThat(saved).allMatch(e -> e.getSource() == ExchangeRateSource.EXCHANGERATE_API);
+        List<Currency> currencies = saved.stream().map(ExchangeRate::getTargetCurrency).toList();
+        assertAll(
+            () -> assertTrue(currencies.contains(Currency.USD)),
+            () -> assertTrue(currencies.contains(Currency.GBP)),
+            () -> assertTrue(currencies.contains(Currency.CHF)),
+            () -> assertTrue(currencies.contains(Currency.JPY)),
+            () -> assertTrue(saved.stream().allMatch(e -> e.getRate().compareTo(BigDecimal.ZERO) > 0)),
+            () -> assertTrue(saved.stream().allMatch(e -> e.getSource() == ExchangeRateSource.EXCHANGERATE_API))
+        );
     }
 
     @Test
@@ -125,7 +137,7 @@ public class ExchangeRateSyncServiceUnitTest {
                 "success",
                 "EUR",
                 null,
-                java.util.Map.of("USD", BigDecimal.valueOf(1.2))
+                Map.of("USD", BigDecimal.valueOf(1.2))
         );
 
         when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class))).thenReturn(ResponseEntity.ok(secondary));
@@ -136,12 +148,14 @@ public class ExchangeRateSyncServiceUnitTest {
         verify(exchangeRateRepository, times(1)).saveAll(captor.capture());
 
         List<ExchangeRate> saved = captor.getValue();
-        assertThat(saved).hasSize(1);
-        assertThat(saved).extracting(ExchangeRate::getTargetCurrency)
-                .containsExactlyInAnyOrder(Currency.USD);
+        assertEquals(1, saved.size());
 
-        assertThat(saved).allMatch(e -> e.getRate().compareTo(BigDecimal.ZERO) > 0);
-        assertThat(saved).allMatch(e -> e.getSource() == ExchangeRateSource.EXCHANGERATE_API);
+        List<Currency> currencies = saved.stream().map(ExchangeRate::getTargetCurrency).toList();
+        assertAll(
+            () -> assertTrue(currencies.contains(Currency.USD)),
+            () -> assertTrue(saved.stream().allMatch(e -> e.getRate().compareTo(BigDecimal.ZERO) > 0)),
+            () -> assertTrue(saved.stream().allMatch(e -> e.getSource() == ExchangeRateSource.EXCHANGERATE_API))
+        );
     }
 
     @Test
@@ -159,8 +173,8 @@ public class ExchangeRateSyncServiceUnitTest {
         verify(exchangeRateRepository).saveAll(captor.capture());
 
         List<ExchangeRate> saved = captor.getValue();
-        assertThat(saved).hasSize(1);
-        assertThat(saved.get(0).getTargetCurrency()).isEqualTo(Currency.USD);
+        assertEquals(1, saved.size());
+        assertEquals(Currency.USD, saved.get(0).getTargetCurrency());
     }
 
     @Test

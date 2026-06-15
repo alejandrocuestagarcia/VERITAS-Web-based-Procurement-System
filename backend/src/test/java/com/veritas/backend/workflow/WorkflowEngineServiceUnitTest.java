@@ -413,7 +413,7 @@ class WorkflowEngineServiceUnitTest {
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         java.time.LocalDateTime entryTime = java.time.LocalDateTime.of(2026, 5, 26, 14, 0, 0);
-        com.veritas.backend.audit.entity.AuditLog entryLog = com.veritas.backend.audit.entity.AuditLog.builder()
+        AuditLog entryLog = AuditLog.builder()
                 .newStep(currentStep)
                 .timestamp(entryTime)
                 .build();

@@ -20,8 +20,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,9 +55,11 @@ class DepartmentServiceUnitTest {
 
         DepartmentDto result = departmentService.createDepartment(request);
 
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.name()).isEqualTo("Engineering");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(1L, result.id()),
+            () -> assertEquals("Engineering", result.name())
+        );
 
         verify(departmentRepository).existsByName("Engineering");
         verify(departmentRepository).save(department);
@@ -89,9 +90,11 @@ class DepartmentServiceUnitTest {
 
         List<DepartmentDto> result = departmentService.getAllDepartments();
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).name()).isEqualTo("Engineering");
-        assertThat(result.get(1).name()).isEqualTo("HR");
+        assertAll(
+            () -> assertEquals(2, result.size()),
+            () -> assertEquals("Engineering", result.get(0).name()),
+            () -> assertEquals("HR", result.get(1).name())
+        );
 
         verify(departmentRepository).findAll();
     }
@@ -106,9 +109,11 @@ class DepartmentServiceUnitTest {
 
         DepartmentDto result = departmentService.getDepartmentById(1L);
 
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.name()).isEqualTo("Engineering");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(1L, result.id()),
+            () -> assertEquals("Engineering", result.name())
+        );
 
         verify(departmentRepository).getDepartmentByDepartmentId(1L);
     }
@@ -127,9 +132,11 @@ class DepartmentServiceUnitTest {
 
         DepartmentDto result = departmentService.updateDepartment(1L, request);
 
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.name()).isEqualTo("R&D");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(1L, result.id()),
+            () -> assertEquals("R&D", result.name())
+        );
 
         verify(departmentRepository).findById(1L);
         verify(departmentRepository).existsByName("R&D");
@@ -151,8 +158,10 @@ class DepartmentServiceUnitTest {
 
         DepartmentDto result = departmentService.updateDepartment(1L, request);
 
-        assertThat(result).isNotNull();
-        assertThat(result.name()).isEqualTo("Engineering");
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals("Engineering", result.name())
+        );
 
         verify(departmentRepository).findById(1L);
         verify(departmentRepository).save(existing);

@@ -1,5 +1,7 @@
 package com.veritas.backend.requisition;
 
+import java.util.ArrayList;
+
 import static com.veritas.backend.common.model.AuditActionConstants.CANCEL;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -404,7 +406,7 @@ class RequisitionServiceUnitTest {
     void SaveAttachment_IoException_ThrowsRuntimeException() throws IOException {
         Request request = new Request();
         request.setRequestID(1L);
-        when(requestRepository.findById(1L)).thenReturn(java.util.Optional.of(request));
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         MockMultipartFile file = mock(MockMultipartFile.class);
         when(file.getInputStream()).thenThrow(new IOException("Disk full"));
@@ -813,7 +815,7 @@ class RequisitionServiceUnitTest {
         currentItem.setQuantity(5);
         currentItem.setUnit(RequestItemUnit.PIECES);
         currentItem.setDescription("old details");
-        request.setItems(new java.util.ArrayList<>(List.of(currentItem)));
+        request.setItems(new ArrayList<>(List.of(currentItem)));
 
         Project newProject = new Project();
         newProject.setId(2L);
@@ -856,7 +858,7 @@ class RequisitionServiceUnitTest {
         request.setRequestName("Laptop");
         request.setDescription(null);
         request.setPriority(Priority.LOW);
-        request.setItems(new java.util.ArrayList<>());
+        request.setItems(new ArrayList<>());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
@@ -885,7 +887,7 @@ class RequisitionServiceUnitTest {
         request.setRequestName("Laptop");
         request.setDescription("Need laptop");
         request.setPriority(Priority.LOW);
-        request.setItems(new java.util.ArrayList<>());
+        request.setItems(new ArrayList<>());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", null, 1L, 1L, Priority.LOW, List.of());
@@ -915,7 +917,7 @@ class RequisitionServiceUnitTest {
         request.setRequestName("Laptop");
         request.setDescription("Need laptop");
         request.setPriority(Priority.LOW);
-        request.setItems(new java.util.ArrayList<>());
+        request.setItems(new ArrayList<>());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
@@ -1011,7 +1013,7 @@ class RequisitionServiceUnitTest {
         currentItem.setName("Old Item");
         currentItem.setQuantity(5);
         currentItem.setUnit(RequestItemUnit.PIECES);
-        request.setItems(new java.util.ArrayList<>(List.of(currentItem)));
+        request.setItems(new ArrayList<>(List.of(currentItem)));
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
@@ -1265,9 +1267,9 @@ class RequisitionServiceUnitTest {
         attachment.setStoragePath(tempFile.toString());
         attachment.setFileName("test.pdf");
 
-        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        invoice.setAttachments(new ArrayList<>(List.of(attachment)));
         request.setInvoice(invoice);
-        request.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        request.setAttachments(new ArrayList<>(List.of(attachment)));
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
@@ -1334,7 +1336,7 @@ class RequisitionServiceUnitTest {
         attachment.setStoragePath("\0invalid-path");
         attachment.setFileName("broken.pdf");
 
-        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        invoice.setAttachments(new ArrayList<>(List.of(attachment)));
         request.setInvoice(invoice);
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));

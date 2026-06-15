@@ -46,7 +46,7 @@ import org.springframework.data.domain.Pageable;
 //AI-GENERATED
 
 @ExtendWith(MockitoExtension.class)
-public class JiraConfigServiceUnitTest {
+class JiraConfigServiceUnitTest {
 
     @Mock
     private JiraConfigRepository repository;
