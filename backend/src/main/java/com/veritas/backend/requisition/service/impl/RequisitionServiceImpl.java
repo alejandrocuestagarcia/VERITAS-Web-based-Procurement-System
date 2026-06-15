@@ -863,7 +863,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                 request,
                 null,
                 PAID,
-                "Transitioned was paid by " + actor.getName());
+                "Request was paid by " + actor.getName());
 
         if (saved.getJiraIssueKey() != null && !saved.getJiraIssueKey().isBlank()) {
             jiraSyncService.handleVeritasWorkflowChange(saved);
