@@ -502,6 +502,10 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request savedRequest = requestRepository.save(request);
 
+        if (savedRequest.getJiraIssueKey() != null && !savedRequest.getJiraIssueKey().isBlank()) {
+            jiraSyncService.handleVeritasWorkflowChange(savedRequest);
+        }
+
         if (savedRequest.getUser() != null) {
             String message = "Your request '" + savedRequest.getRequestName() + "' was rejected" +
                     (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
