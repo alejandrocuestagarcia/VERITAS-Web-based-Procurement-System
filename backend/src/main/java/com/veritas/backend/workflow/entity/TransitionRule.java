@@ -24,6 +24,9 @@ public class TransitionRule {
     private Boolean isCsvRequired = false;
     private Boolean isImageRequired = false;
 
+    @Column(name = "min_vendor_reliability_score")
+    private Double minVendorReliabilityScore;
+
     @Column(name = "advanced_rule")
     private String advancedRule;
 }

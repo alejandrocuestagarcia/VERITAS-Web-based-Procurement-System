@@ -158,6 +158,31 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         }
                     }
 
+                    if (rule.getMinVendorReliabilityScore() != null) {
+                        Long requestId = request.getRequestID();
+                        List<Quote> quotes = requestId != null
+                                ? quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)
+                                : List.of();
+                        Optional<Quote> selectedQuoteOpt = quotes.stream()
+                                .filter(Quote::isSelected)
+                                .findFirst();
+                        if (selectedQuoteOpt.isPresent()) {
+                            Quote selectedQuote = selectedQuoteOpt.get();
+                            Vendor vendor = selectedQuote.getVendorID();
+                            if (vendor != null) {
+                                Double score = vendor.getOverallScore();
+                                double actualScore = (score != null) ? score : 0.0;
+                                if (actualScore < rule.getMinVendorReliabilityScore()) {
+                                    validationErrors.add("Selected vendor " + vendor.getVendorName() + " reliability score (" + String.format(java.util.Locale.US, "%.2f", actualScore) + ") is below the required minimum of " + String.format(java.util.Locale.US, "%.2f", rule.getMinVendorReliabilityScore()));
+                                }
+                            } else {
+                                validationErrors.add("Selected quote has no associated vendor");
+                            }
+                        } else {
+                            validationErrors.add("No quote has been selected for the procurement request");
+                        }
+                    }
+
                     LocalDateTime entryTime = null;
                     if (currentStep.getWorkflowComponent() != WorkflowComponent.START_EVENT) {
                         entryTime = auditLogRepository

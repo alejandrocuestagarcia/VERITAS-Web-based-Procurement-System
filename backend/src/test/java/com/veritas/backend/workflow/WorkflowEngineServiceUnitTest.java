@@ -742,4 +742,70 @@ class WorkflowEngineServiceUnitTest {
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertTrue(ex.getMessage().contains("Advanced validation rule failed: invalidSpelConstruct"));
     }
+
+    @Test
+    void moveToNextStep_VendorReliabilityNotMet_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        TransitionRule rule = new TransitionRule();
+        rule.setMinVendorReliabilityScore(7.5);
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setVendorName("Unreliable Vendor");
+        vendor.setOverallScore(6.8);
+        Quote quote = new Quote();
+        quote.setVendorID(vendor);
+        quote.setSelected(true);
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of(quote));
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertTrue(ex.getMessage().contains("Selected vendor Unreliable Vendor reliability score (6.80) is below the required minimum of 7.50"));
+    }
+
+    @Test
+    void moveToNextStep_VendorReliabilityMetSelectedQuote_Success() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        TransitionRule rule = new TransitionRule();
+        rule.setMinVendorReliabilityScore(7.5);
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setVendorName("Reliable Vendor");
+        vendor.setOverallScore(8.2);
+        Quote quote = new Quote();
+        quote.setVendorID(vendor);
+        quote.setSelected(true);
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of(quote));
+        assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+    }
+
+    @Test
+    void moveToNextStep_VendorReliabilityNoSelectedQuote_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        TransitionRule rule = new TransitionRule();
+        rule.setMinVendorReliabilityScore(7.5);
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setOverallScore(8.2);
+        Quote quote = new Quote();
+        quote.setVendorID(vendor);
+        quote.setSelected(false);
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of(quote));
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertTrue(ex.getMessage().contains("No quote has been selected for the procurement request"));
+    }
+
+    @Test
+    void moveToNextStep_VendorReliabilityNoQuotes_ThrowsException() {
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        TransitionRule rule = new TransitionRule();
+        rule.setMinVendorReliabilityScore(7.5);
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of());
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class,
+                () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
+        assertTrue(ex.getMessage().contains("No quote has been selected for the procurement request"));
+    }
 }

@@ -55,6 +55,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     isCsvRequired: false,
     isImageRequired: false,
     minRequiredVendors: 0,
+    minVendorReliabilityScore: null,
     optionalFailureMessage: '',
     advancedRule: '',
     description: '',
@@ -553,6 +554,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           isCsvRequired: String(rule.isCsvRequired) === 'true',
           isImageRequired: String(rule.isImageRequired) === 'true',
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
+          minVendorReliabilityScore: rule.minVendorReliabilityScore ? parseFloat(rule.minVendorReliabilityScore) : null,
           optionalFailureMessage: rule.optionalFailureMessage || '',
           advancedRule: rule.advancedRule || '',
           description: doc,
@@ -567,6 +569,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       isCsvRequired: false,
       isImageRequired: false,
       minRequiredVendors: 0,
+      minVendorReliabilityScore: null,
       optionalFailureMessage: '',
       advancedRule: '',
       description: doc,
@@ -585,6 +588,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       isCsvRequired: false,
       isImageRequired: false,
       minRequiredVendors: 0,
+      minVendorReliabilityScore: null,
       optionalFailureMessage: '',
       advancedRule: '',
       description: '',
@@ -676,7 +680,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
-  updateRuleProperty(key: 'minRequiredVendors' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'advancedRule', value: any) {
+  updateRuleProperty(key: 'minRequiredVendors' | 'minVendorReliabilityScore' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'advancedRule', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -712,9 +716,20 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       extensionElements.values.push(rule);
     }
 
+    if (key === 'minVendorReliabilityScore' && value !== null && value !== undefined && value !== '') {
+      const numVal = parseFloat(value);
+      if (!isNaN(numVal)) {
+        if (numVal > 10) {
+          value = 10;
+        } else if (numVal < 0) {
+          value = 0;
+        }
+      }
+    }
+
     rule[key] = value;
 
-    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0) && !rule.advancedRule;
+    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0) && (rule.minVendorReliabilityScore === null || rule.minVendorReliabilityScore === undefined || rule.minVendorReliabilityScore === '') && !rule.advancedRule;
 
     if (isRuleEmpty) {
       if (extensionElements.values) {
@@ -761,6 +776,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     this.currentRule.conditionExpression = cleanValue;
     this.applyTransitionRuleCss();
+  }
+
+  validateVendorReliabilityInput(event: any) {
+    const input = event.target as HTMLInputElement;
+    if (input.value && input.value.includes('.')) {
+      const parts = input.value.split('.');
+      if (parts[1] && parts[1].length > 2) {
+        input.value = parts[0] + '.' + parts[1].substring(0, 2);
+        const numVal = parseFloat(input.value);
+        this.updateRuleProperty('minVendorReliabilityScore', numVal);
+      }
+    }
   }
 
   private applyTransitionRuleCss() {
