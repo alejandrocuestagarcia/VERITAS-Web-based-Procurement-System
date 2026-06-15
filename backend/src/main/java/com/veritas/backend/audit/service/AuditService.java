@@ -41,13 +41,13 @@ public interface AuditService {
     void createJiraUnsyncLog(User actor, Request request, String details);
 
     /**
-     * Records an audit entry when a Jira-linked {@link Request} is updated.
+     * Records an audit entry when a comment is posted to a Jira issue associated with a {@link Request}.
      *
-     * @param actor   the {@link User} who performed the update
-     * @param request the {@link Request} whose changes were pushed to Jira
-     * @param details a human-readable description of what was updated
+     * @param actor   the {@link User} who posted the comment
+     * @param request the {@link Request} associated with the Jira issue
+     * @param details a human-readable description of the comment event
      */
-    void createJiraRequestUpdatedLog(User actor, Request request, String details);
+    void createJiraCommentLog(User actor, Request request, String details);
 
     /**
      * Retrieves a paginated list of Jira-related audit logs filtered by a single action type.
@@ -99,15 +99,6 @@ public interface AuditService {
      * @param details a human-readable description of the notification event
      */
     void createNotificationLog(User actor, Request request, String details);
-
-    /**
-     * Records an audit entry when a comment is posted to a Jira issue associated with a {@link Request}.
-     *
-     * @param actor   the {@link User} who posted the comment
-     * @param request the {@link Request} associated with the Jira issue
-     * @param details a human-readable description of the comment event
-     */
-    void createJiraCommentLog(User actor, Request request, String details);
 
     /**
      * Retrieves all audit log entries associated with a given request, ordered by timestamp descending.
