@@ -102,6 +102,11 @@ export class RequisitionVendorComparisonComponent implements OnInit {
     return quote.shippingCosts / rate;
   }
 
+  hasNonEuroQuote(): boolean {
+    return this.quotes.some(q => q.currency && q.currency !== 'EUR');
+  }
+
+
   getRatingColor(score: number | undefined): string {
     if (score === undefined || score === null) return 'bg-gray-200';
     if (score >= 8.0) return 'bg-emerald-500';
