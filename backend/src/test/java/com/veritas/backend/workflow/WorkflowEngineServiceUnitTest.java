@@ -756,7 +756,7 @@ class WorkflowEngineServiceUnitTest {
         Quote quote = new Quote();
         quote.setVendorID(vendor);
         quote.setSelected(true);
-        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of(quote));
+        testRequest.getQuotes().add(quote);
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertTrue(ex.getMessage().contains("Selected vendor Unreliable Vendor reliability score (6.80) is below the required minimum of 7.50"));
@@ -775,7 +775,7 @@ class WorkflowEngineServiceUnitTest {
         Quote quote = new Quote();
         quote.setVendorID(vendor);
         quote.setSelected(true);
-        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of(quote));
+        testRequest.getQuotes().add(quote);
         assertDoesNotThrow(() -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
     }
 
@@ -791,7 +791,7 @@ class WorkflowEngineServiceUnitTest {
         Quote quote = new Quote();
         quote.setVendorID(vendor);
         quote.setSelected(false);
-        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of(quote));
+        testRequest.getQuotes().add(quote);
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertTrue(ex.getMessage().contains("No quote has been selected for the procurement request"));
@@ -803,7 +803,6 @@ class WorkflowEngineServiceUnitTest {
         TransitionRule rule = new TransitionRule();
         rule.setMinVendorReliabilityScore(7.5);
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
-        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(testRequest.getRequestID())).thenReturn(List.of());
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
         assertTrue(ex.getMessage().contains("No quote has been selected for the procurement request"));

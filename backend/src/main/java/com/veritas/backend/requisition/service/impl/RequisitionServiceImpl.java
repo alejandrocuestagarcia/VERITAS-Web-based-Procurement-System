@@ -964,10 +964,10 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new EntityExistsException("Invoice already exists for request with id: " + requestId);
         }
 
-        var selectedQuote = request.getQuotes().stream()
-                .filter(Quote::isSelected)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No vendor quote has been selected for this request. Please select a quote first."));
+        Quote selectedQuote = request.getSelectedQuote();
+        if (selectedQuote == null) {
+            throw new IllegalStateException("No vendor quote has been selected for this request. Please select a quote first.");
+        }
 
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
