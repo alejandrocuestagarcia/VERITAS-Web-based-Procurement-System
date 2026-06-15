@@ -326,6 +326,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request saved = requestRepository.save(request);
 
+        List<String> notifiedRecipients = new ArrayList<>();
         if (saved.getUser() != null) {
             notificationService.createNotification(
                     saved.getUser(),
@@ -333,6 +334,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.APPROVED,
                     "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
             );
+            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
         }
         if (saved.getState() == RequestStatus.FINISHED) {
             if (saved.getUser() != null) {
@@ -342,6 +344,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                         NotificationType.FINISHED,
                         "Your request '" + saved.getRequestName() + "' has been completed."
                 );
+                notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
             }
             try {
                 List<User> financeOfficers = userRepository.findAllByRoleAndIsActiveTrue(UserRole.FINANCE_OFFICER);
@@ -352,6 +355,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                             NotificationType.ASSIGNED,
                             "Requisition '" + saved.getRequestName() + "' is completed and requires payment processing."
                     );
+                    notifiedRecipients.add(fo.getEmail() + " (Reason: ASSIGNED)");
                 }
             } catch (Exception e) {
                 log.error("Failed to notify finance officers for completed requisition {}", saved.getRequestName(), e);
@@ -364,6 +368,12 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.ASSIGNED,
                     "Request '" + saved.getRequestName() + "' requires your action at step '" + saved.getCurrentStep().getName() + "'."
             );
+            notifiedRecipients.add(saved.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+        }
+
+        if (!notifiedRecipients.isEmpty()) {
+            auditService.createNotificationLog(actor, saved,
+                    "Notifications sent for approval at step '" + stepApprovedAt + "' to:\n- " + String.join("\n- ", notifiedRecipients));
         }
 
         return requisitionMapper.toDto(saved);
@@ -398,6 +408,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request savedRequest = requestRepository.save(request);
 
+        List<String> notifiedRecipients = new ArrayList<>();
         if (savedRequest.getUser() != null) {
             String message = "Your request '" + savedRequest.getRequestName() + "' was sent back from step '" + stepRevertedFrom + "'" +
                     (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
@@ -407,6 +418,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.REVERTED,
                     message
             );
+            notifiedRecipients.add(savedRequest.getUser().getEmail() + " (Reason: REVERTED)");
         }
         if (savedRequest.getAssignee() != null) {
             notificationService.createNotification(
@@ -415,6 +427,12 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.ASSIGNED,
                     "Request '" + savedRequest.getRequestName() + "' requires your action after revert."
             );
+            notifiedRecipients.add(savedRequest.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+        }
+
+        if (!notifiedRecipients.isEmpty()) {
+            auditService.createNotificationLog(actor, savedRequest,
+                    "Notifications sent for revert from step '" + stepRevertedFrom + "' to:\n- " + String.join("\n- ", notifiedRecipients));
         }
 
         return requisitionMapper.toDto(savedRequest);
@@ -445,6 +463,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.SUBMITTED,
                     "New requisition '" + savedRequest.getRequestName() + "' has been submitted and requires your action."
             );
+            auditService.createNotificationLog(actor, savedRequest,
+                    "Notifications sent for submission to:\n- " + savedRequest.getAssignee().getEmail() + " (Reason: SUBMITTED)");
         }
 
         return requisitionMapper.toDto(savedRequest);
@@ -491,6 +511,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.REJECTED,
                     message
             );
+            auditService.createNotificationLog(actor, savedRequest,
+                    "Notifications sent for rejection to:\n- " + savedRequest.getUser().getEmail() + " (Reason: REJECTED)");
         }
 
         return requisitionMapper.toDto(savedRequest);
@@ -558,6 +580,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
         }
 
+        List<String> notifiedRecipients = new ArrayList<>();
         if (oldRequester != null) {
             notificationService.createNotification(
                     oldRequester,
@@ -565,6 +588,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.REASSIGNED,
                     "Request '" + updatedRequest.getRequestName() + "' has been reassigned to " + newRequester.getName() + ". You will no longer receive notifications for this request."
             );
+            notifiedRecipients.add(oldRequester.getEmail() + " (Reason: REASSIGNED)");
         }
         notificationService.createNotification(
                 newRequester,
@@ -572,6 +596,12 @@ public class RequisitionServiceImpl implements RequisitionService {
                 NotificationType.ASSIGNED,
                 "Request '" + updatedRequest.getRequestName() + "' has been assigned to you."
         );
+        notifiedRecipients.add(newRequester.getEmail() + " (Reason: ASSIGNED)");
+
+        Authentication authCtx = SecurityContextHolder.getContext().getAuthentication();
+        User changeActor = (User) authCtx.getPrincipal();
+        auditService.createNotificationLog(changeActor, updatedRequest,
+                "Notifications sent for requester change to:\n- " + String.join("\n- ", notifiedRecipients));
 
         return requisitionMapper.toDto(updatedRequest);
     }
@@ -800,6 +830,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.PAID,
                     "Payment has been processed for your request '" + saved.getRequestName() + "'."
             );
+            auditService.createNotificationLog(actor, saved,
+                    "Notifications sent for payment to:\n- " + saved.getUser().getEmail() + " (Reason: PAID)");
         }
 
         auditService.createWorkflowTransitionLog(

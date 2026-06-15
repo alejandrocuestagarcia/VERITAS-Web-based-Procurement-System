@@ -92,6 +92,15 @@ public interface AuditService {
     void createRequisitionChangeLog(User actor, Request request, String details);
 
     /**
+     * Records an audit entry when a notification is sent regarding a {@link Request}.
+     *
+     * @param actor   the {@link User} associated with the notification
+     * @param request the {@link Request} the notification is about
+     * @param details a human-readable description of the notification event
+     */
+    void createNotificationLog(User actor, Request request, String details);
+
+    /**
      * Retrieves all audit log entries associated with a given request, ordered by timestamp descending.
      *
      * @param requestId the ID of the {@link Request} whose audit history is being retrieved
