@@ -226,7 +226,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         request,
                         transition,
                         APPROVE,
-                        "Transitioned from " + getStepName(transition.getFromStep()) + " to " + getStepName(transition.getToStep()));
+                        "Transitioned from '" + getStepName(transition.getFromStep()) + "' to '" + getStepName(transition.getToStep()) + "'");
 
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
 
@@ -306,7 +306,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 request,
                 null,
                 REVERT,
-                "Reverted from " + getStepName(stepToRevertFrom) + " to " + getStepName(targetStep) + ". Reason: " + reason);
+                "Reverted from '" + getStepName(stepToRevertFrom) + "' to '" + getStepName(targetStep) + "'. Reason: " + reason);
 
         if (jiraSyncService != null) {
             jiraSyncService.handleVeritasWorkflowChange(request);
@@ -431,7 +431,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 request,
                 null,
                 "SUBMIT",
-                "Request submitted and entered workflow at: " + getStepName(startStep));
+                "Request submitted and entered workflow at: '" + getStepName(startStep) +"'");
 
         this.moveToNextStep(request, actor, nextAssigneeId);
     }

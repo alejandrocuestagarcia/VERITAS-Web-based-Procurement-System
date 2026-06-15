@@ -148,14 +148,50 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
     void GetJiraIssueLogsByActions_MultipleActions_ReturnsSortedAndFilteredLogs() {
         auditService.createJiraSyncLog(testActor, testRequest, "Syncing 1");
         auditService.createJiraUnsyncLog(testActor, testRequest, "Unsyncing 2");
-        auditService.createJiraRequestUpdatedLog(testActor, testRequest, "Updating 3");
 
         Page<AuditLogDto> result = auditService.getJiraIssueLogsByActions(
-                List.of(JIRA_SYNC, JIRA_UNSYNC, JIRA_REQUEST_UPDATED),
+                List.of(JIRA_SYNC, JIRA_UNSYNC),
                 PageRequest.of(0, 10, Sort.by("timestamp").descending()),
                 ""
         );
 
-        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getContent()).hasSize(2);
+    }
+
+    // AI-GENERATED
+    @Test
+    void CreateNotificationLog_ValidInput_SavesLogToDatabase() {
+        String details = "Notifications sent for approval at step 'Review': actor@yahoo.com (APPROVED), assignee@test.com (ASSIGNED)";
+
+        auditService.createNotificationLog(testActor, testRequest, details);
+
+        List<AuditLog> logs = auditLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+
+        AuditLog saved = logs.getFirst();
+        assertThat(saved.getAction()).isEqualTo(NOTIFICATION_SENT);
+        assertThat(saved.getDescription()).isEqualTo(details);
+        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
+        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
+        assertThat(saved.getEntryHash()).isNotNull();
+        assertThat(saved.getTimestamp()).isNotNull();
+    }
+
+    @Test
+    void CreateJiraCommentLog_ValidInput_SavesLogToDatabase() {
+        String details = "Jira comment posted to issue SCRUM-42: Transition to step 'Procurement Review'";
+
+        auditService.createJiraCommentLog(testActor, testRequest, details);
+
+        List<AuditLog> logs = auditLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+
+        AuditLog saved = logs.getFirst();
+        assertThat(saved.getAction()).isEqualTo(JIRA_COMMENT_POSTED);
+        assertThat(saved.getDescription()).isEqualTo(details);
+        assertThat(saved.getActor().getId()).isEqualTo(testActor.getId());
+        assertThat(saved.getRequest().getRequestID()).isEqualTo(testRequest.getRequestID());
+        assertThat(saved.getEntryHash()).isNotNull();
+        assertThat(saved.getTimestamp()).isNotNull();
     }
 }

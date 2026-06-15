@@ -24,6 +24,7 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.entity.RequestItemUnit;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.workflow.entity.WorkflowStep;
@@ -397,7 +398,67 @@ public class JiraSyncServiceUnitTest {
         verify(restTemplate).exchange(contains("/comment"), eq(HttpMethod.POST), argThat(entity -> {
             String body = (String) entity.getBody();
             return body != null && body.contains("\"type\": \"strong\"") 
-                              && body.contains("Budget exceeded");
+                              && body.contains("Budget exceeded")
+                              && body.contains("was reverted with reason")
+                              && body.contains("moved back to step");
+        }), eq(String.class));
+    }
+
+    // AI-Generated
+    @Test
+    void ProcessQueue_SyncJiraItemWithRejection_PostsRejectComment() {
+        Request request = new Request();
+        request.setRequestID(102L);
+        request.setRequestName("Rejected Requisition");
+        request.setJiraIssueKey("TEST-2");
+        request.setJiraIssueUrl("https://test.atlassian.net/browse/TEST-2");
+        request.setDescription("Rejected description");
+        request.setRejectionReason("Not compliant");
+        request.setState(RequestStatus.FINISHED);
+
+        JiraSyncQueueItem queueItem = JiraSyncQueueItem.builder()
+                .id(2L)
+                .request(request)
+                .jiraConfig(config)
+                .jiraIssueKey("TEST-2")
+                .actionType("SYNC_JIRA")
+                .status("PENDING")
+                .build();
+
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(queueItem));
+
+        when(restTemplate.exchange(contains("/issue/TEST-2"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        when(restTemplate.exchange(contains("fields=attachment"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+                .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+        String transitionsJson = "{\"transitions\":[{\"id\":\"21\",\"name\":\"Delegated Ready\",\"to\":{\"name\":\"Delegated Ready\"}}]}";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode transNode = null;
+        try {
+            transNode = mapper.readTree(transitionsJson);
+        } catch (Exception e) {}
+        when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(any(Request.class), anyString()))
+                .thenReturn(Optional.empty());
+
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+                .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
+
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        service.processQueue();
+
+        assertEquals("COMPLETED", queueItem.getStatus());
+        verify(queueItemRepository).save(queueItem);
+        verify(restTemplate).exchange(contains("/comment"), eq(HttpMethod.POST), argThat(entity -> {
+            String body = (String) entity.getBody();
+            return body != null && body.contains("was rejected with reason")
+                              && body.contains("Not compliant")
+                              && !body.contains("moved back to step");
         }), eq(String.class));
     }
 

@@ -75,14 +75,14 @@ public class AuditServiceImpl implements AuditService {
         auditLogRepository.save(log);
     }
 
-    @Override
-    public void createJiraRequestUpdatedLog(User actor, Request request, String details) {
+        @Override
+    public void createJiraCommentLog(User actor, Request request, String details) {
         String mockHash = UUID.randomUUID().toString();
 
         AuditLog log = AuditLog.builder()
                 .request(request)
                 .actor(actor)
-                .action(JIRA_REQUEST_UPDATED)
+                .action(JIRA_COMMENT_POSTED)
                 .description(details)
                 .entryHash(mockHash)
                 .timestamp(LocalDateTime.now())
@@ -133,6 +133,22 @@ public class AuditServiceImpl implements AuditService {
                 .request(request)
                 .actor(actor)
                 .action(REQUISITION_EDITED)
+                .description(details)
+                .entryHash(mockHash)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        auditLogRepository.save(log);
+    }
+
+    @Override
+    public void createNotificationLog(User actor, Request request, String details) {
+        String mockHash = UUID.randomUUID().toString();
+
+        AuditLog log = AuditLog.builder()
+                .request(request)
+                .actor(actor)
+                .action(NOTIFICATION_SENT)
                 .description(details)
                 .entryHash(mockHash)
                 .timestamp(LocalDateTime.now())

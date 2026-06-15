@@ -16,6 +16,29 @@ import {
 } from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
 import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
 
+interface ActionConfig {
+  icon: string;
+  color: string;
+  bg: string;
+}
+
+const ACTION_CONFIGS: Record<string, ActionConfig> = {
+  APPROVE: { icon: 'check_circle', color: 'text-emerald-600', bg: 'bg-emerald-100' },
+  REVERT: { icon: 'undo', color: 'text-amber-600', bg: 'bg-amber-100' },
+  REJECT: { icon: 'cancel', color: 'text-red-600', bg: 'bg-red-100' },
+  SUBMIT: { icon: 'send', color: 'text-blue-600', bg: 'bg-blue-100' },
+  PAID: { icon: 'payments', color: 'text-lime-600', bg: 'bg-lime-100' },
+  REQUISITION_EDITED: { icon: 'edit', color: 'text-orange-600', bg: 'bg-orange-100' },
+  NOTIFICATION_SENT: { icon: 'notifications', color: 'text-indigo-600', bg: 'bg-indigo-100' },
+  JIRA_SYNC: { icon: 'sync', color: 'text-violet-600', bg: 'bg-violet-100' },
+  JIRA_UNSYNC: { icon: 'sync_disabled', color: 'text-stone-600', bg: 'bg-stone-100' },
+  JIRA_COMMENT_POSTED: { icon: 'comment', color: 'text-fuchsia-600', bg: 'bg-fuchsia-100' }
+};
+
+const DEFAULT_ACTION_CONFIG: ActionConfig = {
+  icon: 'info', color: 'text-slate-500', bg: 'bg-slate-100'
+};
+
 @Component({
   selector: 'app-requisition-detail',
   templateUrl: './requisition-detail.component.html'
@@ -132,46 +155,21 @@ export class RequisitionDetailComponent implements OnInit {
     );
   }
 
+  private getActionConfig(action: string | undefined): ActionConfig {
+    if (!action) return DEFAULT_ACTION_CONFIG;
+    return ACTION_CONFIGS[action] || DEFAULT_ACTION_CONFIG;
+  }
+
   getActionIcon(action: string | undefined): string {
-    switch (action) {
-      case 'APPROVE': return 'check_circle';
-      case 'REVERT': return 'undo';
-      case 'SUBMIT': return 'send';
-      case 'PAID': return 'payments';
-      case 'REQUISITION_EDITED': return 'edit';
-      case 'JIRA_SYNC': return 'sync';
-      case 'JIRA_UNSYNC': return 'sync_disabled';
-      case 'JIRA_REQUEST_UPDATED': return 'update';
-      default: return 'info';
-    }
+    return this.getActionConfig(action).icon;
   }
 
   getActionColor(action: string | undefined): string {
-    switch (action) {
-      case 'APPROVE': return 'text-emerald-600';
-      case 'REVERT': return 'text-red-500';
-      case 'SUBMIT': return 'text-blue-600';
-      case 'PAID': return 'text-teal-600';
-      case 'REQUISITION_EDITED': return 'text-amber-600';
-      case 'JIRA_SYNC': return 'text-purple-600';
-      case 'JIRA_UNSYNC': return 'text-rose-600';
-      case 'JIRA_REQUEST_UPDATED': return 'text-cyan-600';
-      default: return 'text-slate-500';
-    }
+    return this.getActionConfig(action).color;
   }
 
   getActionBgColor(action: string | undefined): string {
-    switch (action) {
-      case 'APPROVE': return 'bg-emerald-100';
-      case 'REVERT': return 'bg-red-100';
-      case 'SUBMIT': return 'bg-blue-100';
-      case 'PAID': return 'bg-teal-100';
-      case 'REQUISITION_EDITED': return 'bg-amber-100';
-      case 'JIRA_SYNC': return 'bg-purple-100';
-      case 'JIRA_UNSYNC': return 'bg-rose-100';
-      case 'JIRA_REQUEST_UPDATED': return 'bg-cyan-100';
-      default: return 'bg-slate-100';
-    }
+    return this.getActionConfig(action).bg;
   }
 
   checkCanAct(id: number): void {
