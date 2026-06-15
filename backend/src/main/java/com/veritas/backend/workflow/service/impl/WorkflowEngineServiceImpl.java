@@ -158,15 +158,8 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     }
 
                     if (rule.getMinVendorReliabilityScore() != null) {
-                        Long requestId = request.getRequestID();
-                        List<Quote> quotes = requestId != null
-                                ? quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)
-                                : List.of();
-                        Optional<Quote> selectedQuoteOpt = quotes.stream()
-                                .filter(Quote::isSelected)
-                                .findFirst();
-                        if (selectedQuoteOpt.isPresent()) {
-                            Quote selectedQuote = selectedQuoteOpt.get();
+                        Quote selectedQuote = request.getSelectedQuote();
+                        if (selectedQuote != null) {
                             Vendor vendor = selectedQuote.getVendorID();
                             if (vendor != null) {
                                 Double score = vendor.getOverallScore();
