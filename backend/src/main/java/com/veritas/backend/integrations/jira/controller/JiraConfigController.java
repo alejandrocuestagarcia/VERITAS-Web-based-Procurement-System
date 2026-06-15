@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
 
+import static com.veritas.backend.common.model.AuditActionConstants.JIRA_COMMENT_POSTED;
 import static com.veritas.backend.common.model.AuditActionConstants.JIRA_SYNC;
 import static com.veritas.backend.common.model.AuditActionConstants.JIRA_UNSYNC;
-import static com.veritas.backend.common.model.AuditActionConstants.JIRA_REQUEST_UPDATED;
 
 @Slf4j
 @RestController
@@ -89,7 +89,7 @@ public class JiraConfigController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String search) {
         return ResponseEntity.ok(auditService.getJiraIssueLogsByActions(
-                java.util.List.of(JIRA_SYNC, JIRA_UNSYNC, JIRA_REQUEST_UPDATED),
+                java.util.List.of(JIRA_SYNC, JIRA_UNSYNC, JIRA_COMMENT_POSTED),
                 PageRequest.of(page, size, Sort.by("timestamp").descending()),
                 search
         ));

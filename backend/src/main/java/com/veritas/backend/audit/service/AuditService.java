@@ -101,6 +101,15 @@ public interface AuditService {
     void createNotificationLog(User actor, Request request, String details);
 
     /**
+     * Records an audit entry when a comment is posted to a Jira issue associated with a {@link Request}.
+     *
+     * @param actor   the {@link User} who posted the comment
+     * @param request the {@link Request} associated with the Jira issue
+     * @param details a human-readable description of the comment event
+     */
+    void createJiraCommentLog(User actor, Request request, String details);
+
+    /**
      * Retrieves all audit log entries associated with a given request, ordered by timestamp descending.
      *
      * @param requestId the ID of the {@link Request} whose audit history is being retrieved

@@ -46,6 +46,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,6 +109,9 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             .optionalStart().appendOffset("+HHMM", "Z").optionalEnd()
             .optionalStart().appendOffset("+HH", "Z").optionalEnd()
             .toFormatter();
+
+    private static final DateTimeFormatter USER_FRIENDLY_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("MMM d, yyyy, h:mm:ss a", Locale.US);
 
     private static final Pattern QTY_UNIT_PATTERN =
             Pattern.compile("^(\\d+)\\s*([a-zA-Z]+)?$", Pattern.CASE_INSENSITIVE);
@@ -322,7 +326,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             if (auth != null && auth.getPrincipal() instanceof User user) {
                 actor = user;
             }
-            auditService.createJiraSyncLog(actor, request, "Synced from Jira issue " + key + " | Created in Jira: " + offsetDateTime.toLocalDateTime());
+            auditService.createJiraSyncLog(actor, request, "Synced from Jira issue '" + key + "' | Created in Jira: " + offsetDateTime.format(USER_FRIENDLY_DATE_FORMATTER));
         } else {
             log.warn("Failed to set Jira custom field for {}, syncing may repeat", key);
         }
@@ -691,6 +695,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         boolean transitioned = transitionJiraIssue(config, issueKey, "Delegated Waiting", true);
         try {
             postJiraComment(config, issueKey, "This requisition has been imported to Veritas and is locked in Jira. Please proceed with all approvals and edits in Veritas.");
+            auditService.createJiraCommentLog(null, request,
+                    "Posted comment to Jira issue '" + issueKey + "' stating that the requisition is now managed in Veritas and locked in Jira");
         } catch (RestClientException e) {
             log.warn("Failed to add locking comment to Jira for issue {}", issueKey, e);
         }
@@ -796,7 +802,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String actorName = actor != null ? actor.getName() : "System";
         try {
             postTransitionComment(config, key, requestName, stepNameForComment, request.getRejectionReason(), extraContext, actorName);
-            auditService.createJiraRequestUpdatedLog(actor, request, "Updated Jira issue " + request.getJiraIssueKey());
+            auditService.createJiraCommentLog(actor, request,
+                    "Posted comment to Jira issue '" + key + "' for transition to step '" + stepNameForComment + "'");
         } catch (RestClientException e) {
             log.warn("Failed to post status or rejection comment to Jira for {}", key, e);
         }
