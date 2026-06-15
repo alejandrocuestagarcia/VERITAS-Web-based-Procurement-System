@@ -142,6 +142,22 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    public void createNotificationLog(User actor, Request request, String details) {
+        String mockHash = UUID.randomUUID().toString();
+
+        AuditLog log = AuditLog.builder()
+                .request(request)
+                .actor(actor)
+                .action(NOTIFICATION_SENT)
+                .description(details)
+                .entryHash(mockHash)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        auditLogRepository.save(log);
+    }
+
+    @Override
     public List<AuditLogDto> getAuditLogsByRequestId(Long requestId) {
         return auditLogRepository.findAllByRequestIdOrderByTimestampDesc(requestId)
                 .stream()
