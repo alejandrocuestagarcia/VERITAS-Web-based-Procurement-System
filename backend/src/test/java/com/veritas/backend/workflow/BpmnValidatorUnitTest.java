@@ -5,6 +5,7 @@ import com.veritas.backend.workflow.validation.BpmnValidationResult;
 import com.veritas.backend.workflow.validation.BpmnValidator;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -1584,5 +1585,258 @@ class BpmnValidatorUnitTest {
                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("minVendorReliabilityScore exceeding the maximum of 10.0")));
         }
 
-        // Removed Process description test
+        @Test
+        void Validate_SpelEvaluationException_Error() {
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                                "  <bpmn:process id=\"Process_1\" name=\"Spel Evaluation Error\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Decision\" />\n" +
+                                "    <bpmn:task id=\"Task_2\" name=\"Approve\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:task id=\"Task_3\" name=\"Reject\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"XOR_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"Task_2\">\n" +
+                                "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${'abc' - 1}</bpmn:conditionExpression>\n" +
+                                "    </bpmn:sequenceFlow>\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"XOR_1\" targetRef=\"Task_3\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_5\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_6\" sourceRef=\"Task_3\" targetRef=\"EndEvent_1\" />\n" +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                assertAll(
+                                () -> assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("failed to evaluate")))
+                );
+        }
+
+        @Test
+        void Validate_SequenceFlowNoRefs_Error() {
+                String xml = VALID_SIMPLE_XML;
+                BpmnModelInstance model = parse(xml);
+                SequenceFlow flow = model.getModelElementById("Flow_2");
+                flow.removeAttribute("targetRef");
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+                 assertAll(
+                                 () -> assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("A transition references a non-existent")))
+                 );
+         }
+
+         @Test
+         void Validate_PrivateMethodsWithNull_UsingReflection() throws Exception {
+                 BpmnValidationResult result = new BpmnValidationResult();
+
+                 java.lang.reflect.Method method1 = BpmnValidator.class.getDeclaredMethod("validateNodeCount", BpmnModelInstance.class, BpmnValidationResult.class);
+                 method1.setAccessible(true);
+                 method1.invoke(validator, null, result);
+
+                 java.lang.reflect.Method method2 = BpmnValidator.class.getDeclaredMethod("validateProcessPresence", BpmnModelInstance.class, BpmnValidationResult.class);
+                 method2.setAccessible(true);
+                 Object processResult = method2.invoke(validator, null, result);
+
+                 assertAll(
+                     () -> assertTrue(result.hasErrors()),
+                     () -> assertTrue(result.getErrors().stream().anyMatch(e -> e.contains("BPMN model is null"))),
+                     () -> assertNull(processResult)
+                 );
+         }
+
+         @Test
+         void Validate_ProcessPresenceNoProcess_UsingReflection() throws Exception {
+                 BpmnModelInstance model = Bpmn.createEmptyModel();
+                 org.camunda.bpm.model.bpmn.instance.Definitions definitions = model.newInstance(org.camunda.bpm.model.bpmn.instance.Definitions.class);
+                 definitions.setTargetNamespace("http://bpmn.io/schema/bpmn");
+                 model.setDefinitions(definitions);
+
+                 BpmnValidationResult result = new BpmnValidationResult();
+                 java.lang.reflect.Method method = BpmnValidator.class.getDeclaredMethod("validateProcessPresence", BpmnModelInstance.class, BpmnValidationResult.class);
+                 method.setAccessible(true);
+                 Object processResult = method.invoke(validator, model, result);
+
+                 assertAll(
+                     () -> assertTrue(result.hasErrors()),
+                     () -> assertTrue(result.getErrors().stream().anyMatch(e -> e.contains("contains no Process class"))),
+                     () -> assertNull(processResult)
+                 );
+         }
+
+         @Test
+         void Validate_InvalidSequenceFlowSource_Error() {
+                 String xml = VALID_SIMPLE_XML;
+                 BpmnModelInstance model = parse(xml);
+                 org.camunda.bpm.model.bpmn.instance.Process process = model.getModelElementById("Process_1");
+                 org.camunda.bpm.model.bpmn.instance.EndEvent end = model.getModelElementById("EndEvent_1");
+
+                 org.camunda.bpm.model.bpmn.instance.SequenceFlow brokenFlow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                 brokenFlow.setId("Flow_broken");
+                 brokenFlow.setTarget(end);
+                 process.addChildElement(brokenFlow);
+
+                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                 () -> validator.validate(xml, model));
+                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-existent source step")));
+         }
+
+         @Test
+         void Validate_InvalidSequenceFlowEndpointNullId_Error() {
+                 String xml = VALID_SIMPLE_XML;
+                 BpmnModelInstance model = parse(xml);
+                 org.camunda.bpm.model.bpmn.instance.Process process = model.getModelElementById("Process_1");
+
+                 org.camunda.bpm.model.bpmn.instance.Task taskWithoutId = model.newInstance(org.camunda.bpm.model.bpmn.instance.Task.class);
+                 process.addChildElement(taskWithoutId);
+
+                 org.camunda.bpm.model.bpmn.instance.EndEvent end = model.getModelElementById("EndEvent_1");
+
+                 org.camunda.bpm.model.bpmn.instance.SequenceFlow brokenFlow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                 brokenFlow.setId("Flow_broken");
+                 brokenFlow.setSource(taskWithoutId);
+                 brokenFlow.setTarget(end);
+                 process.addChildElement(brokenFlow);
+
+                 taskWithoutId.removeAttribute("id");
+
+                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                 () -> validator.validate(xml, model));
+                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-existent source step")));
+         }
+
+         @Test
+         void Validate_LongGatewayChain_Error() {
+                 BpmnModelInstance model = Bpmn.createEmptyModel();
+                 org.camunda.bpm.model.bpmn.instance.Definitions definitions = model.newInstance(org.camunda.bpm.model.bpmn.instance.Definitions.class);
+                 definitions.setTargetNamespace("http://bpmn.io/schema/bpmn");
+                 model.setDefinitions(definitions);
+
+                 org.camunda.bpm.model.bpmn.instance.Process process = model.newInstance(org.camunda.bpm.model.bpmn.instance.Process.class);
+                 process.setId("Process_1");
+                 process.setName("Long Chain Process");
+                 process.setExecutable(true);
+                 definitions.addChildElement(process);
+
+                 org.camunda.bpm.model.bpmn.instance.StartEvent start = model.newInstance(org.camunda.bpm.model.bpmn.instance.StartEvent.class);
+                 start.setId("start");
+                 process.addChildElement(start);
+
+                 org.camunda.bpm.model.bpmn.instance.FlowNode current = start;
+                 for (int i = 0; i < 52; i++) {
+                     org.camunda.bpm.model.bpmn.instance.ExclusiveGateway gw = model.newInstance(org.camunda.bpm.model.bpmn.instance.ExclusiveGateway.class);
+                     gw.setId("gw_" + i);
+                     process.addChildElement(gw);
+
+                     org.camunda.bpm.model.bpmn.instance.SequenceFlow flow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                     flow.setId("flow_" + i);
+                     flow.setSource(current);
+                     flow.setTarget(gw);
+                     process.addChildElement(flow);
+
+                     current = gw;
+                 }
+                 org.camunda.bpm.model.bpmn.instance.EndEvent end = model.newInstance(org.camunda.bpm.model.bpmn.instance.EndEvent.class);
+                 end.setId("end");
+                 process.addChildElement(end);
+
+                 org.camunda.bpm.model.bpmn.instance.SequenceFlow finalFlow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                 finalFlow.setId("finalFlow");
+                 finalFlow.setSource(current);
+                 finalFlow.setTarget(end);
+                 process.addChildElement(finalFlow);
+
+                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                 () -> validator.validate("xml", model));
+                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("consecutive gateways/events without a task")));
+         }
+
+         @Test
+         void Validate_TeamLeaderOptionForNonRequester_Error() {
+                 String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                 "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                 "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                                 "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                 "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                                 "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                 "      <bpmn:documentation>[TEAM_LEADER]true</bpmn:documentation>\n" +
+                                 "    </bpmn:task>\n" +
+                                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
+                                 "  </bpmn:process>\n" +
+                                 "</bpmn:definitions>";
+                 BpmnModelInstance model = parse(xml);
+                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                 () -> validator.validate(xml, model));
+                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("cannot have Team Leader option enabled for non-REQUESTER roles")));
+         }
+
+         @Test
+         void Validate_SpelExpressionWithIndexer_Error() {
+                 String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                 "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                 "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                                 "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                                 "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                 "    <bpmn:exclusiveGateway id=\"XOR_1\" name=\"Split\" />\n" +
+                                 "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                                 "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                 "    </bpmn:task>\n" +
+                                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"XOR_1\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"XOR_1\" targetRef=\"Task_1\">\n" +
+                                 "      <bpmn:conditionExpression xsi:type=\"bpmn:tFormalExpression\">${totalQuantity[0] > 10}</bpmn:conditionExpression>\n" +
+                                 "    </bpmn:sequenceFlow>\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"XOR_1\" targetRef=\"EndEvent_1\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_4\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
+                                 "  </bpmn:process>\n" +
+                                 "</bpmn:definitions>";
+                 BpmnModelInstance model = parse(xml);
+                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                 () -> validator.validate(xml, model));
+                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("failed to evaluate")));
+         }
+
+         @Test
+         void Validate_TransitionRuleLeavingIntermediateThrowEvent_Error() {
+                 String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                 "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                 "                  xmlns:veritas=\"http://veritas\"\n" +
+                                 "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                                 "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                                 "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                 "    <bpmn:intermediateThrowEvent id=\"Throw_1\" name=\"Throw\" />\n" +
+                                 "    <bpmn:task id=\"Task_1\" name=\"Approval Step\">\n" +
+                                 "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                 "    </bpmn:task>\n" +
+                                 "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Throw_1\" />\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Throw_1\" targetRef=\"Task_1\">\n" +
+                                 "      <bpmn:extensionElements>\n" +
+                                 "        <veritas:transitionRule minRequiredVendors=\"3\" />\n" +
+                                 "      </bpmn:extensionElements>\n" +
+                                 "    </bpmn:sequenceFlow>\n" +
+                                 "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
+                                 "  </bpmn:process>\n" +
+                                 "</bpmn:definitions>";
+                 BpmnModelInstance model = parse(xml);
+
+                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                 () -> validator.validate(xml, model));
+                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("originates from a non-task step")));
+         }
 }
+

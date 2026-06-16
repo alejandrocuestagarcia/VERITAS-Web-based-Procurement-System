@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -394,5 +395,319 @@ class ProjectServiceUnitTest {
         when(projectRepository.findByTeamDepartment(department2)).thenReturn(List.of(marketingProject));
 
         assertThrows(IllegalArgumentException.class, () -> projectService.editProject(projectId, editDto));
+    }
+
+    @Test
+    void EditProject_NoInternalBudget_ThrowsEntityNotFoundException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, BigDecimal.valueOf(50000.00), null, null, null);
+
+        Department dept = Department.builder().departmentId(1L).build();
+        Team team = Team.builder().teamId(10L).department(dept).build();
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project")
+                .team(team)
+                .internalBudget(null)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        assertThrows(EntityNotFoundException.class, () ->
+                projectService.editProject(projectId, editDto)
+        );
+    }
+
+    @Test
+    void EditProject_TeamChangeWithBudgetAndDepartment_SavesSuccessfully() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, null, 20L, null, null);
+
+        Department dept = Department.builder()
+                .departmentId(2L)
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(100000.00)).build())
+                .build();
+        Team team = Team.builder().teamId(20L).department(dept).build();
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
+        when(projectRepository.save(existingProject)).thenReturn(existingProject);
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.editProject(projectId, editDto);
+        assertNotNull(result);
+        assertEquals(team, existingProject.getTeam());
+        assertEquals(dept.getInternalBudget(), existingProject.getInternalBudget().getParentBudget());
+    }
+
+    @Test
+    void EditProject_TeamChangeDepartmentNull_SavesSuccessfully() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, null, 20L, null, null);
+
+        Team team = Team.builder().teamId(20L).department(null).build();
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
+        when(projectRepository.save(existingProject)).thenReturn(existingProject);
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.editProject(projectId, editDto);
+        assertNotNull(result);
+        assertEquals(team, existingProject.getTeam());
+        assertNull(existingProject.getInternalBudget().getParentBudget());
+    }
+
+    @Test
+    void GetProjectById_FinanceOfficer_ReturnsProject() {
+        Long projectId = 1L;
+        Project project = Project.builder()
+                .id(projectId)
+                .name("Finance Project")
+                .build();
+        ProjectDto dto = new ProjectDto(projectId, "Finance Project", null, null, null, null, null, null, null, null, null, null);
+
+        User user = User.builder().role(UserRole.FINANCE_OFFICER).build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(projectMapper.toProjectDto(project)).thenReturn(dto);
+
+        ProjectDto result = projectService.getProjectById(projectId, user);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals("Finance Project", result.name())
+        );
+        verify(projectRepository).findById(projectId);
+    }
+
+    @Test
+    void EditProject_StartDateAlreadyPassed_ThrowsIllegalArgumentException() {
+        Long projectId = 1L;
+        LocalDate startDate = LocalDate.now().minusDays(5);
+        LocalDate newStartDate = LocalDate.now().plusDays(10);
+        ProjectEditDto editDto = new ProjectEditDto(null, null, null, newStartDate, null);
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .startDate(startDate)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                projectService.editProject(projectId, editDto)
+        );
+        assertEquals("Start date can only be changed if the project has not started already", ex.getMessage());
+    }
+
+    @Test
+    void EditProject_StartDateInPast_ThrowsIllegalArgumentException() {
+        Long projectId = 1L;
+        LocalDate startDate = LocalDate.now().plusDays(5);
+        LocalDate newStartDate = LocalDate.now().minusDays(2);
+        ProjectEditDto editDto = new ProjectEditDto(null, null, null, newStartDate, null);
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .startDate(startDate)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                projectService.editProject(projectId, editDto)
+        );
+        assertEquals("Start date can only be changed if the new date is in the future", ex.getMessage());
+    }
+
+    @Test
+    void EditProject_EndDateInPast_ThrowsIllegalArgumentException() {
+        Long projectId = 1L;
+        LocalDate startDate = LocalDate.now().minusDays(10);
+        LocalDate endDate = LocalDate.now().plusDays(10);
+        LocalDate newEndDate = LocalDate.now().minusDays(2);
+        ProjectEditDto editDto = new ProjectEditDto(null, null, null, startDate, newEndDate);
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                projectService.editProject(projectId, editDto)
+        );
+        assertEquals("End date can only be changed if the new date is in the future", ex.getMessage());
+    }
+
+    @Test
+    void DeleteProject_DoesNotExist_ThrowsEntityNotFoundException() {
+        Long projectId = 999L;
+        when(projectRepository.existsById(projectId)).thenReturn(false);
+
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () ->
+                projectService.deleteProject(projectId)
+        );
+        assertEquals("Project not found with id 999", ex.getMessage());
+    }
+
+    @Test
+    void CreateProject_DepartmentNull_SavesSuccessfully() {
+        ProjectCreationDto creationDto = new ProjectCreationDto("Dept Null Proj", "DN-KEY", 10L, LocalDate.now(), LocalDate.now().plusDays(30), BigDecimal.valueOf(10000.00));
+
+        Team team = Team.builder().teamId(10L).department(null).build();
+        Project project = Project.builder().name("Dept Null Proj").build();
+
+        when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
+        when(projectMapper.toProject(creationDto)).thenReturn(project);
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
+        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Null Proj", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.createProject(creationDto);
+        assertNotNull(result);
+        assertNull(project.getInternalBudget().getParentBudget());
+    }
+
+    @Test
+    void CreateProject_DepartmentNonNullBudgetNull_Succeeds() {
+        ProjectCreationDto creationDto = new ProjectCreationDto("Dept Non-Null Proj", "DN2-KEY", 10L, LocalDate.now(), LocalDate.now().plusDays(30), BigDecimal.valueOf(10000.00));
+
+        Department department = Department.builder().departmentId(5L).internalBudget(null).build();
+        Team team = Team.builder().teamId(10L).department(department).build();
+        Project project = Project.builder().name("Dept Non-Null Proj").build();
+
+        when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
+        when(projectMapper.toProject(creationDto)).thenReturn(project);
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
+        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Non-Null Proj", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.createProject(creationDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void CreateProject_DepartmentBudgetWithNullLimit_Succeeds() {
+        ProjectCreationDto creationDto = new ProjectCreationDto("Dept Null Limit Proj", "DNL-KEY", 10L, LocalDate.now(), LocalDate.now().plusDays(30), BigDecimal.valueOf(10000.00));
+
+        Department department = Department.builder().departmentId(5L).internalBudget(InternalBudget.builder().totalAmount(null).build()).build();
+        Team team = Team.builder().teamId(10L).department(department).build();
+        Project project = Project.builder().name("Dept Null Limit Proj").build();
+
+        when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
+        when(projectMapper.toProject(creationDto)).thenReturn(project);
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
+        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Null Limit Proj", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.createProject(creationDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void EditProject_EndDateUnchanged_SavesSuccessfully() {
+        Long projectId = 1L;
+        LocalDate endDate = LocalDate.now().plusDays(10);
+        ProjectEditDto editDto = new ProjectEditDto(null, null, null, null, endDate);
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .endDate(endDate)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(projectRepository.save(existingProject)).thenReturn(existingProject);
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.editProject(projectId, editDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void EditProject_OnlyTeamIdUpdated_SavesSuccessfully() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, null, 20L, null, null);
+
+        Department dept = Department.builder().departmentId(2L).internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(100000.00)).build()).build();
+        Team team = Team.builder().teamId(20L).department(dept).build();
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
+        when(projectRepository.save(existingProject)).thenReturn(existingProject);
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+
+        ProjectDto result = projectService.editProject(projectId, editDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void EditProject_BudgetUpdateNullInternalBudget_ThrowsEntityNotFoundException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, BigDecimal.valueOf(50000.00), null, null, null);
+
+        Team team = Team.builder().teamId(10L).department(null).build();
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .team(team)
+                .internalBudget(null)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        assertThrows(EntityNotFoundException.class, () -> projectService.editProject(projectId, editDto));
+    }
+
+    @Test
+    void EditProject_TeamChangeNullInternalBudget_ThrowsNullPointerException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, null, 20L, null, null);
+
+        Team team = Team.builder().teamId(20L).department(null).build();
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .internalBudget(null)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
+
+        assertThrows(NullPointerException.class, () -> projectService.editProject(projectId, editDto));
+    }
+
+    @Test
+    void EditProject_EndDateChangedAndStartDateNull_ThrowsNullPointerException() {
+        Long projectId = 1L;
+        LocalDate startDate = LocalDate.now().plusDays(5);
+        LocalDate newEndDate = LocalDate.now().plusDays(15);
+        ProjectEditDto editDto = new ProjectEditDto(null, null, null, null, newEndDate);
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .startDate(startDate)
+                .endDate(LocalDate.now().plusDays(10))
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        assertThrows(NullPointerException.class, () -> projectService.editProject(projectId, editDto));
     }
 }

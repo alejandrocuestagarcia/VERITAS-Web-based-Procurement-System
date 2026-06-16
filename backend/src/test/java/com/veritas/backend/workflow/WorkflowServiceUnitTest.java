@@ -20,8 +20,11 @@ import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.workflow.repository.WorkflowTransitionRepository;
 import com.veritas.backend.workflow.service.impl.WorkflowServiceImpl;
 import com.veritas.backend.workflow.validation.BpmnValidationException;
+import com.veritas.backend.workflow.validation.BpmnValidationResult;
 import com.veritas.backend.workflow.validation.BpmnValidator;
+import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -384,4 +387,419 @@ class WorkflowServiceUnitTest {
         WorkflowStep step = stepsList.stream().filter(s -> "Approval Step".equals(s.getName())).findFirst().get();
         assertTrue(step.getIsAutomatedApproval());
     }
+
+    @Test
+    void GetWorkflow_AsRequester_MatchingDepartment_ReturnsWorkflowDto() {
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).build();
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        User fullUser = User.builder().id(99L).role(UserRole.REQUESTER).department(dept).build();
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(1L);
+        wd.setName("Test Workflow");
+        wd.setDepartment(dept);
+
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 12L, "desc", true, null);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        WorkflowDto result = workflowService.getWorkflow(1L, requester);
+        assertEquals(dto, result);
+    }
+
+    @Test
+    void GetWorkflow_AsRequester_MismatchingDepartment_ThrowsAccessDeniedException() {
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).build();
+        Department userDept = new Department();
+        userDept.setDepartmentId(12L);
+        User fullUser = User.builder().id(99L).role(UserRole.REQUESTER).department(userDept).build();
+
+        Department workflowDept = new Department();
+        workflowDept.setDepartmentId(99L);
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(1L);
+        wd.setName("Test Workflow");
+        wd.setDepartment(workflowDept);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+
+        assertThrows(AccessDeniedException.class, () -> workflowService.getWorkflow(1L, requester));
+    }
+
+    @Test
+    void GetWorkflow_AsRequester_NullWorkflowDepartment_ReturnsWorkflowDto() {
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).build();
+        Department userDept = new Department();
+        userDept.setDepartmentId(12L);
+        User fullUser = User.builder().id(99L).role(UserRole.REQUESTER).department(userDept).build();
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(1L);
+        wd.setName("Test Workflow");
+        wd.setDepartment(null);
+
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, null, "desc", true, null);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        WorkflowDto result = workflowService.getWorkflow(1L, requester);
+        assertEquals(dto, result);
+    }
+
+    @Test
+    void GetWorkflow_AsRequester_MatchingDepartmentViaTeam_ReturnsWorkflowDto() {
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).build();
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        Team team = new Team();
+        team.setDepartment(dept);
+        User fullUser = User.builder().id(99L).role(UserRole.REQUESTER).team(team).build();
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(1L);
+        wd.setName("Test Workflow");
+        wd.setDepartment(dept);
+
+        WorkflowDto dto = new WorkflowDto(1L, "Test Workflow", VALID_BPMN_XML, 12L, "desc", true, null);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        WorkflowDto result = workflowService.getWorkflow(1L, requester);
+        assertEquals(dto, result);
+    }
+
+    @Test
+    void GetWorkflow_AsRequester_UserNotFound_ThrowsEntityNotFoundException() {
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).build();
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(1L);
+        wd.setName("Test Workflow");
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> workflowService.getWorkflow(1L, requester));
+    }
+
+    @Test
+    void GetAllWorkflows_WithRequester_FiltersByDirectDepartment() {
+        Pageable pageable = PageRequest.of(0, 10);
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).build();
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        User fullUser = User.builder().id(99L).role(UserRole.REQUESTER).department(dept).build();
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setName("Department Workflow");
+
+        Page<WorkflowDefinition> page = new PageImpl<>(List.of(wd));
+        WorkflowDto dto = new WorkflowDto(1L, "Department Workflow", VALID_BPMN_XML, 12L, "desc", true, null);
+
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable)))
+                .thenReturn(page);
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null, requester);
+
+        assertAll("Workflow page contents by requester direct department",
+                () -> assertEquals(1, result.getContent().size()),
+                () -> assertEquals("Department Workflow", result.getContent().get(0).name())
+        );
+    }
+
+    @Test
+    void GetAllWorkflows_WithRequester_UserNotFound_UsesAuthUserFallback() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        User requester = User.builder().id(99L).role(UserRole.REQUESTER).department(dept).build();
+
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setName("Department Workflow");
+
+        Page<WorkflowDefinition> page = new PageImpl<>(List.of(wd));
+        WorkflowDto dto = new WorkflowDto(1L, "Department Workflow", VALID_BPMN_XML, 12L, "desc", true, null);
+
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable)))
+                .thenReturn(page);
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        Page<WorkflowDto> result = workflowService.getAllWorkflows(pageable, null, null, requester);
+
+        assertAll("Workflow page contents by requester auth user fallback",
+                () -> assertEquals(1, result.getContent().size()),
+                () -> assertEquals("Department Workflow", result.getContent().get(0).name())
+        );
+    }
+
+    @Test
+    void EditWorkflow_InactiveWorkflow_ThrowsIllegalArgumentException() {
+        WorkflowDefinition oldWd = new WorkflowDefinition();
+        oldWd.setId(1L);
+        oldWd.setName("Old Name");
+        oldWd.setIsActive(false);
+
+        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML, null);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(oldWd));
+
+        assertThrows(IllegalArgumentException.class, () -> workflowService.editWorkflow(1L, editDto));
+        verify(workflowDefinitionRepository, never()).save(any(WorkflowDefinition.class));
+    }
+
+    @Test
+    void CreateWorkflow_WithDepartmentId_SavesSuccessfully() {
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, 12L);
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+
+        when(departmentRepository.findById(12L)).thenReturn(Optional.of(dept));
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 12L, "", true, null));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowDefinitionRepository).save(workflowCaptor.capture());
+        assertEquals(dept, workflowCaptor.getValue().getDepartment());
+    }
+
+    @Test
+    void CreateWorkflow_DepartmentNotFound_ThrowsEntityNotFoundException() {
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(VALID_BPMN_XML, 99L);
+        when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> workflowService.createWorkflow(saveDto));
+    }
+
+    @Test
+    void EditWorkflow_WithDepartmentId_SavesSuccessfully() {
+        WorkflowDefinition oldWd = new WorkflowDefinition();
+        oldWd.setId(1L);
+        oldWd.setName("Old Name");
+        oldWd.setIsActive(true);
+        oldWd.setVersion(1);
+
+        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML, 12L);
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(oldWd));
+        when(departmentRepository.findById(12L)).thenReturn(Optional.of(dept));
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(2L, "", "", 12L, "", true, null));
+
+        workflowService.editWorkflow(1L, editDto);
+
+        verify(workflowDefinitionRepository, times(2)).save(workflowCaptor.capture());
+        List<WorkflowDefinition> saved = workflowCaptor.getAllValues();
+        assertEquals(dept, saved.get(1).getDepartment());
+    }
+
+    @Test
+    void EditWorkflow_WithoutDepartmentId_UsesOldDepartment() {
+        WorkflowDefinition oldWd = new WorkflowDefinition();
+        oldWd.setId(1L);
+        oldWd.setName("Old Name");
+        oldWd.setIsActive(true);
+        oldWd.setVersion(1);
+        Department oldDept = new Department();
+        oldDept.setDepartmentId(15L);
+        oldWd.setDepartment(oldDept);
+
+        WorkflowEditDto editDto = new WorkflowEditDto(VALID_BPMN_XML, null);
+
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(oldWd));
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(2L, "", "", 15L, "", true, null));
+
+        workflowService.editWorkflow(1L, editDto);
+
+        verify(workflowDefinitionRepository, times(2)).save(workflowCaptor.capture());
+        List<WorkflowDefinition> saved = workflowCaptor.getAllValues();
+        assertEquals(oldDept, saved.get(1).getDepartment());
+    }
+
+    @Test
+    void GetAllWorkflows_WithSearchQuery_FormatsQuery() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(workflowDefinitionRepository.findAllFiltered("%alex%", true, null, true, pageable)).thenReturn(Page.empty());
+
+        workflowService.getAllWorkflows(pageable, "  ALEX  ", true, null);
+
+        verify(workflowDefinitionRepository).findAllFiltered("%alex%", true, null, true, pageable);
+    }
+
+    @Test
+    void GetAllWorkflows_WithProcurementOfficer_FiltersByDirectDepartment() {
+        Pageable pageable = PageRequest.of(0, 10);
+        User officer = User.builder().id(99L).role(UserRole.PROCUREMENT_OFFICER).build();
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        User fullUser = User.builder().id(99L).role(UserRole.PROCUREMENT_OFFICER).department(dept).build();
+
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable)))
+                .thenReturn(Page.empty());
+
+        workflowService.getAllWorkflows(pageable, null, null, officer);
+
+        verify(workflowDefinitionRepository).findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable));
+    }
+
+    @Test
+    void GetAllWorkflows_WithProcurementOfficer_FiltersByTeamDepartment() {
+        Pageable pageable = PageRequest.of(0, 10);
+        User officer = User.builder().id(99L).role(UserRole.PROCUREMENT_OFFICER).build();
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        Team team = new Team();
+        team.setDepartment(dept);
+        User fullUser = User.builder().id(99L).role(UserRole.PROCUREMENT_OFFICER).team(team).build();
+
+        when(userRepository.findById(99L)).thenReturn(Optional.of(fullUser));
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable)))
+                .thenReturn(Page.empty());
+
+        workflowService.getAllWorkflows(pageable, null, null, officer);
+
+        verify(workflowDefinitionRepository).findAllFiltered(any(), any(), eq(12L), eq(true), eq(pageable));
+    }
+
+    @Test
+    void CreateWorkflow_WithAllTransitionRulesAttributes_PersistsSuccessfully() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
+                "xmlns:veritas=\"http://veritas\" " +
+                "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:task id=\"Task_2\" name=\"Approval Step B\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n" +
+                "      <bpmn:extensionElements>\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"3\" minVendorReliabilityScore=\"4.5\" isPdfRequired=\"true\" isCsvRequired=\"false\" isImageRequired=\"true\" advancedRule=\"totalQuantity &gt; 10\" />\n" +
+                "      </bpmn:extensionElements>\n" +
+                "    </bpmn:sequenceFlow>\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n" +
+                "  </bpmn:process>\n" +
+                "</bpmn:definitions>";
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(transitionRuleRepository).saveAll(transitionRulesCaptor.capture());
+        TransitionRule rule = transitionRulesCaptor.getValue().iterator().next();
+
+        assertAll("TransitionRule fields with all attributes",
+                () -> assertEquals(3, rule.getMinRequiredVendors()),
+                () -> assertEquals(4.5, rule.getMinVendorReliabilityScore()),
+                () -> assertTrue(rule.getIsPdfRequired()),
+                () -> assertFalse(rule.getIsCsvRequired()),
+                () -> assertTrue(rule.getIsImageRequired()),
+                () -> assertEquals("totalQuantity > 10", rule.getAdvancedRule())
+        );
+    }
+
+    @Test
+    void CreateWorkflow_WithEmptyTransitionRulesAttributes_PersistsSuccessfully() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
+                "xmlns:veritas=\"http://veritas\" " +
+                "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:task id=\"Task_2\" name=\"Approval Step B\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]PROCUREMENT_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n" +
+                "      <bpmn:extensionElements>\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"\" minVendorReliabilityScore=\"\" advancedRule=\"\" />\n" +
+                "      </bpmn:extensionElements>\n" +
+                "    </bpmn:sequenceFlow>\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n" +
+                "  </bpmn:process>\n" +
+                "</bpmn:definitions>";
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(transitionRuleRepository).saveAll(transitionRulesCaptor.capture());
+        TransitionRule rule = transitionRulesCaptor.getValue().iterator().next();
+
+        assertAll("TransitionRule empty attributes",
+                () -> assertEquals(0, rule.getMinRequiredVendors()),
+                () -> assertNull(rule.getMinVendorReliabilityScore()),
+                () -> assertNull(rule.getAdvancedRule())
+        );
+    }
+
+    @Test
+    void CreateWorkflow_WithOtherExtensionElements_IgnoresThem() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
+                "xmlns:veritas=\"http://veritas\" " +
+                "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\">\n" +
+                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\">\n" +
+                "      <bpmn:extensionElements>\n" +
+                "        <veritas:someOtherElement attr=\"value\" />\n" +
+                "      </bpmn:extensionElements>\n" +
+                "    </bpmn:sequenceFlow>\n" +
+                "  </bpmn:process>\n" +
+                "</bpmn:definitions>";
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", 1L, "", true, null));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(transitionRuleRepository).saveAll(transitionRulesCaptor.capture());
+        assertFalse(transitionRulesCaptor.getValue().iterator().hasNext());
+    }
+
+    @Test
+    void CreateWorkflow_WithUnsupportedFlowNode_ThrowsIllegalStateException() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
+                "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                "    <bpmn:subProcess id=\"SubProcess_1\" name=\"SubProcess\" />\n" +
+                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"SubProcess_1\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"SubProcess_1\" targetRef=\"EndEvent_1\" />\n" +
+                "  </bpmn:process>\n" +
+                "</bpmn:definitions>";
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        doReturn(new BpmnValidationResult()).when(bpmnValidator).validate(anyString(), any(BpmnModelInstance.class));
+
+        assertThrows(IllegalStateException.class, () -> workflowService.createWorkflow(saveDto));
+    }
 }
+

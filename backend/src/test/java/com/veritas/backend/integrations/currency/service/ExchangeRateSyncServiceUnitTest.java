@@ -185,4 +185,169 @@ class ExchangeRateSyncServiceUnitTest {
 
         verify(exchangeRateRepository, never()).saveAll(any());
     }
+
+    @Test
+    void FetchAndStore_PrimaryResponseNot2xx_FallsBackToSecondary() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenReturn(ResponseEntity.status(500).build());
+
+        ExchangeRateApiResponse secondary = new ExchangeRateApiResponse(
+                "success", "EUR", null, Map.of("USD", BigDecimal.valueOf(1.2))
+        );
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(secondary));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void FetchAndStore_PrimaryBodyNullOrEmpty_FallsBackToSecondary() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenReturn(ResponseEntity.ok((FrankfurterApiResponse[]) null));
+
+        ExchangeRateApiResponse secondary = new ExchangeRateApiResponse(
+                "success", "EUR", null, Map.of("USD", BigDecimal.valueOf(1.2))
+        );
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(secondary));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void FetchAndStore_PrimaryEntryNullOrQuoteBlankOrRateNull_FiltersThemOut() {
+        FrankfurterApiResponse[] response = new FrankfurterApiResponse[] {
+                null,
+                new FrankfurterApiResponse("EUR", "2025-01-01", "", BigDecimal.valueOf(1.1)),
+                new FrankfurterApiResponse("EUR", "2025-01-01", "USD", null),
+                new FrankfurterApiResponse("EUR", "2025-01-01", "GBP", BigDecimal.valueOf(0.9)),
+        };
+
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenReturn(ResponseEntity.ok(response));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        ArgumentCaptor<List<ExchangeRate>> captor = ArgumentCaptor.forClass(List.class);
+        verify(exchangeRateRepository).saveAll(captor.capture());
+        assertEquals(1, captor.getValue().size());
+        assertEquals(Currency.GBP, captor.getValue().get(0).getTargetCurrency());
+    }
+
+    @Test
+    void FetchAndStore_PrimaryNoUsableRates_FallsBackToSecondary() {
+        FrankfurterApiResponse[] response = new FrankfurterApiResponse[] {
+                new FrankfurterApiResponse("EUR", "2025-01-01", "USD", BigDecimal.valueOf(-1.1))
+        };
+
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenReturn(ResponseEntity.ok(response));
+
+        ExchangeRateApiResponse secondary = new ExchangeRateApiResponse(
+                "success", "EUR", null, Map.of("GBP", BigDecimal.valueOf(0.9))
+        );
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(secondary));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        ArgumentCaptor<List<ExchangeRate>> captor = ArgumentCaptor.forClass(List.class);
+        verify(exchangeRateRepository).saveAll(captor.capture());
+        assertEquals(1, captor.getValue().size());
+        assertEquals(Currency.GBP, captor.getValue().get(0).getTargetCurrency());
+    }
+
+    @Test
+    void FetchAndStore_SecondaryApiKeyMissing_SkipsSecondary() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenThrow(new RuntimeException("Primary fails"));
+        ReflectionTestUtils.setField(service, "secondaryApiKey", "");
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void FetchAndStore_SecondaryResponseNot2xx_NoPersistence() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenThrow(new RuntimeException("Primary fails"));
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.status(500).build());
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void FetchAndStore_SecondaryResultNotSuccess_NoPersistence() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenThrow(new RuntimeException("Primary fails"));
+
+        ExchangeRateApiResponse secondary = new ExchangeRateApiResponse(
+                "error", "EUR", "invalid-key", Map.of("USD", BigDecimal.valueOf(1.2))
+        );
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(secondary));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void FetchAndStore_SecondaryInvalidBase_NoPersistence() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenThrow(new RuntimeException("Primary fails"));
+
+        ExchangeRateApiResponse secondary = new ExchangeRateApiResponse(
+                "success", "USD", null, Map.of("EUR", BigDecimal.valueOf(1.2))
+        );
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(secondary));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void FetchAndStore_SecondaryNoUsableRates_NoPersistence() {
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenThrow(new RuntimeException("Primary fails"));
+
+        ExchangeRateApiResponse secondary = new ExchangeRateApiResponse(
+                "success", "EUR", null, Map.of("USD", BigDecimal.valueOf(-1.2))
+        );
+        when(restTemplate.getForEntity(anyString(), eq(ExchangeRateApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(secondary));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        verify(exchangeRateRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void FetchAndStore_ZeroOrNegativeRates_AreIgnored() {
+        FrankfurterApiResponse[] response = new FrankfurterApiResponse[] {
+                new FrankfurterApiResponse("EUR", "2025-01-01", "USD", BigDecimal.ZERO),
+                new FrankfurterApiResponse("EUR", "2025-01-01", "GBP", BigDecimal.valueOf(-0.9)),
+                new FrankfurterApiResponse("EUR", "2025-01-01", "CHF", BigDecimal.valueOf(0.95))
+        };
+
+        when(restTemplate.getForEntity(anyString(), eq(FrankfurterApiResponse[].class)))
+                .thenReturn(ResponseEntity.ok(response));
+
+        service.fetchAndStoreLatestExchangeRates();
+
+        ArgumentCaptor<List<ExchangeRate>> captor = ArgumentCaptor.forClass(List.class);
+        verify(exchangeRateRepository).saveAll(captor.capture());
+        assertEquals(1, captor.getValue().size());
+        assertEquals(Currency.CHF, captor.getValue().get(0).getTargetCurrency());
+    }
 }

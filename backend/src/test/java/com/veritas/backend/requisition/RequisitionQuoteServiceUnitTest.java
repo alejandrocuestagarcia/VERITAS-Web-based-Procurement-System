@@ -37,6 +37,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
+import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.team.entity.Team;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -603,5 +606,550 @@ class RequisitionQuoteServiceUnitTest {
 
         verify(internalBudgetRepository, times(2)).save(any(InternalBudget.class));
         verify(quoteRepository, times(3)).save(any(Quote.class));
+    }
+
+    @Test
+    void GetQuotesForRequest_MismatchedRequester_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        User creator = new User();
+        creator.setId(99L);
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setUser(creator);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.REQUESTER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.getQuotesForRequest(requestId)
+        );
+    }
+
+    @Test
+    void GetQuotesForRequest_ProcurementOfficerNullTeam_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setTeam(null);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        currentUser.setDepartment(new Department());
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.getQuotesForRequest(requestId)
+        );
+    }
+
+    @Test
+    void GetQuotesForRequest_ProcurementOfficerNullDepartment_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Team team = new Team();
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setTeam(team);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        currentUser.setDepartment(null);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.getQuotesForRequest(requestId)
+        );
+    }
+
+    @Test
+    void GetQuotesForRequest_ProcurementOfficerDepartmentMismatch_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Department d1 = new Department();
+        d1.setDepartmentId(11L);
+        Team team = new Team();
+        team.setDepartment(d1);
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setTeam(team);
+
+        Department d2 = new Department();
+        d2.setDepartmentId(22L);
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        currentUser.setDepartment(d2);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.getQuotesForRequest(requestId)
+        );
+    }
+
+    @Test
+    void CreateQuoteForRequest_IncorrectBaseAmount_ThrowsIllegalArgumentException() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        QuoteCreateDto dto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(110),
+                5,
+                List.of(
+                        new QuoteLineItemCreateDto("Item A", 3, BigDecimal.valueOf(50), null)
+                )
+        );
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+        when(vendorRepository.findById(2L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            quoteService.createQuoteForRequest(requestId, dto)
+        );
+        assertEquals("Base amount is incorrect", ex.getMessage());
+    }
+
+    @Test
+    void CreateQuoteForRequest_IncorrectTotalAmount_ThrowsIllegalArgumentException() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        QuoteCreateDto dto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(150),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(200),
+                5,
+                List.of(
+                        new QuoteLineItemCreateDto("Item A", 3, BigDecimal.valueOf(50), null)
+                )
+        );
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+        when(vendorRepository.findById(2L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            quoteService.createQuoteForRequest(requestId, dto)
+        );
+        assertEquals("Total amount is incorrect", ex.getMessage());
+    }
+
+    @Test
+    void CreateQuoteForRequest_NullItems_ThrowsNullPointerException() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        QuoteCreateDto dto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(0),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(10),
+                5,
+                null
+        );
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+        when(vendorRepository.findById(2L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        assertThrows(NullPointerException.class, () ->
+            quoteService.createQuoteForRequest(requestId, dto)
+        );
+    }
+
+    @Test
+    void CreateQuoteForRequest_EmptyItems_SavesQuoteSuccessfully() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        QuoteCreateDto dto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(0),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(10),
+                5,
+                List.of()
+        );
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+        when(vendorRepository.findById(2L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        Quote savedQuote = new Quote();
+        savedQuote.setQuoteID(100L);
+        savedQuote.setTotalAmount(BigDecimal.valueOf(10));
+        savedQuote.setCurrency(Currency.EUR);
+        when(quoteRepository.save(any(Quote.class))).thenReturn(savedQuote);
+
+        QuoteDto expectedDto = QuoteDto.builder()
+                .quoteId(100L)
+                .build();
+        when(quoteMapper.toDto(eq(savedQuote), anyList(), any(), any(), any())).thenReturn(expectedDto);
+
+        QuoteDto result = quoteService.createQuoteForRequest(requestId, dto);
+        assertNotNull(result);
+        verify(quoteRepository).save(any(Quote.class));
+        verify(quoteLineItemRepository, never()).save(any());
+    }
+
+    @Test
+    void UpdateQuoteForRequest_DifferentVendor_UpdatesVendor() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Vendor oldVendor = new Vendor();
+        oldVendor.setId(2L);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setVendorID(oldVendor);
+        quote.setTotalAmount(BigDecimal.valueOf(100));
+        quote.setCurrency(Currency.EUR);
+
+        QuoteCreateDto updateDto = new QuoteCreateDto(
+                3L,
+                Currency.EUR,
+                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(110),
+                5,
+                List.of(new QuoteLineItemCreateDto("Item A", 2, BigDecimal.valueOf(50), null))
+        );
+
+        Vendor newVendor = new Vendor();
+        newVendor.setId(3L);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        when(vendorRepository.findById(3L)).thenReturn(Optional.of(newVendor));
+        when(quoteRepository.save(any(Quote.class))).thenReturn(quote);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        QuoteDto expectedDto = QuoteDto.builder().quoteId(quoteId).build();
+        when(quoteMapper.toDto(eq(quote), anyList(), any(), any(), any())).thenReturn(expectedDto);
+
+        QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
+        assertNotNull(result);
+        assertEquals(3L, quote.getVendorID().getId());
+    }
+
+    @Test
+    void UpdateQuoteForRequest_NullAmounts_ThrowsNullPointerException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setVendorID(vendor);
+        quote.setTotalAmount(null);
+        quote.setCurrency(Currency.EUR);
+        quote.setSelected(true);
+
+        QuoteCreateDto updateDto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(0),
+                BigDecimal.valueOf(0),
+                null,
+                5,
+                List.of()
+        );
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        assertThrows(NullPointerException.class, () ->
+            quoteService.updateQuoteForRequest(requestId, quoteId, updateDto)
+        );
+    }
+
+    @Test
+    void UpdateQuoteForRequest_SelectedWithNullBudget_DoesNotValidateBudget() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setBudget(null);
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setVendorID(vendor);
+        quote.setTotalAmount(BigDecimal.valueOf(100));
+        quote.setCurrency(Currency.EUR);
+        quote.setSelected(true);
+
+        QuoteCreateDto updateDto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(110),
+                5,
+                List.of(new QuoteLineItemCreateDto("Item A", 2, BigDecimal.valueOf(50), null))
+        );
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        when(quoteRepository.save(any(Quote.class))).thenReturn(quote);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        QuoteDto expectedDto = QuoteDto.builder().quoteId(quoteId).build();
+        when(quoteMapper.toDto(eq(quote), anyList(), any(), any(), any())).thenReturn(expectedDto);
+
+        QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
+        assertNotNull(result);
+        verify(currencyConversionService, times(1)).convert(any(), any());
+    }
+
+    @Test
+    void UpdateQuoteForRequest_LineItemRequestItemNotFound_SetsRequestItemNull() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setVendorID(vendor);
+        quote.setTotalAmount(BigDecimal.valueOf(100));
+        quote.setCurrency(Currency.EUR);
+
+        QuoteCreateDto updateDto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(100),
+                BigDecimal.valueOf(10),
+                BigDecimal.valueOf(110),
+                5,
+                List.of(new QuoteLineItemCreateDto("Item A", 2, BigDecimal.valueOf(50), 999L))
+        );
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        when(quoteRepository.save(any(Quote.class))).thenReturn(quote);
+        when(requestItemRepository.findById(999L)).thenReturn(Optional.empty());
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        QuoteDto expectedDto = QuoteDto.builder().quoteId(quoteId).build();
+        when(quoteMapper.toDto(eq(quote), anyList(), any(), any(), any())).thenReturn(expectedDto);
+
+        QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
+        assertNotNull(result);
+        verify(quoteLineItemRepository).save(argThat(item -> item.getRequestItem() == null));
+    }
+
+    @Test
+    void DeleteQuoteForRequest_SelectedWithNullBudget_DeletesSuccessfully() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setBudget(null);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setSelected(true);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        quoteService.deleteQuoteForRequest(requestId, quoteId);
+
+        verify(quoteRepository).delete(quote);
+        verify(currencyConversionService, never()).convert(any(), any());
+    }
+
+    @Test
+    void CanAccess_FinanceOfficer_AllowsAccess() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of());
+
+        List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void UpdateQuoteForRequest_EmptyItems_DeletesOldAndDoesNotSaveNew() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Vendor vendor = new Vendor();
+        vendor.setId(2L);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setVendorID(vendor);
+        quote.setTotalAmount(BigDecimal.valueOf(100));
+        quote.setCurrency(Currency.EUR);
+
+        QuoteCreateDto updateDto = new QuoteCreateDto(
+                2L,
+                Currency.EUR,
+                BigDecimal.valueOf(0),
+                BigDecimal.valueOf(0),
+                BigDecimal.valueOf(0),
+                5,
+                List.of()
+        );
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        when(quoteRepository.save(any(Quote.class))).thenReturn(quote);
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        QuoteDto expectedDto = QuoteDto.builder().quoteId(quoteId).build();
+        when(quoteMapper.toDto(eq(quote), anyList(), any(), any(), any())).thenReturn(expectedDto);
+
+        QuoteDto result = quoteService.updateQuoteForRequest(requestId, quoteId, updateDto);
+        assertNotNull(result);
+        verify(quoteLineItemRepository).deleteAll(anyList());
+        verify(quoteLineItemRepository, never()).save(any());
+    }
+
+    @Test
+    void DeleteQuoteForRequest_NullAmount_DeletesSuccessfully() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setBudget(new InternalBudget());
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+        quote.setSelected(true);
+        quote.setTotalAmount(null);
+        quote.setCurrency(Currency.EUR);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        when(currencyConversionService.convert(BigDecimal.ZERO, Currency.EUR)).thenReturn(eurResult(BigDecimal.ZERO));
+
+        User currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(UserRole.FINANCE_OFFICER);
+        Authentication auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        quoteService.deleteQuoteForRequest(requestId, quoteId);
+
+        verify(quoteRepository).delete(quote);
     }
 }

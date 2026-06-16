@@ -1,7 +1,9 @@
 package com.veritas.backend.integrations.jira.service;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
@@ -27,8 +29,16 @@ import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.department.entity.Department;
+import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.entity.Invoice;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityExistsException;
 import java.util.List;
 import java.util.Optional;
+import org.mockito.Mockito;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +52,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 //AI-GENERATED
 
@@ -99,6 +110,11 @@ class JiraConfigServiceUnitTest {
 
         responseDto = new JiraConfigResponseDto(1L, "Test Config", "https://test.atlassian.net", "user",
             "jql", 60, "customfield_10015", null, null, null, null, null, null, null, null, true);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -236,7 +252,7 @@ class JiraConfigServiceUnitTest {
         assertEquals("TEST-123", syncedRequest.getJiraIssueKey());
         assertEquals("https://test.atlassian.net/browse/TEST-123", syncedRequest.getJiraIssueUrl());
         assertEquals("NOT_SYNCED", syncedRequest.getJiraStatus());
-        org.junit.jupiter.api.Assertions.assertNull(syncedRequest.getJiraConfig());
+        assertNull(syncedRequest.getJiraConfig());
 
         // otherRequest is untouched because it wasn't returned by findByJiraConfigId
         assertEquals("OTHER-456", otherRequest.getJiraIssueKey());
@@ -337,6 +353,468 @@ class JiraConfigServiceUnitTest {
         when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
         when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
         when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.of(workflow));
+        when(repository.save(any())).thenReturn(entity);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.createConfig(dto);
+
+        assertNotNull(result);
+        verify(repository).save(any());
+    }
+
+    @Test
+    void DeleteConfig_WithNoAuthentication_DeletesSuccessfully() {
+        SecurityContextHolder.clearContext();
+
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of());
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.deleteConfigById(1L);
+
+        assertNotNull(result);
+        verify(repository).delete(config);
+    }
+
+    @Test
+    void DeleteConfig_WithAuthenticationNotUser_DeletesSuccessfully() {
+        var auth = new UsernamePasswordAuthenticationToken("anonymousUser", null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of());
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.deleteConfigById(1L);
+
+        assertNotNull(result);
+        verify(repository).delete(config);
+    }
+
+    @Test
+    void DeleteConfig_WithFinishedPaidRequest_DoesNotLogOrComment() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+
+        Request finishedPaidRequest = new Request();
+        finishedPaidRequest.setState(RequestStatus.FINISHED);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        finishedPaidRequest.setInvoice(invoice);
+
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(finishedPaidRequest));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        verify(auditService, never()).createJiraUnsyncLog(any(), any(), any());
+        verify(jiraSyncService, never()).postJiraComment(any(), anyString(), anyString());
+    }
+
+    @Test
+    void DeleteConfig_WithSyncedRequestBlankIssueKey_DoesNotComment() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+
+        Request req = new Request();
+        req.setJiraIssueKey("");
+
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(req));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        verify(auditService).createJiraUnsyncLog(eq(null), eq(req), anyString());
+        verify(jiraSyncService, never()).postJiraComment(any(), anyString(), anyString());
+    }
+
+    @Test
+    void DeleteConfig_CommentThrowsException_LogsWarningAndContinues() throws Exception {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+
+        Request req = new Request();
+        req.setJiraIssueKey("TEST-123");
+
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(req));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+        Mockito.doThrow(new RuntimeException("Jira API Down"))
+            .when(jiraSyncService).postJiraComment(any(), anyString(), anyString());
+
+        service.deleteConfigById(1L);
+
+        verify(repository).delete(config);
+    }
+
+    @Test
+    void CreateConfig_FallbackUserNullTeam_ThrowsIllegalArgument() {
+        User fallbackUser = User.builder().id(10L).team(null).build();
+        Project fallbackProject = Project.builder().id(20L).team(Team.builder().teamId(1L).build()).build();
+
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", 10L, 20L, null, null, null);
+
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
+        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+
+        assertThrows(IllegalArgumentException.class, () -> service.createConfig(dto));
+    }
+
+    @Test
+    void CreateConfig_FallbackProjectNullTeam_ThrowsNullPointerException() {
+        User fallbackUser = User.builder().id(10L).team(Team.builder().teamId(1L).build()).build();
+        Project fallbackProject = Project.builder().id(20L).team(null).build();
+
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", 10L, 20L, null, null, null);
+
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
+        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+
+        assertThrows(NullPointerException.class, () -> service.createConfig(dto));
+    }
+    @Test
+    void GetConfigById_ExistingConfig_ReturnsDto() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(mapper.toDto(config)).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.getConfigById(1L);
+
+        assertNotNull(result);
+        assertEquals(responseDto.id(), result.id());
+    }
+
+    @Test
+    void GetConfigById_NonExistingConfig_ThrowsRuntimeException() {
+        when(repository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> service.getConfigById(999L));
+    }
+
+    @Test
+    void CreateConfig_ApiTokenNull_ThrowsIllegalArgumentException() {
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", null,
+                "jql", 60, "customfield_10015", null, null, null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> service.createConfig(dto));
+    }
+
+    @Test
+    void CreateConfig_ApiTokenBlank_ThrowsIllegalArgumentException() {
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "   ",
+                "jql", 60, "customfield_10015", null, null, null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> service.createConfig(dto));
+    }
+
+    @Test
+    void UpdateConfig_DuplicateConfigUrlAndJql_ThrowsEntityExistsException() {
+        JiraConfig anotherConfig = new JiraConfig();
+        anotherConfig.setId(2L);
+        anotherConfig.setJiraUrl("https://test.atlassian.net");
+        anotherConfig.setJql("jql");
+
+        when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.of(anotherConfig));
+
+        assertThrows(EntityExistsException.class, () -> service.updateConfig(1L, configDto));
+    }
+
+    @Test
+    void UpdateConfig_NullApiToken_PreservesExistingToken() {
+        config.setApiToken("old-token");
+
+        JiraConfigDto dto = new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", null,
+                "jql", 60, "customfield_10015", null, null, null, null, null);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.empty());
+        when(repository.save(config)).thenReturn(config);
+        when(mapper.toDto(config)).thenReturn(responseDto);
+
+        service.updateConfig(1L, dto);
+
+        assertEquals("old-token", config.getApiToken());
+    }
+
+    @Test
+    void UpdateConfig_BlankApiToken_PreservesExistingToken() {
+        config.setApiToken("old-token");
+
+        JiraConfigDto dto = new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", "   ",
+                "jql", 60, "customfield_10015", null, null, null, null, null);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.empty());
+        when(repository.save(config)).thenReturn(config);
+        when(mapper.toDto(config)).thenReturn(responseDto);
+
+        service.updateConfig(1L, dto);
+
+        assertEquals("old-token", config.getApiToken());
+    }
+
+    @Test
+    void DeleteConfig_WithUserAuthentication_DeletesSuccessfullyAndLogsWithActor() {
+        User currentUser = User.builder().id(10L).email("actor@test.com").build();
+        var auth = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        Request req = new Request();
+        req.setJiraIssueKey("TEST-123");
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(req));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        verify(auditService).createJiraUnsyncLog(eq(currentUser), eq(req), anyString());
+    }
+
+    @Test
+    void DeleteConfig_WithFinishedRequestNullInvoice_LogsAndComments() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+
+        Request finishedRequest = new Request();
+        finishedRequest.setState(RequestStatus.FINISHED);
+        finishedRequest.setInvoice(null);
+        finishedRequest.setJiraIssueKey("TEST-123");
+
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(finishedRequest));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        assertAll(
+            () -> verify(auditService).createJiraUnsyncLog(eq(null), eq(finishedRequest), anyString()),
+            () -> verify(jiraSyncService).postJiraComment(any(), eq("TEST-123"), anyString())
+        );
+    }
+
+    @Test
+    void DeleteConfig_WithFinishedRequestUnpaidInvoice_LogsAndComments() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+
+        Request finishedRequest = new Request();
+        finishedRequest.setState(RequestStatus.FINISHED);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(false);
+        finishedRequest.setInvoice(invoice);
+        finishedRequest.setJiraIssueKey("TEST-123");
+
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(finishedRequest));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        assertAll(
+            () -> verify(auditService).createJiraUnsyncLog(eq(null), eq(finishedRequest), anyString()),
+            () -> verify(jiraSyncService).postJiraComment(any(), eq("TEST-123"), anyString())
+        );
+    }
+
+    @Test
+    void CreateConfig_WorkflowNonNullDeptAndProjectNullDept_Succeeds() {
+        Department deptA = Department.builder().departmentId(1L).name("Dept A").build();
+        Team team = Team.builder().teamId(1L).name("Team A").department(null).build();
+
+        User fallbackUser = User.builder().id(10L).team(team).build();
+        Project fallbackProject = Project.builder().id(20L).team(team).build();
+        WorkflowDefinition workflow = new WorkflowDefinition();
+        workflow.setId(30L);
+        workflow.setDepartment(deptA);
+
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
+
+        JiraConfig entity = new JiraConfig();
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(entity);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
+        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+        when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.of(workflow));
+        when(repository.save(any())).thenReturn(entity);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.createConfig(dto);
+
+        assertNotNull(result);
+        verify(repository).save(any());
+    }
+
+    @Test
+    void CreateConfig_WorkflowAndProjectSameDepartment_Succeeds() {
+        Department deptA = Department.builder().departmentId(1L).name("Dept A").build();
+        Team team = Team.builder().teamId(1L).name("Team A").department(deptA).build();
+
+        User fallbackUser = User.builder().id(10L).team(team).build();
+        Project fallbackProject = Project.builder().id(20L).team(team).build();
+        WorkflowDefinition workflow = new WorkflowDefinition();
+        workflow.setId(30L);
+        workflow.setDepartment(deptA);
+
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
+
+        JiraConfig entity = new JiraConfig();
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(entity);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
+        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+        when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.of(workflow));
+        when(repository.save(any())).thenReturn(entity);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.createConfig(dto);
+
+        assertNotNull(result);
+        verify(repository).save(any());
+    }
+
+    @Test
+    void CreateConfig_FallbackUserNotFound_ThrowsEntityNotFoundException() {
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", 10L, null, null, null, null);
+
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(userRepository.findById(10L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.createConfig(dto));
+    }
+
+    @Test
+    void CreateConfig_FallbackProjectNotFound_ThrowsEntityNotFoundException() {
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", null, 20L, null, null, null);
+
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(projectRepository.findById(20L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.createConfig(dto));
+    }
+
+    @Test
+    void CreateConfig_FallbackWorkflowNotFound_ThrowsEntityNotFoundException() {
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", null, null, 30L, null, null);
+
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.createConfig(dto));
+    }
+
+    @Test
+    void DeleteConfig_NonExistingConfig_ThrowsEntityNotFoundException() {
+        when(repository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.deleteConfigById(999L));
+    }
+
+    @Test
+    void UpdateConfig_SameConfigUrlAndJql_Succeeds() {
+        JiraConfig existing = new JiraConfig();
+        existing.setId(1L);
+        existing.setJiraUrl("https://test.atlassian.net");
+        existing.setJql("jql");
+
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+        when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenReturn(config);
+        when(mapper.toDto(any())).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.updateConfig(1L, configDto);
+
+        assertNotNull(result);
+        verify(repository).save(any());
+    }
+
+    @Test
+    void UpdateConfig_ConfigNotFound_ThrowsEntityNotFoundException() {
+        when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.empty());
+        when(repository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.updateConfig(999L, configDto));
+    }
+
+    @Test
+    void GetAllConfigs_NullSearch_ReturnsAll() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<JiraConfig> configPage = new PageImpl<>(List.of(config));
+
+        when(repository.findAllFiltered(null, pageable)).thenReturn(configPage);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        Page<JiraConfigResponseDto> result = service.getAllConfigs(pageable, null);
+
+        assertNotNull(result);
+        verify(repository).findAllFiltered(null, pageable);
+    }
+
+    @Test
+    void GetAllConfigs_BlankSearch_ReturnsAll() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<JiraConfig> configPage = new PageImpl<>(List.of(config));
+
+        when(repository.findAllFiltered(null, pageable)).thenReturn(configPage);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        Page<JiraConfigResponseDto> result = service.getAllConfigs(pageable, "   ");
+
+        assertNotNull(result);
+        verify(repository).findAllFiltered(null, pageable);
+    }
+
+    @Test
+    void DeleteConfig_WithSyncedRequestNullIssueKey_DoesNotComment() {
+        when(repository.findById(1L)).thenReturn(Optional.of(config));
+
+        Request req = new Request();
+        req.setJiraIssueKey(null);
+
+        when(requestRepository.findByJiraConfigId(1L)).thenReturn(List.of(req));
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        service.deleteConfigById(1L);
+
+        verify(auditService).createJiraUnsyncLog(eq(null), eq(req), anyString());
+        verify(jiraSyncService, never()).postJiraComment(any(), any(), anyString());
+    }
+
+    @Test
+    void CreateConfig_FallbackUserNullProjectNonNull_Succeeds() {
+        Project fallbackProject = Project.builder().id(20L).team(Team.builder().teamId(1L).build()).build();
+
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", null, 20L, null, null, null);
+
+        JiraConfig entity = new JiraConfig();
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(entity);
+        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+        when(repository.save(any())).thenReturn(entity);
+        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
+
+        JiraConfigResponseDto result = service.createConfig(dto);
+
+        assertNotNull(result);
+        verify(repository).save(any());
+    }
+
+    @Test
+    void CreateConfig_FallbackUserNonNullProjectNull_Succeeds() {
+        User fallbackUser = User.builder().id(10L).team(Team.builder().teamId(1L).build()).build();
+
+        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
+                "jql", 60, "customfield_10015", 10L, null, null, null, null);
+
+        JiraConfig entity = new JiraConfig();
+        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
+        when(mapper.toEntity(any())).thenReturn(entity);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
         when(repository.save(any())).thenReturn(entity);
         when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
 

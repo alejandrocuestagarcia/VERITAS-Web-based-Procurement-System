@@ -45,6 +45,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -740,4 +741,419 @@ class UserServiceUnitTest {
         assertEquals(UserRole.REQUESTER, userToEdit.getRole());
         verify(refreshTokenRepository, times(1)).deleteByUserId(2L);
     }
+
+    @Test
+    void CreateUser_ProcurementOfficerWithoutDepartment_ThrowsIllegalArgumentException() {
+        UserCreationRequestDto request = new UserCreationRequestDto(
+                "pro@veritas.corp", "Procurement", "password123",
+                UserRole.PROCUREMENT_OFFICER, null, null, false);
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
+    }
+
+    @Test
+    void CreateUser_ProcurementOfficerDepartmentNotFound_ThrowsEntityNotFoundException() {
+        UserCreationRequestDto request = new UserCreationRequestDto(
+                "pro@veritas.corp", "Procurement", "password123",
+                UserRole.PROCUREMENT_OFFICER, null, 99L, false);
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> userService.createUser(request));
+    }
+
+    @Test
+    void CreateUser_RequesterPromoteToLeaderSuccess_PromotesLeader() {
+        UserCreationRequestDto request = new UserCreationRequestDto(
+                "test@veritas.corp", "Test User", "password123",
+                UserRole.REQUESTER, 1L, null, true);
+
+        Team mockTeam = new Team();
+        mockTeam.setTeamId(1L);
+        mockTeam.setLeader(null);
+
+        User mappedUser = new User();
+        mappedUser.setRole(UserRole.REQUESTER);
+        User savedUser = new User();
+        savedUser.setRole(UserRole.REQUESTER);
+        UserDto expectedDto = new UserDto(1L, "Test User", "test@veritas.corp", true, UserRole.REQUESTER, "IT Team", 1L, null, null, LocalDateTime.now());
+
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(mockTeam));
+        when(userMapper.toUser(request)).thenReturn(mappedUser);
+        when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
+        when(userRepository.save(mappedUser)).thenReturn(savedUser);
+        when(userMapper.toUserDto(savedUser)).thenReturn(expectedDto);
+
+        UserDto result = userService.createUser(request);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(savedUser, mockTeam.getLeader())
+        );
+        verify(teamRepository).save(mockTeam);
+    }
+
+    @Test
+    void CreateUser_RequesterPromoteToLeaderAlreadyExists_ThrowsIllegalArgumentException() {
+        UserCreationRequestDto request = new UserCreationRequestDto(
+                "test@veritas.corp", "Test User", "password123",
+                UserRole.REQUESTER, 1L, null, true);
+
+        Team mockTeam = new Team();
+        mockTeam.setTeamId(1L);
+        User currentLeader = new User();
+        currentLeader.setId(99L);
+        mockTeam.setLeader(currentLeader);
+
+        User mappedUser = new User();
+        mappedUser.setRole(UserRole.REQUESTER);
+        User savedUser = new User();
+        savedUser.setRole(UserRole.REQUESTER);
+
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(mockTeam));
+        when(userMapper.toUser(request)).thenReturn(mappedUser);
+        when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
+        when(userRepository.save(mappedUser)).thenReturn(savedUser);
+
+        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
+    }
+
+    @Test
+    void EditUser_AdminEditsSelfWithoutChangingRole_SavesSuccessfully() {
+        User adminUser = new User();
+        adminUser.setId(1L);
+        adminUser.setEmail("admin@test.com");
+        adminUser.setRole(UserRole.ADMINISTRATOR);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(adminUser));
+        when(userRepository.save(adminUser)).thenReturn(adminUser);
+
+        UserDto result = userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null), adminUser);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void EditUser_SameTeamNoChange_DoesNotTriggerChangingTeam() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(team);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        UserDto result = userService.editUser(1L, new UserEditDto(null, null, null, 1L, null, null), null);
+
+        assertNotNull(result);
+        assertEquals(team, user.getTeam());
+    }
+
+    @Test
+    void EditUser_ChangeTeamAndPromoteToLeaderInSameRequest_ThrowsIllegalArgumentException() {
+        Team team = new Team();
+        team.setTeamId(1L);
+
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(team);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        assertThrows(IllegalArgumentException.class, () -> 
+            userService.editUser(1L, new UserEditDto(null, null, null, 2L, null, true), null)
+        );
+    }
+
+    @Test
+    void EditUser_EmailNotChanged_DoesNotThrow() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("test@test.com");
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(testTeam);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        UserDto result = userService.editUser(1L, new UserEditDto("test@test.com", null, null, null, null, null), null);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void EditUser_EmailChangedAlreadyRegistered_ThrowsEntityExistsException() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("test@test.com");
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(testTeam);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("other@test.com")).thenReturn(true);
+
+        assertThrows(EntityExistsException.class, () ->
+            userService.editUser(1L, new UserEditDto("other@test.com", null, null, null, null, null), null)
+        );
+    }
+
+    @Test
+    void EditUser_ProcurementOfficerChangeDeptSuccess_SavesSuccessfully() {
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department oldDept = new Department();
+        oldDept.setDepartmentId(1L);
+        user.setDepartment(oldDept);
+
+        Department newDept = new Department();
+        newDept.setDepartmentId(2L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(departmentRepository.findById(2L)).thenReturn(Optional.of(newDept));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.editUser(1L, new UserEditDto(null, null, null, null, 2L, null), null);
+
+        assertEquals(newDept, user.getDepartment());
+    }
+
+    @Test
+    void EditUser_ProcurementOfficerChangeDeptNotFound_ThrowsEntityNotFoundException() {
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.PROCUREMENT_OFFICER);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(departmentRepository.findById(2L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () ->
+            userService.editUser(1L, new UserEditDto(null, null, null, null, 2L, null), null)
+        );
+    }
+
+    @Test
+    void EditUser_ProcurementOfficerNoDeptAssigned_ThrowsIllegalArgumentException() {
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.PROCUREMENT_OFFICER);
+        user.setDepartment(null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.editUser(1L, new UserEditDto(null, null, null, null, null, null), null)
+        );
+    }
+
+    @Test
+    void EditUser_RequesterNoTeamAssigned_ThrowsIllegalArgumentException() {
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.editUser(1L, new UserEditDto(null, null, null, null, null, null), null)
+        );
+    }
+
+    @Test
+    void EditUser_SetTeamLeaderNoTeamAssigned_ThrowsIllegalArgumentException() {
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.FINANCE_OFFICER);
+        user.setTeam(null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.editUser(1L, new UserEditDto(null, null, null, null, null, true), null)
+        );
+    }
+
+    @Test
+    void EditUser_SetTeamLeaderAlreadyHasAnotherLeader_ThrowsIllegalArgumentException() {
+        Team team = new Team();
+        team.setTeamId(1L);
+        User currentLeader = new User();
+        currentLeader.setId(2L);
+        team.setLeader(currentLeader);
+
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(team);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.editUser(1L, new UserEditDto(null, null, null, null, null, true), null)
+        );
+    }
+
+    @Test
+    void GetAllUsers_Called_ReturnsPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(userRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of()));
+
+        Page<UserDto> result = userService.getAllUsers(pageable);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void GetAllRequesters_Called_ReturnsPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.REQUESTER, pageable)).thenReturn(new PageImpl<>(List.of()));
+
+        Page<UserDto> result = userService.getAllRequesters(pageable);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void GetUsersByRole_Called_ReturnsList() {
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.REQUESTER)).thenReturn(List.of());
+
+        List<UserDto> result = userService.getUsersByRole(UserRole.REQUESTER);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void DeleteUser_FallbackUserNotRequester_ThrowsIllegalArgumentException() {
+        User actualUser = new User();
+        actualUser.setId(1L);
+        actualUser.setRole(UserRole.REQUESTER);
+        actualUser.setTeam(testTeam);
+
+        User fallbackUser = new User();
+        fallbackUser.setId(2L);
+        fallbackUser.setRole(UserRole.ADMINISTRATOR);
+        fallbackUser.setTeam(testTeam);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(actualUser));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(fallbackUser));
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.deleteUser(1L, 2L, null)
+        );
+    }
+
+    @Test
+    void DeleteUser_FallbackUserTeamMismatch_ThrowsIllegalArgumentException() {
+        User actualUser = new User();
+        actualUser.setId(1L);
+        actualUser.setRole(UserRole.REQUESTER);
+        actualUser.setTeam(testTeam);
+
+        Team otherTeam = new Team();
+        otherTeam.setTeamId(2L);
+
+        User fallbackUser = new User();
+        fallbackUser.setId(2L);
+        fallbackUser.setRole(UserRole.REQUESTER);
+        fallbackUser.setTeam(otherTeam);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(actualUser));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(fallbackUser));
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.deleteUser(1L, 2L, null)
+        );
+    }
+
+    @Test
+    void DeleteUser_FallbackUserValidWithActiveRequests_ReassignsRequests() {
+        User actualUser = new User();
+        actualUser.setId(1L);
+        actualUser.setRole(UserRole.REQUESTER);
+        actualUser.setTeam(testTeam);
+
+        User fallbackUser = new User();
+        fallbackUser.setId(2L);
+        fallbackUser.setRole(UserRole.REQUESTER);
+        fallbackUser.setTeam(testTeam);
+
+        Request request1 = new Request();
+        request1.setRequestID(10L);
+        request1.setUser(actualUser);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(actualUser));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(fallbackUser));
+        when(requestRepository.findActiveRequestsByUserId(1L)).thenReturn(List.of(request1));
+
+        userService.deleteUser(1L, 2L, null);
+
+        assertAll(
+            () -> assertEquals(fallbackUser, request1.getUser()),
+            () -> verify(requestRepository).saveAll(anyList())
+        );
+    }
+
+    @Test
+    void DeleteUser_ProcurementOfficerWithDepartment_DeletesSuccessfully() {
+        User actualUser = new User();
+        actualUser.setId(1L);
+        actualUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        actualUser.setDepartment(new Department());
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(actualUser));
+
+        userService.deleteUser(1L, null, null);
+
+        assertAll(
+            () -> assertNull(actualUser.getDepartment()),
+            () -> assertFalse(actualUser.getIsActive()),
+            () -> verify(userRepository).save(actualUser)
+        );
+    }
+
+    @Test
+    void EditUser_AdminChangesSelfRoleNonAdmin_ThrowsIllegalArgumentException() {
+        User adminUser = new User();
+        adminUser.setId(1L);
+        adminUser.setEmail("admin@test.com");
+        adminUser.setRole(UserRole.ADMINISTRATOR);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(adminUser));
+
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.editUser(1L, new UserEditDto(null, null, UserRole.REQUESTER, null, null, null), adminUser)
+        );
+    }
+
+    @Test
+    void EditUser_RemoveTeamLeaderStatus_SavesSuccessfully() {
+        Team team = new Team();
+        team.setTeamId(1L);
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(team);
+        team.setLeader(user);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        UserDto result = userService.editUser(1L, new UserEditDto(null, null, null, null, null, false), null);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertNull(team.getLeader())
+        );
+    }
 }
+

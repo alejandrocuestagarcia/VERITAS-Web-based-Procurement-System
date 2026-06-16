@@ -68,5 +68,46 @@ class JiraIssueMapperUnitTest {
         assertEquals(Priority.LOW, mapper.mapPriority("Lowest"));
         assertEquals(Priority.MEDIUM, mapper.mapPriority(null));
         assertEquals(Priority.MEDIUM, mapper.mapPriority("Unknown"));
+        assertEquals(Priority.MEDIUM, mapper.mapPriority("DEFAULT"));
+        assertEquals(Priority.LOW, mapper.mapPriority("MINOR"));
+    }
+
+    @Test
+    void toRequest_NullIssueRecord_ReturnsNull() {
+        org.junit.jupiter.api.Assertions.assertNull(mapper.toRequest(null));
+    }
+
+    @Test
+    void toRequest_NullFields_MapsCorrectly() {
+        JiraIssueRecord issue = new JiraIssueRecord("10001", "TEST-1", "https://api.test/1", null);
+        Request request = mapper.toRequest(issue);
+        org.junit.jupiter.api.Assertions.assertAll(
+            () -> assertEquals("TEST-1", request.getJiraIssueKey()),
+            () -> assertEquals("https://api.test/1", request.getJiraIssueUrl()),
+            () -> org.junit.jupiter.api.Assertions.assertNull(request.getRequestName()),
+            () -> assertEquals(Priority.MEDIUM, request.getPriority()),
+            () -> org.junit.jupiter.api.Assertions.assertNull(request.getDescription())
+        );
+    }
+
+    @Test
+    void toRequest_NullPriorityAndDescription_MapsCorrectly() {
+        JiraFieldsRecord fields = new JiraFieldsRecord(
+            "Summary Test",
+            null,
+            null,
+            "2024-04-26T14:30:00.000+0000",
+            "2024-04-26T15:30:00.000+0000",
+            null,
+            null,
+            null
+        );
+        JiraIssueRecord issue = new JiraIssueRecord("10001", "TEST-1", "https://api.test/1", fields);
+        Request request = mapper.toRequest(issue);
+        org.junit.jupiter.api.Assertions.assertAll(
+            () -> assertEquals("TEST-1", request.getJiraIssueKey()),
+            () -> assertEquals(Priority.MEDIUM, request.getPriority()),
+            () -> org.junit.jupiter.api.Assertions.assertNull(request.getDescription())
+        );
     }
 }
