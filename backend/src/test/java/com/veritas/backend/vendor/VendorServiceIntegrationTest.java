@@ -231,15 +231,17 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         VendorRatingDto ratingData = new VendorRatingDto(8, 9, 8, "Satisfactory performance");
         VendorDto resultDto = vendorService.rateVendor(vendor.getId(), request.getRequestID(), ratingData, evaluator);
 
-        assertThat(resultDto).isNotNull();
-        assertThat(resultDto.gapScore()).isEqualTo(9.0);
-        assertThat(resultDto.overallScore()).isEqualTo(8.6);
-        assertThat(resultDto.communicationScore()).isEqualTo(8.0);
-        assertThat(resultDto.deliveryScore()).isEqualTo(9.0);
-        assertThat(resultDto.qualityScore()).isEqualTo(8.0);
-
         Vendor persistedVendor = vendorRepository.findById(vendor.getId()).orElseThrow();
-        assertThat(persistedVendor.getGapScore()).isEqualTo(9.0);
-        assertThat(persistedVendor.getOverallScore()).isEqualTo(8.6);
+
+        assertAll(
+            () -> assertNotNull(resultDto),
+            () -> assertEquals(9.0, resultDto.gapScore()),
+            () -> assertEquals(8.6, resultDto.overallScore()),
+            () -> assertEquals(8.0, resultDto.communicationScore()),
+            () -> assertEquals(9.0, resultDto.deliveryScore()),
+            () -> assertEquals(8.0, resultDto.qualityScore()),
+            () -> assertEquals(9.0, persistedVendor.getGapScore()),
+            () -> assertEquals(8.6, persistedVendor.getOverallScore())
+        );
     }
 }

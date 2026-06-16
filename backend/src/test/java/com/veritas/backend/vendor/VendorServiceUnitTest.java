@@ -33,7 +33,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -345,14 +344,17 @@ class VendorServiceUnitTest {
 
         VendorDto result = vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
 
-        assertThat(result).isNotNull();
         ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
         VendorEvaluation savedEval = evaluationCaptor.getValue();
-        assertThat(savedEval.getGapScore()).isEqualTo(10.0);
-        assertThat(savedEval.getCommunicationScore()).isEqualTo(9);
-        assertThat(savedEval.getDeliveryScore()).isEqualTo(8);
-        assertThat(savedEval.getQualityScore()).isEqualTo(9);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertEquals(10.0, savedEval.getGapScore()),
+            () -> assertEquals(9, savedEval.getCommunicationScore()),
+            () -> assertEquals(8, savedEval.getDeliveryScore()),
+            () -> assertEquals(9, savedEval.getQualityScore())
+        );
     }
 
     @Test
@@ -390,7 +392,7 @@ class VendorServiceUnitTest {
         ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
         VendorEvaluation savedEval = evaluationCaptor.getValue();
-        assertThat(savedEval.getGapScore()).isEqualTo(8.0);
+        assertEquals(8.0, savedEval.getGapScore());
     }
 
     @Test
@@ -419,6 +421,6 @@ class VendorServiceUnitTest {
         ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
         VendorEvaluation savedEval = evaluationCaptor.getValue();
-        assertThat(savedEval.getGapScore()).isEqualTo(10.0);
+        assertEquals(10.0, savedEval.getGapScore());
     }
 }
