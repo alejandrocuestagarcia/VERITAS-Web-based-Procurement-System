@@ -77,9 +77,8 @@ public abstract class BaseDBIntegrationTest {
             jdbcTemplate.execute("DELETE FROM projects");
             jdbcTemplate.execute("DELETE FROM users");
             jdbcTemplate.execute("DELETE FROM teams");
-            jdbcTemplate.execute("UPDATE departments SET budget_id = NULL");
-            jdbcTemplate.execute("DELETE FROM internal_budgets");
             jdbcTemplate.execute("DELETE FROM departments");
+            jdbcTemplate.execute("DELETE FROM internal_budgets");
             jdbcTemplate.execute("DELETE FROM vendors");
             jdbcTemplate.execute("DELETE FROM exchange_rates");
         }

@@ -49,7 +49,7 @@ public class ProjectController {
     @Operation(summary = "Edit project", description = "Edits a projects basic info.")
     @IsFinanceOfficer
     @PatchMapping("/{id}")
-    public ResponseEntity<ProjectDto> editProject(@PathVariable Long id, @RequestBody ProjectEditDto updatedProject) {
+    public ResponseEntity<ProjectDto> editProject(@PathVariable Long id, @RequestBody @Valid ProjectEditDto updatedProject) {
         log.info("PATCH /projects/{}", id);
         return ResponseEntity.ok(projectService.editProject(id, updatedProject));
     }

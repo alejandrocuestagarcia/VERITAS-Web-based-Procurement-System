@@ -12,6 +12,7 @@ import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
+import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.vendor.entity.Quote;
@@ -21,6 +22,9 @@ import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +75,13 @@ class RequisitionQuoteServiceUnitTest {
     private QuoteMapper quoteMapper;
 
     @Mock
+    private InternalBudgetRepository internalBudgetRepository;
+
+    @Mock
     private CurrencyConversionService currencyConversionService;
+
+    @Mock
+    private RequisitionServiceImpl requisitionService;
 
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;
@@ -98,6 +108,12 @@ class RequisitionQuoteServiceUnitTest {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
+
+        lenient().when(currencyConversionService.convert(any(), any()))
+                .thenAnswer(invocation -> {
+                    BigDecimal amt = invocation.getArgument(0);
+                    return new CurrencyConversionResult(amt != null ? amt : BigDecimal.ZERO, BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER);
+                });
     }
 
     @AfterEach
@@ -535,5 +551,57 @@ class RequisitionQuoteServiceUnitTest {
         List<QuoteDto> result = quoteService.getQuotesForRequest(requestId);
 
         assertNull(result.getFirst().totalAmountEuro());
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_UpdatesBudgetCommittedSpend() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        // Setup budget hierarchy: Request Budget -> Project Budget
+        InternalBudget projectBudget = new InternalBudget();
+        projectBudget.setBudgetType(BudgetType.PROJECT);
+        projectBudget.setTotalAmount(BigDecimal.valueOf(1000));
+        projectBudget.setCommittedSpend(BigDecimal.valueOf(100));
+
+        InternalBudget requestBudget = new InternalBudget();
+        requestBudget.setBudgetType(BudgetType.REQUEST);
+        requestBudget.setTotalAmount(BigDecimal.ZERO);
+        requestBudget.setCommittedSpend(BigDecimal.valueOf(100));
+        requestBudget.setParentBudget(projectBudget);
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setBudget(requestBudget);
+
+        Quote quoteToSelect = new Quote();
+        quoteToSelect.setQuoteID(quoteId);
+        quoteToSelect.setRequest(request);
+        quoteToSelect.setSelected(false);
+        quoteToSelect.setTotalAmount(BigDecimal.valueOf(150));
+
+        Quote otherQuote = new Quote();
+        otherQuote.setQuoteID(11L);
+        otherQuote.setRequest(request);
+        otherQuote.setSelected(true);
+        otherQuote.setTotalAmount(BigDecimal.valueOf(100));
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quoteToSelect, otherQuote));
+
+        quoteService.selectQuoteForRequest(requestId, quoteId);
+
+        assertAll("Quote selection committed spend updates",
+                () -> assertTrue(quoteToSelect.isSelected()),
+                () -> assertFalse(otherQuote.isSelected()),
+                // Difference is 150 - 100 = 50. So committedSpend should go from 100 to 150.
+                () -> assertEquals(0, requestBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(150))),
+                () -> assertEquals(0, projectBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(150)))
+        );
+
+        verify(internalBudgetRepository, times(2)).save(any(InternalBudget.class));
+        verify(quoteRepository, times(3)).save(any(Quote.class));
     }
 }

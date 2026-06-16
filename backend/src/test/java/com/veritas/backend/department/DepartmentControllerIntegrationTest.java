@@ -7,6 +7,8 @@ import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -71,6 +73,11 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 existingDept = departmentRepository.save(Department.builder()
                                 .name("Existing Department")
+                                .internalBudget(InternalBudget.builder()
+                                                .budgetName("Existing Department")
+                                                .budgetType(BudgetType.DEPARTMENT)
+                                                .totalAmount(BigDecimal.valueOf(10000.0))
+                                                .build())
                                 .build());
 
                 testingTeam = teamRepository.save(Team.builder()
@@ -240,6 +247,11 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 Department tempDept = departmentRepository.save(Department.builder()
                                 .name("Temporary Department")
+                                .internalBudget(InternalBudget.builder()
+                                                .budgetName("Temporary Department")
+                                                .budgetType(BudgetType.DEPARTMENT)
+                                                .totalAmount(BigDecimal.valueOf(10000.0))
+                                                .build())
                                 .build());
 
                 mockMvc.perform(delete("/api/v1/departments/" + tempDept.getDepartmentId())

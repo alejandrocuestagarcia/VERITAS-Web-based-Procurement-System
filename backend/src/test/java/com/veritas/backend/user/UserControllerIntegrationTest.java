@@ -84,12 +84,10 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     jdbcTemplate.update("UPDATE users SET team_id = NULL");
     jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
-    jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
     auditLogRepository.deleteAll();
     requestRepository.deleteAll();
     projectRepository.deleteAll();
-    jdbcTemplate.update("DELETE FROM internal_budgets");
 
     entityManager.clear();
 
@@ -108,12 +106,10 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     jdbcTemplate.update("UPDATE users SET team_id = NULL");
     jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
-    jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
     auditLogRepository.deleteAll();
     requestRepository.deleteAll();
     projectRepository.deleteAll();
-    jdbcTemplate.update("DELETE FROM internal_budgets");
 
     entityManager.clear();
 

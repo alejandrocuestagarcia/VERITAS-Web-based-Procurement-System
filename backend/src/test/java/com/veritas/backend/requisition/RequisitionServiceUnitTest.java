@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
 
 import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.notification.entity.NotificationType;
@@ -753,7 +754,7 @@ class RequisitionServiceUnitTest {
                 () -> assertEquals("Updated Laptop", request.getRequestName(), "Request name should be updated"),
                 () -> assertEquals("Need an updated laptop", request.getDescription(), "Description should be updated"),
                 () -> assertEquals(Priority.HIGH, request.getPriority(), "Priority should be updated to HIGH"),
-                () -> assertEquals("Request: Updated Laptop", budget.getBudgetName(), "Internal budget name should be synchronized with new request name")
+                () -> assertEquals("Updated Laptop", budget.getBudgetName(), "Internal budget name should be synchronized with new request name")
         );
         verify(requestRepository).save(request);
     }
@@ -1073,6 +1074,7 @@ class RequisitionServiceUnitTest {
         BigDecimal actualSpend = new BigDecimal("50.00");
 
         InternalBudget budget = new InternalBudget();
+        budget.setBudgetType(BudgetType.REQUEST);
         budget.setCommittedSpend(committedSpend);
         budget.setActualSpend(actualSpend);
         request.setBudget(budget);

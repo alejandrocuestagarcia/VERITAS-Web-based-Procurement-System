@@ -1,6 +1,8 @@
 package com.veritas.backend.department;
 
 import com.veritas.backend.BaseDBIntegrationTest;
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.dto.DepartmentDto;
 import com.veritas.backend.department.entity.Department;
@@ -48,6 +50,18 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
         departmentRepository.deleteAll();
     }
 
+    private Department createTestDepartment(String name) {
+        InternalBudget budget = InternalBudget.builder()
+                .budgetName(name)
+                .budgetType(BudgetType.DEPARTMENT)
+                .totalAmount(BigDecimal.valueOf(100000.0))
+                .build();
+        return Department.builder()
+                .name(name)
+                .internalBudget(budget)
+                .build();
+    }
+
     @Test
     void CreateDepartment_SavesToDatabase() {
         DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
@@ -67,7 +81,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void CreateDepartment_DuplicateName_ThrowsEntityExistsException() {
-        departmentRepository.save(Department.builder().name("Engineering").build());
+        departmentRepository.save(createTestDepartment("Engineering"));
         DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
 
         assertThrows(EntityExistsException.class, () -> departmentService.createDepartment(request));
@@ -75,8 +89,8 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void GetAllDepartments_RetrievesSavedDepartments() {
-        departmentRepository.save(Department.builder().name("Engineering").build());
-        departmentRepository.save(Department.builder().name("Marketing").build());
+        departmentRepository.save(createTestDepartment("Engineering"));
+        departmentRepository.save(createTestDepartment("Marketing"));
 
         List<DepartmentDto> result = departmentService.getAllDepartments();
 
@@ -90,7 +104,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void GetDepartmentById_RetrievesCorrectDepartment() {
-        Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
+        Department saved = departmentRepository.save(createTestDepartment("Engineering"));
 
         DepartmentDto result = departmentService.getDepartmentById(saved.getDepartmentId());
 
@@ -103,7 +117,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void UpdateDepartment_PersistsChanges() {
-        Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
+        Department saved = departmentRepository.save(createTestDepartment("Engineering"));
         DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
 
         DepartmentDto result = departmentService.updateDepartment(saved.getDepartmentId(), request);
@@ -119,8 +133,8 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void UpdateDepartment_DuplicateName_ThrowsEntityExistsException() {
-        Department dept1 = departmentRepository.save(Department.builder().name("Engineering").build());
-        departmentRepository.save(Department.builder().name("R&D").build());
+        Department dept1 = departmentRepository.save(createTestDepartment("Engineering"));
+        departmentRepository.save(createTestDepartment("R&D"));
 
         DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
 
@@ -130,7 +144,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void DeleteDepartment_RemovesFromDatabase() {
-        Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
+        Department saved = departmentRepository.save(createTestDepartment("Engineering"));
 
         departmentService.deleteDepartment(saved.getDepartmentId());
 
@@ -144,7 +158,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void DeleteDepartment_WhenReferencedByTeam_ThrowsIllegalStateException() {
-        Department saved = departmentRepository.save(Department.builder().name("Engineering").build());
+        Department saved = departmentRepository.save(createTestDepartment("Engineering"));
 
         teamRepository.save(Team.builder()
                 .name("Team Alpha")

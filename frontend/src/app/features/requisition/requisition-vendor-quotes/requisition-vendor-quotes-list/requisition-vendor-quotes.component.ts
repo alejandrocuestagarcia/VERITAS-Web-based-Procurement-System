@@ -132,7 +132,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to select quote', err);
-        this.toastService.showError('Failed to select quote');
+        this.toastService.showError(err?.error?.message || err?.error || 'Failed to select quote');
         this.submitting = false;
       }
     });
@@ -250,7 +250,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       },
       error: (err: any) => {
         this.isUploadingInvoice = false;
-        const message = err?.error || 'Failed to upload invoice';
+        const message = err?.error?.message || err?.error || 'Failed to upload invoice';
         this.toastService.showError(message);
       }
     });
@@ -274,7 +274,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
             this.loading = false;
           },
           error: (err: any) => {
-            const message = err?.error || 'Failed to delete invoice';
+            const message = err?.error?.message || err?.error || 'Failed to delete invoice';
             this.toastService.showError(message);
             this.loading = false;
           }

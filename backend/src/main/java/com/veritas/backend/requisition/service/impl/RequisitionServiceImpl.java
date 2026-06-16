@@ -37,6 +37,7 @@ import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.team.entity.Team;
@@ -142,8 +143,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setTeam(user.getTeam());
 
         // Initialize Request Budget
-        InternalBudget budget = InternalBudget.builder().budgetName("Request: " + createDto.requestName())
-                .totalAmount(BigDecimal.ZERO).parentBudget(project.getInternalBudget()).build();
+        InternalBudget budget = InternalBudget.builder().budgetName(createDto.requestName())
+                .totalAmount(BigDecimal.ZERO).parentBudget(project.getInternalBudget()).budgetType(BudgetType.REQUEST).build();
         internalBudgetRepository.save(budget);
         
         request.setBudget(budget);
@@ -502,6 +503,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                 REJECT,
                 "Request was rejected with the following reason: " + rejectionData.getReason());
 
+        freeRequestBudget(request);
+
         Request savedRequest = requestRepository.save(request);
 
         if (savedRequest.getJiraIssueKey() != null && !savedRequest.getJiraIssueKey().isBlank()) {
@@ -552,6 +555,8 @@ public class RequisitionServiceImpl implements RequisitionService {
                 null,
                 CANCEL,
                 "Request was canceled by " + actor.getName());
+
+        freeRequestBudget(request);
 
         Request savedRequest = requestRepository.save(request);
 
@@ -764,7 +769,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         if (request.getBudget() != null) {
-            request.getBudget().setBudgetName("Request: " + updates.requestName());
+            request.getBudget().setBudgetName(updates.requestName());
             internalBudgetRepository.save(request.getBudget());
         }
 
@@ -871,22 +876,79 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     private void addToBudgets(InternalBudget budget, Invoice invoice) {
-        BigDecimal requestCommittedSpent = budget.getCommittedSpend();
+        BigDecimal requestCommittedSpent = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+        if (invoice.getTotalAmount() == null) {
+            throw new IllegalStateException("Invoice has no Total amount defined");
+        }
+
+        CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+        BigDecimal invoiceAmountEur = conversion.convertedAmount();
+        invoice.setPaidAmountEur(invoiceAmountEur);
+
+        BigDecimal difference = invoiceAmountEur.subtract(requestCommittedSpent);
+        validateBudget(budget, difference, false);
+
         while (budget != null) {
-            if (invoice.getTotalAmount() == null) {
-                throw new IllegalStateException("Invoice has no Total amount defined");
-            }
-
-            CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
-            invoice.setPaidAmountEur(conversion.convertedAmount());
-
-            BigDecimal newTotalSpend = budget.getActualSpend().add(conversion.convertedAmount());
+            BigDecimal newTotalSpend = budget.getActualSpend().add(invoiceAmountEur);
             budget.setActualSpend(newTotalSpend);
 
             budget.setCommittedSpend(budget.getCommittedSpend().subtract(requestCommittedSpent));
 
             internalBudgetRepository.save(budget);
             budget = budget.getParentBudget();
+        }
+    }
+
+    public void validateBudget(InternalBudget budget, BigDecimal difference, boolean includesSafetyBuffer) {
+        InternalBudget currentBudget = budget;
+        while (currentBudget != null) {
+            if (currentBudget.getBudgetType() == BudgetType.REQUEST) {
+                currentBudget = currentBudget.getParentBudget();
+                continue;
+            }
+
+            BigDecimal actual = currentBudget.getActualSpend();
+            BigDecimal committed = currentBudget.getCommittedSpend();
+            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount()
+                    : BigDecimal.ZERO;
+            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer();
+
+            BigDecimal threshold = total;
+            if (includesSafetyBuffer && safetyBuffer.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
+                threshold = total.multiply(BigDecimal.ONE.subtract(fraction));
+            }
+
+            BigDecimal simulatedTotal = actual.add(committed).add(difference);
+
+            if (simulatedTotal.compareTo(threshold) > 0) {
+                String budgetIdentifier = currentBudget.getBudgetName();
+                if (budgetIdentifier == null || budgetIdentifier.isBlank()) {
+                    switch (currentBudget.getBudgetType()) {
+                        case PROJECT -> budgetIdentifier = "Project budget";
+                        case DEPARTMENT -> budgetIdentifier = "Department budget";
+                        case GLOBAL -> budgetIdentifier = "Global budget";
+                        default -> budgetIdentifier = "Budget";
+                    }
+                }
+                String messageSuffix = includesSafetyBuffer ? " exhausted including safety buffer." : " exhausted.";
+                throw new WorkflowStateException("Budget of : " + budgetIdentifier + messageSuffix);
+            }
+
+            currentBudget = currentBudget.getParentBudget();
+        }
+    }
+
+    private void freeRequestBudget(Request request) {
+        if (request.getBudget() != null) {
+            BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend();
+            InternalBudget budget = request.getBudget();
+            while (budget != null) {
+                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+                budget.setCommittedSpend(currentCommitted.subtract(requestCommittedSpent));
+                internalBudgetRepository.save(budget);
+                budget = budget.getParentBudget();
+            }
         }
     }
 

@@ -14,6 +14,7 @@ import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
 
@@ -65,6 +66,27 @@ public class ProjectServiceImpl implements ProjectService {
         return allProjects;
     }
 
+    private void validateProjectBudgetLimit(Department department, Long excludeProjectId, BigDecimal projectBudget) {
+        if (department != null && department.getInternalBudget() != null) {
+            BigDecimal deptLimit = department.getInternalBudget().getTotalAmount();
+            if (deptLimit != null) {
+                BigDecimal existingTotal = projectRepository.findByTeamDepartment(department).stream()
+                        .filter(p -> excludeProjectId == null || !p.getId().equals(excludeProjectId))
+                        .map(p -> p.getInternalBudget().getTotalAmount())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                BigDecimal newTotal = existingTotal.add(projectBudget);
+                if (newTotal.compareTo(deptLimit) > 0) {
+                    log.warn("Project budget check failed – budget limit exceeded for department: {} (Limit: {}, Attempted: {})", 
+                            department.getName(), deptLimit, newTotal);
+                    throw new IllegalArgumentException("Project budget of " + projectBudget 
+                            + " exceeds the remaining department budget of " + deptLimit.subtract(existingTotal) 
+                            + " (Total Limit: " + deptLimit + ")");
+                }
+            }
+        }
+    }
+
     @Override
     @Transactional
     public ProjectDto createProject(ProjectCreationDto projectCreationDto) {
@@ -81,31 +103,20 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Department Budget Check
         Department department = team.getDepartment();
-        if (department != null && department.getInternalBudget() != null) {
-            BigDecimal deptLimit = department.getInternalBudget().getTotalAmount();
-            if (deptLimit != null) {
-                BigDecimal existingTotal = projectRepository.findByTeamDepartment(department).stream()
-                        .map(p -> p.getInternalBudget() != null ? p.getInternalBudget().getTotalAmount() : BigDecimal.ZERO)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-                
-                BigDecimal newTotal = existingTotal.add(projectCreationDto.budget());
-                if (newTotal.compareTo(deptLimit) > 0) {
-                    log.warn("Project creation blocked – budget limit exceeded for department: {} (Limit: {}, Attempted: {})", 
-                            department.getName(), deptLimit, newTotal);
-                    throw new IllegalArgumentException("Project budget of " + projectCreationDto.budget() 
-                            + " exceeds the remaining department budget of " + deptLimit.subtract(existingTotal) 
-                            + " (Total Limit: " + deptLimit + ")");
-                }
-            }
-        }
+        validateProjectBudgetLimit(department, null, projectCreationDto.budget());
 
         Project project = projectMapper.toProject(projectCreationDto);
         project.setTeam(team);
 
         // Initialize budget
         InternalBudget budget = new InternalBudget();
-        budget.setBudgetName("Project: " + project.getName());
+        budget.setBudgetName(project.getName());
         budget.setTotalAmount(projectCreationDto.budget());
+        budget.setBudgetType(BudgetType.PROJECT);
+        if (department != null && department.getInternalBudget() != null) {
+            budget.setParentBudget(department.getInternalBudget());
+        }
+
         project.setInternalBudget(budget);
 
         Project saved = projectRepository.save(project);
@@ -167,6 +178,15 @@ public class ProjectServiceImpl implements ProjectService {
             project.setEndDate(updatedProject.startDate());
         }
 
+        if (updatedProject.budget() != null || updatedProject.teamId() != null) {
+            Team targetTeam = updatedProject.teamId() != null ? 
+                    teamRepository.findById(updatedProject.teamId())
+                            .orElseThrow(() -> new EntityNotFoundException("Team with id " + updatedProject.teamId() + " not found")) :
+                    project.getTeam();
+            BigDecimal targetBudget = updatedProject.budget() != null ? updatedProject.budget() : project.getInternalBudget().getTotalAmount();
+            validateProjectBudgetLimit(targetTeam.getDepartment(), id, targetBudget);
+        }
+
         if(updatedProject.name()!= null) project.setName(updatedProject.name());
         if(updatedProject.budget()!= null){
             if (project.getInternalBudget() == null) {
@@ -179,6 +199,9 @@ public class ProjectServiceImpl implements ProjectService {
             Team team = teamRepository.findById(updatedProject.teamId())
                     .orElseThrow(() -> new EntityNotFoundException("Team with id " + updatedProject.teamId() + " not found"));
             project.setTeam(team);
+            if (project.getInternalBudget() != null) {
+                project.getInternalBudget().setParentBudget(team.getDepartment() != null ? team.getDepartment().getInternalBudget() : null);
+            }
         }
         Project saved = projectRepository.save(project);
         log.info("Project edited successfully – id: {}", saved.getId());

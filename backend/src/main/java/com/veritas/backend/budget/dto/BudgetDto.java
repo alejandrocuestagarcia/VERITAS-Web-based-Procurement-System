@@ -1,9 +1,9 @@
 package com.veritas.backend.budget.dto;
 
-import lombok.Data;
+import jakarta.validation.constraints.PositiveOrZero;
 
-@Data
-public class BudgetDto {
-    private Long id;
-    private Double totalAmount;
-}
+public record BudgetDto(
+    Long id,
+    @PositiveOrZero Double totalAmount,
+    @PositiveOrZero Double safetyBuffer
+) {}

@@ -24,7 +24,7 @@ public class Department {
     private String name;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "budget_id")
+    @JoinColumn(name = "budget_id", nullable = false)
     private InternalBudget internalBudget;
 
     private LocalDateTime createdAt;

@@ -4,6 +4,7 @@ import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.common.exception.WorkflowStateException;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
@@ -396,6 +397,11 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
     private void assertBudgetWithinSafetyBuffer(InternalBudget budget) {
         InternalBudget currentBudget = budget;
         while (currentBudget != null) {
+            if (currentBudget.getBudgetType() == BudgetType.REQUEST) {
+                currentBudget = currentBudget.getParentBudget();
+                continue;
+            }
+
             BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend()
                     : BigDecimal.ZERO;
             BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend()
@@ -409,7 +415,19 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
             BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
 
             if (actual.add(committed).compareTo(totalWithBuffer) > 0) {
-                throw new WorkflowStateException("Budget exhausted including safety buffer.");
+                String budgetIdentifier = currentBudget.getBudgetName();
+                if (budgetIdentifier == null || budgetIdentifier.isBlank()) {
+                    if (currentBudget.getBudgetType() == BudgetType.PROJECT) {
+                        budgetIdentifier = "Project budget";
+                    } else if (currentBudget.getBudgetType() == BudgetType.DEPARTMENT) {
+                        budgetIdentifier = "Department budget";
+                    } else if (currentBudget.getBudgetType() == BudgetType.GLOBAL) {
+                        budgetIdentifier = "Global budget";
+                    } else {
+                        budgetIdentifier = "Budget";
+                    }
+                }
+                throw new WorkflowStateException("Budget of : " + budgetIdentifier + " exhausted including safety buffer.");
             }
 
             currentBudget = currentBudget.getParentBudget();

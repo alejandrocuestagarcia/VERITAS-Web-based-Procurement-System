@@ -20,6 +20,8 @@ import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.vendor.mapper.QuoteMapper;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -27,7 +29,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.integrations.currency.entity.Currency;
+import java.math.RoundingMode;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -43,6 +48,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final RequestItemRepository requestItemRepository;
     private final QuoteMapper quoteMapper;
     private final CurrencyConversionService currencyConversionService;
+    private final InternalBudgetRepository internalBudgetRepository;
+    private final RequisitionServiceImpl requisitionService;
 
     @Override
     @Transactional(readOnly = true)
@@ -128,6 +135,10 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         validateAmounts(updateDto);
         
+        BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+        Currency oldCurrency = quote.getCurrency();
+        BigDecimal newAmount = updateDto.totalAmount() != null ? updateDto.totalAmount() : BigDecimal.ZERO;
+
         quote.setCurrency(updateDto.currency());
         quote.setBaseAmount(updateDto.baseAmount());
         quote.setShippingCosts(updateDto.shippingCosts());
@@ -135,6 +146,15 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quote.setShippingTime(updateDto.shippingTime());
         
         Quote updatedQuote = quoteRepository.save(quote);
+
+        Request request = quote.getRequest();
+        if (quote.isSelected() && request.getBudget() != null) {
+            BigDecimal oldAmountEur = currencyConversionService.convert(oldAmount, oldCurrency).convertedAmount();
+            BigDecimal newAmountEur = currencyConversionService.convert(newAmount, updateDto.currency()).convertedAmount();
+            BigDecimal difference = newAmountEur.subtract(oldAmountEur);
+            
+            updateCommittedSpendAndValidate(request.getBudget(), difference);
+        }
 
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
@@ -170,6 +190,13 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     public void deleteQuoteForRequest(Long requestId, Long quoteId) {
         Quote quote = getQuoteForRequest(requestId, quoteId);
 
+        Request request = quote.getRequest();
+        if (quote.isSelected() && request.getBudget() != null) {
+            BigDecimal amountToSubtract = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal amountToSubtractEur = currencyConversionService.convert(amountToSubtract, quote.getCurrency()).convertedAmount();
+            updateCommittedSpend(request.getBudget(), amountToSubtractEur.negate());
+        }
+
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
         quoteLineItemRepository.deleteAll(existingItems);
         
@@ -180,16 +207,30 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     @Transactional
     public void selectQuoteForRequest(Long requestId, Long quoteId) {
         Quote quoteToSelect = getQuoteForRequest(requestId, quoteId);
+        Request request = quoteToSelect.getRequest();
         
         // Unselect all other quotes for this request
+        BigDecimal oldAmountEur = BigDecimal.ZERO;
         List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         for (Quote quote : otherQuotes) {
+            if (quote.isSelected()) {
+                BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
+                oldAmountEur = currencyConversionService.convert(oldAmount, quote.getCurrency()).convertedAmount();
+            }
             quote.setSelected(false);
             quoteRepository.save(quote);
         }
 
         quoteToSelect.setSelected(true);
         quoteRepository.save(quoteToSelect);
+
+        BigDecimal newAmount = quoteToSelect.getTotalAmount() != null ? quoteToSelect.getTotalAmount() : BigDecimal.ZERO;
+        BigDecimal newAmountEur = currencyConversionService.convert(newAmount, quoteToSelect.getCurrency()).convertedAmount();
+
+        if (request.getBudget() != null) {
+            BigDecimal difference = newAmountEur.subtract(oldAmountEur);
+            updateCommittedSpendAndValidate(request.getBudget(), difference);
+        }
     }
 
     private void validateAmounts(QuoteCreateDto dto) {
@@ -208,6 +249,24 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         if (dto.totalAmount().compareTo(computedTotalAmount) != 0) {
             throw new IllegalArgumentException("Total amount is incorrect");
+        }
+    }
+
+
+    private void updateCommittedSpendAndValidate(InternalBudget startBudget, BigDecimal difference) {
+        if (startBudget != null) {
+            requisitionService.validateBudget(startBudget, difference, true);
+            updateCommittedSpend(startBudget, difference);
+        }
+    }
+
+    private void updateCommittedSpend(InternalBudget startBudget, BigDecimal difference) {
+        InternalBudget budget = startBudget;
+        while (budget != null) {
+            BigDecimal currentCommitted = budget.getCommittedSpend();
+            budget.setCommittedSpend(currentCommitted.add(difference));
+            internalBudgetRepository.save(budget);
+            budget = budget.getParentBudget();
         }
     }
 
