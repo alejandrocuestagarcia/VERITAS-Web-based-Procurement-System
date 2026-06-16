@@ -247,8 +247,8 @@
         <button mat-icon-button (click)="viewDetails(req.id)" matTooltip="View Details" class="text-slate-600">
           <mat-icon>visibility</mat-icon>
         </button>
-        <button mat-icon-button (click)="changeRequester(req)" matTooltip="Change Requester"
-          [disabled]="req.isClosed || (!isAdministrator && !isFinanceOfficer)">
+        <button *ngIf="isAdministrator || isFinanceOfficer" mat-icon-button (click)="changeRequester(req)" matTooltip="Change Requester"
+          [disabled]="req.isClosed">
           <mat-icon>swap_horiz</mat-icon>
         </button>
       </td>

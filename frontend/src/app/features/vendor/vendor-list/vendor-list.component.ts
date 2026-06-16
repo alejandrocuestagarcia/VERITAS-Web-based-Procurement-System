@@ -17,7 +17,7 @@ export class VendorListComponent implements OnInit {
   dataSource = new MatTableDataSource<VendorDto>();
   totalVendorCount = 0;
   totalPageElements = 0;
-  displayedColumns: string[] = ['vendorName', 'taxId', 'rating', 'contact', 'actions'];
+  displayedColumns: string[] = [];
   loading = false;
   averageScore = 0.0;
   subtitle = "Configure Vendors for potential Company Procurements.";
@@ -36,6 +36,7 @@ export class VendorListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.setDisplayedColumns();
     this.loadVendors(0, 10);
     this.loadVendorStats();
   }
@@ -113,7 +114,14 @@ export class VendorListComponent implements OnInit {
         console.error('Error fetching user stats:', err);
       }
     })
+  }
 
+  private setDisplayedColumns(): void {
+    this.displayedColumns = ['vendorName', 'taxId', 'rating', 'contact'];
+
+    if (this.isProcurementOfficer) {
+      this.displayedColumns.push('actions');
+    }
   }
 
   get isProcurementOfficer(): boolean {
