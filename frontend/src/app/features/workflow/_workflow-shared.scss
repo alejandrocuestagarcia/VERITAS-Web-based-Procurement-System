@@ -48,4 +48,10 @@
       display: none !important;
     }
   }
+//hide toolbox of editor for small screens since touch doesnt work anyway
+  @media (max-width: 1023px) {
+    .djs-palette {
+      display: none !important;
+    }
+  }
 }

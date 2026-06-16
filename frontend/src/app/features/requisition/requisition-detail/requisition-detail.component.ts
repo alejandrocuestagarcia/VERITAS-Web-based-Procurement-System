@@ -74,6 +74,19 @@ export class RequisitionDetailComponent implements OnInit {
     return this.canAct && this.request?.state !== 'DRAFT' && this.request?.state !== 'FINISHED';
   }
 
+  get missingApproveRequirements(): string {
+    if (!this.request || this.request.responsibleRole !== 'PROCUREMENT_OFFICER') return '';
+    const missing: string[] = [];
+    if (!this.selectedQuote) {
+      missing.push('select a quote');
+    }
+    if (!this.invoice) {
+      missing.push('add an invoice');
+    }
+    if (missing.length === 0) return '';
+    return 'Please ' + missing.join(' and ') + ' to approve.';
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -105,6 +118,7 @@ export class RequisitionDetailComponent implements OnInit {
       next: (req) => {
         this.request = req;
         this.loadSelectedQuote(id);
+        this.loadInvoice(id);
         this.checkCanAct(id);
         this.loadAuditLogs(id);
       },
@@ -171,6 +185,18 @@ export class RequisitionDetailComponent implements OnInit {
 
   getActionBgColor(action: string | undefined): string {
     return this.getActionConfig(action).bg;
+  }
+
+  loadInvoice(id: number): void {
+    this.requisitionService.getInvoice(id).subscribe({
+      next: (inv) => {
+        this.invoice = inv;
+      },
+      error: (err) => {
+        console.error('Failed to load invoice', err);
+        this.invoice = null;
+      }
+    });
   }
 
   checkCanAct(id: number): void {
@@ -279,6 +305,13 @@ export class RequisitionDetailComponent implements OnInit {
 
   approveRequest(): void {
     if (!this.request || !this.request.id) return;
+
+    if (this.request.responsibleRole === 'PROCUREMENT_OFFICER') {
+      if (!this.selectedQuote || !this.invoice) {
+        this.toastService.showError(this.missingApproveRequirements);
+        return;
+      }
+    }
 
     this.loading = true;
     this.requisitionService.getNextStepRole(this.request.id).subscribe({

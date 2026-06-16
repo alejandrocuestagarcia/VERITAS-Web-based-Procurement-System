@@ -292,3 +292,31 @@ textarea.help-code-block {
 }
 
 // ─── end Requisition Filter Bar ───────────────────────────────────────────────
+
+//AI-GENERATED
+// Hide stepper labels on mobile for clean UI
+@media (max-width: 640px) {
+  .mat-stepper-horizontal {
+    .mat-step-text-label,
+    .mat-step-label {
+      display: none !important;
+    }
+    .mat-step-header {
+      padding: 12px 16px !important;
+    }
+  }
+
+  // Ensure dialogs have a margin and never touch screen edges
+  .cdk-overlay-pane{
+    max-width: calc(100vw - 32px) !important;
+    min-width: 0 !important;
+  }
+
+  // Scale down action buttons on mobile to fit text on a single line
+  .v-btn-brand,
+  .v-btn-secondary {
+    padding: 0.625rem 1rem !important;
+    font-size: 0.8125rem !important;
+  }
+
+}

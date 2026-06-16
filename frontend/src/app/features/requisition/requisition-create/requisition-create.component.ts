@@ -221,6 +221,17 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
     }
   }
 
+  selectWorkflow(workflow: WorkflowDto): void {
+    const currentId = this.basicInfoForm.get('workflowDefinitionId')?.value;
+    if (currentId === workflow.id) {
+      if (window.innerWidth < 640) {
+        this.viewWorkflow(workflow.id);
+      }
+    } else {
+      this.basicInfoForm.get('workflowDefinitionId')?.setValue(workflow.id);
+    }
+  }
+
   onFileSelected(event: any): void {
     const files = event.target.files;
     this.addFiles(files);

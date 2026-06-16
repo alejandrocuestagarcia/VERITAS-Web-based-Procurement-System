@@ -11,6 +11,5 @@ export class SharedFormFieldComponent {
   @Input() required: boolean = false;
 
   @HostBinding('class.md:col-span-2') get mdColSpan2() { return this.fullWidth; }
-  @HostBinding('class.col-span-2') get colSpan2() { return this.fullWidth; }
   @HostBinding('class.block') get block() { return true; }
 }

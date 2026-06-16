@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, HostListener} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {Pageable, RequisitionDto, UserDto, UserDtoRoleEnum, UserModuleService} from "../../../core/api";
 import {PageEvent} from "@angular/material/paginator";
@@ -28,6 +28,10 @@ export class UserListComponent implements OnInit {
   selectedRole = "ALL"
   userSessions = 0;
   currentSearchString = "";
+
+  activeDropdown: string | null = null;
+  dropdownX = 0;
+  dropdownY = 0;
 
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
@@ -89,8 +93,64 @@ export class UserListComponent implements OnInit {
 
     this.selectedRole = value;
     this.loadUsers(0, 10)
-
   }
+
+  //AI-Generated
+  toggleDropdown(name: string, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.activeDropdown === name) {
+      this.activeDropdown = null;
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+
+    const estH = 200;
+    const estW = 224;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+
+    this.dropdownY = spaceBelow >= estH
+      ? rect.bottom + 6
+      : Math.max(8, rect.top - estH - 6);
+
+    this.dropdownX = Math.min(rect.left, window.innerWidth - estW - 8);
+
+    this.activeDropdown = name;
+  }
+
+  setRoleFilter(value: string): void {
+    this.selectedRole = value || 'ALL';
+    this.activeDropdown = null;
+    this.sharedTable.resetToFirstPage();
+    this.loadUsers(0, 10);
+  }
+
+  getSelectedRoleLabel(): string {
+    if (this.selectedRole === 'ALL') return 'Role';
+    return this.formatRoleLabel(this.selectedRole);
+  }
+
+  formatRoleLabel(role: string): string {
+    if (!role) return '';
+    return role.toLowerCase()
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.req-filter-pill-wrapper') && !target.closest('.req-dropdown')) {
+      this.activeDropdown = null;
+    }
+  }
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    this.activeDropdown = null;
+  }
+//AI-Generated end
 
   editUser(user: UserDto) {
     this.router.navigate(['/users/edit', user.id]);

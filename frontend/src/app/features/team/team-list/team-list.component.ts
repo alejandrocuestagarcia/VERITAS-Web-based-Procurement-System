@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
@@ -48,6 +48,11 @@ export class TeamListComponent implements OnInit, AfterViewInit {
   activeDepartmentFilter: DepartmentFilter = 'all';
   private currentSearchString = "";
 
+  activeDropdown: string | null = null;
+  dropdownX = 0;
+  dropdownY = 0;
+  departmentSearch = '';
+
   totalTeams = 0;
   totalProjects = 0;
   totalDepartments = 0;
@@ -92,6 +97,63 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     this.activeDepartmentFilter = value ?? 'all';
     this.applyFilters();
   }
+
+//AI-Generated
+  toggleDropdown(name: string, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.activeDropdown === name) {
+      this.activeDropdown = null;
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+
+    const estH = 240;
+    const estW = 224;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+
+    this.dropdownY = spaceBelow >= estH
+      ? rect.bottom + 6
+      : Math.max(8, rect.top - estH - 6);
+
+    this.dropdownX = Math.min(rect.left, window.innerWidth - estW - 8);
+
+    this.activeDropdown = name;
+    if (name === 'department') this.departmentSearch = '';
+  }
+
+  setDepartmentFilter(key: string): void {
+    this.activeDepartmentFilter = key || 'all';
+    this.departmentSearch = '';
+    this.activeDropdown = null;
+    this.applyFilters();
+  }
+
+  getFilteredDepartments(): Array<{ key: string; label: string }> {
+    if (!this.departmentSearch) return this.departmentFilters;
+    const search = this.departmentSearch.toLowerCase();
+    return this.departmentFilters.filter(d => d.label.toLowerCase().includes(search));
+  }
+
+  getSelectedDepartmentLabel(): string {
+    if (this.activeDepartmentFilter === 'all') return 'Department';
+    const filter = this.departmentFilters.find(d => d.key === this.activeDepartmentFilter);
+    return filter ? filter.label : 'Department';
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.req-filter-pill-wrapper') && !target.closest('.req-dropdown')) {
+      this.activeDropdown = null;
+    }
+  }
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    this.activeDropdown = null;
+  }
+//AI-Generated end
 
   private applyFilters() {
     this.dataSource.filter = JSON.stringify({

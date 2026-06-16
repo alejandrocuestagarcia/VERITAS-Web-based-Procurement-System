@@ -30,9 +30,11 @@ export class SharedTableComponent implements AfterContentInit, OnDestroy {
   @Input() displayedColumns: string[] = [];
   @Input() totalElements: number = 0;
   @Input() pageSize: number = 10;
+  @Input() rowClickable: boolean = false;
 
   @Output() pageChanged = new EventEmitter<PageEvent>();
   @Output() searchChanged = new EventEmitter<string>();
+  @Output() rowClicked = new EventEmitter<any>();
 
 
   @ViewChild(MatTable, { static: true }) table!: MatTable<any>;
@@ -66,6 +68,14 @@ export class SharedTableComponent implements AfterContentInit, OnDestroy {
     this.searchSubject.next(value);
   }
 
+  onRowClick(event: MouseEvent, row: any): void {
+    if (!this.rowClickable) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('.mat-mdc-button-base')) {
+      return;
+    }
+    this.rowClicked.emit(row);
+  }
 
   ngOnDestroy() {
     this.searchSubject.complete();
