@@ -719,11 +719,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (key === 'minVendorReliabilityScore' && value !== null && value !== undefined && value !== '') {
       const numVal = parseFloat(value);
       if (!isNaN(numVal)) {
-        if (numVal > 10) {
-          value = 10;
-        } else if (numVal < 0) {
-          value = 0;
-        }
+        value = numVal;
       }
     }
 

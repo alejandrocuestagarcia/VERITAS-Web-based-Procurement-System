@@ -1529,7 +1529,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("negative minVendorReliabilityScore") && e.contains("-2.5"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("negative minVendorReliabilityScore") && e.contains("-2.5")));
         }
 
         @Test
@@ -1555,7 +1555,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("non-numeric minVendorReliabilityScore"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-numeric minVendorReliabilityScore")));
         }
 
         @Test
@@ -1581,7 +1581,7 @@ class BpmnValidatorUnitTest {
                 BpmnModelInstance model = parse(xml);
                 BpmnValidationException ex = assertThrows(BpmnValidationException.class,
                                 () -> validator.validate(xml, model));
-                assertThat(ex.getErrors()).anyMatch(e -> e.contains("minVendorReliabilityScore exceeding the maximum of 10.0"));
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("minVendorReliabilityScore exceeding the maximum of 10.0")));
         }
 
         // Removed Process description test
