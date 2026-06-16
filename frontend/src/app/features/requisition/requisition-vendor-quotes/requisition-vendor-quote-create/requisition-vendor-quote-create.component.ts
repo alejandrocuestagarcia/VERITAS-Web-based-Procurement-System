@@ -63,6 +63,7 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
       baseAmount: [0, [Validators.required, Validators.min(1)]],
       shippingCosts: [0, [Validators.required, Validators.min(0)]],
       totalAmount: [0, [Validators.required, Validators.min(1)]],
+      shippingTime: [null, [Validators.required, Validators.min(0)]],
       items: this.fb.array([])
     });
 
@@ -177,7 +178,8 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
           currency: quote.currency,
           baseAmount: quote.baseAmount,
           shippingCosts: quote.shippingCosts,
-          totalAmount: quote.totalAmount
+          totalAmount: quote.totalAmount,
+          shippingTime: quote.shippingTime
         });
 
         while (this.itemsFormArray.length !== 0) {
@@ -217,6 +219,7 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
       baseAmount: formVal.baseAmount,
       shippingCosts: formVal.shippingCosts,
       totalAmount: formVal.totalAmount,
+      shippingTime: Number(formVal.shippingTime),
       items: formVal.items.map((item: any) => ({
         productDescription: item.productDescription,
         quantity: Number(item.quantity),

@@ -20,6 +20,12 @@
         <input matInput type="text" [value]="quote?.currency || ''" readonly class="text-slate-800 font-semibold">
       </mat-form-field>
     </app-shared-form-field>
+
+    <app-shared-form-field label="Shipping Time">
+      <mat-form-field appearance="outline" class="w-full">
+        <input matInput type="text" [value]="quote?.shippingTime != null ? quote?.shippingTime + ' Days' : ''" readonly class="text-slate-800 font-semibold">
+      </mat-form-field>
+    </app-shared-form-field>
   </app-shared-form-card>
 
   <app-shared-form-card icon="payments" title="Financial Pricing & Totals">

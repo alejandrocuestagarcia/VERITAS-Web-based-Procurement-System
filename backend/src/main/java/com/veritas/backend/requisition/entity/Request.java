@@ -12,6 +12,7 @@ import com.veritas.backend.integrations.jira.entity.JiraConfig;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,4 +126,15 @@ public class Request {
 
     @Column(name = "revision_required", nullable = false)
     private Boolean revisionRequired = false;
+
+    public BigDecimal getSelectedQuoteTotalAmount() {
+        if (quotes == null) {
+            return null;
+        }
+        return quotes.stream()
+                .filter(Quote::isSelected)
+                .map(Quote::getTotalAmount)
+                .findFirst()
+                .orElse(null);
+    }
 }

@@ -1,0 +1,224 @@
+<div class="p-8 max-w-7xl mx-auto flex flex-col font-manrope bg-[#f9fafc] min-h-screen" *ngIf="!loading && requisition">
+  <!-- Breadcrumbs -->
+  <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+    <a [routerLink]="['/requisitions']" class="hover:text-blue-600 transition-colors cursor-pointer">REQUISITIONS</a>
+    <span class="text-slate-300 font-normal">&gt;</span>
+    <a [routerLink]="['/requisitions', requisition.id]" class="hover:text-blue-600 transition-colors cursor-pointer">{{ requisition.requestKey || 'RFQ-' + requisition.id }}</a>
+    <span class="text-slate-300 font-normal">&gt;</span>
+    <a [routerLink]="['/requisitions', requisition.id, 'vendor-quotes']" class="hover:text-blue-600 transition-colors cursor-pointer">VENDOR QUOTES</a>
+    <span class="text-slate-300 font-normal">&gt;</span>
+    <span class="text-slate-600">COMPARE QUOTES</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="flex items-start justify-between border-b border-slate-100 pb-6 mb-8">
+    <div class="flex items-start gap-4">
+      <button mat-icon-button (click)="close()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white shadow-sm rounded-full border border-slate-100 mt-1 shrink-0">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900 m-0">
+          Vendor Quote Comparison
+        </h1>
+        <p class="text-sm text-slate-500 mt-1 mb-0">
+          Compare all vendor quote details side-by-side. Review pricing, shipping times, and vendor reliability scores to select the preferred vendor for this requisition.
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Reliability Score Calculation Card -->
+    <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6"
+         [class.md:col-span-2]="!hasNonEuroQuote()">
+      <div class="flex flex-col gap-2">
+        <span class="text-sm font-bold text-blue-800 uppercase tracking-wider">Reliability Score Calculation:</span>
+        <p class="text-sm text-slate-600 font-medium leading-relaxed m-0">
+          The score is a weighted average of evaluations: 
+          <strong>40% Invoice Gap</strong>, 
+          <strong>20% Quality</strong>, 
+          <strong>20% Delivery</strong>, and 
+          <strong>20% Communication</strong>.
+          Hover over any card's score bar to view details.
+        </p>
+      </div>
+    </div>
+
+    <!-- Currency Conversion Notice Card -->
+    <div *ngIf="hasNonEuroQuote()" class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6">
+      <div class="flex flex-col gap-2">
+        <span class="text-sm font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+          <mat-icon class="text-amber-500 scale-90 -ml-0.5">info_outline</mat-icon>
+          Currency Conversion Notice
+        </span>
+        <p class="text-sm text-slate-600 font-medium leading-relaxed m-0">
+          Converted prices are based on official live exchange rates. Because rates fluctuate, please confirm final order prices with the vendor.
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Comparison Matrix -->
+  <div class="bg-white rounded-[20px] border border-slate-200 p-8 shadow-sm overflow-x-auto">
+    <div class="flex flex-row gap-6 min-w-[750px]">
+      <!-- Left Labels Column -->
+      <div class="flex flex-col justify-end min-w-[200px] pb-24 text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">
+        <div class="h-16 flex items-center">Subtotal</div>
+        <div class="h-16 flex items-center border-t border-slate-100">Shipping Costs</div>
+        <div class="h-32 flex items-center border-t border-slate-100">Total (EUR)</div>
+        <div class="h-16 flex items-center border-t border-slate-100">Shipping Time</div>
+        <div class="h-20 flex items-center border-t border-slate-100">Reliability Score</div>
+      </div>
+
+      <!-- Vendor Quote Cards Columns -->
+      <div class="flex flex-row gap-6 flex-1">
+        <div *ngFor="let quote of quotes"
+             class="flex-1 min-w-[260px] max-w-[340px] bg-white rounded-[20px] border transition-all duration-300 relative flex flex-col"
+             [class.border-blue-600]="quote === recommendedQuote"
+             [class.shadow-lg]="quote === recommendedQuote"
+             [class.border-slate-200]="quote !== recommendedQuote"
+             [class.shadow-sm]="quote !== recommendedQuote">
+
+          <!-- Recommended Ribbon -->
+          <div *ngIf="quote === recommendedQuote"
+               class="absolute -top-3 right-6 bg-blue-600 text-white text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+            Recommended
+          </div>
+
+          <!-- Vendor Header -->
+          <div class="p-6 flex flex-col items-center text-center pb-4">
+            <!-- Logo Placeholder -->
+            <a [routerLink]="['/requisitions', requisition.id, 'vendor-quotes', 'view', quote.quoteId]"
+               target="_blank"
+               matTooltip="View Quote Details"
+               class="w-12 h-12 rounded-xl flex items-center justify-center font-extrabold text-sm mb-3 shadow-inner cursor-pointer hover:scale-105 transition-all decoration-transparent"
+               [class.bg-blue-50]="quote === recommendedQuote"
+               [class.text-blue-600]="quote === recommendedQuote"
+               [class.bg-slate-50]="quote !== recommendedQuote"
+               [class.text-slate-500]="quote !== recommendedQuote">
+              {{ getVendorInitials(quote.vendor?.vendorName) }}
+            </a>
+
+            <h3 class="text-sm font-bold text-slate-800 leading-snug m-0 hover:text-blue-600 cursor-pointer transition-colors flex items-center gap-1 justify-center">
+              <a [routerLink]="['/requisitions', requisition.id, 'vendor-quotes', 'view', quote.quoteId]"
+                 target="_blank"
+                 matTooltip="View Quote Details"
+                 class="hover:text-blue-600 transition-colors flex items-center gap-1 justify-center no-underline text-inherit">
+                <span>{{ quote.vendor?.vendorName || 'Unknown Vendor' }}</span>
+                <mat-icon class="text-slate-400 hover:text-blue-600 scale-[0.7] -mr-1">open_in_new</mat-icon>
+              </a>
+            </h3>
+            <span class="text-[10px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">
+              Tax ID: {{ quote.vendor?.taxId }}
+            </span>
+          </div>
+
+          <!-- Comparison Rows -->
+          <div class="flex-1 flex flex-col px-6 pb-6 text-slate-700">
+
+            <!-- Base Amount Row -->
+            <div class="h-16 flex flex-col justify-center border-t border-slate-100">
+              <span class="text-base font-bold text-slate-800">
+                {{ quote.baseAmount | currency:quote.currency }}
+                <span class="text-xs font-semibold text-slate-500 ml-1">{{ quote.currency }}</span>
+              </span>
+              <span *ngIf="quote.currency !== 'EUR' && getBaseAmountEuro(quote) as baseEuro" class="text-sm font-semibold text-slate-500 mt-0.5">
+                ≈ {{ baseEuro | currency:'EUR' }}
+              </span>
+            </div>
+
+            <!-- Shipping Row -->
+            <div class="h-16 flex flex-col justify-center border-t border-slate-100">
+              <span class="text-base font-medium text-slate-700">
+                {{ quote.shippingCosts | currency:quote.currency }}
+                <span class="text-xs font-medium text-slate-500 ml-1">{{ quote.currency }}</span>
+              </span>
+              <span *ngIf="quote.currency !== 'EUR' && getShippingCostsEuro(quote) as shippingEuro" class="text-sm font-medium text-slate-500 mt-0.5">
+                ≈ {{ shippingEuro | currency:'EUR' }}
+              </span>
+            </div>
+
+            <!-- Total Amount Row (EUR, backend-converted) -->
+            <div class="h-32 flex flex-col justify-center border-t border-slate-100">
+              <!-- Primary: large EUR value from backend -->
+              <span *ngIf="quote.totalAmountEuro != null"
+                    class="text-2xl font-black"
+                    [class.text-blue-600]="quote === recommendedQuote"
+                    [class.text-slate-900]="quote !== recommendedQuote">
+                {{ quote.totalAmountEuro | currency:'EUR' }}
+              </span>
+              <!-- Fallback if backend couldn't convert -->
+              <span *ngIf="quote.totalAmountEuro == null"
+                    class="text-xl font-black text-slate-500">
+                {{ quote.totalAmount | currency:quote.currency }}
+                <span class="text-xs font-medium text-slate-600 ml-1">{{ quote.currency }}</span>
+              </span>
+
+              <!-- For converted foreign currency quotes, show original details -->
+              <ng-container *ngIf="quote.currency !== 'EUR' && quote.totalAmountEuro != null">
+                <span class="text-xs font-bold text-slate-600 mt-1">
+                  Original: {{ quote.totalAmount | currency:quote.currency }} {{ quote.currency }}
+                </span>
+                <span *ngIf="getExchangeRateLabel(quote) as rateLabel"
+                      class="text-xs font-semibold text-slate-500 mt-0.5">
+                  {{ rateLabel }}
+                </span>
+              </ng-container>
+            </div>
+
+            <!-- Lead Time Row -->
+            <div class="h-16 flex items-center gap-2 border-t border-slate-100">
+              <mat-icon class="text-slate-400 scale-75 -ml-1">schedule</mat-icon>
+              <span class="text-xs font-bold text-slate-700">
+                {{ getLeadTimeDays(quote) }} Days
+              </span>
+            </div>
+
+            <!-- Reliability Score Row -->
+            <div class="h-20 flex flex-col justify-center border-t border-slate-100 cursor-help"
+                 [matTooltip]="'Breakdown:\n• Quote-to-Invoice Gap: ' + (quote.vendor?.gapScore != null ? quote.vendor?.gapScore?.toFixed(1) : 'N/A') + '\n• Quality: ' + (quote.vendor?.qualityScore != null ? quote.vendor?.qualityScore?.toFixed(1) : 'N/A') + '\n• Delivery: ' + (quote.vendor?.deliveryScore != null ? quote.vendor?.deliveryScore?.toFixed(1) : 'N/A') + '\n• Communication: ' + (quote.vendor?.communicationScore != null ? quote.vendor?.communicationScore?.toFixed(1) : 'N/A')"
+                 matTooltipClass="whitespace-pre-line text-xs p-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1">
+                  <div class="w-2 h-2 rounded-full" [ngClass]="getRatingColor(quote.vendor?.overallScore)"></div>
+                  <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Reliability Score</span>
+                </div>
+                <span class="text-xs font-black" [ngClass]="getRatingTextColor(quote.vendor?.overallScore)">
+                  {{ quote.vendor?.overallScore != null ? quote.vendor?.overallScore?.toFixed(1) : 'N/A' }}
+                </span>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500"
+                     [ngClass]="getRatingColor(quote.vendor?.overallScore)"
+                     [style.width.%]="(quote.vendor?.overallScore || 0) * 10">
+                </div>
+              </div>
+            </div>
+
+            <!-- Selection Action Button -->
+            <div class="mt-6">
+              <button mat-flat-button class="w-full py-2.5 rounded-xl font-bold transition-all"
+                      [class.v-btn-brand]="quote === recommendedQuote"
+                      [class.v-btn-secondary]="quote !== recommendedQuote"
+                      (click)="selectQuote(quote)">
+                Select Vendor
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div class="flex flex-col items-center justify-center min-h-[60vh] font-manrope" *ngIf="loading">
+  <mat-spinner diameter="40" class="mb-4"></mat-spinner>
+  <p class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Loading comparison data...</p>
+</div>

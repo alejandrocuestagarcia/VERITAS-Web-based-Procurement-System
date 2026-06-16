@@ -8,6 +8,9 @@ import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.vendor.dto.VendorDto;
 
+import lombok.Builder;
+
+@Builder
 public record QuoteDto(
     Long quoteId,
     Long vendorId,
@@ -19,6 +22,7 @@ public record QuoteDto(
     BigDecimal totalAmountEuro,
     LocalDateTime exchangeRateFetchedAt,
     ExchangeRateSource exchangeRateSource,
+    Integer shippingTime,
     Boolean isSelected,
     List<QuoteLineItemDto> items
 ) {}

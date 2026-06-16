@@ -33,6 +33,7 @@ import { RequisitionVendorQuotesComponent } from "./features/requisition/requisi
 import { RequisitionVendorQuoteCreateComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-create/requisition-vendor-quote-create.component";
 import { RequisitionVendorQuoteViewComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-quote-view/requisition-vendor-quote-view.component";
 import { ProjectEditComponent } from "./features/project/project-edit/project-edit.component";
+import { RequisitionVendorComparisonComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-comparison/requisition-vendor-comparison.component";
 import { NotificationLogComponent } from "./features/notifications/notification-log/notification-log.component";
 
 const routes: Routes = [
@@ -219,6 +220,12 @@ const routes: Routes = [
     path: 'requisitions/:id',
     component: RequisitionDetailComponent,
     canActivate: [authGuard]
+  },
+  {
+    path: 'requisitions/:id/compare-quotes',
+    component: RequisitionVendorComparisonComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PROCUREMENT_OFFICER'] }
   },
   {
     path: 'integrations',

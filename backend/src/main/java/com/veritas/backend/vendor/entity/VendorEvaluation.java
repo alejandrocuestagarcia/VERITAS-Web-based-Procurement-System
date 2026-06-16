@@ -30,6 +30,7 @@ public class VendorEvaluation {
     private Integer deliveryScore;
     private Integer qualityScore;
     private Integer communicationScore;
+    private Double gapScore;
     private String notes;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

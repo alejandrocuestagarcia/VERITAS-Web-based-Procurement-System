@@ -45,6 +45,9 @@ public class Quote {
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "shipping_time", nullable = false)
+    private Integer shippingTime;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

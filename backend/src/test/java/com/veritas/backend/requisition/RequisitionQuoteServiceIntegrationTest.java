@@ -154,14 +154,15 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void QuoteCreation_ValidInput_PersistsInDatabase() {
-        QuoteCreateDto createDto = new QuoteCreateDto(
-                vendor.getId(),
-                Currency.EUR,
-                BigDecimal.valueOf(200),
-                BigDecimal.valueOf(15),
-                BigDecimal.valueOf(215),
-                List.of(new QuoteLineItemCreateDto("Integration Item", 2, BigDecimal.valueOf(100), null))
-        );
+        QuoteCreateDto createDto = QuoteCreateDto.builder()
+                .vendorId(vendor.getId())
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(200))
+                .shippingCosts(BigDecimal.valueOf(15))
+                .totalAmount(BigDecimal.valueOf(215))
+                .shippingTime(5)
+                .items(List.of(new QuoteLineItemCreateDto("Integration Item", 2, BigDecimal.valueOf(100), null)))
+                .build();
 
         QuoteDto result = quoteService.createQuoteForRequest(request.getRequestID(), createDto);
 
@@ -201,14 +202,15 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
     void UpdateQuote_ValidInput_PersistsChanges() {
         Quote quote = saveTestQuote(Currency.EUR, BigDecimal.valueOf(100));
 
-        QuoteCreateDto updateDto = new QuoteCreateDto(
-                vendor.getId(),
-                Currency.USD,
-                BigDecimal.valueOf(120),
-                BigDecimal.valueOf(5),
-                BigDecimal.valueOf(125),
-                List.of(new QuoteLineItemCreateDto("Updated Item", 1, BigDecimal.valueOf(120), null))
-        );
+        QuoteCreateDto updateDto = QuoteCreateDto.builder()
+                .vendorId(vendor.getId())
+                .currency(Currency.USD)
+                .baseAmount(BigDecimal.valueOf(120))
+                .shippingCosts(BigDecimal.valueOf(5))
+                .totalAmount(BigDecimal.valueOf(125))
+                .shippingTime(5)
+                .items(List.of(new QuoteLineItemCreateDto("Updated Item", 1, BigDecimal.valueOf(120), null)))
+                .build();
 
         QuoteDto result = quoteService.updateQuoteForRequest(request.getRequestID(), quote.getQuoteID(), updateDto);
 
@@ -285,6 +287,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         quote.setBaseAmount(totalAmount);
         quote.setShippingCosts(BigDecimal.ZERO);
         quote.setTotalAmount(totalAmount);
+        quote.setShippingTime(5);
         quote.setSelected(false);
         return quoteRepository.save(quote);
     }

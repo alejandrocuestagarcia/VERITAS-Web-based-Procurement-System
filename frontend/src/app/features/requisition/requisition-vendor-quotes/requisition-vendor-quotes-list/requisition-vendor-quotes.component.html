@@ -35,10 +35,14 @@
     <span>Delete Invoice</span>
   </button>
 
-  <button filters mat-stroked-button class="v-btn-secondary" type="button">
+  <button filters mat-stroked-button class="v-btn-secondary" type="button"
+          [disabled]="quotes.length < 2"
+          [matTooltip]="quotes.length < 2 ? 'Add at least 2 quotes to compare' : 'Compare vendor quotes side-by-side'"
+          (click)="openComparisonPage()">
     <mat-icon class="scale-90">compare_arrows</mat-icon>
     <span>Vendor Comparison</span>
   </button>
+
 
   <ng-container columns>
     <ng-container matColumnDef="vendor">

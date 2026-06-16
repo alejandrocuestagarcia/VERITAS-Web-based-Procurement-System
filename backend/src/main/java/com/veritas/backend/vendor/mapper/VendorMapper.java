@@ -12,6 +12,7 @@ public interface VendorMapper {
     @Mapping(target = "communicationScore", expression = "java(round(vendor.getCommunicationScore()))")
     @Mapping(target = "qualityScore", expression = "java(round(vendor.getQualityScore()))")
     @Mapping(target = "deliveryScore", expression = "java(round(vendor.getDeliveryScore()))")
+    @Mapping(target = "gapScore", expression = "java(round(vendor.getGapScore()))")
     @Mapping(target = "overallScore", expression = "java(round(vendor.getOverallScore()))")
     VendorDto toVendorDto(Vendor vendor);
 
