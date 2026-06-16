@@ -12,12 +12,44 @@
   </ng-container>
 
   <!-- Filters -->
-  <div filters class="flex items-center gap-3">
-    <span class="text-[11px] font-semibold text-muted-grey uppercase tracking-wider">Filter by:</span>
-    <mat-chip-listbox (change)="onRoleFilterChange($event.value)">
-      <mat-chip-option value="ALL" [selected]="selectedRole === 'ALL'">All Roles</mat-chip-option>
-      <mat-chip-option *ngFor="let role of userRoles" [value]="role">{{ role | formatEnum }}</mat-chip-option>
-    </mat-chip-listbox>
+  <!--AI-Generated-->
+  <div filters class="w-full font-inter req-filter-pill-wrapper">
+    <div class="flex items-center gap-2 flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+      <div class="shrink-0">
+        <button
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          [class]="selectedRole !== 'ALL' ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
+          (click)="toggleDropdown('role', $event)">
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="selectedRole !== 'ALL' ? 'text-blue-500' : 'text-slate-400'">admin_panel_settings</mat-icon>
+          <span>{{ getSelectedRoleLabel() }}</span>
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="selectedRole !== 'ALL' ? 'text-blue-300' : 'text-slate-300'">expand_more</mat-icon>
+        </button>
+
+        <!-- Role dropdown -->
+        <div *ngIf="activeDropdown === 'role'" class="req-dropdown bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[200px]"
+          [style.top.px]="dropdownY" [style.left.px]="dropdownX">
+          <div class="py-1">
+            <button class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="selectedRole === 'ALL' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setRoleFilter('ALL')">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="selectedRole === 'ALL'">check</mat-icon>
+              <span class="w-[13px]" *ngIf="selectedRole !== 'ALL'"></span>
+              All Roles
+            </button>
+            <button *ngFor="let r of userRoles"
+              class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="selectedRole === r ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setRoleFilter(r)">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="selectedRole === r">check</mat-icon>
+              <span class="w-[13px]" *ngIf="selectedRole !== r"></span>
+              {{ r | formatEnum }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- Actions -->

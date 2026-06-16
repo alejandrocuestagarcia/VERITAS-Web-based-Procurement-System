@@ -13,12 +13,52 @@
   </ng-container>
 
   <!-- Filters -->
-  <div filters class="flex items-center gap-3">
-    <span class="text-[11px] font-semibold text-muted-grey uppercase tracking-wider">Filter by:</span>
-    <mat-chip-listbox (change)="onDepartmentFilterChange($event.value)">
-      <mat-chip-option value="all" [selected]="activeDepartmentFilter === 'all'">All Teams</mat-chip-option>
-      <mat-chip-option *ngFor="let filter of departmentFilters" [value]="filter.key" [selected]="activeDepartmentFilter === filter.key">{{ filter.label }}</mat-chip-option>
-    </mat-chip-listbox>
+  <!--AI-Generated-->
+  <div filters class="w-full font-inter req-filter-pill-wrapper">
+    <div class="flex items-center gap-2 flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+      <div class="shrink-0">
+        <button
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          [class]="activeDepartmentFilter !== 'all' ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
+          (click)="toggleDropdown('department', $event)">
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="activeDepartmentFilter !== 'all' ? 'text-blue-500' : 'text-slate-400'">business</mat-icon>
+          <span>{{ getSelectedDepartmentLabel() }}</span>
+          <mat-icon class="!flex items-center justify-center text-[16px] !w-4 !h-4 leading-none shrink-0" [class]="activeDepartmentFilter !== 'all' ? 'text-blue-300' : 'text-slate-300'">expand_more</mat-icon>
+        </button>
+
+        <!-- Department dropdown -->
+        <div *ngIf="activeDropdown === 'department'" class="req-dropdown bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[224px] max-w-[280px]"
+          [style.top.px]="dropdownY" [style.left.px]="dropdownX">
+          <div class="p-2 border-b border-slate-100">
+            <div class="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg border border-slate-200/60">
+              <mat-icon class="text-slate-400 text-[15px] !w-3.5 !h-3.5 leading-none">search</mat-icon>
+              <input class="w-full border-0 outline-none bg-transparent text-[12px]" placeholder="Search departments..."
+                [(ngModel)]="departmentSearch" (click)="$event.stopPropagation()" />
+            </div>
+          </div>
+          <div class="py-1 max-h-[240px] overflow-y-auto">
+            <button class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors"
+              [class]="activeDepartmentFilter === 'all' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="setDepartmentFilter('all')">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="activeDepartmentFilter === 'all'">check</mat-icon>
+              <span class="w-[13px]" *ngIf="activeDepartmentFilter !== 'all'"></span>
+              All Departments
+            </button>
+            <button *ngFor="let d of getFilteredDepartments()"
+              class="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-left transition-colors truncate"
+              [class]="activeDepartmentFilter === d.key ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'"
+              [title]="d.label"
+              (click)="setDepartmentFilter(d.key)">
+              <mat-icon class="req-icon-check text-blue-500" *ngIf="activeDepartmentFilter === d.key">check</mat-icon>
+              <span class="w-[13px]" *ngIf="activeDepartmentFilter !== d.key"></span>
+              {{ d.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- Actions -->

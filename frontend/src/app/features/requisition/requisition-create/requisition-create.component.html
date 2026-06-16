@@ -89,7 +89,7 @@
                  [class.border-red-400]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched"
                  [class.bg-red-50]="basicInfoForm.get('workflowDefinitionId')?.hasError('required') && basicInfoForm.get('workflowDefinitionId')?.touched">
               <div *ngFor="let workflow of workflows"
-                (click)="basicInfoForm.get('workflowDefinitionId')?.setValue(workflow.id)"
+                (click)="selectWorkflow(workflow)"
                 [class.border-blue-500]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
                 [class.bg-blue-50]="basicInfoForm.get('workflowDefinitionId')?.value === workflow.id"
                 [class.border-slate-200]="basicInfoForm.get('workflowDefinitionId')?.value !== workflow.id"
@@ -114,7 +114,7 @@
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-3 shrink-0">
                   <button mat-icon-button (click)="$event.stopPropagation(); viewWorkflow(workflow.id)"
                     class="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500"
                     matTooltip="View Workflow Logic">
@@ -143,9 +143,9 @@
           </app-shared-form-field>
         </app-shared-form-card>
 
-        <div class="flex justify-end pt-4">
-          <button mat-button (click)="onCancel()" class="mr-4">Cancel</button>
-          <button mat-raised-button color="primary" matStepperNext (click)="basicInfoForm.markAllAsTouched()">Next: Attachments</button>
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+          <button mat-button (click)="onCancel()" class="w-full sm:w-auto mr-0 sm:mr-4 order-last sm:order-first">Cancel</button>
+          <button mat-raised-button color="primary" matStepperNext (click)="basicInfoForm.markAllAsTouched()" class="w-full sm:w-auto">Next: Attachments</button>
         </div>
       </div>
     </mat-step>
@@ -218,9 +218,9 @@
           </div>
         </div>
 
-        <div class="max-w-2xl mx-auto flex justify-between mt-12">
-          <button mat-button matStepperPrevious>Back</button>
-          <button mat-raised-button color="primary" matStepperNext>Next: Line Items</button>
+        <div class="max-w-2xl mx-auto flex flex-col sm:flex-row justify-between gap-3 mt-12">
+          <button mat-button matStepperPrevious class="w-full sm:w-auto order-last sm:order-first">Back</button>
+          <button mat-raised-button color="primary" matStepperNext class="w-full sm:w-auto">Next: Line Items</button>
         </div>
       </div>
     </mat-step>
@@ -230,10 +230,12 @@
       <ng-template matStepLabel>Line Items</ng-template>
       <div [formGroup]="lineItemsForm" class="py-6 space-y-4">
         <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
-          <p class="text-sm text-blue-800 m-0 flex items-center gap-2">
-            <mat-icon class="text-blue-500 h-5 w-5 leading-5 text-[20px]">info</mat-icon>
-            List your required items below. Use the attachments you uploaded in Step 2 for reference.
-            Procurement will handle the technical specifications and pricing later.
+          <p class="text-sm text-blue-800 m-0 flex items-start gap-2">
+            <mat-icon class="text-blue-500 h-5 w-5 leading-5 text-[20px] shrink-0 mt-0.5">info</mat-icon>
+            <span>
+              List your required items below. Use the attachments you uploaded in Step 2 for reference.
+              Procurement will handle the technical specifications and pricing later.
+            </span>
           </p>
         </div>
 
@@ -254,8 +256,8 @@
                 </mat-form-field>
               </app-shared-form-field>
 
-              <div class="flex gap-4 items-start">
-                <div class="w-32">
+              <div class="flex flex-col sm:flex-row gap-4 items-start">
+                <div class="w-full sm:w-32">
                   <app-shared-form-field label="Quantity" [required]="true">
                     <mat-form-field appearance="outline" class="w-full">
                       <input matInput type="number" formControlName="quantity">
@@ -263,7 +265,7 @@
                   </app-shared-form-field>
                 </div>
 
-                <div class="w-48">
+                <div class="w-full sm:w-48">
                   <app-shared-form-field label="Unit" [required]="true">
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-select formControlName="unit" placeholder="Select unit">
@@ -291,9 +293,9 @@
           <mat-icon>add</mat-icon> Add Another Item
         </button>
 
-        <div class="flex justify-between mt-10">
-          <button mat-button matStepperPrevious>Back</button>
-          <button mat-raised-button color="primary" matStepperNext>Next: Review</button>
+        <div class="flex flex-col sm:flex-row justify-between gap-3 mt-10">
+          <button mat-button matStepperPrevious class="w-full sm:w-auto order-last sm:order-first">Back</button>
+          <button mat-raised-button color="primary" matStepperNext class="w-full sm:w-auto">Next: Review</button>
         </div>
       </div>
     </mat-step>
@@ -380,26 +382,26 @@
           </table>
         </div>
 
-        <div class="flex justify-between mt-10">
-          <button mat-button matStepperPrevious>Back</button>
-          <div class="flex gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-10">
+          <button mat-button matStepperPrevious class="w-full sm:w-auto order-last sm:order-first">Back</button>
+          <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <ng-container *ngIf="isDraft()">
-              <button mat-stroked-button color="primary" (click)="onSubmit(false)" [disabled]="loading" class="px-6 h-11 border-blue-500 text-blue-600 hover:bg-blue-50 transition-colors">
-                <mat-icon *ngIf="loading" class="mr-2 animate-spin">sync</mat-icon>
-                <mat-icon *ngIf="!loading" class="mr-2">drafts</mat-icon>
-                Save as Draft
+              <button mat-stroked-button color="primary" (click)="onSubmit(false)" [disabled]="loading" class="w-full sm:w-auto px-6 h-11 border-blue-500 text-blue-600 hover:bg-blue-50 transition-colors">
+                <mat-icon *ngIf="loading" class="mr-2 animate-spin shrink-0">sync</mat-icon>
+                <mat-icon *ngIf="!loading" class="mr-2 shrink-0">drafts</mat-icon>
+                <span class="whitespace-nowrap">Save as Draft</span>
               </button>
-              <button mat-raised-button color="primary" (click)="onSubmit(true)" [disabled]="loading" class="px-8 h-11 shadow-sm">
-                <mat-icon *ngIf="loading" class="mr-2 animate-spin">sync</mat-icon>
-                <mat-icon *ngIf="!loading" class="mr-2">send</mat-icon>
-                Submit Request
+              <button mat-raised-button color="primary" (click)="onSubmit(true)" [disabled]="loading" class="w-full sm:w-auto px-8 h-11 shadow-sm">
+                <mat-icon *ngIf="loading" class="mr-2 animate-spin shrink-0">sync</mat-icon>
+                <mat-icon *ngIf="!loading" class="mr-2 shrink-0">send</mat-icon>
+                <span class="whitespace-nowrap">Submit Request</span>
               </button>
             </ng-container>
             <ng-container *ngIf="!isDraft()">
-              <button mat-raised-button color="primary" (click)="onSubmit(false)" [disabled]="loading" class="px-8 h-11 shadow-sm">
-                <mat-icon *ngIf="loading" class="mr-2 animate-spin">sync</mat-icon>
-                <mat-icon *ngIf="!loading" class="mr-2">save</mat-icon>
-                Save Changes
+              <button mat-raised-button color="primary" (click)="onSubmit(false)" [disabled]="loading" class="w-full sm:w-auto px-8 h-11 shadow-sm">
+                <mat-icon *ngIf="loading" class="mr-2 animate-spin shrink-0">sync</mat-icon>
+                <mat-icon *ngIf="!loading" class="mr-2 shrink-0">save</mat-icon>
+                <span class="whitespace-nowrap">Save Changes</span>
               </button>
             </ng-container>
           </div>
