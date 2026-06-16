@@ -15,7 +15,7 @@ import {ToastService} from "../../../core/services/toast.service";
 export class ProjectListComponent implements OnInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  displayedColumns = ['name', 'team', 'budget', 'committed', 'actual', 'startDate', 'endDate', 'actions'];
+  displayedColumns: string[] = [];
   dataSource = new MatTableDataSource<ProjectDto>([]);
 
   loading = false;
@@ -30,6 +30,7 @@ export class ProjectListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.setDisplayedColumns();
     this.loadData();
   }
 
@@ -73,6 +74,14 @@ export class ProjectListComponent implements OnInit {
         });
       }
     });
+  }
+
+  private setDisplayedColumns(): void {
+    this.displayedColumns = ['name', 'team', 'budget', 'committed', 'actual', 'startDate', 'endDate'];
+
+    if (this.isFinanceOfficer || this.isAdministrator) {
+      this.displayedColumns.push('actions');
+    }
   }
 
   get isFinanceOfficer(): boolean {

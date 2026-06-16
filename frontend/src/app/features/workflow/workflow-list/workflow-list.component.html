@@ -73,10 +73,10 @@
           <button mat-icon-button matTooltip="View Workflow" [routerLink]="['/workflows/view', workflow.id]">
             <mat-icon>visibility</mat-icon>
           </button>
-          <button mat-icon-button matTooltip="Edit Workflow" [routerLink]="['/workflows/edit', workflow.id]" [disabled]="(!isFinanceOfficer && !isAdministrator) || !workflow.isActive">
+          <button *ngIf="isFinanceOfficer || isAdministrator" mat-icon-button matTooltip="Edit Workflow" [routerLink]="['/workflows/edit', workflow.id]" [disabled]="!workflow.isActive">
             <mat-icon>edit</mat-icon>
           </button>
-          <button mat-icon-button matTooltip="Delete Workflow" color="warn" (click)="deleteWorkflow(workflow)" [disabled]="(!isFinanceOfficer && !isAdministrator) || !workflow.isActive">
+          <button *ngIf="isFinanceOfficer || isAdministrator" mat-icon-button matTooltip="Delete Workflow" color="warn" (click)="deleteWorkflow(workflow)" [disabled]="!workflow.isActive">
             <mat-icon>delete</mat-icon>
           </button>
       </td>
