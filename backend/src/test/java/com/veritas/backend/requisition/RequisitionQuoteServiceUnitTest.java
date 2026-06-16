@@ -547,11 +547,11 @@ class RequisitionQuoteServiceUnitTest {
         quoteService.selectQuoteForRequest(requestId, quoteId);
 
         assertAll("Quote selection committed spend updates",
-                () -> assertThat(quoteToSelect.isSelected()).isTrue(),
-                () -> assertThat(otherQuote.isSelected()).isFalse(),
+                () -> assertTrue(quoteToSelect.isSelected()),
+                () -> assertFalse(otherQuote.isSelected()),
                 // Difference is 150 - 100 = 50. So committedSpend should go from 100 to 150.
-                () -> assertThat(requestBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150)),
-                () -> assertThat(projectBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150))
+                () -> assertEquals(0, requestBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(150))),
+                () -> assertEquals(0, projectBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(150)))
         );
 
         verify(internalBudgetRepository, times(2)).save(any(InternalBudget.class));

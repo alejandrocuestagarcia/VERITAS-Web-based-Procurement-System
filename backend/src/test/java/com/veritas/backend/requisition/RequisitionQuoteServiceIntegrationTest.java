@@ -351,10 +351,10 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         // Check committedSpend has increased by 100
         assertAll("Committed spend increased by 100 across hierarchy",
-                () -> assertThat(updatedReqBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(100)),
-                () -> assertThat(updatedProjBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(300)),
-                () -> assertThat(updatedDeptBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(300)),
-                () -> assertThat(updatedGlobalBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(300))
+                () -> assertEquals(0, updatedReqBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(100))),
+                () -> assertEquals(0, updatedProjBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(300))),
+                () -> assertEquals(0, updatedDeptBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(300))),
+                () -> assertEquals(0, updatedGlobalBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(300)))
         );
 
         // Select quote2 (150), should subtract quote1 (100) and add quote2 (150), net change +50
@@ -366,10 +366,10 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         InternalBudget updatedGlobalBudget2 = internalBudgetRepository.findById(globalBudget.getId()).orElseThrow();
 
         assertAll("Committed spend updated after selecting another quote",
-                () -> assertThat(updatedReqBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150)),
-                () -> assertThat(updatedProjBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350)),
-                () -> assertThat(updatedDeptBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350)),
-                () -> assertThat(updatedGlobalBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350))
+                () -> assertEquals(0, updatedReqBudget2.getCommittedSpend().compareTo(BigDecimal.valueOf(150))),
+                () -> assertEquals(0, updatedProjBudget2.getCommittedSpend().compareTo(BigDecimal.valueOf(350))),
+                () -> assertEquals(0, updatedDeptBudget2.getCommittedSpend().compareTo(BigDecimal.valueOf(350))),
+                () -> assertEquals(0, updatedGlobalBudget2.getCommittedSpend().compareTo(BigDecimal.valueOf(350)))
         );
     }
 
@@ -414,7 +414,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         // Verify initial committedSpend
         InternalBudget updatedReqBudget = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
-        assertThat(updatedReqBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertEquals(0, updatedReqBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(100)));
 
         // Update the selected quote to totalAmount 150
         QuoteCreateDto updateDto = new QuoteCreateDto(
@@ -434,9 +434,9 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         InternalBudget updatedDeptBudget = internalBudgetRepository.findById(deptBudget.getId()).orElseThrow();
 
         assertAll("Committed spend updated after editing selected quote",
-                () -> assertThat(updatedReqBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(150)),
-                () -> assertThat(updatedProjBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350)),
-                () -> assertThat(updatedDeptBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(350))
+                () -> assertEquals(0, updatedReqBudget2.getCommittedSpend().compareTo(BigDecimal.valueOf(150))),
+                () -> assertEquals(0, updatedProjBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(350))),
+                () -> assertEquals(0, updatedDeptBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(350)))
         );
     }
 
@@ -481,7 +481,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         // Verify initial committedSpend
         InternalBudget updatedReqBudget = internalBudgetRepository.findById(reqBudget.getId()).orElseThrow();
-        assertThat(updatedReqBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertEquals(0, updatedReqBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(100)));
 
         // Delete the quote
         quoteService.deleteQuoteForRequest(request.getRequestID(), quote.getQuoteID());
@@ -492,9 +492,9 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         InternalBudget updatedDeptBudget = internalBudgetRepository.findById(deptBudget.getId()).orElseThrow();
 
         assertAll("Committed spend decremented after deleting selected quote",
-                () -> assertThat(updatedReqBudget2.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(0)),
-                () -> assertThat(updatedProjBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(200)),
-                () -> assertThat(updatedDeptBudget.getCommittedSpend()).isEqualByComparingTo(BigDecimal.valueOf(200))
+                () -> assertEquals(0, updatedReqBudget2.getCommittedSpend().compareTo(BigDecimal.valueOf(0))),
+                () -> assertEquals(0, updatedProjBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(200))),
+                () -> assertEquals(0, updatedDeptBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(200)))
         );
     }
 }
