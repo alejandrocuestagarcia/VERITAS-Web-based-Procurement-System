@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
@@ -146,12 +147,16 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         userRepository.deleteAllInBatch();
         teamRepository.deleteAllInBatch();
 
-        jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
-        internalBudgetRepository.deleteAllInBatch();
         departmentRepository.deleteAllInBatch();
+        internalBudgetRepository.deleteAllInBatch();
 
         Department department = departmentRepository.save(Department.builder()
                 .name("R&D")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("R&D")
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(1000000.0))
+                        .build())
                 .build());
 
         Team team = teamRepository.save(Team.builder()
@@ -1012,6 +1017,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     void DeleteAttachment_AsProcurementOfficer_DifferentDepartment_ReturnsForbidden() throws Exception {
         Department department = departmentRepository.save(Department.builder()
                 .name("Marketing")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Marketing")
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(1000000.0))
+                        .build())
                 .build());
 
         User otherProcurementOfficer = new User();

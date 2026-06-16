@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
@@ -20,6 +22,7 @@ import com.veritas.backend.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,22 +86,32 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
         @BeforeEach
         void setup() {
                 // Break circular references between users.team_id and teams.leader_id before
-                // deletes.
                 jdbcTemplate.update("UPDATE users SET team_id = NULL");
                 jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
                 jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
-                jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
 
                 projectRepository.deleteAll();
-                jdbcTemplate.update("DELETE FROM internal_budgets");
-
                 userRepository.deleteAll();
                 teamRepository.deleteAll();
                 departmentRepository.deleteAll();
                 internalBudgetRepository.deleteAll();
 
-                departmentIT = departmentRepository.save(Department.builder().name("IT").build());
-                departmentHR = departmentRepository.save(Department.builder().name("HR").build());
+                departmentIT = departmentRepository.save(Department.builder()
+                                .name("IT")
+                                .internalBudget(InternalBudget.builder()
+                                                .budgetName("IT")
+                                                .budgetType(BudgetType.DEPARTMENT)
+                                                .totalAmount(BigDecimal.valueOf(1000000.0))
+                                                .build())
+                                .build());
+                departmentHR = departmentRepository.save(Department.builder()
+                                .name("HR")
+                                .internalBudget(InternalBudget.builder()
+                                                .budgetName("HR")
+                                                .budgetType(BudgetType.DEPARTMENT)
+                                                .totalAmount(BigDecimal.valueOf(1000000.0))
+                                                .build())
+                                .build());
         }
 
         @Test
@@ -883,13 +896,18 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 String token = createTokenForRole(UserRole.FINANCE_OFFICER);
                 Team team = createTeam("Project Team", departmentIT);
 
-                Project project = Project.builder()
-                                .name("Assigned Project")
-                                .projectKey("AP-1")
-                                .team(team)
-                                .startDate(LocalDate.now())
-                                .endDate(LocalDate.now().plusDays(30))
-                                .build();
+                 Project project = Project.builder()
+                                 .name("Assigned Project")
+                                 .projectKey("AP-1")
+                                 .team(team)
+                                 .startDate(LocalDate.now())
+                                 .endDate(LocalDate.now().plusDays(30))
+                                 .internalBudget(InternalBudget.builder()
+                                                 .budgetName("Assigned Project")
+                                                 .budgetType(BudgetType.PROJECT)
+                                                 .totalAmount(BigDecimal.valueOf(10000.0))
+                                                 .build())
+                                 .build();
                 projectRepository.save(project);
 
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())

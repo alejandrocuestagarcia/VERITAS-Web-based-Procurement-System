@@ -2,6 +2,7 @@ package com.veritas.backend.project;
 
 import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.project.service.ProjectService;
@@ -66,10 +67,20 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
 
         qaDepartment = departmentRepository.save(Department.builder()
                 .name("QA Dept")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("QA Dept")
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(1000000.0))
+                        .build())
                 .build());
 
         devDepartment = departmentRepository.save(Department.builder()
                 .name("Dev Dept")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Dev Dept")
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(1000000.0))
+                        .build())
                 .build());
 
         testingTeam = teamRepository.save(Team.builder()

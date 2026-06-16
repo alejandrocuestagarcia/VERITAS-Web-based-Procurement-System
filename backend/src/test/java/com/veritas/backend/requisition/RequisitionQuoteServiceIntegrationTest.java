@@ -88,6 +88,11 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
         Department department = new Department();
         department.setName("IT");
+        department.setInternalBudget(InternalBudget.builder()
+                .budgetName("IT")
+                .budgetType(BudgetType.DEPARTMENT)
+                .totalAmount(BigDecimal.valueOf(1000000.0))
+                .build());
         department = departmentRepository.save(department);
 
         Team team = new Team();
@@ -140,19 +145,17 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         jdbcTemplate.update("UPDATE users SET team_id = NULL");
         jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
         jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
-        jdbcTemplate.update("UPDATE departments SET budget_id = NULL");
-        jdbcTemplate.update("UPDATE projects SET budget_id = NULL");
 
         quoteLineItemRepository.deleteAll();
         quoteRepository.deleteAll();
         requestRepository.deleteAll();
 
         projectRepository.deleteAll();
-        jdbcTemplate.update("DELETE FROM internal_budgets");
-
-        teamRepository.deleteAll();
         userRepository.deleteAll();
+        teamRepository.deleteAll();
         departmentRepository.deleteAll();
+
+        jdbcTemplate.update("DELETE FROM internal_budgets");
 
         vendorRepository.deleteAll();
         exchangeRateRepository.deleteAll();

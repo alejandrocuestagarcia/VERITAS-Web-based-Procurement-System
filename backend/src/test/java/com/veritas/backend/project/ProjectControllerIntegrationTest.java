@@ -8,6 +8,7 @@ import com.veritas.backend.auth.service.JwtService;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectEditDto;
 import com.veritas.backend.project.entity.Project;
@@ -83,10 +84,20 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
 
         departmentTesting = departmentRepository.save(Department.builder()
                 .name("Testing")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Testing")
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(1000000.0))
+                        .build())
                 .build());
 
         departmentDev = departmentRepository.save(Department.builder()
                 .name("Dev")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Dev")
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(1000000.0))
+                        .build())
                 .build());
 
         testingTeam = teamRepository.save(Team.builder()
@@ -341,7 +352,7 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
 
         String token = jwtService.generateAccessToken(unauthorizedRequester);
         ProjectEditDto editDto =
-                new ProjectEditDto("Hack Attempt Name", BigDecimal.valueOf(0),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
+                new ProjectEditDto("Hack Attempt Name", BigDecimal.valueOf(100.0),null ,LocalDate.now().plusDays(1),LocalDate.now().plusYears(1));
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/projects/" + project.getId())
                         .header("Authorization", "Bearer " + token)

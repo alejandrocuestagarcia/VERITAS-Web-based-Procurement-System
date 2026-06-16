@@ -37,7 +37,7 @@ public class Project {
     private LocalDate endDate;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "budget_id")
+    @JoinColumn(name = "budget_id", nullable = false)
     private InternalBudget internalBudget;
 
     @Column(name = "request_counter", nullable = false, columnDefinition = "int default 0")

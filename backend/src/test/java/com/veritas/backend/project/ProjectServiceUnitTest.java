@@ -233,9 +233,11 @@ class ProjectServiceUnitTest {
         ProjectEditDto editDto =
                 new ProjectEditDto("Updated Project Name", BigDecimal.valueOf(50000.00),null,null,null);
 
+        Team team = Team.builder().teamId(10L).build();
         Project existingProject = Project.builder()
                 .id(projectId)
                 .name("Old Project Name")
+                .team(team)
                 .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
                 .build();
 
@@ -320,5 +322,77 @@ class ProjectServiceUnitTest {
         assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
 
         verify(projectRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void EditProject_ExceedsDepartmentBudget_ThrowsIllegalArgumentException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto("Updated Project Name", BigDecimal.valueOf(50000.00), null, null, null);
+
+        Department department = Department.builder()
+                .departmentId(1L)
+                .name("Engineering")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(60000.00)).build())
+                .build();
+        Team team = Team.builder().teamId(10L).department(department).build();
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project Name")
+                .team(team)
+                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .build();
+
+        Project otherProject = Project.builder()
+                .id(2L)
+                .name("Other Project")
+                .team(team)
+                .internalBudget(InternalBudget.builder().budgetName("Other Budget").totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(projectRepository.findByTeamDepartment(department)).thenReturn(List.of(existingProject, otherProject));
+
+        assertThrows(IllegalArgumentException.class, () -> projectService.editProject(projectId, editDto));
+    }
+
+    @Test
+    void EditProject_ChangeTeamExceedsDepartmentBudget_ThrowsIllegalArgumentException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, null, 20L, null, null);
+
+        Department department1 = Department.builder()
+                .departmentId(1L)
+                .name("Engineering")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(60000.00)).build())
+                .build();
+        Team team1 = Team.builder().teamId(10L).department(department1).build();
+
+        Department department2 = Department.builder()
+                .departmentId(2L)
+                .name("Marketing")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(30000.00)).build())
+                .build();
+        Team team2 = Team.builder().teamId(20L).department(department2).build();
+
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project Name")
+                .team(team1)
+                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        Project marketingProject = Project.builder()
+                .id(3L)
+                .name("Marketing Project")
+                .team(team2)
+                .internalBudget(InternalBudget.builder().budgetName("Marketing Budget").totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+        when(teamRepository.findById(20L)).thenReturn(Optional.of(team2));
+        when(projectRepository.findByTeamDepartment(department2)).thenReturn(List.of(marketingProject));
+
+        assertThrows(IllegalArgumentException.class, () -> projectService.editProject(projectId, editDto));
     }
 }

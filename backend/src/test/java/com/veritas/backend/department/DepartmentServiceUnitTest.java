@@ -1,11 +1,16 @@
 package com.veritas.backend.department;
 
+import com.veritas.backend.budget.entity.BudgetType;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.department.dto.DepartmentCreateDto;
 import com.veritas.backend.department.dto.DepartmentDto;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.mapper.DepartmentMapper;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.department.service.impl.DepartmentServiceImpl;
+import com.veritas.backend.project.entity.Project;
+import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -37,6 +42,12 @@ class DepartmentServiceUnitTest {
     
     @Mock
     private TeamRepository teamRepository;
+
+    @Mock
+    private InternalBudgetRepository internalBudgetRepository;
+
+    @Mock
+    private ProjectRepository projectRepository;
 
     @InjectMocks
     private DepartmentServiceImpl departmentService;
@@ -74,6 +85,26 @@ class DepartmentServiceUnitTest {
         assertThrows(EntityExistsException.class, () -> departmentService.createDepartment(request));
 
         verify(departmentRepository, never()).save(any());
+    }
+
+    @Test
+    void CreateDepartment_ExceedsGlobalBudget_ThrowsIllegalArgumentException() {
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
+        Department existingDept = Department.builder()
+                .departmentId(2L)
+                .name("HR")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(95000.0)).build())
+                .build();
+        InternalBudget globalBudget = InternalBudget.builder()
+                .budgetType(BudgetType.GLOBAL)
+                .totalAmount(BigDecimal.valueOf(100000.0))
+                .build();
+
+        when(departmentRepository.existsByName("Engineering")).thenReturn(false);
+        when(internalBudgetRepository.findByBudgetType(BudgetType.GLOBAL)).thenReturn(Optional.of(globalBudget));
+        when(departmentRepository.findAll()).thenReturn(List.of(existingDept));
+
+        assertThrows(IllegalArgumentException.class, () -> departmentService.createDepartment(request));
     }
 
     @Test
@@ -189,6 +220,56 @@ class DepartmentServiceUnitTest {
         assertThrows(EntityExistsException.class, () -> departmentService.updateDepartment(1L, request));
 
         verify(departmentRepository, never()).save(any());
+    }
+
+    @Test
+    void UpdateDepartment_ExceedsGlobalBudget_ThrowsIllegalArgumentException() {
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(20000.0));
+        Department currentDept = Department.builder()
+                .departmentId(1L)
+                .name("Engineering")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(10000.0)).build())
+                .build();
+        Department otherDept = Department.builder()
+                .departmentId(2L)
+                .name("HR")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(90000.0)).build())
+                .build();
+        InternalBudget globalBudget = InternalBudget.builder()
+                .budgetType(BudgetType.GLOBAL)
+                .totalAmount(BigDecimal.valueOf(100000.0))
+                .build();
+
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(currentDept));
+        when(departmentRepository.existsByName("Engineering")).thenReturn(false);
+        when(internalBudgetRepository.findByBudgetType(BudgetType.GLOBAL)).thenReturn(Optional.of(globalBudget));
+        when(departmentRepository.findAll()).thenReturn(List.of(currentDept, otherDept));
+
+        assertThrows(IllegalArgumentException.class, () -> departmentService.updateDepartment(1L, request));
+    }
+
+    @Test
+    void UpdateDepartment_LowerThanProjectsBudgetSum_ThrowsIllegalArgumentException() {
+        DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(5000.0));
+        Department currentDept = Department.builder()
+                .departmentId(1L)
+                .name("Engineering")
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(10000.0)).build())
+                .build();
+        Project project1 = Project.builder()
+                .id(101L)
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(4000.0)).build())
+                .build();
+        Project project2 = Project.builder()
+                .id(102L)
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(3000.0)).build())
+                .build();
+
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(currentDept));
+        when(departmentRepository.existsByName("Engineering")).thenReturn(false);
+        when(projectRepository.findByTeamDepartment(currentDept)).thenReturn(List.of(project1, project2));
+
+        assertThrows(IllegalArgumentException.class, () -> departmentService.updateDepartment(1L, request));
     }
 
     @Test
