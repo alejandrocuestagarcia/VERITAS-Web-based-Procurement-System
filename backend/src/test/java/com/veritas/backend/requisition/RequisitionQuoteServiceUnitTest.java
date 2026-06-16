@@ -12,6 +12,7 @@ import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
+import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.vendor.entity.Quote;
@@ -78,6 +79,9 @@ class RequisitionQuoteServiceUnitTest {
 
     @Mock
     private CurrencyConversionService currencyConversionService;
+
+    @Mock
+    private RequisitionServiceImpl requisitionService;
 
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;

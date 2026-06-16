@@ -31,15 +31,15 @@ public class InternalBudget {
     private BigDecimal totalAmount;
 
     @Builder.Default
-    @Column(name = "committed_spend")
+    @Column(name = "committed_spend", nullable = false)
     private BigDecimal committedSpend = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "actual_spend")
+    @Column(name = "actual_spend", nullable = false)
     private BigDecimal actualSpend = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "safety_buffer")
+    @Column(name = "safety_buffer", nullable = false)
     private BigDecimal safetyBuffer = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)

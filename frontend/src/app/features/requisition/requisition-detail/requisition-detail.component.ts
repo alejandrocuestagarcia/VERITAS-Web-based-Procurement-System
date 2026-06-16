@@ -541,7 +541,7 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isProcessingPayment = false;
-        this.toastService.showError('Failed to process payment');
+        this.showErrorFromResponse(err, 'Failed to process payment');
       }
     });
   }

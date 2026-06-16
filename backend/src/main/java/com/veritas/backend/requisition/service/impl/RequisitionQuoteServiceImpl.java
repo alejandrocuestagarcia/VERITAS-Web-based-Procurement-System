@@ -49,6 +49,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final QuoteMapper quoteMapper;
     private final CurrencyConversionService currencyConversionService;
     private final InternalBudgetRepository internalBudgetRepository;
+    private final RequisitionServiceImpl requisitionService;
 
     @Override
     @Transactional(readOnly = true)
@@ -150,15 +151,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             BigDecimal newAmountEur = currencyConversionService.convert(newAmount, updateDto.currency()).convertedAmount();
             BigDecimal difference = newAmountEur.subtract(oldAmountEur);
             
-            validateBudgetAfterSelection(request.getBudget(), difference);
-
-            InternalBudget budget = request.getBudget();
-            while (budget != null) {
-                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
-                budget.setCommittedSpend(currentCommitted.add(difference));
-                internalBudgetRepository.save(budget);
-                budget = budget.getParentBudget();
-            }
+            updateCommittedSpendAndValidate(request.getBudget(), difference);
         }
 
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
@@ -199,13 +192,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         if (quote.isSelected() && request.getBudget() != null) {
             BigDecimal amountToSubtract = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
             BigDecimal amountToSubtractEur = currencyConversionService.convert(amountToSubtract, quote.getCurrency()).convertedAmount();
-            InternalBudget budget = request.getBudget();
-            while (budget != null) {
-                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
-                budget.setCommittedSpend(currentCommitted.subtract(amountToSubtractEur));
-                internalBudgetRepository.save(budget);
-                budget = budget.getParentBudget();
-            }
+            updateCommittedSpend(request.getBudget(), amountToSubtractEur.negate());
         }
 
         List<QuoteLineItem> existingItems = quoteLineItemRepository.findByQuoteQuoteID(quoteId);
@@ -240,14 +227,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         if (request.getBudget() != null) {
             BigDecimal difference = newAmountEur.subtract(oldAmountEur);
-            validateBudgetAfterSelection(request.getBudget(), difference);
-            InternalBudget budget = request.getBudget();
-            while (budget != null) {
-                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
-                budget.setCommittedSpend(currentCommitted.add(difference));
-                internalBudgetRepository.save(budget);
-                budget = budget.getParentBudget();
-            }
+            updateCommittedSpendAndValidate(request.getBudget(), difference);
         }
     }
 
@@ -270,45 +250,21 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         }
     }
 
-    private void validateBudgetAfterSelection(InternalBudget budget, BigDecimal difference) {
-        InternalBudget currentBudget = budget;
-        while (currentBudget != null) {
-            if (currentBudget.getBudgetType() == BudgetType.REQUEST) {
-                currentBudget = currentBudget.getParentBudget();
-                continue;
-            }
 
-            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend()
-                    : BigDecimal.ZERO;
-            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend()
-                    : BigDecimal.ZERO;
-            BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount()
-                    : BigDecimal.ZERO;
-            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer() != null ? currentBudget.getSafetyBuffer()
-                    : BigDecimal.ZERO;
+    private void updateCommittedSpendAndValidate(InternalBudget startBudget, BigDecimal difference) {
+        if (startBudget != null) {
+            requisitionService.validateBudget(startBudget, difference, true);
+            updateCommittedSpend(startBudget, difference);
+        }
+    }
 
-            BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
-            BigDecimal totalWithBuffer = total.multiply(BigDecimal.ONE.subtract(fraction));
-
-            BigDecimal simulatedCommitted = committed.add(difference);
-
-            if (actual.add(simulatedCommitted).compareTo(totalWithBuffer) > 0) {
-                String budgetIdentifier = currentBudget.getBudgetName();
-                if (budgetIdentifier == null || budgetIdentifier.isBlank()) {
-                    if (currentBudget.getBudgetType() == BudgetType.PROJECT) {
-                        budgetIdentifier = "Project budget";
-                    } else if (currentBudget.getBudgetType() == BudgetType.DEPARTMENT) {
-                        budgetIdentifier = "Department budget";
-                    } else if (currentBudget.getBudgetType() == BudgetType.GLOBAL) {
-                        budgetIdentifier = "Global budget";
-                    } else {
-                        budgetIdentifier = "Budget";
-                    }
-                }
-                throw new WorkflowStateException("Budget of : " + budgetIdentifier + " exhausted including safety buffer.");
-            }
-
-            currentBudget = currentBudget.getParentBudget();
+    private void updateCommittedSpend(InternalBudget startBudget, BigDecimal difference) {
+        InternalBudget budget = startBudget;
+        while (budget != null) {
+            BigDecimal currentCommitted = budget.getCommittedSpend();
+            budget.setCommittedSpend(currentCommitted.add(difference));
+            internalBudgetRepository.save(budget);
+            budget = budget.getParentBudget();
         }
     }
 

@@ -78,14 +78,13 @@ class BudgetControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void CreateBudget_NoGlobalBudgetExists_CreatesBudget() throws Exception {
-        BudgetDto dto = new BudgetDto();
-        dto.setTotalAmount(500000.0);
+        BudgetDto dto = new BudgetDto(null, 500000.0, null);
 
         mockMvc.perform(post("/api/v1/budget")
                         .header("Authorization", "Bearer " + financeOfficerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.totalAmount").value(500000.0));
 
@@ -103,8 +102,7 @@ class BudgetControllerIntegrationTest extends BaseDBIntegrationTest {
         globalBudget.setTotalAmount(BigDecimal.valueOf(100000.0));
         internalBudgetRepository.save(globalBudget);
 
-        BudgetDto dto = new BudgetDto();
-        dto.setTotalAmount(500000.0);
+        BudgetDto dto = new BudgetDto(null, 500000.0, null);
 
         mockMvc.perform(post("/api/v1/budget")
                         .header("Authorization", "Bearer " + financeOfficerToken)
@@ -115,8 +113,7 @@ class BudgetControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void CreateBudget_AsRequester_ReturnsForbidden() throws Exception {
-        BudgetDto dto = new BudgetDto();
-        dto.setTotalAmount(500000.0);
+        BudgetDto dto = new BudgetDto(null, 500000.0, null);
 
         mockMvc.perform(post("/api/v1/budget")
                         .header("Authorization", "Bearer " + requesterToken)
@@ -135,9 +132,7 @@ class BudgetControllerIntegrationTest extends BaseDBIntegrationTest {
         globalBudget.setSafetyBuffer(BigDecimal.ZERO);
         internalBudgetRepository.save(globalBudget);
 
-        BudgetDto dto = new BudgetDto();
-        dto.setTotalAmount(250000.0);
-        dto.setSafetyBuffer(10.0);
+        BudgetDto dto = new BudgetDto(null, 250000.0, 10.0);
 
         mockMvc.perform(patch("/api/v1/budget")
                         .header("Authorization", "Bearer " + financeOfficerToken)
@@ -156,8 +151,7 @@ class BudgetControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void EditBudget_NoGlobalBudgetExists_ReturnsNotFound() throws Exception {
-        BudgetDto dto = new BudgetDto();
-        dto.setTotalAmount(250000.0);
+        BudgetDto dto = new BudgetDto(null, 250000.0, null);
 
         mockMvc.perform(patch("/api/v1/budget")
                         .header("Authorization", "Bearer " + financeOfficerToken)
@@ -168,8 +162,7 @@ class BudgetControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void EditBudget_AsRequester_ReturnsForbidden() throws Exception {
-        BudgetDto dto = new BudgetDto();
-        dto.setTotalAmount(250000.0);
+        BudgetDto dto = new BudgetDto(null, 250000.0, null);
 
         mockMvc.perform(patch("/api/v1/budget")
                         .header("Authorization", "Bearer " + requesterToken)

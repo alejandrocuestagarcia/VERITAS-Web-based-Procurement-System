@@ -885,7 +885,8 @@ public class RequisitionServiceImpl implements RequisitionService {
         BigDecimal invoiceAmountEur = conversion.convertedAmount();
         invoice.setPaidAmountEur(invoiceAmountEur);
 
-        validatePaymentBudget(budget, invoiceAmountEur, requestCommittedSpent);
+        BigDecimal difference = invoiceAmountEur.subtract(requestCommittedSpent);
+        validateBudget(budget, difference, false);
 
         while (budget != null) {
             BigDecimal newTotalSpend = budget.getActualSpend().add(invoiceAmountEur);
@@ -898,7 +899,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
     }
 
-    private void validatePaymentBudget(InternalBudget budget, BigDecimal invoiceAmountEur, BigDecimal requestCommittedSpent) {
+    public void validateBudget(InternalBudget budget, BigDecimal difference, boolean includesSafetyBuffer) {
         InternalBudget currentBudget = budget;
         while (currentBudget != null) {
             if (currentBudget.getBudgetType() == BudgetType.REQUEST) {
@@ -906,31 +907,32 @@ public class RequisitionServiceImpl implements RequisitionService {
                 continue;
             }
 
-            BigDecimal actual = currentBudget.getActualSpend() != null ? currentBudget.getActualSpend()
-                    : BigDecimal.ZERO;
-            BigDecimal committed = currentBudget.getCommittedSpend() != null ? currentBudget.getCommittedSpend()
-                    : BigDecimal.ZERO;
+            BigDecimal actual = currentBudget.getActualSpend();
+            BigDecimal committed = currentBudget.getCommittedSpend();
             BigDecimal total = currentBudget.getTotalAmount() != null ? currentBudget.getTotalAmount()
                     : BigDecimal.ZERO;
+            BigDecimal safetyBuffer = currentBudget.getSafetyBuffer();
 
-            BigDecimal simulatedActual = actual.add(invoiceAmountEur);
-            BigDecimal simulatedCommitted = committed.subtract(requestCommittedSpent);
-            BigDecimal simulatedTotal = simulatedActual.add(simulatedCommitted);
+            BigDecimal threshold = total;
+            if (includesSafetyBuffer && safetyBuffer.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal fraction = safetyBuffer.divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
+                threshold = total.multiply(BigDecimal.ONE.subtract(fraction));
+            }
 
-            if (simulatedTotal.compareTo(total) > 0) {
+            BigDecimal simulatedTotal = actual.add(committed).add(difference);
+
+            if (simulatedTotal.compareTo(threshold) > 0) {
                 String budgetIdentifier = currentBudget.getBudgetName();
                 if (budgetIdentifier == null || budgetIdentifier.isBlank()) {
-                    if (currentBudget.getBudgetType() == BudgetType.PROJECT) {
-                        budgetIdentifier = "Project budget";
-                    } else if (currentBudget.getBudgetType() == BudgetType.DEPARTMENT) {
-                        budgetIdentifier = "Department budget";
-                    } else if (currentBudget.getBudgetType() == BudgetType.GLOBAL) {
-                        budgetIdentifier = "Global budget";
-                    } else {
-                        budgetIdentifier = "Budget";
+                    switch (currentBudget.getBudgetType()) {
+                        case PROJECT -> budgetIdentifier = "Project budget";
+                        case DEPARTMENT -> budgetIdentifier = "Department budget";
+                        case GLOBAL -> budgetIdentifier = "Global budget";
+                        default -> budgetIdentifier = "Budget";
                     }
                 }
-                throw new WorkflowStateException("Budget of : " + budgetIdentifier + " exhausted.");
+                String messageSuffix = includesSafetyBuffer ? " exhausted including safety buffer." : " exhausted.";
+                throw new WorkflowStateException("Budget of : " + budgetIdentifier + messageSuffix);
             }
 
             currentBudget = currentBudget.getParentBudget();
@@ -939,8 +941,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private void freeRequestBudget(Request request) {
         if (request.getBudget() != null) {
-            BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend() != null 
-                    ? request.getBudget().getCommittedSpend() : BigDecimal.ZERO;
+            BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend();
             InternalBudget budget = request.getBudget();
             while (budget != null) {
                 BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;

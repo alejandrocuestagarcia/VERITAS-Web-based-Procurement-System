@@ -3,6 +3,7 @@ package com.veritas.backend.budget.service.impl;
 import com.veritas.backend.budget.dto.BudgetDto;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.mapper.BudgetMapper;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.budget.service.BudgetService;
 import jakarta.persistence.EntityExistsException;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 public class BudgetServiceImpl implements BudgetService {
 
     private final InternalBudgetRepository internalBudgetRepository;
+    private final BudgetMapper budgetMapper;
 
     @Override
     @Transactional
@@ -29,24 +31,19 @@ public class BudgetServiceImpl implements BudgetService {
         InternalBudget budget = new InternalBudget();
         budget.setBudgetName("Global Budget");
         budget.setBudgetType(BudgetType.GLOBAL);
-        if (budgetDto.getTotalAmount() != null) {
-            budget.setTotalAmount(BigDecimal.valueOf(budgetDto.getTotalAmount()));
+        if (budgetDto.totalAmount() != null) {
+            budget.setTotalAmount(BigDecimal.valueOf(budgetDto.totalAmount()));
         } else {
             budget.setTotalAmount(BigDecimal.ZERO);
         }
-        if(budgetDto.getSafetyBuffer() != null){
-            budget.setSafetyBuffer(BigDecimal.valueOf(budgetDto.getSafetyBuffer()));
-        }
-        else{
+        if (budgetDto.safetyBuffer() != null) {
+            budget.setSafetyBuffer(BigDecimal.valueOf(budgetDto.safetyBuffer()));
+        } else {
             budget.setSafetyBuffer(BigDecimal.ZERO);
         }
 
         InternalBudget saved = internalBudgetRepository.save(budget);
-
-        BudgetDto result = new BudgetDto();
-        result.setId(saved.getId());
-        result.setTotalAmount(saved.getTotalAmount() != null ? saved.getTotalAmount().doubleValue() : 0.0);
-        return result;
+        return budgetMapper.toDto(saved);
     }
 
     @Override
@@ -55,18 +52,14 @@ public class BudgetServiceImpl implements BudgetService {
         InternalBudget budget = internalBudgetRepository.findByBudgetType(BudgetType.GLOBAL)
                 .orElseThrow(() -> new EntityNotFoundException("Global budget not found"));
 
-        if (budgetDto.getTotalAmount() != null) {
-            budget.setTotalAmount(BigDecimal.valueOf(budgetDto.getTotalAmount()));
+        if (budgetDto.totalAmount() != null) {
+            budget.setTotalAmount(BigDecimal.valueOf(budgetDto.totalAmount()));
         }
-        if(budgetDto.getSafetyBuffer() != null){
-            budget.setSafetyBuffer(BigDecimal.valueOf(budgetDto.getSafetyBuffer()));
+        if (budgetDto.safetyBuffer() != null) {
+            budget.setSafetyBuffer(BigDecimal.valueOf(budgetDto.safetyBuffer()));
         }
 
         InternalBudget saved = internalBudgetRepository.save(budget);
-
-        BudgetDto result = new BudgetDto();
-        result.setId(saved.getId());
-        result.setTotalAmount(saved.getTotalAmount() != null ? saved.getTotalAmount().doubleValue() : 0.0);
-        return result;
+        return budgetMapper.toDto(saved);
     }
 }
