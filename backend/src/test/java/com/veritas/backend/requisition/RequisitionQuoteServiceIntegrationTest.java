@@ -429,6 +429,7 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
                 BigDecimal.valueOf(140),
                 BigDecimal.valueOf(10),
                 BigDecimal.valueOf(150),
+                7,
                 List.of(new QuoteLineItemCreateDto("Some Item", 1, BigDecimal.valueOf(140), null))
         );
 
