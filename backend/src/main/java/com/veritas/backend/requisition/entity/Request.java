@@ -127,14 +127,18 @@ public class Request {
     @Column(name = "revision_required", nullable = false)
     private Boolean revisionRequired = false;
 
-    public BigDecimal getSelectedQuoteTotalAmount() {
+    public Quote getSelectedQuote() {
         if (quotes == null) {
             return null;
         }
         return quotes.stream()
                 .filter(Quote::isSelected)
-                .map(Quote::getTotalAmount)
                 .findFirst()
                 .orElse(null);
+    }
+
+    public BigDecimal getSelectedQuoteTotalAmount() {
+        Quote selected = getSelectedQuote();
+        return selected != null ? selected.getTotalAmount() : null;
     }
 }

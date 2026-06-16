@@ -35,14 +35,7 @@ public class WorkflowBranchingContext {
 
     public WorkflowBranchingContext(Request request, CurrencyConversionService currencyConversionService) {
 
-        // Selected Quote Resolution
-        List<Quote> quotes = request.getQuotes();
-        Quote selectedQuote = null;
-        for (Quote quote : quotes) {
-            if (quote.isSelected()) {
-                selectedQuote = quote;
-            }
-        }
+        Quote selectedQuote = request.getSelectedQuote();
 
         BigDecimal quoteAmount = null;
         if (selectedQuote != null) {

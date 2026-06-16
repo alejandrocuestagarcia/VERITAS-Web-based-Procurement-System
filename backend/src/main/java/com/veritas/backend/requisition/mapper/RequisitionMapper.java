@@ -50,22 +50,12 @@ public interface RequisitionMapper {
     AttachmentDto toAttachmentDto(com.veritas.backend.requisition.entity.Attachment attachment);
 
     default Long resolveSelectedVendorId(Request request) {
-        if (request.getQuotes() == null) return null;
-        return request.getQuotes().stream()
-                .filter(Quote::isSelected)
-                .map(q -> q.getVendorID() != null ? q.getVendorID().getId() : null)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+        Quote selected = request.getSelectedQuote();
+        return (selected != null && selected.getVendorID() != null) ? selected.getVendorID().getId() : null;
     }
 
     default String resolveSelectedVendorName(Request request) {
-        if (request.getQuotes() == null) return null;
-        return request.getQuotes().stream()
-                .filter(Quote::isSelected)
-                .map(q -> q.getVendorID() != null ? q.getVendorID().getVendorName() : null)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+        Quote selected = request.getSelectedQuote();
+        return (selected != null && selected.getVendorID() != null) ? selected.getVendorID().getVendorName() : null;
     }
 }
