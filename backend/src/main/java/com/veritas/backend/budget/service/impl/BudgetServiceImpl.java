@@ -160,7 +160,18 @@ public class BudgetServiceImpl implements BudgetService {
                 .orElseThrow(() -> new EntityNotFoundException("Global budget not found"));
 
         if (budgetDto.totalAmount() != null) {
-            budget.setTotalAmount(BigDecimal.valueOf(budgetDto.totalAmount()));
+            BigDecimal newTotal = BigDecimal.valueOf(budgetDto.totalAmount());
+            if (newTotal.compareTo(budget.getTotalAmount()) < 0) {
+                BigDecimal departmentsBudgetSum = departmentRepository.findAll().stream()
+                        .map(d -> d.getInternalBudget() != null ? d.getInternalBudget().getTotalAmount() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                if (newTotal.compareTo(departmentsBudgetSum) < 0) {
+                    throw new IllegalArgumentException("New global budget of " + newTotal
+                            + " is less than the sum of its department budgets (" + departmentsBudgetSum + ")");
+                }
+            }
+            budget.setTotalAmount(newTotal);
         }
         if (budgetDto.safetyBuffer() != null) {
             budget.setSafetyBuffer(BigDecimal.valueOf(budgetDto.safetyBuffer()));

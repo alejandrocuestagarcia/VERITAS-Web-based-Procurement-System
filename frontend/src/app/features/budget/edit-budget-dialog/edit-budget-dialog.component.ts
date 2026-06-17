@@ -50,8 +50,17 @@ export class EditBudgetDialogComponent implements OnInit {
         this.dialogRef.close(true);
       },
       error: (err) => {
-        this.toastService.showError('Failed to update global budget.');
         this.loading = false;
+        if (err?.error instanceof Blob) {
+          err.error.text().then((text: string) => {
+            this.toastService.showError(text || 'Failed to update global budget.');
+          });
+        } else {
+          const errorMsg = typeof err?.error === 'string' && err.error.length > 0
+            ? err.error
+            : (err?.error?.message || err?.message || 'Failed to update global budget.');
+          this.toastService.showError(errorMsg);
+        }
       }
     });
   }

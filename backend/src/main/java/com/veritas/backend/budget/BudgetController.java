@@ -14,9 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import com.veritas.backend.budget.service.BudgetService;
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.List;
-
 @RestController
 @RequestMapping("/budget")
 @RequiredArgsConstructor
@@ -29,7 +26,7 @@ public class BudgetController {
     @IsFinanceOfficer
     @GetMapping(value = "/dashboard", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BudgetDashboardDto> getFinanceDashboard(@RequestParam(required = false) Long departmentId) {
-        return budgetService.getFinanceDashboard(departmentId);
+        return ResponseEntity.ok(budgetService.getFinanceDashboard(departmentId));
     }
 
     @Operation(summary = "Create Budget", description = "Create company budget, fails if a budget already exists.")
