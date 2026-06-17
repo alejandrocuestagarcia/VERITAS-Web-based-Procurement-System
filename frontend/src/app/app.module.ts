@@ -1,9 +1,12 @@
-import { NgModule } from '@angular/core';
+import { NgModule, LOCALE_ID } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule, HTTP_INTERCEPTORS } from "@angular/common/http";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
-import { CommonModule } from '@angular/common';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import localeEnDe from '@angular/common/locales/en-DE';
+
+registerLocaleData(localeEnDe);
 import { RouterModule } from '@angular/router';
 import { NoopScrollStrategy } from '@angular/cdk/overlay';
 
@@ -22,7 +25,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatListModule } from "@angular/material/list";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
-import { MatNativeDateModule, MatOptionModule } from "@angular/material/core";
+import { MatNativeDateModule, MatOptionModule, MAT_DATE_LOCALE } from "@angular/material/core";
 import { MatSelectModule } from "@angular/material/select";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatSliderModule } from "@angular/material/slider";
@@ -231,6 +234,14 @@ import { NotificationLogComponent } from './features/notifications/notification-
     {
       provide: MAT_DIALOG_DEFAULT_OPTIONS,
       useValue: { hasBackdrop: true, scrollStrategy: new NoopScrollStrategy() }
+    },
+    {
+      provide: LOCALE_ID,
+      useValue: 'en-DE'
+    },
+    {
+      provide: MAT_DATE_LOCALE,
+      useValue: 'en-DE'
     }
   ],
   bootstrap: [AppComponent]
