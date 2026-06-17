@@ -532,7 +532,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
         StringBuilder sb = new StringBuilder();
         extractText(description, sb);
-        String text = sb.toString().trim();
+        String text = sb.toString().replaceAll("\\n{2,}", "\n").trim();
         return text.isEmpty() ? null : text;
     }
 
