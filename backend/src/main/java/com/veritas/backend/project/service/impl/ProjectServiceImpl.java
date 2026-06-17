@@ -175,7 +175,7 @@ public class ProjectServiceImpl implements ProjectService {
                 throw new IllegalArgumentException("End date can only be changed if the new date is in the future");
             }
 
-            project.setEndDate(updatedProject.startDate());
+            project.setEndDate(updatedProject.endDate());
         }
 
         if (updatedProject.budget() != null || updatedProject.teamId() != null) {
