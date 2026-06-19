@@ -322,32 +322,28 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setRevisionRequired(false);
 
-        String stepApprovedAt = request.getCurrentStep() != null ? request.getCurrentStep().getName() : "Unknown";
+        String stepApprovedAt = request.getCurrentStep().getName();
         workflowEngineService.moveToNextStep(request, actor, nextAssigneeId);
 
 
         Request saved = requestRepository.save(request);
 
         List<String> notifiedRecipients = new ArrayList<>();
-        if (saved.getUser() != null) {
+        notificationService.createNotification(
+                saved.getUser(),
+                saved,
+                NotificationType.APPROVED,
+                "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
+        );
+        notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
+        if (saved.getState() == RequestStatus.FINISHED) {
             notificationService.createNotification(
                     saved.getUser(),
                     saved,
-                    NotificationType.APPROVED,
-                    "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
+                    NotificationType.FINISHED,
+                    "Your request '" + saved.getRequestName() + "' has been completed."
             );
-            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
-        }
-        if (saved.getState() == RequestStatus.FINISHED) {
-            if (saved.getUser() != null) {
-                notificationService.createNotification(
-                        saved.getUser(),
-                        saved,
-                        NotificationType.FINISHED,
-                        "Your request '" + saved.getRequestName() + "' has been completed."
-                );
-                notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
-            }
+            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
             try {
                 List<User> financeOfficers = userRepository.findAllByRoleAndIsActiveTrue(UserRole.FINANCE_OFFICER);
                 for (User fo : financeOfficers) {
@@ -400,7 +396,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be reverted");
         }
 
-        String stepRevertedFrom = request.getCurrentStep() != null ? request.getCurrentStep().getName() : "Unknown";
+        String stepRevertedFrom = request.getCurrentStep().getName();
 
         workflowEngineService.revertToPreviousStep(request, actor, rejectionData.getReason());
 
@@ -411,17 +407,15 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request savedRequest = requestRepository.save(request);
 
         List<String> notifiedRecipients = new ArrayList<>();
-        if (savedRequest.getUser() != null) {
-            String message = "Your request '" + savedRequest.getRequestName() + "' was sent back from step '" + stepRevertedFrom + "'" +
-                    (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
-            notificationService.createNotification(
-                    savedRequest.getUser(),
-                    savedRequest,
-                    NotificationType.REVERTED,
-                    message
-            );
-            notifiedRecipients.add(savedRequest.getUser().getEmail() + " (Reason: REVERTED)");
-        }
+        String message = "Your request '" + savedRequest.getRequestName() + "' was sent back from step '" + stepRevertedFrom + "'" +
+                (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
+        notificationService.createNotification(
+                savedRequest.getUser(),
+                savedRequest,
+                NotificationType.REVERTED,
+                message
+        );
+        notifiedRecipients.add(savedRequest.getUser().getEmail() + " (Reason: REVERTED)");
         if (savedRequest.getAssignee() != null) {
             notificationService.createNotification(
                     savedRequest.getAssignee(),
@@ -511,18 +505,16 @@ public class RequisitionServiceImpl implements RequisitionService {
             jiraSyncService.handleVeritasWorkflowChange(savedRequest);
         }
 
-        if (savedRequest.getUser() != null) {
-            String message = "Your request '" + savedRequest.getRequestName() + "' was rejected" +
-                    (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
-            notificationService.createNotification(
-                    savedRequest.getUser(),
-                    savedRequest,
-                    NotificationType.REJECTED,
-                    message
-            );
-            auditService.createNotificationLog(actor, savedRequest,
-                    "Notifications sent for rejection to:\n- " + savedRequest.getUser().getEmail() + " (Reason: REJECTED)");
-        }
+        String message = "Your request '" + savedRequest.getRequestName() + "' was rejected" +
+                (rejectionData.getReason() != null && !rejectionData.getReason().isBlank() ? " with the message: " + rejectionData.getReason() : ".");
+        notificationService.createNotification(
+                savedRequest.getUser(),
+                savedRequest,
+                NotificationType.REJECTED,
+                message
+        );
+        auditService.createNotificationLog(actor, savedRequest,
+                "Notifications sent for rejection to:\n- " + savedRequest.getUser().getEmail() + " (Reason: REJECTED)");
 
         return requisitionMapper.toDto(savedRequest);
     }
@@ -598,15 +590,13 @@ public class RequisitionServiceImpl implements RequisitionService {
                         + " to " + newRequester.getName());
 
         List<String> notifiedRecipients = new ArrayList<>();
-        if (oldRequester != null) {
-            notificationService.createNotification(
-                    oldRequester,
-                    updatedRequest,
-                    NotificationType.REASSIGNED,
-                    "Request '" + updatedRequest.getRequestName() + "' has been reassigned to " + newRequester.getName() + ". You will no longer receive notifications for this request."
-            );
-            notifiedRecipients.add(oldRequester.getEmail() + " (Reason: REASSIGNED)");
-        }
+        notificationService.createNotification(
+                oldRequester,
+                updatedRequest,
+                NotificationType.REASSIGNED,
+                "Request '" + updatedRequest.getRequestName() + "' has been reassigned to " + newRequester.getName() + ". You will no longer receive notifications for this request."
+        );
+        notifiedRecipients.add(oldRequester.getEmail() + " (Reason: REASSIGNED)");
         notificationService.createNotification(
                 newRequester,
                 updatedRequest,
@@ -643,7 +633,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         UserRole requiredRole = UserRole.valueOf(roleName);
 
         Long requestDepartmentId = null;
-        if (request.getUser() != null && request.getUser().getTeam() != null && request.getUser().getTeam().getDepartment() != null) {
+        if (request.getUser().getTeam() != null) {
             requestDepartmentId = request.getUser().getTeam().getDepartment().getDepartmentId();
         }
 
@@ -673,7 +663,7 @@ public class RequisitionServiceImpl implements RequisitionService {
     @Transactional(readOnly = true)
     public boolean canAct(Long id, User actor) {
         Request request = requestRepository.findById(id).orElse(null);
-        if (request == null || request.getCurrentStep() == null) {
+        if (request == null) {
             return false;
         }
         try {
@@ -720,17 +710,17 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (!Objects.equals(request.getPriority(), updates.priority())) {
             changes.add("Priority changed from '" + request.getPriority() + "' to '" + updates.priority() + "'");
         }
-        if (updates.projectId() != null && (request.getProject() == null || !request.getProject().getId().equals(updates.projectId()))) {
-            String oldName = request.getProject() != null ? request.getProject().getName() : "None";
+        if (updates.projectId() != null && !request.getProject().getId().equals(updates.projectId())) {
+            String oldName = request.getProject().getName();
             Project newProject = projectRepository.findById(updates.projectId()).orElse(null);
             String newName = newProject != null ? newProject.getName() : String.valueOf(updates.projectId());
             changes.add("Project changed from '" + oldName + "' to '" + newName + "'");
         }
         WorkflowDefinition newWorkflow = null;
         boolean workflowChanged = updates.workflowDefinitionId() != null
-                && (request.getWorkflowDefinition() == null || !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId()));
+                && !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId());
         if (workflowChanged) {
-            String oldName = request.getWorkflowDefinition() != null ? request.getWorkflowDefinition().getName() : "None";
+            String oldName = request.getWorkflowDefinition().getName();
             newWorkflow = workflowDefinitionRepository.findById(updates.workflowDefinitionId())
                     .orElseThrow(() -> new IllegalArgumentException("Workflow not found with ID: " + updates.workflowDefinitionId()));
             String newName = newWorkflow.getName();
@@ -767,15 +757,11 @@ public class RequisitionServiceImpl implements RequisitionService {
             request.setRequestKey(newProject.getProjectKey() + "-" + newProject.getRequestCounter());
             request.setProject(newProject);
 
-            if (request.getBudget() != null) {
-                request.getBudget().setParentBudget(newProject.getInternalBudget());
-            }
+            request.getBudget().setParentBudget(newProject.getInternalBudget());
         }
 
-        if (request.getBudget() != null) {
-            request.getBudget().setBudgetName(updates.requestName());
-            internalBudgetRepository.save(request.getBudget());
-        }
+        request.getBudget().setBudgetName(updates.requestName());
+        internalBudgetRepository.save(request.getBudget());
 
         if (workflowChanged) {
             request.setWorkflowDefinition(newWorkflow);

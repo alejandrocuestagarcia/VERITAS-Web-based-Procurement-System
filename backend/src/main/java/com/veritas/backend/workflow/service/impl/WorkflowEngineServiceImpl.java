@@ -182,8 +182,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         entryTime = auditLogRepository
                                 .findFirstByRequestAndNewStepOrderByTimestampAsc(request, currentStep)
                                 .map(AuditLog::getTimestamp)
-                                .orElse(request.getCreatedAt() != null ? request.getCreatedAt()
-                                        : LocalDateTime.MIN);
+                                .orElse(request.getCreatedAt());
                     }
                     final LocalDateTime finalEntryTime = entryTime;
 
@@ -419,8 +418,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
     private void checkReqDeptMatchesUser(Request request, User attachedActor) {
         Long reqDept = null;
-        if (request.getUser() != null && request.getUser().getTeam() != null
-                && request.getUser().getTeam().getDepartment() != null) {
+        if (request.getUser().getTeam() != null) {
             reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
         }
         Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()

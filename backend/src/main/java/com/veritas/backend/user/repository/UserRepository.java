@@ -16,6 +16,8 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
   Optional<User> findByEmail(String email);
 
+  Optional<User> findByEmailAndIsActiveTrue(String email);
+
   boolean existsByEmail(String email);
 
   @Query("SELECT u from User u where u.isActive = true and " +

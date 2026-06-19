@@ -148,7 +148,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote updatedQuote = quoteRepository.save(quote);
 
         Request request = quote.getRequest();
-        if (quote.isSelected() && request.getBudget() != null) {
+        if (quote.isSelected()) {
             BigDecimal oldAmountEur = currencyConversionService.convert(oldAmount, oldCurrency).convertedAmount();
             BigDecimal newAmountEur = currencyConversionService.convert(newAmount, updateDto.currency()).convertedAmount();
             BigDecimal difference = newAmountEur.subtract(oldAmountEur);
@@ -191,7 +191,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote quote = getQuoteForRequest(requestId, quoteId);
 
         Request request = quote.getRequest();
-        if (quote.isSelected() && request.getBudget() != null) {
+        if (quote.isSelected()) {
             BigDecimal amountToSubtract = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
             BigDecimal amountToSubtractEur = currencyConversionService.convert(amountToSubtract, quote.getCurrency()).convertedAmount();
             updateCommittedSpend(request.getBudget(), amountToSubtractEur.negate());
@@ -227,10 +227,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         BigDecimal newAmount = quoteToSelect.getTotalAmount() != null ? quoteToSelect.getTotalAmount() : BigDecimal.ZERO;
         BigDecimal newAmountEur = currencyConversionService.convert(newAmount, quoteToSelect.getCurrency()).convertedAmount();
 
-        if (request.getBudget() != null) {
-            BigDecimal difference = newAmountEur.subtract(oldAmountEur);
-            updateCommittedSpendAndValidate(request.getBudget(), difference);
-        }
+        BigDecimal difference = newAmountEur.subtract(oldAmountEur);
+        updateCommittedSpendAndValidate(request.getBudget(), difference);
     }
 
     private void validateAmounts(QuoteCreateDto dto) {
@@ -293,7 +291,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         }
 
         if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
-            if (request.getTeam() == null || user.getDepartment() == null) {
+            if (user.getDepartment() == null) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
 

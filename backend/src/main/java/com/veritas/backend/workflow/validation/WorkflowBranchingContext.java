@@ -48,49 +48,44 @@ public class WorkflowBranchingContext {
         }
         this.selectedQuoteTotalAmount = quoteAmount;
 
-        this.priority = request.getPriority() != null ? request.getPriority().name() : null;
+        this.priority = request.getPriority().name();
         this.totalQuantity = request.getTotalQuantity();
 
         User creator = request.getUser();
 
-        // Department resolution (from team assigned directly to request, or creator's team)
+        // Department resolution
         Team resolvedTeam = request.getTeam();
-        if (resolvedTeam == null && creator != null) {
-            resolvedTeam = creator.getTeam();
-        }
-        Department dept = (resolvedTeam != null) ? resolvedTeam.getDepartment() : null;
-        this.department = (dept != null) ? new BranchingDepartment(
+        Department dept = resolvedTeam.getDepartment();
+        this.department = new BranchingDepartment(
             dept.getDepartmentId(),
             dept.getName(),
-            dept.getInternalBudget() != null ? new BranchingBudget(dept.getInternalBudget()) : null
-        ) : null;
+            new BranchingBudget(dept.getInternalBudget())
+        );
 
         // Project resolution
         Project proj = request.getProject();
-        this.project = (proj != null) ? new BranchingProject(
+        this.project = new BranchingProject(
             proj.getId(),
             proj.getName(),
             proj.getProjectKey(),
-            proj.getInternalBudget() != null ? new BranchingBudget(proj.getInternalBudget()) : null
-        ) : null;
+            new BranchingBudget(proj.getInternalBudget())
+        );
 
         // Requester resolution
         boolean teamLeader = false;
-        if (creator != null && creator.getTeam() != null) {
-            User leader = creator.getTeam().getLeader();
-            if (leader != null && leader.getId().equals(creator.getId())) {
-                teamLeader = true;
-            }
+        User leader = creator.getTeam().getLeader();
+        if (leader != null && leader.getId().equals(creator.getId())) {
+            teamLeader = true;
         }
-        this.requester = (creator != null) ? new BranchingUser(creator.getId(), creator.getName(), creator.getEmail(), creator.getRole() != null ? creator.getRole().name() : null, teamLeader) : null;
+        this.requester = new BranchingUser(creator.getId(), creator.getName(), creator.getEmail(), creator.getRole().name(), teamLeader);
 
         // Budget resolution
         InternalBudget b = request.getBudget();
-        this.budget = (b != null) ? new BranchingBudget(b) : null;
+        this.budget = new BranchingBudget(b);
 
         // Global budget resolution
         InternalBudget rootBudget = resolveGlobalBudget(b);
-        this.globalBudget = (rootBudget != null) ? new BranchingBudget(rootBudget) : null;
+        this.globalBudget = new BranchingBudget(rootBudget);
     }
 
     public static WorkflowBranchingContext createDummyContext() {
@@ -109,9 +104,6 @@ public class WorkflowBranchingContext {
     }
 
     private InternalBudget resolveGlobalBudget(InternalBudget b) {
-        if (b == null) {
-            return null;
-        }
         InternalBudget current = b;
         int depth = 0;
         while (current.getParentBudget() != null && depth < 100) {
