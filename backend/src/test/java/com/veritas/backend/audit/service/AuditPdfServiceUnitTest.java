@@ -11,6 +11,8 @@ import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.project.entity.Project;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -53,12 +55,21 @@ class AuditPdfServiceUnitTest {
                 .email("test@veritas.com")
                 .build();
 
+        Team team = Team.builder()
+                .name("Engineering")
+                .build();
+        Project project = Project.builder()
+                .name("Internal Supplies")
+                .build();
+
         testRequest = new Request();
         testRequest.setRequestName("Office Supplies Order");
         testRequest.setRequestKey("REQ-001");
         testRequest.setPriority(Priority.HIGH);
         testRequest.setState(RequestStatus.ACTIVE);
         testRequest.setUser(testUser);
+        testRequest.setTeam(team);
+        testRequest.setProject(project);
         testRequest.setCreatedAt(LocalDateTime.of(2026, 6, 5, 10, 0));
 
         RequestItem item1 = new RequestItem();
@@ -209,6 +220,8 @@ class AuditPdfServiceUnitTest {
         unicodeRequest.setPriority(Priority.MEDIUM);
         unicodeRequest.setState(RequestStatus.ACTIVE);
         unicodeRequest.setUser(unicodeUser);
+        unicodeRequest.setTeam(Team.builder().name("Engineering").build());
+        unicodeRequest.setProject(Project.builder().name("Internal Supplies").build());
         unicodeRequest.setCreatedAt(LocalDateTime.now());
 
         RequestItem item = new RequestItem();
@@ -279,6 +292,14 @@ class AuditPdfServiceUnitTest {
     void generateAuditReport_WithNullFields_HandlesNullsGracefully() throws IOException {
         Long requestId = 6L;
         Request nullRequest = new Request();
+        nullRequest.setRequestName("Dummy Request");
+        nullRequest.setRequestKey("DUMMY-REQ");
+        nullRequest.setPriority(Priority.MEDIUM);
+        nullRequest.setState(RequestStatus.DRAFT);
+        nullRequest.setUser(User.builder().email("dummy@veritas.com").name("Dummy User").build());
+        nullRequest.setTeam(Team.builder().name("Dummy Team").build());
+        nullRequest.setProject(Project.builder().name("Dummy Project").build());
+        nullRequest.setCreatedAt(LocalDateTime.now());
         
         RequestItem nullItem = new RequestItem();
         nullItem.setRequest(nullRequest);
@@ -306,6 +327,13 @@ class AuditPdfServiceUnitTest {
         Long requestId = 7L;
         Request longTextRequest = new Request();
         longTextRequest.setRequestName("A".repeat(100) + " " + "B".repeat(100));
+        longTextRequest.setRequestKey("REQ-LONG");
+        longTextRequest.setPriority(Priority.MEDIUM);
+        longTextRequest.setState(RequestStatus.ACTIVE);
+        longTextRequest.setUser(testUser);
+        longTextRequest.setTeam(Team.builder().name("Long Team").build());
+        longTextRequest.setProject(Project.builder().name("Long Project").build());
+        longTextRequest.setCreatedAt(LocalDateTime.now());
         
         RequestItem longItem = new RequestItem();
         longItem.setName("ShortName " + "A".repeat(200));

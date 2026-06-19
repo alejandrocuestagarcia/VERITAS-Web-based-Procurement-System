@@ -1,9 +1,11 @@
 package com.veritas.backend.util;
 
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
@@ -36,6 +38,7 @@ public class RequestFactory {
                 .committedSpend(BigDecimal.ZERO)
                 .actualSpend(BigDecimal.ZERO)
                 .safetyBuffer(BigDecimal.ZERO)
+                .budgetType(BudgetType.REQUEST)
                 .build());
     }
 
@@ -46,6 +49,7 @@ public class RequestFactory {
                 .committedSpend(BigDecimal.ZERO)
                 .actualSpend(BigDecimal.ZERO)
                 .safetyBuffer(BigDecimal.ZERO)
+                .budgetType(BudgetType.PROJECT)
                 .build();
         String uniqueKey = key + "-" + java.util.UUID.randomUUID().toString().substring(0, 8);
         return projectRepository.save(Project.builder()
@@ -87,6 +91,9 @@ public class RequestFactory {
         InternalBudget budget = createBudget(requestName + " Budget");
         WorkflowStep startStep = createWorkflowWithStartStep(requestName + " Workflow");
 
+        project.setRequestCounter(project.getRequestCounter() + 1);
+        project = projectRepository.save(project);
+
         Request request = new Request();
         request.setRequestName(requestName);
         request.setUser(requester);
@@ -95,6 +102,8 @@ public class RequestFactory {
         request.setBudget(budget);
         request.setWorkflowDefinition(startStep.getWorkflowDefinition());
         request.setCurrentStep(startStep);
+        request.setPriority(Priority.LOW);
+        request.setRequestKey(project.getProjectKey() + "-" + project.getRequestCounter());
         return requestRepository.save(request);
     }
 }

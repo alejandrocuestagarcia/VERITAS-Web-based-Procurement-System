@@ -217,7 +217,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .team(team)
                 .startDate(LocalDate.of(2026, 1, 1))
                 .endDate(LocalDate.of(2026, 12, 31))
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(10000.00))
+                        .build())
                 .requestCounter(0)
                 .build();
         project = projectRepository.save(project);
@@ -623,9 +627,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     //AI-Generated
     @Test
     void ChangeRequester_NewRequesterFromDifferentTeam_ReturnsBadRequest() throws Exception {
+        Department department = departmentRepository.findAll().get(0);
         Team otherTeam = teamRepository.save(Team.builder()
                 .name("Marketing")
                 .description("Marketing Team")
+                .department(department)
                 .isActive(true)
                 .build());
 

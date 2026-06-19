@@ -52,6 +52,10 @@ import java.util.Optional;
 
 import com.veritas.backend.workflow.repository.WorkflowDefinitionRepository;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
+import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.workflow.entity.WorkflowDefinition;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
@@ -124,6 +128,27 @@ class JiraSyncServiceUnitTest {
         config.setJql("project = TEST");
         config.setCustomFieldId("customfield_10001");
 
+        Team team = Team.builder().teamId(10L).name("Fallback Team").build();
+        User fallbackUser = User.builder().id(20L).name("Fallback User").team(team).build();
+        Project fallbackProject = Project.builder()
+                .id(30L)
+                .name("Fallback Project")
+                .projectKey("FALLBACK")
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Fallback Project Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(java.math.BigDecimal.valueOf(100000.00))
+                        .build())
+                .build();
+        WorkflowDefinition fallbackWorkflow = new WorkflowDefinition();
+        fallbackWorkflow.setId(40L);
+        fallbackWorkflow.setName("Fallback Workflow");
+
+        config.setFallbackUser(fallbackUser);
+        config.setFallbackProject(fallbackProject);
+        config.setFallbackWorkflow(fallbackWorkflow);
+
+
         Field restTemplateField = JiraSyncServiceImpl.class.getDeclaredField("restTemplate");
         restTemplateField.setAccessible(true);
         restTemplateField.set(service, restTemplate);
@@ -159,7 +184,7 @@ class JiraSyncServiceUnitTest {
             new JiraIssueRecord("10001", "TEST-1", "https://api/1",
                 new JiraFieldsRecord("Summary", null,
                     null, "2026-05-01T16:06:19.433+02:00",
-                    null, null, null, null))));
+                    null, null, new JiraProjectRecord("TEST", "Test Project"), null))));
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),
             eq(JiraSearchResponseRecord.class)))
@@ -190,7 +215,7 @@ class JiraSyncServiceUnitTest {
         JiraUserRecord reporter = new JiraUserRecord("reporter@veritas.com", "Reporter Name");
 
         JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
-            new JiraIssueRecord("10001", "TEST-1", "https://api/1", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, null, null))));
+            new JiraIssueRecord("10001", "TEST-1", "https://api/1", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, new JiraProjectRecord("TEST", "Test Project"), null))));
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),
             eq(JiraSearchResponseRecord.class))).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
@@ -205,16 +230,78 @@ class JiraSyncServiceUnitTest {
         User mockUser = new User();
         mockUser.setId(42L);
         mockUser.setEmail("reporter@veritas.com");
-        when(userRepository.findByEmail("reporter@veritas.com")).thenReturn(Optional.of(mockUser));
+        mockUser.setTeam(config.getFallbackUser().getTeam());
+        when(userRepository.findByEmailAndIsActiveTrue("reporter@veritas.com")).thenReturn(Optional.of(mockUser));
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class),
             eq(String.class))).thenReturn(new ResponseEntity<>(HttpStatus.NO_CONTENT));
 
         service.runManualSync(1L);
 
-        verify(userRepository).findByEmail("reporter@veritas.com");
+        verify(userRepository).findByEmailAndIsActiveTrue("reporter@veritas.com");
         verify(requestRepository, atLeastOnce()).saveAndFlush(any());
         verify(configRepository).save(any());
+    }
+
+    @Test
+    void RunManualSync_WithInactiveReporter_FallsBackToConfiguredUserAndTeam() {
+        when(configRepository.findById(1L)).thenReturn(Optional.of(config));
+
+        JiraUserRecord reporter = new JiraUserRecord("inactive@veritas.com", "Inactive User");
+        JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
+            new JiraIssueRecord("10001", "TEST-1", "https://api/1", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, new JiraProjectRecord("TEST", "Test Project"), null))));
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),
+            eq(JiraSearchResponseRecord.class))).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+
+        when(requestRepository.findByJiraIssueKey(anyString())).thenReturn(Optional.empty());
+        Request request = new Request();
+        request.setRequestID(101L);
+        when(issueMapper.toRequest(any())).thenReturn(request);
+        when(requestRepository.saveAndFlush(any())).thenReturn(request);
+        when(internalBudgetRepository.save(any())).thenReturn(null);
+        when(userRepository.findByEmailAndIsActiveTrue("inactive@veritas.com")).thenReturn(Optional.empty());
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class),
+            eq(String.class))).thenReturn(new ResponseEntity<>(HttpStatus.NO_CONTENT));
+
+        service.runManualSync(1L);
+
+        assertEquals(config.getFallbackUser(), request.getUser());
+        assertEquals(config.getFallbackUser().getTeam(), request.getTeam());
+    }
+
+    @Test
+    void RunManualSync_WithReporterWithoutTeam_FallsBackToConfiguredUserAndTeam() {
+        when(configRepository.findById(1L)).thenReturn(Optional.of(config));
+
+        JiraUserRecord reporter = new JiraUserRecord("teamless@veritas.com", "Teamless User");
+        JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
+            new JiraIssueRecord("10001", "TEST-1", "https://api/1", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, new JiraProjectRecord("TEST", "Test Project"), null))));
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class),
+            eq(JiraSearchResponseRecord.class))).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+
+        when(requestRepository.findByJiraIssueKey(anyString())).thenReturn(Optional.empty());
+        Request request = new Request();
+        request.setRequestID(101L);
+        when(issueMapper.toRequest(any())).thenReturn(request);
+        when(requestRepository.saveAndFlush(any())).thenReturn(request);
+        when(internalBudgetRepository.save(any())).thenReturn(null);
+
+        User mockUser = new User();
+        mockUser.setId(42L);
+        mockUser.setEmail("teamless@veritas.com");
+        mockUser.setTeam(null);
+        when(userRepository.findByEmailAndIsActiveTrue("teamless@veritas.com")).thenReturn(Optional.of(mockUser));
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class),
+            eq(String.class))).thenReturn(new ResponseEntity<>(HttpStatus.NO_CONTENT));
+
+        service.runManualSync(1L);
+
+        assertEquals(config.getFallbackUser(), request.getUser());
+        assertEquals(config.getFallbackUser().getTeam(), request.getTeam());
     }
 
     //AI-GENERATED
@@ -502,6 +589,7 @@ class JiraSyncServiceUnitTest {
 
         verifyNoInteractions(queueItemRepository);
     }
+
     @Test
     void HandleVeritasWorkflowChange_ValidConfig_QueuesTask() {
         Request request = new Request();
@@ -611,7 +699,7 @@ class JiraSyncServiceUnitTest {
     @Test
     void processIssue_MatchedProjectByNameAndFallbackUser_MapsSuccessfully() {
         when(configRepository.findById(1L)).thenReturn(Optional.of(config));
-        
+
         User fallbackUser = new User();
         fallbackUser.setId(50L);
         config.setFallbackUser(fallbackUser);
@@ -673,7 +761,7 @@ class JiraSyncServiceUnitTest {
         when(projectRepository.findByProjectKey("UNKNOWN")).thenReturn(Optional.empty());
         when(projectRepository.findByName("Unknown Project")).thenReturn(Optional.empty());
         when(requestRepository.saveAndFlush(any())).thenReturn(req);
-        
+
         WorkflowStep startStep = new WorkflowStep();
         when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(any(), eq(WorkflowComponent.START_EVENT)))
             .thenReturn(Optional.of(startStep));
@@ -717,7 +805,7 @@ class JiraSyncServiceUnitTest {
     @Test
     void syncAttachments_DownloadIOException_LogsWarningAndContinues() {
         when(configRepository.findById(1L)).thenReturn(Optional.of(config));
-        
+
         JiraAttachmentRecord attachment = new JiraAttachmentRecord("1", "doc.pdf", "https://api/doc.pdf", 1024L, "application/pdf");
         JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
             new JiraIssueRecord("100", "TEST-1", "url", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, List.of(attachment)))
@@ -750,14 +838,14 @@ class JiraSyncServiceUnitTest {
                 Request req = new Request();
                 req.setDescription("Desc");
                 List<RequestItem> items = new ArrayList<>();
-                
+
                 String tableAdf = "{\"type\":\"table\",\"content\":[{\"type\":\"tableRow\",\"content\":[" +
                         "{\"type\":\"tableCell\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Item 1\"}]}]}," +
                         "{\"type\":\"tableCell\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"5 box\"}]}]}" +
                         "]}]}";
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode adfNode = mapper.readTree(tableAdf);
-                
+
                 // Indirectly test parseQtyAndUnit (size == 2)
                 service.mapDescription(adfNode); // covers findTableNodes and extractText
             }
@@ -777,7 +865,7 @@ class JiraSyncServiceUnitTest {
                 "{\"type\":\"tableCell\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"10\"}]}]}," +
                 "{\"type\":\"tableCell\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"kg\"}]}]}" +
                 "]}]}";
-        
+
         // Row size 4 (description in col 4)
         String adfRowSize4 = "{\"type\":\"table\",\"content\":[" +
                 "{\"type\":\"tableRow\",\"content\":[" +
@@ -788,9 +876,9 @@ class JiraSyncServiceUnitTest {
                 "]}]}";
 
         ObjectMapper mapper = new ObjectMapper();
-        
+
         List<RequestItem> items = new ArrayList<>();
-        
+
         // We will call the private extraction method via manual sync mock
         when(configRepository.findById(1L)).thenReturn(Optional.of(config));
         JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
@@ -798,7 +886,7 @@ class JiraSyncServiceUnitTest {
         ));
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(JiraSearchResponseRecord.class)))
             .thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
-        
+
         Request mockReq = new Request();
         mockReq.setRequestID(10L);
         when(issueMapper.toRequest(any())).thenReturn(mockReq);
@@ -835,7 +923,7 @@ class JiraSyncServiceUnitTest {
         Request request = new Request();
         request.setRequestID(10L);
         request.setRequestKey("KEY-1");
-        
+
         JiraSyncQueueItem lockItem = JiraSyncQueueItem.builder()
             .id(1L)
             .status("PENDING")
@@ -853,7 +941,7 @@ class JiraSyncServiceUnitTest {
         try { transNode = mapper.readTree(transitionsJson); } catch (Exception e) {}
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
                 .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
-        
+
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
@@ -877,7 +965,7 @@ class JiraSyncServiceUnitTest {
         WorkflowStep step = new WorkflowStep();
         step.setName("Review Step");
         request.setCurrentStep(step);
-        
+
         JiraSyncQueueItem item = JiraSyncQueueItem.builder()
             .id(1L)
             .status("PENDING")
@@ -1443,7 +1531,7 @@ class JiraSyncServiceUnitTest {
         Request request = new Request();
         request.setRequestID(10L);
         request.setRequestKey("KEY-1");
-        
+
         JiraSyncQueueItem lockItem = JiraSyncQueueItem.builder()
             .id(1L)
             .status("PENDING")
@@ -1471,7 +1559,7 @@ class JiraSyncServiceUnitTest {
         when(item.getId()).thenReturn(1L);
         when(item.getRetries()).thenReturn(4, 5); // 4 initially, 5 after increment
         when(item.getRequest()).thenThrow(new RuntimeException("Database error"));
-        
+
         when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(item));
 
         service.processQueue();
@@ -1486,7 +1574,7 @@ class JiraSyncServiceUnitTest {
         when(item.getId()).thenReturn(1L);
         when(item.getRetries()).thenReturn(0, 1);
         when(item.getRequest()).thenThrow(new RuntimeException("Database error"));
-        
+
         when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(item));
 
         service.processQueue();
@@ -1507,14 +1595,14 @@ class JiraSyncServiceUnitTest {
         config.setFallbackProject(fallbackProj);
 
         JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
-        
+
         JiraProjectRecord jiraProj = new JiraProjectRecord("UNKNOWN", "Unknown Project");
         JiraFieldsRecord fieldsWithProj = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, jiraProj, null);
         JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fieldsWithProj);
 
         when(projectRepository.findByProjectKey("UNKNOWN")).thenReturn(Optional.empty());
         when(projectRepository.findByName("Unknown Project")).thenReturn(Optional.empty());
-        
+
         Request req = new Request();
         req.setRequestID(10L);
         when(issueMapper.toRequest(issueRecord)).thenReturn(req);
