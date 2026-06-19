@@ -481,7 +481,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be rejected");
         }
 
-        if (request.getCurrentStep() != null && !canAct(id, actor)) {
+        if (!canAct(id, actor)) {
             throw new AccessDeniedException("Not allowed to access this request");
         }
 
@@ -837,25 +837,21 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
         }
 
-        if (request.getBudget() != null) {
-            addToBudgets(request.getBudget(), invoice);
-            invoice.setIsPaid(true);
-            invoiceRepository.save(invoice);
-        }
+        addToBudgets(request.getBudget(), invoice);
+        invoice.setIsPaid(true);
+        invoiceRepository.save(invoice);
 
         request.setState(RequestStatus.FINISHED);
         Request saved = requestRepository.save(request);
 
-        if (saved.getUser() != null) {
-            notificationService.createNotification(
-                    saved.getUser(),
-                    saved,
-                    NotificationType.PAID,
-                    "Payment has been processed for your request '" + saved.getRequestName() + "'."
-            );
-            auditService.createNotificationLog(actor, saved,
-                    "Notifications sent for payment to:\n- " + saved.getUser().getEmail() + " (Reason: PAID)");
-        }
+        notificationService.createNotification(
+                saved.getUser(),
+                saved,
+                NotificationType.PAID,
+                "Payment has been processed for your request '" + saved.getRequestName() + "'."
+        );
+        auditService.createNotificationLog(actor, saved,
+                "Notifications sent for payment to:\n- " + saved.getUser().getEmail() + " (Reason: PAID)");
 
         auditService.createWorkflowTransitionLog(
                 actor,
@@ -934,15 +930,13 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     private void freeRequestBudget(Request request) {
-        if (request.getBudget() != null) {
-            BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend();
-            InternalBudget budget = request.getBudget();
-            while (budget != null) {
-                BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
-                budget.setCommittedSpend(currentCommitted.subtract(requestCommittedSpent));
-                internalBudgetRepository.save(budget);
-                budget = budget.getParentBudget();
-            }
+        BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend();
+        InternalBudget budget = request.getBudget();
+        while (budget != null) {
+            BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
+            budget.setCommittedSpend(currentCommitted.subtract(requestCommittedSpent));
+            internalBudgetRepository.save(budget);
+            budget = budget.getParentBudget();
         }
     }
 
@@ -1092,9 +1086,6 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private void checkRequestAccess(Request request, User user) {
         if (user.getRole() == UserRole.REQUESTER) {
-            if (request.getUser() == null) {
-                throw new AccessDeniedException("Not allowed to access this request");
-            }
             User fullUser = userRepository.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException("User not found with id: " + user.getId()));
             if (fullUser.equals(fullUser.getTeam().getLeader())) {
                 if (!request.getTeam().getTeamId().equals(fullUser.getTeam().getTeamId())) {
@@ -1106,7 +1097,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         } else if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
-            if (request.getTeam().getDepartment() == null || !user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
+            if (!user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         }

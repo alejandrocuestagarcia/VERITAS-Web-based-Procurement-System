@@ -102,11 +102,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.deleteAll();
     teamRepository.deleteAll();
 
-    testTeam = new Team();
-    testTeam.setName("Test Team");
-    testTeam.setDescription("Description Placeholder");
-
-    testTeam = teamRepository.save(testTeam);
+    testTeam = userFactory.createTeam("Test Team");
   }
 
   @AfterEach
@@ -465,10 +461,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     testTeam.setLeader(user);
     teamRepository.save(testTeam);
 
-    Team newTeam = new Team();
-    newTeam.setName("Other Team");
-    newTeam.setDescription("IT Department Team");
-    teamRepository.save(newTeam);
+    Team newTeam = userFactory.createTeam("Other Team");
 
     UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
     mockMvc.perform(patch("/api/v1/users/" + user.getId())

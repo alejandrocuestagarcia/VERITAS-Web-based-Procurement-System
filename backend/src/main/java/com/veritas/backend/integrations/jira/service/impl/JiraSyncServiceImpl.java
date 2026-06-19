@@ -245,10 +245,6 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             request.setRequestKey(resolvedProject.getProjectKey() + "-" + resolvedProject.getRequestCounter());
         }
 
-        if (request.getRequestKey() == null) {
-            request.setRequestKey(key);
-        }
-
         if (request.getWorkflowDefinition() == null) {
             request.setWorkflowDefinition(config.getFallbackWorkflow());
         }
@@ -276,8 +272,12 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
         
         if (request.getUser() == null) {
-            request.setUser(config.getFallbackUser());
-            request.setTeam(config.getFallbackUser().getTeam());
+            User fallbackUser = config.getFallbackUser();
+            if (fallbackUser.getTeam() == null) {
+                throw new IllegalStateException("Fallback user has no team configured on Jira config ID " + config.getId());
+            }
+            request.setUser(fallbackUser);
+            request.setTeam(fallbackUser.getTeam());
         }
 
         if (request.getBudget() == null) {

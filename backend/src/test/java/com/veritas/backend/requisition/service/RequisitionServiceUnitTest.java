@@ -216,6 +216,29 @@ class RequisitionServiceUnitTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
+    private Request createValidRequest(RequestStatus state) {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(state);
+        request.setUser(testUser);
+        request.setTeam(testTeam);
+        request.setProject(testProject);
+        request.setWorkflowDefinition(testWorkflow);
+        request.setCurrentStep(testStartStep);
+        request.setPriority(Priority.LOW);
+        request.setRequestName("Laptop");
+        request.setBudget(InternalBudget.builder()
+                .budgetType(BudgetType.REQUEST)
+                .budgetName("Laptop")
+                .totalAmount(BigDecimal.ZERO)
+                .committedSpend(BigDecimal.ZERO)
+                .actualSpend(BigDecimal.ZERO)
+                .safetyBuffer(BigDecimal.ZERO)
+                .build());
+        request.setItems(new ArrayList<>());
+        return request;
+    }
+
     @Test
     void CreateRequest_ValidInput_SavesAndReturnsDto() {
         stupRepositories();
@@ -804,12 +827,7 @@ class RequisitionServiceUnitTest {
     //AI-Generated
     @Test
     void UpdateRequest_FieldsChanged_CreatesAuditLog() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestName("Old Laptop");
         request.setDescription("Need old laptop");
         request.setPriority(Priority.LOW);
@@ -853,16 +871,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void UpdateRequest_DescriptionSet_CreatesCorrectAuditLog() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
-        request.setRequestName("Laptop");
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setDescription(null);
-        request.setPriority(Priority.LOW);
-        request.setItems(new ArrayList<>());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
@@ -882,16 +892,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void UpdateRequest_DescriptionCleared_CreatesCorrectAuditLog() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
-        request.setRequestName("Laptop");
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setDescription("Need laptop");
-        request.setPriority(Priority.LOW);
-        request.setItems(new ArrayList<>());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", null, 1L, 1L, Priority.LOW, List.of());
@@ -912,16 +914,8 @@ class RequisitionServiceUnitTest {
     //AI-Generated
     @Test
     void UpdateRequest_NoChanges_DoesNotCreateAuditLog() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
-        request.setRequestName("Laptop");
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setDescription("Need laptop");
-        request.setPriority(Priority.LOW);
-        request.setItems(new ArrayList<>());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
@@ -938,12 +932,7 @@ class RequisitionServiceUnitTest {
     //AI-Generated
     @Test
     void UpdateRequest_ProjectNotFound_ThrowsIllegalArgumentException() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
+        Request request = createValidRequest(RequestStatus.DRAFT);
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 999L, 1L, Priority.LOW, List.of());
@@ -959,12 +948,7 @@ class RequisitionServiceUnitTest {
     //AI-Generated
     @Test
     void UpdateRequest_WorkflowNotFound_ThrowsIllegalArgumentException() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
+        Request request = createValidRequest(RequestStatus.DRAFT);
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 999L, Priority.LOW, List.of());
@@ -980,12 +964,7 @@ class RequisitionServiceUnitTest {
     //AI-Generated
     @Test
     void UpdateRequest_WorkflowMissingStartEvent_ThrowsIllegalStateException() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
+        Request request = createValidRequest(RequestStatus.DRAFT);
 
         WorkflowDefinition newWorkflow = new WorkflowDefinition();
         newWorkflow.setId(2L);
@@ -1006,12 +985,7 @@ class RequisitionServiceUnitTest {
     //AI-Generated
     @Test
     void UpdateRequest_EmptyItems_ClearsLineItems() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
+        Request request = createValidRequest(RequestStatus.DRAFT);
 
         RequestItem currentItem = new RequestItem();
         currentItem.setName("Old Item");
@@ -1077,6 +1051,8 @@ class RequisitionServiceUnitTest {
 
         User user = new User();
         user.setName("user");
+        user.setEmail("user@veritas.com");
+        request.setUser(user);
 
         BigDecimal totalAmount = new BigDecimal("120.00");
         BigDecimal committedSpend = new BigDecimal("200.00");
@@ -1459,9 +1435,7 @@ class RequisitionServiceUnitTest {
     // AI-Generated
     @Test
     void ApproveRequest_ValidRequest_ApprovesAndReturnsDto() {
-        Request request = new Request();
-        request.setRequestID(1L);
-        request.setState(RequestStatus.ACTIVE);
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRevisionRequired(true);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -1541,10 +1515,8 @@ class RequisitionServiceUnitTest {
         User assignee = new User();
         assignee.setEmail("assignee@veritas.com");
 
-        Request request = new Request();
-        request.setRequestID(1L);
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestName("Test Request");
-        request.setState(RequestStatus.ACTIVE);
         request.setRevisionRequired(false);
         request.setUser(creator);
         request.setAssignee(assignee);
@@ -1587,10 +1559,8 @@ class RequisitionServiceUnitTest {
         User assignee = new User();
         assignee.setEmail("assignee@veritas.com");
 
-        Request request = new Request();
-        request.setRequestID(1L);
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestName("Test Request");
-        request.setState(RequestStatus.ACTIVE);
         request.setRevisionRequired(false);
         request.setUser(creator);
         request.setAssignee(assignee);
@@ -1697,6 +1667,9 @@ class RequisitionServiceUnitTest {
         request.setRequestName("Test Request");
         request.setState(RequestStatus.ACTIVE);
         request.setUser(creator);
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
         request.setCurrentStep(step);
@@ -1738,6 +1711,9 @@ class RequisitionServiceUnitTest {
         request.setState(RequestStatus.ACTIVE);
         request.setUser(creator);
         request.setJiraIssueKey("TEST-42");
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
         request.setCurrentStep(step);
@@ -1769,6 +1745,9 @@ class RequisitionServiceUnitTest {
         request.setState(RequestStatus.ACTIVE);
         request.setUser(creator);
         // jiraIssueKey is null
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
         request.setCurrentStep(step);
@@ -1852,6 +1831,9 @@ class RequisitionServiceUnitTest {
         request.setRequestID(1L);
         request.setState(RequestStatus.DRAFT);
         request.setUser(testUser);
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -1881,6 +1863,9 @@ class RequisitionServiceUnitTest {
         request.setRequestID(1L);
         request.setState(RequestStatus.ACTIVE);
         request.setUser(testUser);
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
         WorkflowStep step = new WorkflowStep();
         step.setId(10L);
         request.setCurrentStep(step);
@@ -3236,4 +3221,3 @@ class RequisitionServiceUnitTest {
         });
     }
 }
-

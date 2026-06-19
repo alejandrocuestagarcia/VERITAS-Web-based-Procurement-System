@@ -204,6 +204,8 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         quote.setVendorID(vendor);
         quote.setRequest(request);
         quote.setSelected(true);
+        quote.setBaseAmount(new BigDecimal("100.00"));
+        quote.setShippingCosts(BigDecimal.ZERO);
         quote.setTotalAmount(new BigDecimal("100.00"));
         quote.setCurrency(Currency.EUR);
         quote.setShippingTime(5);
@@ -216,6 +218,7 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         invoice.setVendor(vendor);
         invoice.setRequest(request);
         invoice.setInvoiceNumber("INV-999");
+        invoice.setInvoiceDate(java.time.LocalDate.now());
         invoice.setTotalAmount(new BigDecimal("110.00"));
         invoice.setCurrency(Currency.EUR);
         invoice = invoiceRepository.save(invoice);
