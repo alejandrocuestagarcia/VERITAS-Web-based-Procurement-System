@@ -33,13 +33,13 @@ public class Quote {
     private boolean isSelected = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 3)
+    @Column(length = 3, nullable = false)
     private Currency currency;
 
-    @Column(name = "base_amount")
+    @Column(name = "base_amount", nullable = false)
     private BigDecimal baseAmount;
 
-    @Column(name = "shipping_costs")
+    @Column(name = "shipping_costs", nullable = false)
     private BigDecimal shippingCosts;
 
     @Column(name = "total_amount", nullable = false)

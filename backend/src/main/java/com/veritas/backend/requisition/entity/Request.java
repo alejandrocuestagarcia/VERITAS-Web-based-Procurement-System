@@ -54,7 +54,7 @@ public class Request {
     @EqualsAndHashCode.Exclude
     private User user;
 
-    @Column(name = "request_key")
+    @Column(name = "request_key", nullable = false, unique = true)
     private String requestKey;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
@@ -125,6 +125,7 @@ public class Request {
     private LocalDateTime deletedAt;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false)
     private Priority priority;
 
     @Column(name = "jira_issue_key", unique = true)

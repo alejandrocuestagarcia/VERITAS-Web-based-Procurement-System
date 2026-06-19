@@ -30,6 +30,7 @@ public class Team {
 
     @NotBlank(message = "Team name is required")
     @Size(max = 120, message = "Team name must be at most 120 characters")
+    @Column(nullable = false)
     private String name;
 
     @NotBlank(message = "Team description is required")
@@ -54,6 +55,7 @@ public class Team {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Department department;

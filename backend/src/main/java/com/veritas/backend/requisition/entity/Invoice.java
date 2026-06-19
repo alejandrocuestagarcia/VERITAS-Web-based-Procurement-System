@@ -38,12 +38,13 @@ public class Invoice {
     @EqualsAndHashCode.Exclude
     private Vendor vendor;
 
-    @Column(name = "invoice_number")
+    @Column(name = "invoice_number", nullable = false)
     private String invoiceNumber;
 
-    @Column(name = "invoice_date")
+    @Column(name = "invoice_date", nullable = false)
     private LocalDate invoiceDate;
 
+    @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
     @Column(name = "currency", nullable = false, length = 3)

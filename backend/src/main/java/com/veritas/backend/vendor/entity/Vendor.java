@@ -22,12 +22,12 @@ public class Vendor {
     @Size(max = 120, message = "Vendor name must be at most 120 characters")
     private String vendorName;
 
-    @Column(name = "tax_id", unique = true)
+    @Column(name = "tax_id", unique = true, nullable = false)
     @NotBlank(message = "Tax ID is required")
     @Size(max = 60, message = "Tax ID must be at most 60 characters")
     private String taxId;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     @NotBlank(message = "Description is required")
     @Size(max = 3000, message = "Description must be at most 3000 characters")
     private String description;

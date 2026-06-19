@@ -18,12 +18,16 @@ public class QuoteLineItem {
     @JoinColumn(name = "quote_id", nullable = false)
     private Quote quote;
 
+    @Column(name = "product_description", nullable = false)
     private String productDescription;
 
     @Column(nullable = false)
     private int quantity;
 
+    @Column(name = "unit_price", nullable = false)
     private BigDecimal unitPrice;
+
+    @Column(name = "subtotal", nullable = false)
     private BigDecimal subtotal;
 
     @ManyToOne(fetch = FetchType.LAZY)

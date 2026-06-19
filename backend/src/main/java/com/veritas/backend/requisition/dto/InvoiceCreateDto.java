@@ -28,5 +28,6 @@ public class InvoiceCreateDto {
     @NotNull(message = "Due date is required")
     private LocalDate dueDate;
 
+    @NotNull(message = "Invoice date is required")
     private LocalDate invoiceDate;
 }

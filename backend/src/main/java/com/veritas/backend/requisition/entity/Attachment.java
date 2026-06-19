@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class Attachment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "attachment_id")
     private Long attachmentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -21,9 +22,18 @@ public class Attachment {
     @JoinColumn(name = "invoice_id")
     private Invoice invoice;
 
+    @Column(name = "file_name", nullable = false)
     private String fileName;
+
+    @Column(name = "file_type", nullable = false)
     private String fileType;
-    private Long fileSize;
+
+    @Column(name = "file_size", nullable = false)
+    private long fileSize;
+
+    @Column(name = "storage_path", nullable = false)
     private String storagePath;
+
+    @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt = LocalDateTime.now();
 }
