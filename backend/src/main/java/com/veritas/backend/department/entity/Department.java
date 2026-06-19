@@ -27,6 +27,7 @@ public class Department {
     @JoinColumn(name = "budget_id", nullable = false)
     private InternalBudget internalBudget;
 
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @PrePersist

@@ -174,7 +174,7 @@ public class AuditPdfServiceImpl implements AuditPdfService {
             String[] rowData = {
                     defaultStr(item.getName()),
                     defaultStr(item.getDescription()),
-                    item.getQuantity() != null ? item.getQuantity().toString() : "",
+                    String.valueOf(item.getQuantity()),
                     item.getUnit() != null ? item.getUnit().toString() : "N/A"
             };
 

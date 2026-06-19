@@ -316,7 +316,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " is in draft and must be submitted");
         }
 
-        if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+        if (request.getInvoice() != null && request.getInvoice().getIsPaid()) {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be approved");
         }
 
@@ -396,7 +396,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " is in draft and cannot be reverted");
         }
 
-        if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+        if (request.getInvoice() != null && request.getInvoice().getIsPaid()) {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be reverted");
         }
 
@@ -483,7 +483,7 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Request " + id + " is already finished and cannot be rejected");
         }
 
-        if (request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+        if (request.getInvoice() != null && request.getInvoice().getIsPaid()) {
             throw new WorkflowStateException("Request " + id + " has already been paid and cannot be rejected");
         }
 
@@ -739,7 +739,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         boolean itemsChanged = hasLineItemsChanged(request.getItems(), updates.items());
         if (itemsChanged) {
-            String oldItemsStr = request.getItems() == null ? "" : request.getItems().stream()
+            String oldItemsStr = request.getItems().stream()
                     .map(item -> item.getName() + " (" + item.getQuantity() + " " + item.getUnit() + (item.getDescription() != null && !item.getDescription().isEmpty() ? " - " + item.getDescription() : "") + ")")
                             .collect(Collectors.joining(", "));
             String newItemsStr = updates.items() == null ? "" : updates.items().stream()
@@ -812,7 +812,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (incomingItems == null) {
             return currentItems != null && !currentItems.isEmpty();
         }
-        if (currentItems == null || currentItems.size() != incomingItems.size()) {
+        if (currentItems.size() != incomingItems.size()) {
             return true;
         }
 

@@ -762,7 +762,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String extraContext = null;
         if (RequestStatus.FINISHED.equals(request.getState())) {
             if (request.getInvoice() != null) {
-                if (Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                if (request.getInvoice().getIsPaid()) {
                     stepNameForComment = "Paid";
                 } else {
                     stepNameForComment = "Finished and Awaiting Payment";
@@ -781,7 +781,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
 
         User actor = null;
-        if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+        if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && request.getInvoice().getIsPaid()) {
             Optional<AuditLog> paymentLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, PAID);
             if (paymentLog.isPresent()) {
                 actor = paymentLog.get().getActor();

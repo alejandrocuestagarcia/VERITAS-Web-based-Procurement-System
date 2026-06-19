@@ -19,7 +19,8 @@ public class TransitionRule {
     @EqualsAndHashCode.Exclude
     private WorkflowTransition transition;
 
-    private Integer minRequiredVendors = 0;
+    @Column(name = "min_required_vendors", nullable = false)
+    private int minRequiredVendors = 0;
 
     @Column(name = "required_file_types")
     private String requiredFileTypes;
@@ -29,4 +30,28 @@ public class TransitionRule {
 
     @Column(name = "advanced_rule")
     private String advancedRule;
+
+    public boolean getIsPdfRequired() {
+        return this.isPdfRequired;
+    }
+
+    public boolean getIsCsvRequired() {
+        return this.isCsvRequired;
+    }
+
+    public boolean getIsImageRequired() {
+        return this.isImageRequired;
+    }
+
+    public void setIsPdfRequired(boolean isPdfRequired) {
+        this.isPdfRequired = isPdfRequired;
+    }
+
+    public void setIsCsvRequired(boolean isCsvRequired) {
+        this.isCsvRequired = isCsvRequired;
+    }
+
+    public void setIsImageRequired(boolean isImageRequired) {
+        this.isImageRequired = isImageRequired;
+    }
 }

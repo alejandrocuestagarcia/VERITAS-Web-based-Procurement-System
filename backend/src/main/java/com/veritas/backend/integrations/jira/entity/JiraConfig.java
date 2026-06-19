@@ -46,7 +46,7 @@ public class JiraConfig {
     private String jql;
 
     @Column(nullable = false)
-    private Integer syncIntervalMinutes;
+    private int syncIntervalMinutes;
 
     @Column(name = "custom_field_id", nullable = false)
     private String customFieldId;
@@ -67,7 +67,7 @@ public class JiraConfig {
     private java.time.LocalDateTime lastSyncTime;
 
     public java.time.LocalDateTime getNextSyncTime() {
-        if (syncIntervalMinutes == null || syncIntervalMinutes <= 0) {
+        if (syncIntervalMinutes <= 0) {
             return null;
         }
         if (lastSyncTime == null) {

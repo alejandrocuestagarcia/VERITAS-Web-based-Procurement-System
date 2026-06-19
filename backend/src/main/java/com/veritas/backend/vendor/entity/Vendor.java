@@ -40,10 +40,10 @@ public class Vendor {
     @Size(max = 120, message = "Primary contact email must be at most 120 characters")
     private String primaryContactEmail;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")

@@ -99,7 +99,7 @@ public class JiraConfigServiceImpl implements JiraConfigService {
 
             if (request.getState() == RequestStatus.FINISHED
                     && request.getInvoice() != null
-                    && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                    && request.getInvoice().getIsPaid()) {
                 continue;
             }
 

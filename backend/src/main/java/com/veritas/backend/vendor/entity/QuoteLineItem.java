@@ -19,7 +19,10 @@ public class QuoteLineItem {
     private Quote quote;
 
     private String productDescription;
-    private Integer quantity;
+
+    @Column(nullable = false)
+    private int quantity;
+
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
 

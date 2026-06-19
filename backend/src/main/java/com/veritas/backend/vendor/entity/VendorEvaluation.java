@@ -27,9 +27,17 @@ public class VendorEvaluation {
     @JoinColumn(name = "request_id", unique = true)
     private Request request;
 
-    private Integer deliveryScore;
-    private Integer qualityScore;
-    private Integer communicationScore;
+    @Column(name = "delivery_score", nullable = false)
+    private int deliveryScore;
+
+    @Column(name = "quality_score", nullable = false)
+    private int qualityScore;
+
+    @Column(name = "communication_score", nullable = false)
+    private int communicationScore;
+
     private Double gapScore;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

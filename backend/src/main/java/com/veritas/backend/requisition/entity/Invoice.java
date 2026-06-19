@@ -51,13 +51,23 @@ public class Invoice {
     private Currency currency;
     
     private LocalDate dueDate;
-    private Boolean isPaid = false;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid = false;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
     @Column(name = "paid_amount_eur")
     private BigDecimal paidAmountEur;
+
+    public boolean getIsPaid() {
+        return this.isPaid;
+    }
+
+    public void setIsPaid(boolean isPaid) {
+        this.isPaid = isPaid;
+    }
 
     @PrePersist
     protected void onCreate() {

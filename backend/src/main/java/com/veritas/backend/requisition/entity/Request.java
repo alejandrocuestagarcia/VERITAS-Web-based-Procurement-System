@@ -95,8 +95,8 @@ public class Request {
     @EqualsAndHashCode.Exclude
     private User assignee;
 
-    @Column(name = "total_quantity")
-    private Integer totalQuantity;
+    @Column(name = "total_quantity", nullable = false)
+    private int totalQuantity = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
@@ -104,10 +104,10 @@ public class Request {
     @EqualsAndHashCode.Exclude
     private Project project;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
@@ -159,12 +159,17 @@ public class Request {
     private String rejectionReason;
 
     @Column(name = "revision_required", nullable = false)
-    private Boolean revisionRequired = false;
+    private boolean revisionRequired = false;
+
+    public boolean getRevisionRequired() {
+        return this.revisionRequired;
+    }
+
+    public void setRevisionRequired(boolean revisionRequired) {
+        this.revisionRequired = revisionRequired;
+    }
 
     public Quote getSelectedQuote() {
-        if (quotes == null) {
-            return null;
-        }
         return quotes.stream()
                 .filter(Quote::isSelected)
                 .findFirst()

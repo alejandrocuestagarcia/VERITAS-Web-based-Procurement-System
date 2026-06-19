@@ -39,7 +39,7 @@ public interface RequisitionMapper {
     @Mapping(target = "assigneeName", source = "assignee.name")
     @Mapping(target = "assigneeEmail", source = "assignee.email")
     @Mapping(target = "workflowDefinitionId", source = "workflowDefinition.id")
-    @Mapping(target = "isPaid", expression = "java(request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid()))")
+    @Mapping(target = "isPaid", expression = "java(request.getInvoice() != null && request.getInvoice().getIsPaid())")
     @Mapping(target = "paidAmountEur", expression = "java(request.getInvoice() != null ? request.getInvoice().getPaidAmountEur() : null)")
     @Mapping(target = "workflowStepDescription", expression = "java(request.getCurrentStep() != null && request.getCurrentStep().getDescription() != null ? request.getCurrentStep().getDescription() : null)")
     @Mapping(target = "revisionRequired", source = "revisionRequired")

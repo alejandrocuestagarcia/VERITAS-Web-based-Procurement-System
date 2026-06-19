@@ -36,7 +36,7 @@ public class JiraSyncQueueItem {
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer retries = 0;
+    private int retries = 0;
 
     @Column(nullable = false)
     @Builder.Default

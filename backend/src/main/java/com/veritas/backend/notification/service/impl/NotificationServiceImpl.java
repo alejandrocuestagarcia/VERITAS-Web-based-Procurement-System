@@ -97,7 +97,7 @@ public class NotificationServiceImpl implements NotificationService {
     public boolean getEmailPreference(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-        return Boolean.TRUE.equals(user.getNotificationEmailEnabled());
+        return user.getNotificationEmailEnabled();
     }
 
     @Override

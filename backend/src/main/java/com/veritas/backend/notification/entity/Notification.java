@@ -30,9 +30,9 @@ public class Notification {
 
     private String message;
 
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     @Builder.Default
-    private Boolean isRead = false;
+    private boolean isRead = false;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -45,6 +45,14 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationType type;
+
+    public boolean getIsRead() {
+        return this.isRead;
+    }
+
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
+    }
 
     @PrePersist
     protected void onCreate() {

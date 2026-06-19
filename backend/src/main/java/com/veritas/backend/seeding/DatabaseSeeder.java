@@ -631,7 +631,7 @@ public class DatabaseSeeder implements ApplicationRunner {
 
         // Increment project request counter and set request key
         if (project != null) {
-            int currentCounter = project.getRequestCounter() != null ? project.getRequestCounter() : 0;
+            int currentCounter = project.getRequestCounter();
             project.setRequestCounter(currentCounter + 1);
             projectRepo.save(project);
             request.setRequestKey(project.getProjectKey() + "-" + project.getRequestCounter());
