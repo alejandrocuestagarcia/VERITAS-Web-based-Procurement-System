@@ -174,9 +174,9 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     }
 
     const defaultDue = new Date();
-    this.invoiceForm.patchValue({ dueDate: defaultDue.toISOString().split('T')[0] });
+    this.invoiceForm.patchValue({ dueDate: defaultDue });
 
-    this.invoiceForm.patchValue({ invoiceDate: new Date().toISOString().split('T')[0] });
+    this.invoiceForm.patchValue({ invoiceDate: new Date() });
 
     this.isInvoiceDrawerOpen = true;
   }
@@ -233,8 +233,8 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       invoiceNumber: formValue.invoiceNumber,
       totalAmount: formValue.totalAmount,
       currency: (this.selectedQuote?.currency as unknown as InvoiceCreateDtoCurrencyEnum) || InvoiceCreateDtoCurrencyEnum.Eur,
-      dueDate: formValue.dueDate,
-      invoiceDate: formValue.invoiceDate || undefined
+      dueDate: this.formatDate(formValue.dueDate),
+      invoiceDate: formValue.invoiceDate ? this.formatDate(formValue.invoiceDate) : undefined
     };
 
     this.requisitionService.createInvoice(
@@ -302,5 +302,14 @@ export class RequisitionVendorQuotesComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([`/requisitions/${this.requisitionId}`]);
+  }
+
+  private formatDate(date: Date | string | null | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
