@@ -395,7 +395,7 @@ class UserServiceUnitTest {
         when(userRepository.existsByEmail(request.email())).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(jakarta.persistence.EntityNotFoundException.class, () -> userService.createUser(request));
+        assertThrows(EntityNotFoundException.class, () -> userService.createUser(request));
         verify(userRepository, never()).save(any());
     }
 

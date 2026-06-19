@@ -1,11 +1,21 @@
 package com.veritas.backend.workflow;
 
+import java.lang.reflect.Method;
+import org.camunda.bpm.model.bpmn.instance.Definitions;
+import org.camunda.bpm.model.bpmn.instance.EndEvent;
+import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
+import org.camunda.bpm.model.bpmn.instance.FlowNode;
+import org.camunda.bpm.model.bpmn.instance.Process;
+import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
+import org.camunda.bpm.model.bpmn.instance.StartEvent;
+import org.camunda.bpm.model.bpmn.instance.Task;
+
 import com.veritas.backend.workflow.validation.BpmnValidationException;
 import com.veritas.backend.workflow.validation.BpmnValidationResult;
 import com.veritas.backend.workflow.validation.BpmnValidator;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
-import org.camunda.bpm.model.bpmn.instance.*;
+
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -219,11 +229,11 @@ class BpmnValidatorUnitTest {
                                 "</bpmn:definitions>";
                 BpmnModelInstance model = parse(xml);
 
-                org.camunda.bpm.model.bpmn.instance.Process process = model.getModelElementById("Process_1");
-                org.camunda.bpm.model.bpmn.instance.Task task = model.getModelElementById("Task_1");
+                Process process = model.getModelElementById("Process_1");
+                Task task = model.getModelElementById("Task_1");
 
-                org.camunda.bpm.model.bpmn.instance.SequenceFlow brokenFlow = model
-                                .newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                SequenceFlow brokenFlow = model
+                                .newInstance(SequenceFlow.class);
                 brokenFlow.setId("Flow_2");
                 brokenFlow.setSource(task);
                 process.addChildElement(brokenFlow);
@@ -1640,11 +1650,11 @@ class BpmnValidatorUnitTest {
          void Validate_PrivateMethodsWithNull_UsingReflection() throws Exception {
                  BpmnValidationResult result = new BpmnValidationResult();
 
-                 java.lang.reflect.Method method1 = BpmnValidator.class.getDeclaredMethod("validateNodeCount", BpmnModelInstance.class, BpmnValidationResult.class);
+                 Method method1 = BpmnValidator.class.getDeclaredMethod("validateNodeCount", BpmnModelInstance.class, BpmnValidationResult.class);
                  method1.setAccessible(true);
                  method1.invoke(validator, null, result);
 
-                 java.lang.reflect.Method method2 = BpmnValidator.class.getDeclaredMethod("validateProcessPresence", BpmnModelInstance.class, BpmnValidationResult.class);
+                 Method method2 = BpmnValidator.class.getDeclaredMethod("validateProcessPresence", BpmnModelInstance.class, BpmnValidationResult.class);
                  method2.setAccessible(true);
                  Object processResult = method2.invoke(validator, null, result);
 
@@ -1658,12 +1668,12 @@ class BpmnValidatorUnitTest {
          @Test
          void Validate_ProcessPresenceNoProcess_UsingReflection() throws Exception {
                  BpmnModelInstance model = Bpmn.createEmptyModel();
-                 org.camunda.bpm.model.bpmn.instance.Definitions definitions = model.newInstance(org.camunda.bpm.model.bpmn.instance.Definitions.class);
+                 Definitions definitions = model.newInstance(Definitions.class);
                  definitions.setTargetNamespace("http://bpmn.io/schema/bpmn");
                  model.setDefinitions(definitions);
 
                  BpmnValidationResult result = new BpmnValidationResult();
-                 java.lang.reflect.Method method = BpmnValidator.class.getDeclaredMethod("validateProcessPresence", BpmnModelInstance.class, BpmnValidationResult.class);
+                 Method method = BpmnValidator.class.getDeclaredMethod("validateProcessPresence", BpmnModelInstance.class, BpmnValidationResult.class);
                  method.setAccessible(true);
                  Object processResult = method.invoke(validator, model, result);
 
@@ -1678,10 +1688,10 @@ class BpmnValidatorUnitTest {
          void Validate_InvalidSequenceFlowSource_Error() {
                  String xml = VALID_SIMPLE_XML;
                  BpmnModelInstance model = parse(xml);
-                 org.camunda.bpm.model.bpmn.instance.Process process = model.getModelElementById("Process_1");
-                 org.camunda.bpm.model.bpmn.instance.EndEvent end = model.getModelElementById("EndEvent_1");
+                 Process process = model.getModelElementById("Process_1");
+                 EndEvent end = model.getModelElementById("EndEvent_1");
 
-                 org.camunda.bpm.model.bpmn.instance.SequenceFlow brokenFlow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                 SequenceFlow brokenFlow = model.newInstance(SequenceFlow.class);
                  brokenFlow.setId("Flow_broken");
                  brokenFlow.setTarget(end);
                  process.addChildElement(brokenFlow);
@@ -1695,14 +1705,14 @@ class BpmnValidatorUnitTest {
          void Validate_InvalidSequenceFlowEndpointNullId_Error() {
                  String xml = VALID_SIMPLE_XML;
                  BpmnModelInstance model = parse(xml);
-                 org.camunda.bpm.model.bpmn.instance.Process process = model.getModelElementById("Process_1");
+                 Process process = model.getModelElementById("Process_1");
 
-                 org.camunda.bpm.model.bpmn.instance.Task taskWithoutId = model.newInstance(org.camunda.bpm.model.bpmn.instance.Task.class);
+                 Task taskWithoutId = model.newInstance(Task.class);
                  process.addChildElement(taskWithoutId);
 
-                 org.camunda.bpm.model.bpmn.instance.EndEvent end = model.getModelElementById("EndEvent_1");
+                 EndEvent end = model.getModelElementById("EndEvent_1");
 
-                 org.camunda.bpm.model.bpmn.instance.SequenceFlow brokenFlow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                 SequenceFlow brokenFlow = model.newInstance(SequenceFlow.class);
                  brokenFlow.setId("Flow_broken");
                  brokenFlow.setSource(taskWithoutId);
                  brokenFlow.setTarget(end);
@@ -1718,27 +1728,27 @@ class BpmnValidatorUnitTest {
          @Test
          void Validate_LongGatewayChain_Error() {
                  BpmnModelInstance model = Bpmn.createEmptyModel();
-                 org.camunda.bpm.model.bpmn.instance.Definitions definitions = model.newInstance(org.camunda.bpm.model.bpmn.instance.Definitions.class);
+                 Definitions definitions = model.newInstance(Definitions.class);
                  definitions.setTargetNamespace("http://bpmn.io/schema/bpmn");
                  model.setDefinitions(definitions);
 
-                 org.camunda.bpm.model.bpmn.instance.Process process = model.newInstance(org.camunda.bpm.model.bpmn.instance.Process.class);
+                 Process process = model.newInstance(Process.class);
                  process.setId("Process_1");
                  process.setName("Long Chain Process");
                  process.setExecutable(true);
                  definitions.addChildElement(process);
 
-                 org.camunda.bpm.model.bpmn.instance.StartEvent start = model.newInstance(org.camunda.bpm.model.bpmn.instance.StartEvent.class);
+                 StartEvent start = model.newInstance(StartEvent.class);
                  start.setId("start");
                  process.addChildElement(start);
 
-                 org.camunda.bpm.model.bpmn.instance.FlowNode current = start;
+                 FlowNode current = start;
                  for (int i = 0; i < 52; i++) {
-                     org.camunda.bpm.model.bpmn.instance.ExclusiveGateway gw = model.newInstance(org.camunda.bpm.model.bpmn.instance.ExclusiveGateway.class);
+                     ExclusiveGateway gw = model.newInstance(ExclusiveGateway.class);
                      gw.setId("gw_" + i);
                      process.addChildElement(gw);
 
-                     org.camunda.bpm.model.bpmn.instance.SequenceFlow flow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                     SequenceFlow flow = model.newInstance(SequenceFlow.class);
                      flow.setId("flow_" + i);
                      flow.setSource(current);
                      flow.setTarget(gw);
@@ -1746,11 +1756,11 @@ class BpmnValidatorUnitTest {
 
                      current = gw;
                  }
-                 org.camunda.bpm.model.bpmn.instance.EndEvent end = model.newInstance(org.camunda.bpm.model.bpmn.instance.EndEvent.class);
+                 EndEvent end = model.newInstance(EndEvent.class);
                  end.setId("end");
                  process.addChildElement(end);
 
-                 org.camunda.bpm.model.bpmn.instance.SequenceFlow finalFlow = model.newInstance(org.camunda.bpm.model.bpmn.instance.SequenceFlow.class);
+                 SequenceFlow finalFlow = model.newInstance(SequenceFlow.class);
                  finalFlow.setId("finalFlow");
                  finalFlow.setSource(current);
                  finalFlow.setTarget(end);

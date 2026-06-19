@@ -33,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -532,7 +533,7 @@ class WorkflowEngineServiceUnitTest {
         rule.setIsPdfRequired(true);
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
-        java.time.LocalDateTime entryTime = java.time.LocalDateTime.of(2026, 5, 26, 14, 0, 0);
+        LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
         AuditLog entryLog = AuditLog.builder()
                 .newStep(currentStep)
                 .timestamp(entryTime)
@@ -542,7 +543,7 @@ class WorkflowEngineServiceUnitTest {
 
         Attachment oldPdf = new Attachment();
         oldPdf.setFileType("application/pdf");
-        oldPdf.setUploadedAt(java.time.LocalDateTime.of(2026, 5, 26, 13, 59, 0));
+        oldPdf.setUploadedAt(LocalDateTime.of(2026, 5, 26, 13, 59, 0));
         testRequest.getAttachments().add(oldPdf);
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
@@ -1355,7 +1356,7 @@ class WorkflowEngineServiceUnitTest {
 
     @Test
     void testGetStepNamePrivateMethod() throws Exception {
-        java.lang.reflect.Method method = WorkflowEngineServiceImpl.class.getDeclaredMethod("getStepName", WorkflowStep.class);
+        Method method = WorkflowEngineServiceImpl.class.getDeclaredMethod("getStepName", WorkflowStep.class);
         method.setAccessible(true);
 
         WorkflowStep nullStep = null;

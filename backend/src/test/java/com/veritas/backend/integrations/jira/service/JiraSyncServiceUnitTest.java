@@ -1,5 +1,11 @@
 package com.veritas.backend.integrations.jira.service;
 
+import com.veritas.backend.integrations.currency.entity.Currency;
+import com.veritas.backend.requisition.entity.Invoice;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
+import com.veritas.backend.workflow.entity.WorkflowDefinition;
+import org.springframework.web.client.RestClientException;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -523,7 +529,7 @@ class JiraSyncServiceUnitTest {
     void testConnection_RestClientException_ReturnsFalse() {
         JiraConfigDto dto = new JiraConfigDto(null, "Test", "https://test.com", "user", "token", "jql", 60, "field", null, null, null, null, null);
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
-            .thenThrow(new org.springframework.web.client.RestClientException("Connection error"));
+            .thenThrow(new RestClientException("Connection error"));
 
         assertFalse(service.testConnection(dto));
     }
@@ -538,7 +544,7 @@ class JiraSyncServiceUnitTest {
     void runManualSync_SyncConfigException_SavesSuccessfully() {
         when(configRepository.findById(1L)).thenReturn(Optional.of(config));
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(JiraSearchResponseRecord.class)))
-            .thenThrow(new org.springframework.web.client.RestClientException("API error"));
+            .thenThrow(new RestClientException("API error"));
 
         assertDoesNotThrow(() -> service.runManualSync(1L));
         verify(configRepository).save(any());
@@ -563,7 +569,7 @@ class JiraSyncServiceUnitTest {
 
         // c1 fails, c2 succeeds
         when(restTemplate.exchange(contains("c1.com"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JiraSearchResponseRecord.class)))
-            .thenThrow(new org.springframework.web.client.RestClientException("c1 failed"));
+            .thenThrow(new RestClientException("c1 failed"));
         when(restTemplate.exchange(contains("c2.com"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JiraSearchResponseRecord.class)))
             .thenReturn(new ResponseEntity<>(new JiraSearchResponseRecord(new ArrayList<>()), HttpStatus.OK));
 
@@ -638,7 +644,7 @@ class JiraSyncServiceUnitTest {
         fallbackProject.setRequestCounter(2);
         config.setFallbackProject(fallbackProject);
 
-        com.veritas.backend.workflow.entity.WorkflowDefinition fallbackWorkflow = new com.veritas.backend.workflow.entity.WorkflowDefinition();
+        WorkflowDefinition fallbackWorkflow = new WorkflowDefinition();
         fallbackWorkflow.setId(99L);
         config.setFallbackWorkflow(fallbackWorkflow);
 
@@ -659,7 +665,7 @@ class JiraSyncServiceUnitTest {
         when(requestRepository.saveAndFlush(any())).thenReturn(req);
         
         WorkflowStep startStep = new WorkflowStep();
-        when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(any(), eq(com.veritas.backend.workflow.entity.WorkflowComponent.START_EVENT)))
+        when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(any(), eq(WorkflowComponent.START_EVENT)))
             .thenReturn(Optional.of(startStep));
 
         when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
@@ -691,7 +697,7 @@ class JiraSyncServiceUnitTest {
         when(requestRepository.saveAndFlush(any())).thenReturn(req);
 
         when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
-            .thenThrow(new org.springframework.web.client.RestClientException("Field update failed"));
+            .thenThrow(new RestClientException("Field update failed"));
 
         service.runManualSync(1L);
 
@@ -720,7 +726,7 @@ class JiraSyncServiceUnitTest {
 
         // Mock attachment download failing
         when(restTemplate.exchange(eq("https://api/doc.pdf"), eq(HttpMethod.GET), any(HttpEntity.class), eq(Resource.class)))
-            .thenThrow(new org.springframework.web.client.RestClientException("Download failed"));
+            .thenThrow(new RestClientException("Download failed"));
 
         assertDoesNotThrow(() -> service.runManualSync(1L));
     }
@@ -842,7 +848,7 @@ class JiraSyncServiceUnitTest {
                 .thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
         when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
-                .thenThrow(new org.springframework.web.client.RestClientException("Comment failed")); // postJiraComment throws
+                .thenThrow(new RestClientException("Comment failed")); // postJiraComment throws
 
         when(restTemplate.exchange(contains("/remotelink"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(HttpStatus.CREATED));
@@ -906,10 +912,10 @@ class JiraSyncServiceUnitTest {
         request.setJiraIssueKey("TEST-1");
         request.setState(RequestStatus.FINISHED);
 
-        com.veritas.backend.requisition.entity.Invoice invoice = new com.veritas.backend.requisition.entity.Invoice();
+        Invoice invoice = new Invoice();
         invoice.setIsPaid(true);
         invoice.setTotalAmount(BigDecimal.valueOf(100.0));
-        invoice.setCurrency(com.veritas.backend.integrations.currency.entity.Currency.USD);
+        invoice.setCurrency(Currency.USD);
         request.setInvoice(invoice);
 
         JiraSyncQueueItem item = JiraSyncQueueItem.builder()
@@ -923,7 +929,7 @@ class JiraSyncServiceUnitTest {
         when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(item));
 
         // Mock conversion service
-        when(currencyConversionService.convert(BigDecimal.valueOf(100.0), com.veritas.backend.integrations.currency.entity.Currency.USD))
+        when(currencyConversionService.convert(BigDecimal.valueOf(100.0), Currency.USD))
             .thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(92.0), BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
 
         User actor = new User();
@@ -976,7 +982,7 @@ class JiraSyncServiceUnitTest {
             .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
 
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
-            .thenThrow(new org.springframework.web.client.RestClientException("Transitions fetch failed"));
+            .thenThrow(new RestClientException("Transitions fetch failed"));
 
         when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
             .thenReturn(new ResponseEntity<>(HttpStatus.OK));
@@ -1021,7 +1027,7 @@ class JiraSyncServiceUnitTest {
                 .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
 
         when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
-                .thenThrow(new org.springframework.web.client.RestClientException("Transition execute failed"));
+                .thenThrow(new RestClientException("Transition execute failed"));
 
         when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(HttpStatus.OK));

@@ -2,6 +2,8 @@ package com.veritas.backend.integrations.jira.mapper;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -74,19 +76,19 @@ class JiraIssueMapperUnitTest {
 
     @Test
     void toRequest_NullIssueRecord_ReturnsNull() {
-        org.junit.jupiter.api.Assertions.assertNull(mapper.toRequest(null));
+        assertNull(mapper.toRequest(null));
     }
 
     @Test
     void toRequest_NullFields_MapsCorrectly() {
         JiraIssueRecord issue = new JiraIssueRecord("10001", "TEST-1", "https://api.test/1", null);
         Request request = mapper.toRequest(issue);
-        org.junit.jupiter.api.Assertions.assertAll(
+        assertAll(
             () -> assertEquals("TEST-1", request.getJiraIssueKey()),
             () -> assertEquals("https://api.test/1", request.getJiraIssueUrl()),
-            () -> org.junit.jupiter.api.Assertions.assertNull(request.getRequestName()),
+            () -> assertNull(request.getRequestName()),
             () -> assertEquals(Priority.MEDIUM, request.getPriority()),
-            () -> org.junit.jupiter.api.Assertions.assertNull(request.getDescription())
+            () -> assertNull(request.getDescription())
         );
     }
 
@@ -104,10 +106,10 @@ class JiraIssueMapperUnitTest {
         );
         JiraIssueRecord issue = new JiraIssueRecord("10001", "TEST-1", "https://api.test/1", fields);
         Request request = mapper.toRequest(issue);
-        org.junit.jupiter.api.Assertions.assertAll(
+        assertAll(
             () -> assertEquals("TEST-1", request.getJiraIssueKey()),
             () -> assertEquals(Priority.MEDIUM, request.getPriority()),
-            () -> org.junit.jupiter.api.Assertions.assertNull(request.getDescription())
+            () -> assertNull(request.getDescription())
         );
     }
 }

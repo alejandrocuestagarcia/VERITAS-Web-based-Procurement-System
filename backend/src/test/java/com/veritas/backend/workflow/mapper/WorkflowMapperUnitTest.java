@@ -11,9 +11,10 @@ import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.veritas.backend.department.mapper.DepartmentMapper;
 import org.mapstruct.factory.Mappers;
 
-import java.time.LocalDateTime;
+import java.lang.reflect.Field;
 
 class WorkflowMapperUnitTest {
 
@@ -22,8 +23,8 @@ class WorkflowMapperUnitTest {
     @BeforeEach
     void setUp() throws Exception {
         mapper = Mappers.getMapper(WorkflowMapper.class);
-        com.veritas.backend.department.mapper.DepartmentMapper deptMapper = Mappers.getMapper(com.veritas.backend.department.mapper.DepartmentMapper.class);
-        java.lang.reflect.Field field = mapper.getClass().getDeclaredField("departmentMapper");
+        DepartmentMapper deptMapper = Mappers.getMapper(DepartmentMapper.class);
+        Field field = mapper.getClass().getDeclaredField("departmentMapper");
         field.setAccessible(true);
         field.set(mapper, deptMapper);
     }
