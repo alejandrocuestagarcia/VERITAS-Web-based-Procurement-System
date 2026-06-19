@@ -15,7 +15,7 @@ public class QuoteLineItem {
     private Long lineItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quote_id")
+    @JoinColumn(name = "quote_id", nullable = false)
     private Quote quote;
 
     private String productDescription;

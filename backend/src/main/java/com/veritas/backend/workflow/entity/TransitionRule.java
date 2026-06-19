@@ -14,7 +14,7 @@ public class TransitionRule {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "transition_id")
+    @JoinColumn(name = "transition_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WorkflowTransition transition;

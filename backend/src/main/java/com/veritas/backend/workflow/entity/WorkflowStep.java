@@ -13,7 +13,7 @@ public class WorkflowStep {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workflow_definition_id")
+    @JoinColumn(name = "workflow_definition_id", nullable = false)
     private WorkflowDefinition workflowDefinition;
 
     @Enumerated(EnumType.STRING)

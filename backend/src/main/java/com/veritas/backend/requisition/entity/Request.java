@@ -49,7 +49,7 @@ public class Request {
     private VendorEvaluation vendorEvaluation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User user;
@@ -58,13 +58,13 @@ public class Request {
     private String requestKey;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
-    @JoinColumn(name = "budget_id")
+    @JoinColumn(name = "budget_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private InternalBudget budget;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
+    @JoinColumn(name = "team_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Team team;
@@ -78,13 +78,13 @@ public class Request {
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workflow_definition_id")
+    @JoinColumn(name = "workflow_definition_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WorkflowDefinition workflowDefinition;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_step_id")
+    @JoinColumn(name = "current_step_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WorkflowStep currentStep;
@@ -99,7 +99,7 @@ public class Request {
     private int totalQuantity = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
+    @JoinColumn(name = "project_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Project project;
@@ -112,9 +112,7 @@ public class Request {
 
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
+        this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 

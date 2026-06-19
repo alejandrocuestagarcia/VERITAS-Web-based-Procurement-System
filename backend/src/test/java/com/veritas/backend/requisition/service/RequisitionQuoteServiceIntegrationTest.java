@@ -28,6 +28,8 @@ import com.veritas.backend.vendor.repository.VendorRepository;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
+import com.veritas.backend.util.RequestFactory;
+import com.veritas.backend.util.UserFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,6 +81,11 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     private InternalBudgetRepository internalBudgetRepository;
 
+    @Autowired
+    private RequestFactory requestFactory;
+    @Autowired
+    private UserFactory userFactory;
+
     private Request request;
     private Vendor vendor;
 
@@ -101,10 +108,8 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         team.setDepartment(department);
         team = teamRepository.save(team);
 
-        request = new Request();
-        request.setRequestName("Integration Request");
-        request.setTeam(team);
-        request = requestRepository.save(request);
+        User requester = userFactory.createUser("requester@test.com", team, UserRole.REQUESTER);
+        request = requestFactory.createValidRequest("Integration Request", requester);
 
         vendor = new Vendor();
         vendor.setVendorName("Integration Vendor");

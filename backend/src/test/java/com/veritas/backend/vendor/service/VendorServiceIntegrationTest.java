@@ -19,6 +19,8 @@ import jakarta.persistence.EntityExistsException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.veritas.backend.util.UserFactory;
+import com.veritas.backend.util.RequestFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -49,6 +51,12 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserFactory userFactory;
+
+    @Autowired
+    private RequestFactory requestFactory;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -182,13 +190,7 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void RateVendor_CalculatesGapAndWeightedOverallScore_PersistsCorrectly() {
-        User evaluator = new User();
-        evaluator.setEmail("evaluator@veritas.com");
-        evaluator.setName("Procurement Officer");
-        evaluator.setPasswordHash("secured_pass");
-        evaluator.setRole(com.veritas.backend.user.entity.UserRole.PROCUREMENT_OFFICER);
-        evaluator.setIsActive(true);
-        evaluator = userRepository.save(evaluator);
+        User evaluator = userFactory.createUser("evaluator@veritas.com", null, com.veritas.backend.user.entity.UserRole.PROCUREMENT_OFFICER);
 
         Vendor vendor = new Vendor();
         vendor.setVendorName("Reliable Logistics");
@@ -196,9 +198,7 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         vendor.setDescription("Logistics vendor description");
         vendor = vendorRepository.save(vendor);
 
-        Request request = new Request();
-        request.setRequestName("Requisition for Logistics");
-        request = requestRepository.save(request);
+        Request request = requestFactory.createValidRequest("Requisition for Logistics", evaluator);
 
         Quote quote = new Quote();
         quote.setVendorID(vendor);

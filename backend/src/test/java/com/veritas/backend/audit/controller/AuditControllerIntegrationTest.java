@@ -4,6 +4,8 @@ import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.auth.service.JwtService;
+import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.repository.InvoiceRepository;
@@ -22,6 +24,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.veritas.backend.util.UserFactory;
+import com.veritas.backend.util.RequestFactory;
 import java.time.LocalDateTime;
 
 import static com.veritas.backend.common.model.AuditActionConstants.REQUISITION_EDITED;
@@ -38,21 +42,12 @@ class AuditControllerIntegrationTest extends BaseDBIntegrationTest {
     private MockMvc mockMvc;
     @Autowired
     private JwtService jwtService;
-
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private TeamRepository teamRepository;
-    @Autowired
-    private RequestRepository requestRepository;
     @Autowired
     private AuditLogRepository auditLogRepository;
     @Autowired
-    private InvoiceRepository invoiceRepository;
+    private UserFactory userFactory;
     @Autowired
-    private AttachmentRepository attachmentRepository;
-    @Autowired
-    private RequestItemRepository requestItemRepository;
+    private RequestFactory requestFactory;
 
     private String requesterToken;
     private Request testRequest;
@@ -60,35 +55,11 @@ class AuditControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        invoiceRepository.deleteAllInBatch();
-        attachmentRepository.deleteAllInBatch();
-        requestItemRepository.deleteAllInBatch();
-        auditLogRepository.deleteAllInBatch();
-        requestRepository.deleteAllInBatch();
-        userRepository.deleteAllInBatch();
-        teamRepository.deleteAllInBatch();
-
-        Team team = teamRepository.save(Team.builder()
-                .name("Engineering")
-                .description("Engineering team for testing")
-                .isActive(true)
-                .build());
-
-        requester = new User();
-        requester.setEmail("req-audit@veritas.com");
-        requester.setName("Audit Requester");
-        requester.setPasswordHash("hashed");
-        requester.setRole(UserRole.REQUESTER);
-        requester.setIsActive(true);
-        requester.setTeam(team);
-        requester = userRepository.save(requester);
-
+        Team team = userFactory.createTeam("Engineering");
+        requester = userFactory.createUser("req-audit@veritas.com", team, UserRole.REQUESTER);
         requesterToken = jwtService.generateAccessToken(requester);
 
-        testRequest = new Request();
-        testRequest.setRequestName("Audit Test Request");
-        testRequest.setUser(requester);
-        testRequest = requestRepository.save(testRequest);
+        testRequest = requestFactory.createValidRequest("Audit Test Request", requester);
     }
 
     @Test

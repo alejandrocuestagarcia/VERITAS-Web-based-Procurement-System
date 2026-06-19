@@ -16,15 +16,15 @@ public class VendorEvaluation {
     private Long evaluationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vendor_id")
+    @JoinColumn(name = "vendor_id", nullable = false)
     private Vendor vendor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "evaluator_id")
+    @JoinColumn(name = "evaluator_id", nullable = false)
     private User evaluator;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id", unique = true)
+    @JoinColumn(name = "request_id", unique = true, nullable = false)
     private Request request;
 
     @Column(name = "delivery_score", nullable = false)

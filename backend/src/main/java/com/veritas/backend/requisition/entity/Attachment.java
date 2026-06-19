@@ -14,7 +14,7 @@ public class Attachment {
     private Long attachmentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id")
+    @JoinColumn(name = "request_id", nullable = false)
     private Request request;
 
     @ManyToOne(fetch = FetchType.LAZY)

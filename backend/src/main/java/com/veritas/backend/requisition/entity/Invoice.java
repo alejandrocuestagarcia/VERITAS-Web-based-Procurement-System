@@ -22,7 +22,7 @@ public class Invoice {
     private Long invoiceId;
 
     @OneToOne
-    @JoinColumn(name = "request_id")
+    @JoinColumn(name = "request_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Request request;
@@ -33,7 +33,7 @@ public class Invoice {
     private List<Attachment> attachments = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vendor_id")
+    @JoinColumn(name = "vendor_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Vendor vendor;
