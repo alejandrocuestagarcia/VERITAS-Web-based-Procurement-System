@@ -253,6 +253,7 @@ public class UserServiceImpl implements UserService {
     if (user.isPresent()) {
       User actualUser = user.get();
       actualUser.setIsActive(false);
+      actualUser.setNotificationEmailEnabled(false);
       actualUser.setDeletedAt(LocalDateTime.now());
 
       if (fallbackUserId != null) {
