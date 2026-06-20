@@ -10,6 +10,7 @@ import com.veritas.backend.user.entity.User;
 import com.veritas.backend.vendor.dto.VendorDto;
 import com.veritas.backend.vendor.dto.VendorEditDto;
 import com.veritas.backend.vendor.dto.VendorRatingDto;
+import com.veritas.backend.vendor.dto.VendorStatsDto;
 import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.entity.VendorEvaluation;
@@ -422,5 +423,188 @@ class VendorServiceUnitTest {
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
         VendorEvaluation savedEval = evaluationCaptor.getValue();
         assertEquals(10.0, savedEval.getGapScore());
+    }
+
+    @Test
+    void EditVendor_TaxIdConflictsWithSelf_Succeeds() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setTaxId("TAX-001");
+
+        VendorEditDto edits = new VendorEditDto(null, "TAX-001", null, null, null);
+
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        vendorService.editVendor(1L, edits);
+
+        verify(vendorRepository, never()).findByTaxId(any());
+    }
+
+    @Test
+    void EditVendor_TaxIdConflictsWithDifferentVendorWithSameId_Succeeds() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        vendor.setTaxId("TAX-001");
+
+        Vendor existingSameId = new Vendor();
+        existingSameId.setId(1L);
+        existingSameId.setTaxId("TAX-NEW");
+
+        VendorEditDto edits = new VendorEditDto(null, "TAX-NEW", null, null, null);
+
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(vendorRepository.findByTaxId("TAX-NEW")).thenReturn(Optional.of(existingSameId));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        vendorService.editVendor(1L, edits);
+
+        verify(vendorRepository).save(any(Vendor.class));
+    }
+
+    @Test
+    void FindVendors_MinimumRatingNull_UsesZeroRating() {
+        Vendor vendor = new Vendor();
+        Page<Vendor> page = new PageImpl<>(List.of(vendor));
+        when(vendorRepository.findByRating(eq("test"), eq(0.0), any(Pageable.class))).thenReturn(page);
+
+        vendorService.findVendorsByStringAndRating(PageRequest.of(0, 10), "test", null);
+
+        verify(vendorRepository).findByRating(eq("test"), eq(0.0), any(Pageable.class));
+    }
+
+    @Test
+    void GetVendorStats_WithAverageRating_ReturnsRoundedRating() {
+        when(vendorRepository.count()).thenReturn(5L);
+        when(vendorRepository.getAverageOverallScore()).thenReturn(8.756);
+
+        VendorStatsDto stats = vendorService.getVendorStats();
+
+        assertAll(
+            () -> assertEquals(5L, stats.total()),
+            () -> assertEquals(8.76, stats.averageRating())
+        );
+    }
+
+    @Test
+    void GetVendorStats_WithNullAverageRating_ReturnsZeroRating() {
+        when(vendorRepository.count()).thenReturn(5L);
+        when(vendorRepository.getAverageOverallScore()).thenReturn(null);
+
+        VendorStatsDto stats = vendorService.getVendorStats();
+
+        assertAll(
+            () -> assertEquals(5L, stats.total()),
+            () -> assertEquals(0.0, stats.averageRating())
+        );
+    }
+
+    @Test
+    void GetVendorById_Found_ReturnsDto() {
+        Vendor vendor = new Vendor();
+        vendor.setId(1L);
+        VendorDto dto = new VendorDto(1L, "V", "T", null, null, null, null, null, null, null, null, null, null, null);
+
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(vendorMapper.toVendorDto(vendor)).thenReturn(dto);
+
+        VendorDto result = vendorService.getVendorById(1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.id());
+    }
+
+    @Test
+    void GetVendorById_NotFound_ThrowsIllegalArgumentException() {
+        when(vendorRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> vendorService.getVendorById(1L));
+    }
+
+    @Test
+    void RateVendor_VendorNotFound_ThrowsEntityNotFoundException() {
+        when(vendorRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User()));
+    }
+
+    @Test
+    void RateVendor_RequestNotFound_ThrowsEntityNotFoundException() {
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(new Vendor()));
+        when(requestRepository.findById(10L)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User()));
+    }
+
+    @Test
+    void RateVendor_AlreadyEvaluated_ThrowsEntityExistsException() {
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(new Vendor()));
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(new Request()));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(true);
+
+        assertThrows(EntityExistsException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User()));
+    }
+
+    @Test
+    void RateVendor_NullQuoteTotal_SavesWithGapScoreTen() {
+        Vendor vendor = new Vendor();
+        Request request = new Request();
+        request.setInvoice(new Invoice());
+
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
+
+        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User());
+
+        ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
+        verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
+        assertEquals(10.0, evaluationCaptor.getValue().getGapScore());
+    }
+
+    @Test
+    void RateVendor_ZeroQuoteTotal_SavesWithGapScoreTen() {
+        Vendor vendor = new Vendor();
+        Request request = new Request();
+        request.setInvoice(new Invoice());
+        request.getInvoice().setTotalAmount(new BigDecimal("100.00"));
+
+        Quote quote = new Quote();
+        quote.setSelected(true);
+        quote.setTotalAmount(BigDecimal.ZERO);
+        request.setQuotes(List.of(quote));
+
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
+
+        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User());
+
+        ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
+        verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
+        assertEquals(10.0, evaluationCaptor.getValue().getGapScore());
+    }
+
+    @Test
+    void RateVendor_HugeDeviation_SavesWithGapScoreZero() {
+        Vendor vendor = new Vendor();
+        Request request = new Request();
+        request.setInvoice(new Invoice());
+        request.getInvoice().setTotalAmount(new BigDecimal("300.00")); // 200% deviation
+
+        Quote quote = new Quote();
+        quote.setSelected(true);
+        quote.setTotalAmount(new BigDecimal("100.00"));
+        request.setQuotes(List.of(quote));
+
+        when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
+
+        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User());
+
+        ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
+        verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
+        assertEquals(0.0, evaluationCaptor.getValue().getGapScore());
     }
 }

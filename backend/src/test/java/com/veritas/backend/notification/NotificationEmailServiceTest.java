@@ -3,6 +3,7 @@ package com.veritas.backend.notification;
 import com.veritas.backend.notification.entity.NotificationType;
 import com.veritas.backend.notification.service.impl.NotificationEmailServiceImpl;
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.mail.MailService;
@@ -130,5 +131,81 @@ class NotificationEmailServiceTest {
         emailService.sendNotificationEmail(recipient, request, NotificationType.SUBMITTED, "Requisition submitted");
 
         verify(mailService).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void sendNotificationEmail_EmailNotificationsNull_Skipped() {
+        recipient.setNotificationEmailEnabled(null);
+
+        emailService.sendNotificationEmail(recipient, request, NotificationType.SUBMITTED, "Requisition submitted");
+
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void sendNotificationEmail_AllSubjectTypes_Succeeds() {
+        NotificationType[] types = NotificationType.values();
+        for (NotificationType type : types) {
+            reset(mailService);
+            emailService.sendNotificationEmail(recipient, request, type, "Message for " + type.name());
+
+            ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+            verify(mailService).sendEmail(anyString(), subjectCaptor.capture(), anyString());
+
+            String subject = subjectCaptor.getValue();
+            assertNotNull(subject);
+            assertTrue(subject.contains("VERITAS"));
+        }
+    }
+
+    @Test
+    void sendNotificationEmail_FinishedRequest_SendsStatusCompleted() {
+        request.setState(RequestStatus.FINISHED);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.APPROVED, "Your request was approved");
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mailService).sendEmail(anyString(), anyString(), bodyCaptor.capture());
+
+        String body = bodyCaptor.getValue();
+        assertTrue(body.contains("Status: Completed"));
+        assertFalse(body.contains("Current Step:"));
+    }
+
+    @Test
+    void sendNotificationEmail_RequestNoNameNoKey_SendsNaSubject() {
+        request.setRequestName("");
+        request.setRequestKey(null);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.FINISHED, "Requisition completed");
+
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mailService).sendEmail(anyString(), subjectCaptor.capture(), anyString());
+
+        assertEquals("VERITAS — Request 'N/A' Completed", subjectCaptor.getValue());
+    }
+
+    @Test
+    void sendNotificationEmail_RequestNameBlank_FallsBackToKey() {
+        request.setRequestName("   ");
+        request.setRequestKey("REQ-123");
+        emailService.sendNotificationEmail(recipient, request, NotificationType.FINISHED, "Requisition completed");
+
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mailService).sendEmail(anyString(), subjectCaptor.capture(), anyString());
+
+        assertEquals("VERITAS — Request 'REQ-123' Completed", subjectCaptor.getValue());
+    }
+
+    @Test
+    void sendNotificationEmail_RequestNoCurrentStep_SendsBasicDetails() {
+        request.setState(RequestStatus.DRAFT);
+        request.setCurrentStep(null);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.FINISHED, "Requisition completed");
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mailService).sendEmail(anyString(), anyString(), bodyCaptor.capture());
+
+        String body = bodyCaptor.getValue();
+        assertFalse(body.contains("Status: Completed"));
+        assertFalse(body.contains("Current Step:"));
     }
 }

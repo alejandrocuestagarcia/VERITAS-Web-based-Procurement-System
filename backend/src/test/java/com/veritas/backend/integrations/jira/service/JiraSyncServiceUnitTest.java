@@ -5,6 +5,9 @@ import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import org.springframework.web.client.RestClientException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +42,9 @@ import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.repository.UserRepository;
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -125,6 +130,10 @@ class JiraSyncServiceUnitTest {
         Field frontendUrlField = JiraSyncServiceImpl.class.getDeclaredField("frontendUrl");
         frontendUrlField.setAccessible(true);
         frontendUrlField.set(service, "https://frontend.com");
+
+        Field requisitionServiceField = JiraSyncServiceImpl.class.getDeclaredField("requisitionService");
+        requisitionServiceField.setAccessible(true);
+        requisitionServiceField.set(service, requisitionService);
     }
 
     @Test
@@ -708,7 +717,7 @@ class JiraSyncServiceUnitTest {
     void syncAttachments_DownloadIOException_LogsWarningAndContinues() {
         when(configRepository.findById(1L)).thenReturn(Optional.of(config));
         
-        JiraAttachmentRecord attachment = new JiraAttachmentRecord("1", "doc.pdf", "application/pdf", 1024L, "https://api/doc.pdf");
+        JiraAttachmentRecord attachment = new JiraAttachmentRecord("1", "doc.pdf", "https://api/doc.pdf", 1024L, "application/pdf");
         JiraSearchResponseRecord response = new JiraSearchResponseRecord(List.of(
             new JiraIssueRecord("100", "TEST-1", "url", new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, List.of(attachment)))
         ));
@@ -725,7 +734,7 @@ class JiraSyncServiceUnitTest {
             .thenReturn(new ResponseEntity<>(HttpStatus.OK));
 
         // Mock attachment download failing
-        when(restTemplate.exchange(eq("https://api/doc.pdf"), eq(HttpMethod.GET), any(HttpEntity.class), eq(Resource.class)))
+        when(restTemplate.exchange(contains("doc.pdf"), eq(HttpMethod.GET), any(HttpEntity.class), eq(Resource.class)))
             .thenThrow(new RestClientException("Download failed"));
 
         assertDoesNotThrow(() -> service.runManualSync(1L));
@@ -1091,5 +1100,340 @@ class JiraSyncServiceUnitTest {
             () -> assertEquals("COMPLETED", item.getStatus()),
             () -> verify(restTemplate).exchange(contains("/attachment/j1"), eq(HttpMethod.DELETE), any(HttpEntity.class), eq(Void.class))
         );
+    }
+
+    @Test
+    void parseQtyAndUnit_VariousInputs_Covered() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("parseQtyAndUnit", String.class, RequestItem.class);
+        method.setAccessible(true);
+
+        RequestItem item = new RequestItem();
+
+        // null/blank
+        method.invoke(service, null, item);
+        assertEquals(1, item.getQuantity());
+        assertEquals(RequestItemUnit.PIECES, item.getUnit());
+
+        method.invoke(service, "   ", item);
+        assertEquals(1, item.getQuantity());
+        assertEquals(RequestItemUnit.PIECES, item.getUnit());
+
+        // matches pattern: number + unit
+        method.invoke(service, "10 pieces", item);
+        assertEquals(10, item.getQuantity());
+        assertEquals(RequestItemUnit.PIECES, item.getUnit());
+
+        method.invoke(service, "5box", item);
+        assertEquals(5, item.getQuantity());
+        assertEquals(RequestItemUnit.BOXES, item.getUnit());
+
+        method.invoke(service, "100kgs", item);
+        assertEquals(100, item.getQuantity());
+        assertEquals(RequestItemUnit.KG, item.getUnit());
+
+        method.invoke(service, "20unknown", item);
+        assertEquals(20, item.getQuantity());
+        assertEquals(RequestItemUnit.PIECES, item.getUnit());
+
+        // does not match pattern: non-digits extracted
+        method.invoke(service, "abc-12-def", item);
+        assertEquals(12, item.getQuantity());
+        assertEquals(RequestItemUnit.PIECES, item.getUnit());
+
+        method.invoke(service, "xyz", item);
+        assertEquals(1, item.getQuantity());
+        assertEquals(RequestItemUnit.PIECES, item.getUnit());
+    }
+
+    @Test
+    void mapDescription_VariousInputs_Covered() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // null node
+        assertNull(service.mapDescription(null));
+        assertNull(service.mapDescription(mapper.nullNode()));
+
+        // textual node
+        assertEquals("Hello world", service.mapDescription(mapper.valueToTree("Hello world")));
+
+        // complex structure
+        String json = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Line 1\"}]},{\"type\":\"table\",\"content\":[]}]}";
+        try {
+            JsonNode node = mapper.readTree(json);
+            String result = service.mapDescription(node);
+            assertNotNull(result);
+            assertTrue(result.contains("Line 1"));
+            assertFalse(result.contains("table"));
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void runManualSync_ThrowsRuntimeException_LogsAndSwallows() {
+        when(configRepository.findById(1L)).thenReturn(Optional.of(config));
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(JiraSearchResponseRecord.class)))
+            .thenReturn(new ResponseEntity<>(new JiraSearchResponseRecord(List.of()), HttpStatus.OK));
+        doThrow(new RuntimeException("Database error")).when(configRepository).save(any(JiraConfig.class));
+
+        assertDoesNotThrow(() -> service.runManualSync(1L));
+    }
+
+    @Test
+    void lockJiraIssue_RestClientException_ReturnsFalse() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("lockJiraIssue", JiraConfig.class, String.class, Request.class);
+        method.setAccessible(true);
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenThrow(new RestClientException("Connection refused"));
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        Boolean result = (Boolean) method.invoke(service, config, "TEST-1", request);
+        assertFalse(result);
+    }
+
+    @Test
+    void uploadAttachmentToJira_ThrowsException_Handled() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("uploadAttachmentToJira", JiraConfig.class, String.class, Attachment.class);
+        method.setAccessible(true);
+
+        Attachment att = new Attachment();
+        att.setFileName("file.txt");
+        att.setStoragePath("invalid/path/file.txt");
+
+        // Should catch IOException and not throw
+        assertDoesNotThrow(() -> method.invoke(service, config, "TEST-1", att));
+    }
+
+    @Test
+    void syncAttachments_WithAttachment_DownloadsAndSaves() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncAttachments", Request.class, JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        JiraAttachmentRecord attRecord = new JiraAttachmentRecord("att1", "jira.txt", "https://api/att1/content", 100L, "text/plain");
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, List.of(attRecord));
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        Resource resource = mock(Resource.class);
+        ByteArrayInputStream bis = new ByteArrayInputStream("hello".getBytes());
+        when(resource.getInputStream()).thenReturn(bis);
+        when(restTemplate.exchange(eq("https://api/att1/content"), eq(HttpMethod.GET), any(HttpEntity.class), eq(Resource.class)))
+            .thenReturn(new ResponseEntity<>(resource, HttpStatus.OK));
+
+        method.invoke(service, request, config, issueRecord);
+
+        verify(requisitionService).saveAttachmentFromInputStream(eq(10L), eq("jira.txt"), eq("text/plain"), eq(100L), any());
+    }
+
+    @Test
+    void syncAttachments_DownloadThrowsException_LogsWarningAndSwallows() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncAttachments", Request.class, JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        JiraAttachmentRecord attRecord = new JiraAttachmentRecord("att1", "jira.txt", "https://api/att1/content", 100L, "text/plain");
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, List.of(attRecord));
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        when(restTemplate.exchange(eq("https://api/att1/content"), eq(HttpMethod.GET), any(HttpEntity.class), eq(Resource.class)))
+            .thenThrow(new RestClientException("Download failed"));
+
+        assertDoesNotThrow(() -> method.invoke(service, request, config, issueRecord));
+    }
+
+    @Test
+    void syncLineItems_VariousRequests_Covered() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncLineItems", Request.class, JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Request request1 = new Request();
+        request1.setItems(null);
+
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        method.invoke(service, request1, config, issueRecord);
+        assertNotNull(request1.getItems());
+        assertTrue(request1.getItems().isEmpty());
+
+        Request request2 = new Request();
+        List<RequestItem> existingItems = new ArrayList<>();
+        existingItems.add(new RequestItem());
+        request2.setItems(existingItems);
+
+        method.invoke(service, request2, config, issueRecord);
+        verify(requestItemRepository).deleteAll(any());
+        assertTrue(request2.getItems().isEmpty());
+    }
+
+    @Test
+    void extractLineItemsFromDescriptionTable_VariousTables_Covered() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("extractLineItemsFromDescriptionTable", JsonNode.class, Request.class, List.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        List<RequestItem> items = new ArrayList<>();
+
+        // Null description
+        method.invoke(service, null, request, items);
+        assertTrue(items.isEmpty());
+
+        // Description with various table structures
+        String json = "{\n" +
+                "  \"type\": \"doc\",\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"type\": \"table\",\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"type\": \"tableRow\",\n" +
+                "          \"content\": [\n" +
+                "            { \"type\": \"tableHeader\", \"content\": [{ \"type\": \"text\", \"text\": \"Item\" }] },\n" +
+                "            { \"type\": \"tableHeader\", \"content\": [{ \"type\": \"text\", \"text\": \"Qty\" }] }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"type\": \"tableRow\",\n" +
+                "          \"content\": [\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"Laptop\" }] },\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"5 pieces\" }] }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"type\": \"tableRow\",\n" +
+                "          \"content\": [\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"Monitor\" }] },\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"2\" }] },\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"boxes\" }] }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"type\": \"tableRow\",\n" +
+                "          \"content\": [\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"Mouse\" }] },\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"invalid_qty\" }] },\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"pcs\" }] }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"type\": \"tableRow\",\n" +
+                "          \"content\": [\n" +
+                "            { \"type\": \"tableCell\", \"content\": [{ \"type\": \"text\", \"text\": \"Keyboard\" }] }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"type\": \"tableRow\",\n" +
+                "          \"content\": []\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"type\": \"paragraph\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(json);
+
+        method.invoke(service, node, request, items);
+
+        assertAll(
+            () -> assertEquals(4, items.size()),
+            () -> assertEquals("Laptop", items.get(0).getName()),
+            () -> assertEquals(5, items.get(0).getQuantity()),
+            () -> assertEquals("Monitor", items.get(1).getName()),
+            () -> assertEquals(2, items.get(1).getQuantity()),
+            () -> assertEquals(RequestItemUnit.BOXES, items.get(1).getUnit()),
+            () -> assertEquals("Mouse", items.get(2).getName()),
+            () -> assertEquals(1, items.get(2).getQuantity()),
+            () -> assertEquals("Keyboard", items.get(3).getName()),
+            () -> assertEquals(1, items.get(3).getQuantity())
+        );
+    }
+
+    @Test
+    void processIssue_WithSecurityContextUser_LogsActor() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Authentication auth = mock(Authentication.class);
+        User principal = new User();
+        principal.setId(5L);
+        when(auth.getPrincipal()).thenReturn(principal);
+
+        SecurityContext context = mock(SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(context);
+
+        try {
+            JiraConfig tempConfig = new JiraConfig();
+            tempConfig.setCustomFieldId("customfield_10001");
+            tempConfig.setJiraUrl("https://test.atlassian.net");
+
+            Request request = new Request();
+            request.setRequestID(10L);
+            request.setItems(new ArrayList<>());
+            when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.of(request));
+            when(requestRepository.saveAndFlush(any())).thenReturn(request);
+            when(internalBudgetRepository.save(any())).thenReturn(null);
+
+            // Mock the PUT call for updateJiraCustomField to return success
+            when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>(HttpStatus.NO_CONTENT));
+
+            JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
+            JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+            method.invoke(service, tempConfig, issueRecord);
+
+            verify(auditService).createJiraSyncLog(eq(principal), any(), anyString());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    void syncVeritasToJira_VariousBranches_Covered() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncVeritasToJira", JiraConfig.class, Request.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setJiraIssueKey("TEST-101");
+        request.setState(RequestStatus.FINISHED);
+
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+
+        // Stub PUT description update
+        when(restTemplate.exchange(contains("/issue/TEST-101"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>("{}", HttpStatus.OK));
+
+        // Stub transitions GET
+        String transitionsJson = "{\"transitions\":[{\"id\":\"11\",\"name\":\"Delegated Ready\",\"to\":{\"name\":\"Delegated Ready\"}}]}";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode transNode = mapper.readTree(transitionsJson);
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(transNode, HttpStatus.OK));
+
+        // Stub transitions POST
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        // Stub comment POST
+        when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        Boolean result1 = (Boolean) method.invoke(service, config, request);
+        assertTrue(result1);
     }
 }

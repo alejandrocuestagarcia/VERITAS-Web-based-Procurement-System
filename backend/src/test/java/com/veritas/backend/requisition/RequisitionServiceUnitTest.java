@@ -34,7 +34,7 @@ import com.veritas.backend.requisition.dto.InvoiceDto;
 import com.veritas.backend.requisition.dto.InvoiceCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
 import jakarta.persistence.EntityExistsException;
-import org.springframework.web.multipart.MultipartFile;
+import org.mockito.*;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.dto.RequisitionItemCreateDto;
 import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
@@ -78,10 +78,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+
 import static org.mockito.Mockito.doThrow;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
@@ -2479,6 +2476,242 @@ class RequisitionServiceUnitTest {
 
         assertDoesNotThrow(() -> requisitionService.deleteInvoice(1L, testUser));
         verify(invoiceRepository).delete(invoice);
+    }
+
+    @Test
+    void downloadAttachment_AttachmentNotFound_ThrowsEntityNotFoundException() {
+        when(attachmentRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> requisitionService.downloadAttachment(999L, testUser));
+    }
+
+    @Test
+    void saveAttachmentFromInputStream_RequestNotFound_ThrowsIllegalArgumentException() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class, () -> requisitionService.saveAttachmentFromInputStream(999L, "file.txt", "text/plain", 100L, null));
+    }
+
+    @Test
+    void downloadAttachment_FileNotReadable_ThrowsRuntimeException() {
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        attachment.setFileName("test.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setStoragePath("non-existent-path/file.pdf");
+
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+
+        assertThrows(RuntimeException.class, () -> requisitionService.downloadAttachment(1L, testUser));
+    }
+
+    @Test
+    void deleteAttachment_WithInvoice_DeletesInvoiceInstead() {
+        Attachment attachment = new Attachment();
+        attachment.setAttachmentId(1L);
+        Request request = new Request();
+        request.setRequestID(10L);
+        attachment.setRequest(request);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(false);
+        invoice.setAttachments(new ArrayList<>());
+        request.setInvoice(invoice);
+        attachment.setInvoice(invoice);
+
+        when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        requisitionService.deleteAttachment(1L, testUser);
+
+        verify(invoiceRepository).delete(invoice);
+    }
+
+    @Test
+    void approveRequest_WithPaidInvoice_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () -> requisitionService.approveRequest(10L, testUser, null));
+    }
+
+    @Test
+    void approveRequest_NotFinished_NoAssignee_SkipsAssigneeNotification() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setAssignee(null);
+        request.setRequestName("Test");
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenReturn(request);
+
+        requisitionService.approveRequest(10L, testUser, null);
+
+        verify(requestRepository).save(any());
+    }
+
+    @Test
+    void revertRequest_WithPaidInvoice_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Reason");
+        rejectDto.setRevisionRequired(false);
+        assertThrows(WorkflowStateException.class, () -> requisitionService.revertRequest(10L, testUser, rejectDto));
+    }
+
+    @Test
+    void revertRequest_BlankReason_AppendsPeriodInMessage() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        User creator = new User();
+        creator.setEmail("creator@test.com");
+        request.setUser(creator);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenReturn(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("");
+        rejectDto.setRevisionRequired(false);
+        requisitionService.revertRequest(10L, testUser, rejectDto);
+
+        verify(notificationService).createNotification(
+                eq(creator), any(), eq(NotificationType.REVERTED),
+                ArgumentMatchers.endsWith(".")
+        );
+    }
+
+    @Test
+    void rejectRequest_WithPaidInvoice_ThrowsWorkflowStateException() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Reason");
+        rejectDto.setRevisionRequired(false);
+        assertThrows(WorkflowStateException.class, () -> requisitionService.rejectRequest(10L, testUser, rejectDto));
+    }
+
+    @Test
+    void rejectRequest_NoJiraKey_SkipsJiraSync() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setJiraIssueKey(null);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenReturn(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Rejected");
+        rejectDto.setRevisionRequired(false);
+        requisitionService.rejectRequest(10L, testUser, rejectDto);
+
+        verify(jiraSyncService, never()).handleVeritasWorkflowChange(any());
+    }
+
+    @Test
+    void rejectRequest_BlankReason_AppendsPeriodInMessage() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setJiraIssueKey(null);
+        User creator = new User();
+        creator.setEmail("c@test.com");
+        request.setUser(creator);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenReturn(request);
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("");
+        rejectDto.setRevisionRequired(false);
+        requisitionService.rejectRequest(10L, testUser, rejectDto);
+
+        verify(notificationService).createNotification(
+                eq(creator), any(), eq(NotificationType.REJECTED),
+                ArgumentMatchers.endsWith(".")
+        );
+    }
+
+    @Test
+    void getNextStepRole_NullStep_ReturnsNull() {
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(workflowEngineService.getNextStep(request)).thenReturn(null);
+
+        assertNull(requisitionService.getNextStepRole(10L, testUser));
+    }
+
+    @Test
+    void getNextStepRole_NullRole_ReturnsNull() {
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        WorkflowStep nextStep = new WorkflowStep();
+        nextStep.setRole(null);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(workflowEngineService.getNextStep(request)).thenReturn(nextStep);
+
+        assertNull(requisitionService.getNextStepRole(10L, testUser));
+    }
+
+    @Test
+    void getNextStepRole_AutomatedStep_ReturnsNull() {
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        WorkflowStep nextStep = new WorkflowStep();
+        nextStep.setRole(UserRole.REQUESTER);
+        nextStep.setIsAutomatedApproval(true);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(workflowEngineService.getNextStep(request)).thenReturn(nextStep);
+
+        assertNull(requisitionService.getNextStepRole(10L, testUser));
+    }
+
+    @Test
+    void getEligibleAssignees_NullUserDept_ReturnsAllProcurementOfficers() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setUser(null);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        User candidate = new User();
+        candidate.setId(5L);
+        candidate.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department dept = new Department();
+        dept.setDepartmentId(1L);
+        candidate.setDepartment(dept);
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(candidate));
+
+        requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
+
+        verify(userMapper).toUserDto(candidate);
     }
 }
 
