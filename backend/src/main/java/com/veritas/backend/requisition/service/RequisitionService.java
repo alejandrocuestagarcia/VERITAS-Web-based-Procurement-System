@@ -168,7 +168,7 @@ public interface RequisitionService {
      * @throws WorkflowStateException if the request is finished
      * @throws IllegalArgumentException if the new requester is not a REQUESTER from the same team
      */
-    RequisitionDto changeRequester(Long id, Long newRequesterId);
+    RequisitionDto changeRequester(Long id, Long newRequesterId, User actor);
 
     /**
      * Returns the role required to act at the next workflow step, or {@code null} if the next step is automated.

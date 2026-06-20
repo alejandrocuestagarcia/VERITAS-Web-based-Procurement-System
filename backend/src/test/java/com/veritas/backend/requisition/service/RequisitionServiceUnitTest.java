@@ -622,7 +622,7 @@ class RequisitionServiceUnitTest {
         when(securityContext.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(securityContext);
 
-        RequisitionDto result = requisitionService.changeRequester(1L, 2L);
+        RequisitionDto result = requisitionService.changeRequester(1L, 2L, testUser);
 
         assertNotNull(result);
         verify(requestRepository).save(requestCaptor.capture());
@@ -634,7 +634,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(99L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> requisitionService.changeRequester(99L, 2L));
+                () -> requisitionService.changeRequester(99L, 2L, testUser));
         assertTrue(ex.getMessage().contains("Request not found with id: 99"));
         verify(requestRepository, never()).save(any());
     }
@@ -646,7 +646,7 @@ class RequisitionServiceUnitTest {
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> requisitionService.changeRequester(1L, null));
+                () -> requisitionService.changeRequester(1L, null, testUser));
         assertTrue(ex.getMessage().contains("New assigned user must be stated"));
         verify(requestRepository, never()).save(any());
     }
@@ -668,7 +668,7 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> requisitionService.changeRequester(1L, 99L));
+                () -> requisitionService.changeRequester(1L, 99L, testUser));
         verify(requestRepository, never()).save(any());
     }
 
@@ -695,7 +695,7 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(manager));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> requisitionService.changeRequester(1L, 2L));
+                () -> requisitionService.changeRequester(1L, 2L, testUser));
         assertTrue(ex.getMessage().contains("New assigned user must be a requester from the same team"));
         verify(requestRepository, never()).save(any());
     }
@@ -726,7 +726,7 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(newRequester));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> requisitionService.changeRequester(1L, 2L));
+                () -> requisitionService.changeRequester(1L, 2L, testUser));
         assertTrue(ex.getMessage().contains("New assigned user must be a requester from the same team"));
         verify(requestRepository, never()).save(any());
     }

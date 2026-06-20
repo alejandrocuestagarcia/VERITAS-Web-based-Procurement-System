@@ -565,7 +565,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public RequisitionDto changeRequester(Long id, Long newRequesterId) {
+    public RequisitionDto changeRequester(Long id, Long newRequesterId, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
@@ -590,6 +590,11 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (jiraSyncService != null) {
             jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
         }
+
+        auditService.createWorkflowTransitionLog(
+                actor, request, null, REQUESTER_CHANGED,
+                "Requester changed from " + (oldRequester != null ? oldRequester.getName() : "unknown")
+                        + " to " + newRequester.getName());
 
         List<String> notifiedRecipients = new ArrayList<>();
         if (oldRequester != null) {
