@@ -237,7 +237,8 @@
             <div *ngIf="isEditable">
               <input type="number" step="1" min="1" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 [ngModelOptions]="{standalone: true}"
-                [ngModel]="currentRule.minRequiredVendors" (ngModelChange)="updateRuleProperty('minRequiredVendors', $event)"
+                [ngModel]="currentRule.minRequiredVendors" (ngModelChange)="onMinRequiredVendorsChange($event)"
+                appNumericOnly="integer"
                 placeholder="1">
             </div>
             <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">
@@ -251,7 +252,8 @@
             <div *ngIf="isEditable">
               <input type="number" step="0.5" min="0" max="10" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 [ngModelOptions]="{standalone: true}"
-                [ngModel]="currentRule.minVendorReliabilityScore" (ngModelChange)="updateRuleProperty('minVendorReliabilityScore', $event)"
+                [ngModel]="currentRule.minVendorReliabilityScore" (ngModelChange)="onMinVendorReliabilityScoreChange($event)"
+                appNumericOnly="decimal"
                 placeholder="e.g. 7">
             </div>
             <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">

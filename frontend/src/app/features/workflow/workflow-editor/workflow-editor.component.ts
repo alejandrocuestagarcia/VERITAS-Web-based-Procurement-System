@@ -655,6 +655,28 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
+  onMinRequiredVendorsChange(value: any) {
+    if (value === '' || value === null || value === undefined) {
+      this.updateRuleProperty('minRequiredVendors', 0);
+      return;
+    }
+    const intVal = parseInt(value, 10);
+    if (!isNaN(intVal) && intVal >= 0) {
+      this.updateRuleProperty('minRequiredVendors', intVal);
+    }
+  }
+
+  onMinVendorReliabilityScoreChange(value: any) {
+    if (value === '' || value === null || value === undefined) {
+      this.updateRuleProperty('minVendorReliabilityScore', null);
+      return;
+    }
+    const floatVal = parseFloat(value);
+    if (!isNaN(floatVal) && floatVal >= 0 && floatVal <= 10) {
+      this.updateRuleProperty('minVendorReliabilityScore', floatVal);
+    }
+  }
+
   updateRuleProperty(key: 'minRequiredVendors' | 'minVendorReliabilityScore' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'advancedRule', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {

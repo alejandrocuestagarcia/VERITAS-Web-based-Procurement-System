@@ -32,6 +32,7 @@ import { MatSliderModule } from "@angular/material/slider";
 import { MatDialogModule, MAT_DIALOG_DEFAULT_OPTIONS } from "@angular/material/dialog";
 import { MatStepperModule } from "@angular/material/stepper";
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { NumericOnlyDirective } from './shared/directives/numeric-only.directive';
 
 // Routing & App
 import { AppRoutingModule } from './app-routing.module';
@@ -215,7 +216,8 @@ import { NotificationLogComponent } from './features/notifications/notification-
     MatSliderModule,
     MatDialogModule,
     MatStepperModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    NumericOnlyDirective
   ],
   providers: [
     {
