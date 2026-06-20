@@ -202,10 +202,18 @@
             View Workflow
           </button>
         </div>
-        <p class="text-[14px] text-slate-600 leading-relaxed">
-          This step (<strong class="text-slate-900 font-bold">{{ request.status }}</strong>) requires review from <strong class="text-slate-900 font-bold">{{ (request.responsibleRole ? formatRole(request.responsibleRole) : 'No Role Assigned') | titlecase }}</strong>:
-          <span class="text-slate-600 font-bold">{{ request.workflowStepDescription }}</span>
-        </p>
+        <ng-container *ngIf="request.state === 'DRAFT'; else activeWorkflowStep">
+          <p class="text-[14px] text-slate-600 leading-relaxed m-0">
+            This request is currently in the <strong class="text-slate-900 font-bold">Draft</strong> step<span *ngIf="request.status && request.status.toLowerCase() !== 'draft'"> (<strong class="text-slate-900 font-bold">{{ request.status }}</strong>)</span>.
+            <span *ngIf="isRequester()" class="block mt-1.5 text-xs text-slate-500 font-semibold">Click the <strong>Submit</strong> button in the header to start the procurement process.</span>
+          </p>
+        </ng-container>
+        <ng-template #activeWorkflowStep>
+          <p class="text-[14px] text-slate-600 leading-relaxed m-0">
+            This step (<strong class="text-slate-900 font-bold">{{ request.status }}</strong>)<span *ngIf="request.responsibleRole"> requires review from <strong class="text-slate-900 font-bold">{{ formatRole(request.responsibleRole) | titlecase }}</strong></span><span *ngIf="request.workflowStepDescription">:
+            <span class="text-slate-600 font-bold">{{ request.workflowStepDescription }}</span></span>
+          </p>
+        </ng-template>
       </div>
 
       <div *ngIf="request.isClosed" class="bg-green-50/60 rounded-[20px] border border-green-200 shadow-sm p-7 border-l-[6px] border-l-green-500">
