@@ -103,13 +103,15 @@ export class RequisitionDetailComponent implements OnInit {
   private requestId!: number;
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (id) {
-      this.loadRequest(id);
-      this.requestId = id;
-    } else {
-      this.router.navigate(['/requisitions']);
-    }
+    this.route.paramMap.subscribe(params => {
+      const id = Number(params.get('id'));
+      if (id) {
+        this.loadRequest(id);
+        this.requestId = id;
+      } else {
+        this.router.navigate(['/requisitions']);
+      }
+    });
   }
 
   loadRequest(id: number): void {
