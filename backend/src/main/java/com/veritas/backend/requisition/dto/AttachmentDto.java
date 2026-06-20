@@ -8,5 +8,6 @@ public record AttachmentDto(
         String fileType,
         Long fileSize,
         String storagePath,
-        LocalDateTime uploadedAt
+        LocalDateTime uploadedAt,
+        Long invoiceId
 ) {}

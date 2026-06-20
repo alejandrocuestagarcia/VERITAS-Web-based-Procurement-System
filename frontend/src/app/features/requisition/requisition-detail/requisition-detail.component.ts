@@ -63,6 +63,8 @@ export class RequisitionDetailComponent implements OnInit {
   rawPdfUrl = '';
   isProcessingPayment = false;
   invoice: InvoiceDto | null = null;
+  invoiceAttachment: any = null;
+  invoiceFileType = '';
 
   auditLogs: AuditLogDto[] = [];
   auditLogsLoading = false;
@@ -536,26 +538,31 @@ export class RequisitionDetailComponent implements OnInit {
       error: () => this.invoice = null
     });
 
-    const invoicePdf = this.request.attachments?.find(
-      (a: any) => a.fileType === 'application/pdf'
+    this.invoiceAttachment = this.request.attachments?.find(
+      (a: any) => a.invoiceId != null
     );
+    this.invoiceFileType = this.invoiceAttachment?.fileType || '';
 
-    if (invoicePdf && invoicePdf.attachmentId) {
-      this.requisitionService.downloadAttachment(invoicePdf.attachmentId).subscribe({
+    if (this.invoiceAttachment && this.invoiceAttachment.attachmentId) {
+      this.requisitionService.downloadAttachment(this.invoiceAttachment.attachmentId).subscribe({
         next: (blob) => {
           const blobUrl = window.URL.createObjectURL(blob);
           this.rawPdfUrl = blobUrl;
           this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
         },
         error: (err) => {
-          console.error('Failed to load PDF preview', err);
+          console.error('Failed to load invoice preview', err);
           this.pdfUrl = null;
           this.rawPdfUrl = '';
+          this.invoiceAttachment = null;
+          this.invoiceFileType = '';
         }
       });
     } else {
       this.pdfUrl = null;
       this.rawPdfUrl = '';
+      this.invoiceAttachment = null;
+      this.invoiceFileType = '';
     }
   }
 
@@ -567,6 +574,8 @@ export class RequisitionDetailComponent implements OnInit {
     }
     this.pdfUrl = null;
     this.rawPdfUrl = '';
+    this.invoiceAttachment = null;
+    this.invoiceFileType = '';
   }
 
   toggleDrawerExpand(): void {

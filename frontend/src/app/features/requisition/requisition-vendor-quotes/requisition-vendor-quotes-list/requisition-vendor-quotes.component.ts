@@ -192,10 +192,6 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      if (file.type !== 'application/pdf') {
-        this.toastService.showError('Only PDF files are allowed');
-        return;
-      }
       if (file.size > environment.maxFileSize) {
         const maxMb = Math.round(environment.maxFileSize / (1024 * 1024));
         this.toastService.showError(`File ${file.name} exceeds the ${maxMb}MB limit.`);
@@ -209,10 +205,6 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     event.preventDefault();
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
       const file = event.dataTransfer.files[0];
-      if (file.type !== 'application/pdf') {
-        this.toastService.showError('Only PDF files are allowed');
-        return;
-      }
       if (file.size > environment.maxFileSize) {
         const maxMb = Math.round(environment.maxFileSize / (1024 * 1024));
         this.toastService.showError(`File ${file.name} exceeds the ${maxMb}MB limit.`);

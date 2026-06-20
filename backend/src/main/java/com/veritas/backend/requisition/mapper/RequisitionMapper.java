@@ -47,6 +47,7 @@ public interface RequisitionMapper {
 
     RequisitionItemDto toItemDto(com.veritas.backend.requisition.entity.RequestItem item);
     
+    @Mapping(target = "invoiceId", source = "invoice.invoiceId")
     AttachmentDto toAttachmentDto(com.veritas.backend.requisition.entity.Attachment attachment);
 
     default Long resolveSelectedVendorId(Request request) {
