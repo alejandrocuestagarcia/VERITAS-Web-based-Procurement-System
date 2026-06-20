@@ -96,6 +96,11 @@ jacocoTestReport {
 		xml.required = true
 		html.required = true
 	}
+	classDirectories.setFrom(files(classDirectories.files.collect {
+		fileTree(dir: it, exclude: [
+			'**/com/veritas/backend/seeding/**'
+		])
+	}))
 }
 
 tasks.register('unitTest', Test) {
