@@ -172,7 +172,7 @@
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Condition</label>
 
             <div *ngIf="isEditable">
-              <textarea #routingEl rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+              <textarea #routingEl rows="3" spellcheck="false" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
                 (focus)="onTextareaFocus(routingEl)"
                 (input)="onTextareaInput(routingEl)"
                 (keydown)="onAutocompleteKeydown($event, routingEl)"
@@ -271,7 +271,7 @@
             </button>
             <div *ngIf="isAdvancedRuleExpanded" class="space-y-2 animate-in fade-in duration-200">
               <div *ngIf="isEditable">
-                <textarea #advancedRuleEl rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+                <textarea #advancedRuleEl rows="3" spellcheck="false" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
                   (focus)="onTextareaFocus(advancedRuleEl)"
                   (input)="onTextareaInput(advancedRuleEl)"
                   (keydown)="onAutocompleteKeydown($event, advancedRuleEl)"
