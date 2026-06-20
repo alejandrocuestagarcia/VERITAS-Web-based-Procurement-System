@@ -753,7 +753,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const element = elementRegistry.get(this.selectedElementId);
     if (!element) return;
 
-    const cleanValue = (value || '').trim();
+    const cleanValue = (value || '');
 
     if (cleanValue) {
       const wrappedExpression = cleanValue.startsWith('${') ? cleanValue : `\${${cleanValue}}`;
