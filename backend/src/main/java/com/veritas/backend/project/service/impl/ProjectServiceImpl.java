@@ -216,7 +216,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         if (requestRepository.existsByProjectId(id)) {
-            throw new IllegalStateException("Cannot delete project because there are requisitions pointing to it");
+            throw new IllegalStateException("Cannot delete project because there are requisitions that are part of the project");
         }
 
         if (jiraConfigRepository.existsByFallbackProjectId(id)) {
