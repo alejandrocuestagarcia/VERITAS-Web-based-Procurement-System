@@ -1,6 +1,7 @@
 package com.veritas.backend.workflow.validation;
 
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.workflow.dto.SpelFieldDto;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
@@ -97,6 +98,44 @@ public class BpmnValidator {
             "globalbudget.safetybuffer",
             "globalbudget.remainingamount"
     );
+
+    private static final Set<String> OBJECT_PATHS = Set.of(
+            "department", "project", "requester", "budget", "globalbudget",
+            "department.budget", "project.budget"
+    );
+
+    private static final Set<String> STRING_PATHS = Set.of(
+            "priority",
+            "department.name", "project.name", "project.key",
+            "requester.name", "requester.email", "requester.role",
+            "budget.name", "globalbudget.name",
+            "department.budget.name", "project.budget.name"
+    );
+
+    private static final Set<String> BOOLEAN_PATHS = Set.of("requester.isteamleader");
+
+    /**
+     * Returns the list of all allowed SpEL field paths with their types,
+     * derived from the canonical {@link #ALLOWED_BRANCHING_PATHS} set.
+     */
+    public static List<SpelFieldDto> getSpelFields() {
+        return ALLOWED_BRANCHING_PATHS.stream()
+                .map(path -> {
+                    String type;
+                    boolean isObject = OBJECT_PATHS.contains(path);
+                    if (isObject) {
+                        type = "object";
+                    } else if (BOOLEAN_PATHS.contains(path)) {
+                        type = "boolean";
+                    } else if (STRING_PATHS.contains(path)) {
+                        type = "string";
+                    } else {
+                        type = "number";
+                    }
+                    return new SpelFieldDto(path, type, isObject);
+                })
+                .toList();
+    }
 
     private final SpelExpressionParser spelParser = new SpelExpressionParser();
 

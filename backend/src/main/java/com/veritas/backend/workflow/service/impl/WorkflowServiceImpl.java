@@ -5,6 +5,7 @@ import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
+import com.veritas.backend.workflow.dto.SpelFieldDto;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -285,5 +286,10 @@ public class WorkflowServiceImpl implements WorkflowService {
         workflowDefinition.setIsActive(false);
         workflowDefinition.setDeactivatedAt(LocalDateTime.now());
         workflowDefinitionRepository.save(workflowDefinition);
+    }
+
+    @Override
+    public List<SpelFieldDto> getSpelFields() {
+        return BpmnValidator.getSpelFields();
     }
 }

@@ -62,56 +62,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     conditionExpression: ''
   };
 
-  readonly spelFields: { label: string; insert: string; type: string }[] = [
-    { label: 'selectedQuoteTotalAmount', insert: 'selectedQuoteTotalAmount ', type: 'number' },
-    { label: 'priority', insert: 'priority ', type: 'string' },
-    { label: 'totalQuantity', insert: 'totalQuantity ', type: 'number' },
-    { label: 'department', insert: 'department.', type: 'object' },
-    { label: 'project', insert: 'project.', type: 'object' },
-    { label: 'requester', insert: 'requester.', type: 'object' },
-    { label: 'budget', insert: 'budget.', type: 'object' },
-    { label: 'globalBudget', insert: 'globalBudget.', type: 'object' },
-  ];
+  spelFields: { label: string; insert: string; type: string }[] = [];
 
-  private readonly spelNested: Record<string, { label: string; insert: string; type: string }[]> = {
-    'department': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'budget', insert: 'budget.', type: 'object' },
-    ],
-    'project': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'key', insert: 'key ', type: 'string' }, { label: 'budget', insert: 'budget.', type: 'object' },
-    ],
-    'requester': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'email', insert: 'email ', type: 'string' }, { label: 'role', insert: 'role ', type: 'string' },
-      { label: 'isTeamLeader', insert: 'isTeamLeader ', type: 'boolean' },
-    ],
-    'budget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-    'globalBudget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-    'department.budget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-    'project.budget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-  };
+  private spelNested: Record<string, { label: string; insert: string; type: string }[]> = {};
 
   private readonly spelOperators = [
     { label: 'and', insert: 'and ' },
@@ -128,6 +81,27 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   ];
 
   autocompleteVisible = false;
+
+  private loadSpelFields(): void {
+    this.workflowService.getSpelFields().subscribe(fields => {
+        this.spelFields = [];
+        const nested: Record<string, { label: string; insert: string; type: string }[]> = {};
+        for (const f of fields) {
+          const path = f.path!;
+          const lastDot = path.lastIndexOf('.');
+          const label = lastDot >= 0 ? path.substring(lastDot + 1) : path;
+          const insert = f.isObject ? label + '.' : label + ' ';
+          const entry = { label, insert, type: f.type ?? 'string' };
+          if (lastDot >= 0) {
+            const parent = path.substring(0, lastDot).toLowerCase();
+            (nested[parent] ??= []).push(entry);
+          } else {
+            this.spelFields.push(entry);
+          }
+        }
+        this.spelNested = nested;
+      });
+  }
   autocompleteOptions: { label: string; insert: string; type?: string }[] = [];
   activeAutocompleteIndex = 0;
   autocompleteTop = 0;
@@ -268,6 +242,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
+    this.loadSpelFields();
     this.mode = this.data?.mode ?? (this.route.snapshot.data['mode'] as WorkflowMode) ?? 'create';
 
     const BpmnClass = this.mode === 'view' ? BpmnViewer : BpmnModeler;

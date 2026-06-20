@@ -1,5 +1,6 @@
 package com.veritas.backend.workflow.service;
 
+import com.veritas.backend.workflow.dto.SpelFieldDto;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -9,6 +10,8 @@ import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
 
 public interface WorkflowService {
@@ -70,4 +73,14 @@ public interface WorkflowService {
      * @throws EntityNotFoundException if no workflow exists with the given ID
      */
     void deleteWorkflow(Long id);
+
+    /**
+     * Returns the list of allowed SpEL fields for use in routing expressions and transition rules.
+     * Each field includes its fully-qualified path (e.g. {@code department.budget.remainingAmount}),
+     * its data type ({@code number}, {@code string}, {@code boolean}, {@code object}), and whether
+     * the field represents a nested object that can be further drilled into.
+     *
+     * @return the list of allowed SpEL fields
+     */
+    List<SpelFieldDto> getSpelFields();
 }
