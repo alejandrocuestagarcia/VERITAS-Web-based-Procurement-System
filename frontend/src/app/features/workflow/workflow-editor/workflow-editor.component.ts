@@ -774,17 +774,6 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.applyTransitionRuleCss();
   }
 
-  validateVendorReliabilityInput(event: any) {
-    const input = event.target as HTMLInputElement;
-    if (input.value && input.value.includes('.')) {
-      const parts = input.value.split('.');
-      if (parts[1] && parts[1].length > 2) {
-        input.value = parts[0] + '.' + parts[1].substring(0, 2);
-        const numVal = parseFloat(input.value);
-        this.updateRuleProperty('minVendorReliabilityScore', numVal);
-      }
-    }
-  }
 
   private applyTransitionRuleCss() {
     const canvas = this.bpmnInstance.get('canvas');
