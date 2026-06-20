@@ -3,6 +3,7 @@ package com.veritas.backend.requisition.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import com.veritas.backend.integrations.currency.entity.Currency;
 public class InvoiceCreateDto {
 
     @NotBlank(message = "Invoice number is required")
+    @Size(max = 120, message = "Invoice number must be at most 120 characters")
     private String invoiceNumber;
 
     @NotNull(message = "Total amount is required")

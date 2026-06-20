@@ -29,7 +29,7 @@ public class Vendor {
 
     @Column(columnDefinition = "TEXT")
     @NotBlank(message = "Description is required")
-    @Size(max = 500, message = "Description must be at most 500 characters")
+    @Size(max = 3000, message = "Description must be at most 3000 characters")
     private String description;
 
     @Column(name = "primary_contact_name")

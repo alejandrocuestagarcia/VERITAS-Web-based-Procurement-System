@@ -5,11 +5,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public record UserCreationRequestDto(
-        @NotBlank @Email String email,
-        @NotBlank String name,
-        @NotBlank String password,
+        @NotBlank
+        @Email
+        @Size(max = 254, message = "Email must be at most 254 characters")
+        String email,
+
+        @NotBlank
+        @Size(max = 120, message = "Name must be at most 120 characters")
+        String name,
+
+        @NotBlank
+        @Size(max = 120, message = "Password must be at most 120 characters")
+        String password,
+
         @NotNull UserRole role,
         @Schema(description = "Required only for REQUESTER role")
         Long teamId,
