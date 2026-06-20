@@ -4,6 +4,7 @@ import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
+import com.veritas.backend.budget.entity.InternalBudget;
 import org.springframework.web.client.RestClientException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -1738,5 +1739,223 @@ class JiraSyncServiceUnitTest {
             .thenReturn(new ResponseEntity<>(mapper.readTree(json8), HttpStatus.OK));
         Boolean res8 = (Boolean) method.invoke(service, config, "TEST-1", "target", false);
         assertFalse(res8); // returns isLock (false) when transitionId == null
+    }
+
+    @Test
+    void createJiraRemoteLink_VariousBranches() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("createJiraRemoteLink", JiraConfig.class, String.class, Request.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setRequestKey("REQ-10");
+        request.setRequestName(null); // covers requestName == null -> requestKey used
+
+        // Test successful call
+        lenient().when(restTemplate.exchange(contains("/remotelink"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>("{}", HttpStatus.OK));
+        assertDoesNotThrow(() -> method.invoke(service, config, "TEST-1", request));
+
+        // Test RestClientException is caught and handled gracefully
+        lenient().when(restTemplate.exchange(contains("/remotelink"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenThrow(new RestClientException("Rest error"));
+        assertDoesNotThrow(() -> method.invoke(service, config, "TEST-1", request));
+    }
+
+    @Test
+    void syncVeritasToJira_RejectionAndRevertBranches() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncVeritasToJira", JiraConfig.class, Request.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setJiraIssueKey("TEST-101");
+        request.setState(RequestStatus.ACTIVE);
+        request.setRejectionReason("Bad quote");
+        request.setRequestName("Requisition Name");
+
+        // 1. REJECT audit log present
+        User rejectActor = new User();
+        rejectActor.setName("Rejecter User");
+        AuditLog rejectLog = AuditLog.builder().actor(rejectActor).build();
+        lenient().when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REJECT))
+            .thenReturn(Optional.of(rejectLog));
+
+        // Stub REST dependencies
+        lenient().when(restTemplate.exchange(contains("/issue/TEST-101"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>("{}", HttpStatus.OK));
+        lenient().when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        lenient().when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(new ObjectMapper().readTree("{\"transitions\":[]}"), HttpStatus.OK));
+
+        Boolean res1 = (Boolean) method.invoke(service, config, request);
+        assertTrue(res1);
+
+        // 2. REJECT log absent, REVERT log present
+        User reverterActor = new User();
+        reverterActor.setName("Reverter User");
+        AuditLog revertLog = AuditLog.builder().actor(reverterActor).build();
+        lenient().when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REJECT))
+            .thenReturn(Optional.empty());
+        lenient().when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT))
+            .thenReturn(Optional.of(revertLog));
+
+        Boolean res2 = (Boolean) method.invoke(service, config, request);
+        assertTrue(res2);
+
+        // 3. Both logs absent
+        lenient().when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REJECT))
+            .thenReturn(Optional.empty());
+        lenient().when(auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, REVERT))
+            .thenReturn(Optional.empty());
+
+        Boolean res3 = (Boolean) method.invoke(service, config, request);
+        assertTrue(res3);
+    }
+
+    @Test
+    void syncVeritasToJira_FinishedStateNullInvoiceAndUnpaidInvoice() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncVeritasToJira", JiraConfig.class, Request.class);
+        method.setAccessible(true);
+
+        // Stub PUT description update and comment POST
+        lenient().when(restTemplate.exchange(contains("/issue/TEST-101"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>("{}", HttpStatus.OK));
+        lenient().when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        lenient().when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(new ObjectMapper().readTree("{\"transitions\":[]}"), HttpStatus.OK));
+
+        // 1. Finished state with null Invoice
+        Request requestNullInvoice = new Request();
+        requestNullInvoice.setRequestID(10L);
+        requestNullInvoice.setJiraIssueKey("TEST-101");
+        requestNullInvoice.setState(RequestStatus.FINISHED);
+        requestNullInvoice.setRequestName("Req");
+
+        Boolean res1 = (Boolean) method.invoke(service, config, requestNullInvoice);
+        assertTrue(res1);
+
+        // 2. Finished state with unpaid Invoice
+        Request requestUnpaid = new Request();
+        requestUnpaid.setRequestID(10L);
+        requestUnpaid.setJiraIssueKey("TEST-101");
+        requestUnpaid.setState(RequestStatus.FINISHED);
+        requestUnpaid.setRequestName("Req");
+        Invoice unpaidInvoice = new Invoice();
+        unpaidInvoice.setIsPaid(false);
+        unpaidInvoice.setTotalAmount(BigDecimal.TEN);
+        unpaidInvoice.setCurrency(Currency.EUR);
+        requestUnpaid.setInvoice(unpaidInvoice);
+
+        CurrencyConversionResult convResult = new CurrencyConversionResult(BigDecimal.TEN, BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER);
+        lenient().when(currencyConversionService.convert(any(), any())).thenReturn(convResult);
+
+        Boolean res2 = (Boolean) method.invoke(service, config, requestUnpaid);
+        assertTrue(res2);
+    }
+
+    @Test
+    void syncVeritasToJira_CurrentStepNull() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncVeritasToJira", JiraConfig.class, Request.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setJiraIssueKey("TEST-101");
+        request.setState(RequestStatus.ACTIVE); // Not FINISHED
+        request.setCurrentStep(null); // targetStepName becomes null/blank
+        request.setRequestName("Req");
+
+        lenient().when(restTemplate.exchange(contains("/issue/TEST-101"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>("{}", HttpStatus.OK));
+        lenient().when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        Boolean res = (Boolean) method.invoke(service, config, request);
+        assertTrue(res);
+    }
+
+    @Test
+    void syncVeritasToJira_CommentThrowsException() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncVeritasToJira", JiraConfig.class, Request.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setJiraIssueKey("TEST-101");
+        request.setState(RequestStatus.ACTIVE);
+        request.setRequestName("Req");
+
+        lenient().when(restTemplate.exchange(contains("/issue/TEST-101"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>("{}", HttpStatus.OK));
+        lenient().when(restTemplate.exchange(contains("/comment"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenThrow(new RestClientException("Comment error"));
+
+        Boolean res = (Boolean) method.invoke(service, config, request);
+        assertTrue(res); // Handled gracefully and returns true
+    }
+
+    @Test
+    void processIssue_AlreadyHasRequestKeyAndBudgetAndWorkflow() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Request existingRequest = new Request();
+        existingRequest.setRequestID(10L);
+        existingRequest.setRequestKey("EXISTING-KEY");
+        existingRequest.setWorkflowDefinition(new WorkflowDefinition());
+        existingRequest.setBudget(new InternalBudget());
+
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
+        when(issueMapper.toRequest(issueRecord)).thenReturn(existingRequest);
+        when(requestRepository.saveAndFlush(any())).thenReturn(existingRequest);
+
+        // Stub PUT updateJiraCustomField
+        lenient().when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        assertDoesNotThrow(() -> method.invoke(service, config, issueRecord));
+    }
+
+    @Test
+    void buildJiraDescriptionPayload_VariousBranches() {
+        // 1. null description, null items
+        Request request1 = new Request();
+        request1.setDescription(null);
+        request1.setItems(null);
+
+        JsonNode payload1 = service.buildJiraDescriptionPayload(request1);
+        assertNotNull(payload1);
+
+        // 2. blank description, items empty
+        Request request2 = new Request();
+        request2.setDescription("   ");
+        request2.setItems(List.of());
+
+        JsonNode payload2 = service.buildJiraDescriptionPayload(request2);
+        assertNotNull(payload2);
+
+        // 3. items with null unit and non-null description
+        Request request3 = new Request();
+        request3.setDescription("Desc");
+        RequestItem item = new RequestItem();
+        item.setName("Item");
+        item.setQuantity(1);
+        item.setUnit(null); // unit is null
+        item.setDescription("Item Description"); // description is non-null
+        request3.setItems(List.of(item));
+
+        JsonNode payload3 = service.buildJiraDescriptionPayload(request3);
+        assertNotNull(payload3);
+
+        // 4. items with null unit and null description
+        item.setDescription(null);
+        JsonNode payload4 = service.buildJiraDescriptionPayload(request3);
+        assertNotNull(payload4);
     }
 }
