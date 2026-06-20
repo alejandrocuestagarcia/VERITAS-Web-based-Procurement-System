@@ -616,12 +616,6 @@ class RequisitionServiceUnitTest {
         RequisitionDto expectedDto = mock(RequisitionDto.class);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
-        Authentication auth = mock(Authentication.class);
-        when(auth.getPrincipal()).thenReturn(currentRequester);
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(securityContext);
-
         RequisitionDto result = requisitionService.changeRequester(1L, 2L, testUser);
 
         assertNotNull(result);
