@@ -71,7 +71,7 @@ public class UserController {
     @Operation(summary = "Edit user", description = "Edits a users basic info.")
     @IsFinanceOfficer
     @PatchMapping(path = "/{id}", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<UserDto> editUser(@PathVariable Long id, @RequestBody UserEditDto edits,
+    public ResponseEntity<UserDto> editUser(@PathVariable Long id, @Valid @RequestBody UserEditDto edits,
             @AuthenticationPrincipal User currentUser) {
         UserDto updated = userService.editUser(id, edits, currentUser);
         log.info("PATCH /users/{}", id);

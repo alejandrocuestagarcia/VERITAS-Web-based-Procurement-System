@@ -19,6 +19,9 @@
           <mat-error *ngIf="vendorForm.get('vendorName')?.hasError('required') && vendorForm.get('vendorName')?.touched">
             Vendor name is required
           </mat-error>
+          <mat-error *ngIf="vendorForm.get('vendorName')?.hasError('maxlength') && vendorForm.get('vendorName')?.touched">
+            Vendor name must be at most 120 characters
+          </mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -29,6 +32,9 @@
           <mat-error *ngIf="vendorForm.get('taxId')?.hasError('required') && vendorForm.get('taxId')?.touched">
             Tax ID is required
           </mat-error>
+          <mat-error *ngIf="vendorForm.get('taxId')?.hasError('maxlength') && vendorForm.get('taxId')?.touched">
+            Tax ID must be at most 60 characters
+          </mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -38,6 +44,9 @@
           <textarea matInput formControlName="description" placeholder="Enter notes" rows="1"></textarea>
           <mat-error *ngIf="vendorForm.get('description')?.hasError('required') && vendorForm.get('description')?.touched">
             Description is required
+          </mat-error>
+          <mat-error *ngIf="vendorForm.get('description')?.hasError('maxlength') && vendorForm.get('description')?.touched">
+            Description must be at most 3000 characters
           </mat-error>
         </mat-form-field>
       </app-shared-form-field>
@@ -57,6 +66,9 @@
           <input matInput formControlName="primaryContactEmail" type="email" placeholder="email@vendor.com">
           <mat-error *ngIf="vendorForm.get('primaryContactEmail')?.hasError('email') && vendorForm.get('primaryContactEmail')?.touched">
             Please enter a valid email address
+          </mat-error>
+          <mat-error *ngIf="vendorForm.get('primaryContactEmail')?.hasError('maxlength') && vendorForm.get('primaryContactEmail')?.touched">
+            Email must be at most 120 characters
           </mat-error>
         </mat-form-field>
       </app-shared-form-field>

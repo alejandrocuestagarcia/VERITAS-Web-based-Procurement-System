@@ -11,6 +11,9 @@
           <mat-error *ngIf="userForm.get('name')?.hasError('required') && userForm.get('name')?.touched">
             Name is required
           </mat-error>
+          <mat-error *ngIf="userForm.get('name')?.hasError('maxlength') && userForm.get('name')?.touched">
+            Name must be at most 120 characters
+          </mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -23,6 +26,9 @@
           </mat-error>
           <mat-error *ngIf="userForm.get('email')?.hasError('email') && userForm.get('email')?.touched">
             Please enter a valid email address
+          </mat-error>
+          <mat-error *ngIf="userForm.get('email')?.hasError('maxlength') && userForm.get('email')?.touched">
+            Email address must be at most 254 characters
           </mat-error>
         </mat-form-field>
       </app-shared-form-field>

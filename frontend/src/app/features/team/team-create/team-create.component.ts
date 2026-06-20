@@ -54,7 +54,7 @@ export class TeamCreateComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       leaderId: [null],
       departmentId: [null, Validators.required],
-      description: ['', [Validators.required, Validators.maxLength(500)]]
+      description: ['', [Validators.required, Validators.maxLength(3000)]]
     });
 
     this.teamForm.get('leaderId')?.valueChanges.subscribe(() => {

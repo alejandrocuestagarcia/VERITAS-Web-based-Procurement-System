@@ -18,7 +18,7 @@ public record UserCreationRequestDto(
         String name,
 
         @NotBlank
-        @Size(max = 120, message = "Password must be at most 120 characters")
+        @Size(max = 72, message = "Password must be at most 72 characters")
         String password,
 
         @NotNull UserRole role,

@@ -39,11 +39,11 @@ export class VendorEditComponent implements OnInit {
 
   private initForm(): void {
     this.vendorForm = this.fb.group({
-      vendorName: ['', Validators.required],
-      taxId: ['', Validators.required],
-      description: ['', Validators.required],
-      primaryContactName: [''],
-      primaryContactEmail: ['', Validators.email],
+      vendorName: ['', [Validators.required, Validators.maxLength(120)]],
+      taxId: ['', [Validators.required, Validators.maxLength(60)]],
+      description: ['', [Validators.required, Validators.maxLength(3000)]],
+      primaryContactName: ['', Validators.maxLength(120)],
+      primaryContactEmail: ['', [Validators.email, Validators.maxLength(120)]],
     });
   }
 

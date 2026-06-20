@@ -28,11 +28,11 @@ export class VendorCreateComponent implements OnInit {
 
   private initForm(): void {
     this.vendorForm = this.fb.group({
-      name: ['', Validators.required],
-      taxId: ['', Validators.required],
-      description: ['', Validators.required],
-      primaryContactName: [''],
-      primaryContactEmail: ['', Validators.email],
+      name: ['', [Validators.required, Validators.maxLength(120)]],
+      taxId: ['', [Validators.required, Validators.maxLength(60)]],
+      description: ['', [Validators.required, Validators.maxLength(3000)]],
+      primaryContactName: ['', Validators.maxLength(120)],
+      primaryContactEmail: ['', [Validators.email, Validators.maxLength(120)]],
     });
   }
 

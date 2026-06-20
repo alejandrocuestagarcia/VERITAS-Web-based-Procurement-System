@@ -36,7 +36,7 @@ export class ProjectEditComponent implements OnInit{
 
   private initForm(): void {
     this.projectForm = this.fb.group({
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(120)]],
       teamId: [null, Validators.required],
       budget: [null, [Validators.required, Validators.min(1)]],
       startDate: [null, Validators.required],
