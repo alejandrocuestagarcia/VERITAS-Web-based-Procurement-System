@@ -49,20 +49,20 @@ public class BpmnValidator {
     );
 
     private static final Set<String> ALLOWED_BRANCHING_PATHS = Set.of(
-            "selectedquotetotalamount",
+            "selectedQuoteTotalAmount",
             "priority",
-            "totalquantity",
+            "totalQuantity",
             "department",
             "department.id",
             "department.name",
             "department.budget",
             "department.budget.id",
             "department.budget.name",
-            "department.budget.totalamount",
-            "department.budget.committedspend",
-            "department.budget.actualspend",
-            "department.budget.safetybuffer",
-            "department.budget.remainingamount",
+            "department.budget.totalAmount",
+            "department.budget.committedSpend",
+            "department.budget.actualSpend",
+            "department.budget.safetyBuffer",
+            "department.budget.remainingAmount",
             "project",
             "project.id",
             "project.name",
@@ -70,37 +70,37 @@ public class BpmnValidator {
             "project.budget",
             "project.budget.id",
             "project.budget.name",
-            "project.budget.totalamount",
-            "project.budget.committedspend",
-            "project.budget.actualspend",
-            "project.budget.safetybuffer",
-            "project.budget.remainingamount",
+            "project.budget.totalAmount",
+            "project.budget.committedSpend",
+            "project.budget.actualSpend",
+            "project.budget.safetyBuffer",
+            "project.budget.remainingAmount",
             "requester",
             "requester.id",
             "requester.name",
             "requester.email",
             "requester.role",
-            "requester.isteamleader",
+            "requester.isTeamLeader",
             "budget",
             "budget.id",
             "budget.name",
-            "budget.totalamount",
-            "budget.committedspend",
-            "budget.actualspend",
-            "budget.safetybuffer",
-            "budget.remainingamount",
-            "globalbudget",
-            "globalbudget.id",
-            "globalbudget.name",
-            "globalbudget.totalamount",
-            "globalbudget.committedspend",
-            "globalbudget.actualspend",
-            "globalbudget.safetybuffer",
-            "globalbudget.remainingamount"
+            "budget.totalAmount",
+            "budget.committedSpend",
+            "budget.actualSpend",
+            "budget.safetyBuffer",
+            "budget.remainingAmount",
+            "globalBudget",
+            "globalBudget.id",
+            "globalBudget.name",
+            "globalBudget.totalAmount",
+            "globalBudget.committedSpend",
+            "globalBudget.actualSpend",
+            "globalBudget.safetyBuffer",
+            "globalBudget.remainingAmount"
     );
 
     private static final Set<String> OBJECT_PATHS = Set.of(
-            "department", "project", "requester", "budget", "globalbudget",
+            "department", "project", "requester", "budget", "globalBudget",
             "department.budget", "project.budget"
     );
 
@@ -108,11 +108,11 @@ public class BpmnValidator {
             "priority",
             "department.name", "project.name", "project.key",
             "requester.name", "requester.email", "requester.role",
-            "budget.name", "globalbudget.name",
+            "budget.name", "globalBudget.name",
             "department.budget.name", "project.budget.name"
     );
 
-    private static final Set<String> BOOLEAN_PATHS = Set.of("requester.isteamleader");
+    private static final Set<String> BOOLEAN_PATHS = Set.of("requester.isTeamLeader");
 
     /**
      * Returns the list of all allowed SpEL field paths with their types,
@@ -755,7 +755,7 @@ public class BpmnValidator {
         }
 
         for (String path : paths) {
-            if (!ALLOWED_BRANCHING_PATHS.contains(path.toLowerCase())) {
+            if (!ALLOWED_BRANCHING_PATHS.contains(path)) {
                 result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target) + "' references property '"
                         + path + "' which is not an allowed field");
             }

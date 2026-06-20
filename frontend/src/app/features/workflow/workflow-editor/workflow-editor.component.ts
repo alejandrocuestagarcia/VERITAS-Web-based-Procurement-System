@@ -133,8 +133,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     let candidates: { label: string; insert: string; type?: string }[];
 
-    if (lastDot >= 0 && this.spelNested[parentPath]) {
-      candidates = this.spelNested[parentPath];
+    if (lastDot >= 0 && this.spelNested[parentPath.toLowerCase()]) {
+      candidates = this.spelNested[parentPath.toLowerCase()];
     } else if (lastDot >= 0) {
       candidates = [];
     } else {
@@ -175,17 +175,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     el.selectionEnd = cursor;
     el.focus();
 
-    this.updateConditionExpression(el.value);
+    if (this.advancedRuleEl && el === this.advancedRuleEl.nativeElement) {
+      this.updateRuleProperty('advancedRule', el.value);
+    } else {
+      this.updateConditionExpression(el.value);
+    }
 
     this.autocompleteVisible = false;
-    const savedValue = el.value;
     //AI GENERATED
     setTimeout(() => {
-      if (el.value !== savedValue) {
-        el.value = savedValue;
-        el.selectionStart = savedValue.length;
-        el.selectionEnd = savedValue.length;
-      }
       this.showAutocomplete(el);
     }, 0);
   }
