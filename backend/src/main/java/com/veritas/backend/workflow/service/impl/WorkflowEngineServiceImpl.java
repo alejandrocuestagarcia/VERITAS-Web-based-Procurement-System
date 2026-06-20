@@ -154,7 +154,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                                 .distinct()
                                 .count();
                         if (distinctVendors < rule.getMinRequiredVendors()) {
-                            validationErrors.add("Not enough vendors");
+                            validationErrors.add("A minimum of " + rule.getMinRequiredVendors() + " distinct vendors is required");
                         }
                     }
 
