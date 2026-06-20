@@ -614,9 +614,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         );
         notifiedRecipients.add(newRequester.getEmail() + " (Reason: ASSIGNED)");
 
-        Authentication authCtx = SecurityContextHolder.getContext().getAuthentication();
-        User changeActor = (User) authCtx.getPrincipal();
-        auditService.createNotificationLog(changeActor, updatedRequest,
+        auditService.createNotificationLog(actor, updatedRequest,
                 "Notifications sent for requester change to:\n- " + String.join("\n- ", notifiedRecipients));
 
         return requisitionMapper.toDto(updatedRequest);
