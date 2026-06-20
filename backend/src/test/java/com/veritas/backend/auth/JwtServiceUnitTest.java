@@ -50,16 +50,22 @@ class JwtServiceUnitTest {
 
   @Test
   void ExtractEmail_ValidToken_ReturnsEmail() {
+    String token = jwtService.generateAccessToken(adminUser);
+    assertEquals("dev@veritas.com", jwtService.extractEmail(token));
   }
 
   @Test
   void IsTokenValid_DetailsMatch_ReturnsTrue() {
-
     String token = jwtService.generateAccessToken(adminUser);
-
-
-
     assertTrue(jwtService.isTokenValid(token, adminUserDetails));
+  }
+
+  @Test
+  void IsTokenValid_UsernameMismatched_ReturnsFalse() {
+    String token = jwtService.generateAccessToken(adminUser);
+    UserDetails differentUser = withUsername("wrong@veritas.com")
+        .password("password").authorities("ROLE_ADMINISTRATOR").build();
+    assertFalse(jwtService.isTokenValid(token, differentUser));
   }
 
   @Test

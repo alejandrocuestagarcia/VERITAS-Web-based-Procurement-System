@@ -1436,4 +1436,307 @@ class JiraSyncServiceUnitTest {
         Boolean result1 = (Boolean) method.invoke(service, config, request);
         assertTrue(result1);
     }
+
+    @Test
+    void processQueue_MaxRetriesReached_SetsStatusFailed() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setRequestKey("KEY-1");
+        
+        JiraSyncQueueItem lockItem = JiraSyncQueueItem.builder()
+            .id(1L)
+            .status("PENDING")
+            .actionType("LOCK")
+            .jiraConfig(config)
+            .jiraIssueKey("TEST-1")
+            .request(request)
+            .retries(4)
+            .build();
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(lockItem));
+
+        // Mock Lock transitions to throw exception so success = false
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenThrow(new RestClientException("API error"));
+
+        service.processQueue();
+
+        assertEquals("FAILED", lockItem.getStatus());
+        verify(queueItemRepository).save(lockItem);
+    }
+
+    @Test
+    void processQueue_QueueItemThrowsRuntimeException_RetriesReached_SetsStatusFailed() {
+        JiraSyncQueueItem item = mock(JiraSyncQueueItem.class);
+        when(item.getId()).thenReturn(1L);
+        when(item.getRetries()).thenReturn(4, 5); // 4 initially, 5 after increment
+        when(item.getRequest()).thenThrow(new RuntimeException("Database error"));
+        
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(item));
+
+        service.processQueue();
+
+        verify(item).setStatus("FAILED");
+        verify(queueItemRepository).save(item);
+    }
+
+    @Test
+    void processQueue_QueueItemThrowsRuntimeException_RetriesNotReached_SetsStatusPending() {
+        JiraSyncQueueItem item = mock(JiraSyncQueueItem.class);
+        when(item.getId()).thenReturn(1L);
+        when(item.getRetries()).thenReturn(0, 1);
+        when(item.getRequest()).thenThrow(new RuntimeException("Database error"));
+        
+        when(queueItemRepository.findByStatus("PENDING")).thenReturn(List.of(item));
+
+        service.processQueue();
+
+        verify(item).setStatus("PENDING");
+        verify(queueItemRepository).save(item);
+    }
+
+    @Test
+    void processIssue_FallbackProjectUsed_RequestKeyGenerated() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Project fallbackProj = new Project();
+        fallbackProj.setId(99L);
+        fallbackProj.setProjectKey("FALLBACK");
+        fallbackProj.setRequestCounter(5);
+        config.setFallbackProject(fallbackProj);
+
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
+        
+        JiraProjectRecord jiraProj = new JiraProjectRecord("UNKNOWN", "Unknown Project");
+        JiraFieldsRecord fieldsWithProj = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, jiraProj, null);
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fieldsWithProj);
+
+        when(projectRepository.findByProjectKey("UNKNOWN")).thenReturn(Optional.empty());
+        when(projectRepository.findByName("Unknown Project")).thenReturn(Optional.empty());
+        
+        Request req = new Request();
+        req.setRequestID(10L);
+        when(issueMapper.toRequest(issueRecord)).thenReturn(req);
+        when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
+        when(requestRepository.saveAndFlush(any())).thenReturn(req);
+
+        // Stub PUT call
+        when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        method.invoke(service, config, issueRecord);
+
+        assertEquals(fallbackProj, req.getProject());
+        assertEquals("FALLBACK-6", req.getRequestKey());
+        verify(projectRepository).saveAndFlush(fallbackProj);
+    }
+
+    @Test
+    void processIssue_NoMatchingProjectAndNoFallbackProject_RequestKeyFallback() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        config.setFallbackProject(null);
+
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        Request req = new Request();
+        req.setRequestID(10L);
+        when(issueMapper.toRequest(issueRecord)).thenReturn(req);
+        when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
+        when(requestRepository.saveAndFlush(any())).thenReturn(req);
+
+        // Stub PUT call
+        when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        method.invoke(service, config, issueRecord);
+
+        assertNull(req.getProject());
+        assertEquals("TEST-1", req.getRequestKey());
+    }
+
+    @Test
+    void processIssue_ReporterEmailNullOrBlank_FallbackUserUsed() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        User fallbackUser = new User();
+        fallbackUser.setId(55L);
+        config.setFallbackUser(fallbackUser);
+
+        JiraUserRecord reporter = new JiraUserRecord("   ", "Reporter Name");
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, null, null);
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        Request req = new Request();
+        req.setRequestID(10L);
+        when(issueMapper.toRequest(issueRecord)).thenReturn(req);
+        when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
+        when(requestRepository.saveAndFlush(any())).thenReturn(req);
+
+        // Stub PUT call
+        when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        method.invoke(service, config, issueRecord);
+
+        assertEquals(fallbackUser, req.getUser());
+    }
+
+    @Test
+    void processIssue_ReporterEmailNotFound_FallbackUserUsed() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        User fallbackUser = new User();
+        fallbackUser.setId(55L);
+        config.setFallbackUser(fallbackUser);
+
+        JiraUserRecord reporter = new JiraUserRecord("nonexistent@test.com", "Reporter Name");
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, reporter, null, null);
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        Request req = new Request();
+        req.setRequestID(10L);
+        when(issueMapper.toRequest(issueRecord)).thenReturn(req);
+        when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+        when(requestRepository.saveAndFlush(any())).thenReturn(req);
+
+        // Stub PUT call
+        when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+
+        method.invoke(service, config, issueRecord);
+
+        assertEquals(fallbackUser, req.getUser());
+    }
+
+    @Test
+    void findTableNodes_PrimitiveNode_HandledCorrectly() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("findTableNodes", JsonNode.class, List.class);
+        method.setAccessible(true);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode primitiveNode = mapper.readTree("123"); // Integer node (neither object nor array)
+
+        List<JsonNode> tableNodes = new ArrayList<>();
+        method.invoke(service, primitiveNode, tableNodes);
+
+        assertTrue(tableNodes.isEmpty());
+    }
+
+    @Test
+    void extractText_ObjectNodeWithoutContent_HandledCorrectly() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("extractText", JsonNode.class, StringBuilder.class);
+        method.setAccessible(true);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree("{\"type\": \"paragraph\"}"); // paragraph node without content
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, node, sb);
+
+        assertEquals("", sb.toString());
+    }
+
+    @Test
+    void extractText_ParagraphNodeWithLengthZero_SkipsNewline() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("extractText", JsonNode.class, StringBuilder.class);
+        method.setAccessible(true);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree("{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Hello\"}]}");
+
+        StringBuilder sb = new StringBuilder(); // length 0
+        method.invoke(service, node, sb);
+
+        assertEquals("Hello", sb.toString()); // No leading newline
+    }
+
+    @Test
+    void syncAttachments_BodyNull_HandlesGracefully() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("syncAttachments", Request.class, JiraConfig.class, JiraIssueRecord.class);
+        method.setAccessible(true);
+
+        Request request = new Request();
+        request.setRequestID(10L);
+
+        JiraAttachmentRecord att = new JiraAttachmentRecord("1", "jira.txt", "https://api/att1/content", 100L, "text/plain");
+        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, List.of(att));
+        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
+
+        when(restTemplate.exchange(eq("https://api/att1/content"), eq(HttpMethod.GET), any(HttpEntity.class), eq(Resource.class)))
+            .thenReturn(new ResponseEntity<>(null, HttpStatus.OK)); // Body is null
+
+        assertDoesNotThrow(() -> method.invoke(service, request, config, issueRecord));
+    }
+
+    @Test
+    void transitionJiraIssue_ReflectionBranches() throws Exception {
+        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("transitionJiraIssue", JiraConfig.class, String.class, String.class, boolean.class);
+        method.setAccessible(true);
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        // 1. isLock = true, match by name
+        String json1 = "{\"transitions\":[{\"id\":\"1\",\"name\":\"Delegated Waiting\",\"to\":{\"name\":\"Other\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json1), HttpStatus.OK));
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
+        Boolean res1 = (Boolean) method.invoke(service, config, "TEST-1", "any", true);
+        assertTrue(res1);
+
+        // 2. isLock = true, match by to.name
+        String json2 = "{\"transitions\":[{\"id\":\"2\",\"name\":\"Other\",\"to\":{\"name\":\"delegated waiting\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json2), HttpStatus.OK));
+        Boolean res2 = (Boolean) method.invoke(service, config, "TEST-1", "any", true);
+        assertTrue(res2);
+
+        // 3. isLock = true, no match
+        String json3 = "{\"transitions\":[{\"id\":\"3\",\"name\":\"Other\",\"to\":{\"name\":\"Other\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json3), HttpStatus.OK));
+        Boolean res3 = (Boolean) method.invoke(service, config, "TEST-1", "any", true);
+        assertTrue(res3); // returns isLock (true) when transitionId == null
+
+        // 4. isLock = false, match by name ignore case
+        String json4 = "{\"transitions\":[{\"id\":\"4\",\"name\":\"TARGET\",\"to\":{\"name\":\"Other\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json4), HttpStatus.OK));
+        Boolean res4 = (Boolean) method.invoke(service, config, "TEST-1", "target", false);
+        assertTrue(res4);
+
+        // 5. isLock = false, match by to.name ignore case
+        String json5 = "{\"transitions\":[{\"id\":\"5\",\"name\":\"Other\",\"to\":{\"name\":\"target\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json5), HttpStatus.OK));
+        Boolean res5 = (Boolean) method.invoke(service, config, "TEST-1", "target", false);
+        assertTrue(res5);
+
+        // 6. isLock = false, match by name contains
+        String json6 = "{\"transitions\":[{\"id\":\"6\",\"name\":\"ContainsTargetWord\",\"to\":{\"name\":\"Other\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json6), HttpStatus.OK));
+        Boolean res6 = (Boolean) method.invoke(service, config, "TEST-1", "target", false);
+        assertTrue(res6);
+
+        // 7. isLock = false, match by to.name contains
+        String json7 = "{\"transitions\":[{\"id\":\"7\",\"name\":\"Other\",\"to\":{\"name\":\"ContainsTargetWord\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json7), HttpStatus.OK));
+        Boolean res7 = (Boolean) method.invoke(service, config, "TEST-1", "target", false);
+        assertTrue(res7);
+
+        // 8. isLock = false, no match
+        String json8 = "{\"transitions\":[{\"id\":\"8\",\"name\":\"Other\",\"to\":{\"name\":\"Other\"}}]}";
+        when(restTemplate.exchange(contains("/transitions"), eq(HttpMethod.GET), any(HttpEntity.class), eq(JsonNode.class)))
+            .thenReturn(new ResponseEntity<>(mapper.readTree(json8), HttpStatus.OK));
+        Boolean res8 = (Boolean) method.invoke(service, config, "TEST-1", "target", false);
+        assertFalse(res8); // returns isLock (false) when transitionId == null
+    }
 }

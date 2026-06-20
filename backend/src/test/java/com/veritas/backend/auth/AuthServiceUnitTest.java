@@ -31,6 +31,7 @@ import static org.mockito.Mockito.never;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -241,6 +242,67 @@ class AuthServiceUnitTest {
 
     assertTrue(target.getRequiresPasswordChange());
     verify(auditService).createPasswordResetLog(eq(admin), eq("ADMIN_PASSWORD_RESET"), anyString());
+  }
+
+  @Test
+  void Login_UserDisabled_ThrowsDisabledException() {
+    LoginRequestDto request = new LoginRequestDto(CORRECT_EMAIL, CORRECT_PASSWORD);
+    testUser.setIsActive(false);
+
+    when(userRepository.findByEmail(CORRECT_EMAIL)).thenReturn(Optional.of(testUser));
+    when(passwordEncoder.matches(CORRECT_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
+
+    assertThrows(DisabledException.class, () -> authService.login(request));
+
+    verify(userRepository).findByEmail(CORRECT_EMAIL);
+    verify(passwordEncoder).matches(CORRECT_PASSWORD, HASHED_PASSWORD);
+    verify(jwtService, never()).generateAccessToken(any(User.class));
+    verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
+  }
+
+  @Test
+  void RefreshToken_TokenExpired_ThrowsRuntimeExceptionAndDeletesToken() {
+    User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
+    RefreshToken refreshToken = new RefreshToken();
+    refreshToken.setToken("expired_token");
+    refreshToken.setUser(user);
+    refreshToken.setExpiryDate(Instant.now().minusSeconds(10));
+
+    when(refreshTokenRepository.findByToken("expired_token")).thenReturn(Optional.of(refreshToken));
+
+    assertThrows(RuntimeException.class, () -> authService.refreshToken(new RefreshTokenDto("expired_token")));
+
+    verify(refreshTokenRepository).findByToken("expired_token");
+    verify(refreshTokenRepository).delete(refreshToken);
+    verify(jwtService, never()).generateAccessToken(any());
+  }
+
+  @Test
+  void CompletePasswordChange_ValidRequest_UpdatesPasswordAndAuditLog() {
+    User admin = User.builder().id(1L).email("admin@v.com").build();
+    Authentication auth = mock(Authentication.class);
+    SecurityContext securityContext = mock(SecurityContext.class);
+
+    when(securityContext.getAuthentication()).thenReturn(auth);
+    when(auth.getPrincipal()).thenReturn(admin);
+    SecurityContextHolder.setContext(securityContext);
+
+    when(passwordEncoder.encode("newPassword")).thenReturn("newHashedPassword");
+
+    authService.completePasswordChange("newPassword");
+
+    assertAll(
+        () -> assertEquals("newHashedPassword", admin.getPasswordHash()),
+        () -> assertFalse(admin.getRequiresPasswordChange())
+    );
+    verify(userRepository).save(admin);
+    verify(auditService).createPasswordResetLog(eq(admin), eq("PASSWORD_CHANGED_BY_USER"), anyString());
+  }
+
+  @Test
+  void Logout_ValidToken_DeletesRefreshToken() {
+    authService.logout(new RefreshTokenDto("token_to_delete"));
+    verify(refreshTokenRepository).deleteByToken("token_to_delete");
   }
 
 }

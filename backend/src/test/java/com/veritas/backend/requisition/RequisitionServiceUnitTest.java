@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -2712,6 +2713,460 @@ class RequisitionServiceUnitTest {
         requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
 
         verify(userMapper).toUserDto(candidate);
+    }
+
+    @Test
+    void getRequests_RequesterWithTeamAndLeaderIsUser_UserIdFilterNull() {
+        testUser.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(2L);
+        team.setLeader(testUser);
+        testUser.setTeam(team);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, 2L, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, 2L, null, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_RequesterWithTeamAndLeaderNotUser_UserIdFilterIsUser() {
+        testUser.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(2L);
+        User leader = new User();
+        leader.setId(99L);
+        team.setLeader(leader);
+        testUser.setTeam(team);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, 1L, null, 2L, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, 1L, null, 2L, null, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_RequesterWithoutTeam_UserIdFilterIsUser() {
+        testUser.setRole(UserRole.REQUESTER);
+        testUser.setTeam(null);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, 1L, null, null, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, 1L, null, null, null, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_ProcurementOfficerWithDept_DeptFilterIsSet() {
+        testUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department dept = new Department();
+        dept.setDepartmentId(3L);
+        testUser.setDepartment(dept);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, 3L, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, 3L, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_ProcurementOfficerWithoutDept_DeptFilterIsMinusOne() {
+        testUser.setRole(UserRole.PROCUREMENT_OFFICER);
+        testUser.setDepartment(null);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, -1L, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, -1L, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_WithCreatorIdAndRequesterRoleWithUserIdFilterNull_SetsUserIdFilterToCreatorId() {
+        testUser.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(2L);
+        team.setLeader(testUser);
+        testUser.setTeam(team);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, 99L, null, 2L, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, 99L, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, 99L, null, 2L, null, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_WithCreatorIdAndAdminRole_SetsUserIdFilterToCreatorId() {
+        testUser.setRole(UserRole.ADMINISTRATOR);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, 99L, null, null, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, 99L, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, 99L, null, null, null, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_WithDateFilters_ParsesStartAndEndOfDay() {
+        testUser.setRole(UserRole.ADMINISTRATOR);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        java.time.LocalDate from = java.time.LocalDate.of(2026, 6, 1);
+        java.time.LocalDate to = java.time.LocalDate.of(2026, 6, 20);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, null, null, null, null, from.atStartOfDay(), to.atTime(23, 59, 59, 999999999), pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, from, to, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, null, null, null, null, from.atStartOfDay(), to.atTime(23, 59, 59, 999999999), pageable);
+    }
+
+    @Test
+    void getEligibleAssignees_NullTeam_ReturnsAllProcurementOfficers() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        User creator = new User();
+        creator.setTeam(null);
+        request.setUser(creator);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        User candidate = new User();
+        candidate.setId(5L);
+        candidate.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department dept = new Department();
+        dept.setDepartmentId(1L);
+        candidate.setDepartment(dept);
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(candidate));
+
+        requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
+
+        verify(userMapper).toUserDto(candidate);
+    }
+
+    @Test
+    void getEligibleAssignees_NullDepartmentOnTeam_ReturnsAllProcurementOfficers() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        User creator = new User();
+        Team team = new Team();
+        team.setDepartment(null);
+        creator.setTeam(team);
+        request.setUser(creator);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        User candidate = new User();
+        candidate.setId(5L);
+        candidate.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department dept = new Department();
+        dept.setDepartmentId(1L);
+        candidate.setDepartment(dept);
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(candidate));
+
+        requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
+
+        verify(userMapper).toUserDto(candidate);
+    }
+
+    @Test
+    void getEligibleAssignees_RequesterRoleMatchingDept_FiltersCorrectly() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        User creator = new User();
+        Team team = new Team();
+        Department dept = new Department();
+        dept.setDepartmentId(1L);
+        team.setDepartment(dept);
+        creator.setTeam(team);
+        request.setUser(creator);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        User c1 = new User();
+        c1.setId(5L);
+        c1.setRole(UserRole.REQUESTER);
+        Team c1Team = new Team();
+        c1Team.setDepartment(dept);
+        c1.setTeam(c1Team);
+
+        User c2 = new User();
+        c2.setId(6L);
+        c2.setRole(UserRole.REQUESTER);
+        Team c2Team = new Team();
+        Department diffDept = new Department();
+        diffDept.setDepartmentId(2L);
+        c2Team.setDepartment(diffDept);
+        c2.setTeam(c2Team);
+
+        User c3 = new User();
+        c3.setId(7L);
+        c3.setRole(UserRole.REQUESTER);
+        c3.setTeam(null);
+
+        User c4 = new User();
+        c4.setId(8L);
+        c4.setRole(UserRole.REQUESTER);
+        Team c4Team = new Team();
+        c4Team.setDepartment(null);
+        c4.setTeam(c4Team);
+
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.REQUESTER)).thenReturn(List.of(c1, c2, c3, c4));
+
+        requisitionService.getEligibleAssignees(10L, "REQUESTER", testUser);
+
+        verify(userMapper).toUserDto(c1);
+        verify(userMapper, never()).toUserDto(c2);
+        verify(userMapper, never()).toUserDto(c3);
+        verify(userMapper, never()).toUserDto(c4);
+    }
+
+    @Test
+    void getEligibleAssignees_ProcurementOfficerRoleMatchingDept_FiltersCorrectly() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        User creator = new User();
+        Team team = new Team();
+        Department dept = new Department();
+        dept.setDepartmentId(1L);
+        team.setDepartment(dept);
+        creator.setTeam(team);
+        request.setUser(creator);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        User c1 = new User();
+        c1.setId(5L);
+        c1.setRole(UserRole.PROCUREMENT_OFFICER);
+        c1.setDepartment(dept);
+
+        User c2 = new User();
+        c2.setId(6L);
+        c2.setRole(UserRole.PROCUREMENT_OFFICER);
+        Department diffDept = new Department();
+        diffDept.setDepartmentId(2L);
+        c2.setDepartment(diffDept);
+
+        User c3 = new User();
+        c3.setId(7L);
+        c3.setRole(UserRole.PROCUREMENT_OFFICER);
+        c3.setDepartment(null);
+
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(c1, c2, c3));
+
+        requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
+
+        verify(userMapper).toUserDto(c1);
+        verify(userMapper, never()).toUserDto(c2);
+        verify(userMapper, never()).toUserDto(c3);
+    }
+
+    @Test
+    void updateRequest_NullProjectAndNullWorkflow_SetsDescriptionsAndSaves() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.DRAFT);
+        User creator = new User();
+        creator.setId(1L);
+        request.setUser(creator);
+        request.setRequestName("Old Name");
+        request.setDescription("Old Desc");
+        request.setPriority(Priority.LOW);
+        request.setProject(null);
+        request.setWorkflowDefinition(null);
+        request.setItems(new ArrayList<>());
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+            "New Name", "New Desc", null, null, Priority.HIGH, new ArrayList<>()
+        );
+
+        requisitionService.updateRequest(10L, updates, testUser);
+
+        verify(requestRepository).save(any());
+        verify(auditService).createRequisitionChangeLog(eq(testUser), eq(request), anyString());
+    }
+
+    @Test
+    void updateRequest_NullOldDescAndNewDescNotBlank_LogsDescriptionSet() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.DRAFT);
+        User creator = new User();
+        creator.setId(1L);
+        request.setUser(creator);
+        request.setRequestName("Name");
+        request.setDescription(null);
+        request.setPriority(Priority.LOW);
+        request.setItems(new ArrayList<>());
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+            "Name", "New Desc", null, null, Priority.LOW, new ArrayList<>()
+        );
+
+        requisitionService.updateRequest(10L, updates, testUser);
+
+        verify(auditService).createRequisitionChangeLog(eq(testUser), eq(request), contains("Description set to 'New Desc'"));
+    }
+
+    @Test
+    void updateRequest_OldDescNotBlankAndNewDescBlank_LogsDescriptionCleared() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.DRAFT);
+        User creator = new User();
+        creator.setId(1L);
+        request.setUser(creator);
+        request.setRequestName("Name");
+        request.setDescription("Old Desc");
+        request.setPriority(Priority.LOW);
+        request.setItems(new ArrayList<>());
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+            "Name", "", null, null, Priority.LOW, new ArrayList<>()
+        );
+
+        requisitionService.updateRequest(10L, updates, testUser);
+
+        verify(auditService).createRequisitionChangeLog(eq(testUser), eq(request), contains("Description cleared (was 'Old Desc')"));
+    }
+
+    @Test
+    void updateRequest_ChangeWorkflow_SetsWorkflowAndResetsToDraft() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.DRAFT);
+        User creator = new User();
+        creator.setId(1L);
+        request.setUser(creator);
+        request.setRequestName("Name");
+        request.setDescription("Desc");
+        request.setPriority(Priority.LOW);
+        request.setItems(new ArrayList<>());
+
+        WorkflowDefinition oldWf = new WorkflowDefinition();
+        oldWf.setId(1L);
+        oldWf.setName("Old Workflow");
+        request.setWorkflowDefinition(oldWf);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        
+        WorkflowDefinition newWf = new WorkflowDefinition();
+        newWf.setId(2L);
+        newWf.setName("New Workflow");
+        when(workflowDefinitionRepository.findById(2L)).thenReturn(Optional.of(newWf));
+
+        WorkflowStep startStep = new WorkflowStep();
+        startStep.setId(5L);
+        when(workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(newWf, WorkflowComponent.START_EVENT))
+                .thenReturn(Optional.of(startStep));
+
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+            "Name", "Desc", null, 2L, Priority.LOW, new ArrayList<>()
+        );
+
+        requisitionService.updateRequest(10L, updates, testUser);
+
+        verify(requestRepository).save(any());
+        assertEquals(newWf, request.getWorkflowDefinition());
+        assertEquals(startStep, request.getCurrentStep());
+    }
+
+    @Test
+    void updateRequest_LineItemsChangeIncomingNull_RemovesAllItems() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.DRAFT);
+        User creator = new User();
+        creator.setId(1L);
+        request.setUser(creator);
+        request.setRequestName("Name");
+        request.setItems(new ArrayList<>());
+        RequestItem ri = new RequestItem();
+        ri.setName("Item1");
+        ri.setQuantity(2);
+        ri.setUnit(RequestItemUnit.PIECES);
+        ri.setDescription("Item Desc");
+        request.getItems().add(ri);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+            "Name", null, null, null, Priority.LOW, null
+        );
+
+        requisitionService.updateRequest(10L, updates, testUser);
+
+        verify(requestRepository).save(any());
+        assertTrue(request.getItems().isEmpty());
+    }
+
+    @Test
+    void updateRequest_LineItemsChangeDifferentCount_UpdatesItems() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.DRAFT);
+        User creator = new User();
+        creator.setId(1L);
+        request.setUser(creator);
+        request.setRequestName("Name");
+        request.setItems(new ArrayList<>());
+        RequestItem ri = new RequestItem();
+        ri.setName("Item1");
+        ri.setQuantity(2);
+        ri.setUnit(RequestItemUnit.PIECES);
+        request.getItems().add(ri);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionItemCreateDto itemDto = new RequisitionItemCreateDto("Item1", 3, RequestItemUnit.PIECES, "New Description");
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+            "Name", null, null, null, Priority.LOW, List.of(itemDto)
+        );
+
+        requisitionService.updateRequest(10L, updates, testUser);
+
+        verify(requestRepository).save(any());
     }
 }
 
