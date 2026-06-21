@@ -8,6 +8,7 @@ import {Router} from "@angular/router";
 import {MatDialog} from '@angular/material/dialog';
 import {ToastService} from "../../../core/services/toast.service";
 import {UserDeletionDialogComponent} from '../user-deletion-dialog/user-deletion-dialog.component';
+import { extractErrorMessage } from '../../../shared/error-utils';
 
 @Component({
   selector: 'app-user-list',
@@ -181,19 +182,19 @@ export class UserListComponent implements OnInit {
                     this.loadUserStats();
                   },
                   error: (err) => {
-                    this.toastService.showError("User Deactivation failed: " + err.message);
+                    this.toastService.showError(extractErrorMessage(err, 'Failed to deactivate user'));
                   }
                 });
               }
             });
           },
           error: (err) => {
-            this.toastService.showError("Could not fetch users for fallback selection: " + err.message);
+            this.toastService.showError(extractErrorMessage(err, 'Failed to load users for fallback selection'));
           }
         });
       },
       error: (err) => {
-        this.toastService.showError("Could not fetch pending requests: " + err.message);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to fetch pending requests'));
       }
     });
   }

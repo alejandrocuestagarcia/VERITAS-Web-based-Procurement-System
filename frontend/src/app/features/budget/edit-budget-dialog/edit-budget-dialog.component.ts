@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FinancialGovernanceModuleService } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/error-utils';
 
 @Component({
   selector: 'app-edit-budget-dialog',
@@ -51,16 +52,7 @@ export class EditBudgetDialogComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        if (err?.error instanceof Blob) {
-          err.error.text().then((text: string) => {
-            this.toastService.showError(text || 'Failed to update global budget.');
-          });
-        } else {
-          const errorMsg = typeof err?.error === 'string' && err.error.length > 0
-            ? err.error
-            : (err?.error?.message || err?.message || 'Failed to update global budget.');
-          this.toastService.showError(errorMsg);
-        }
+        this.toastService.showError(extractErrorMessage(err, 'Failed to update global budget'));
       }
     });
   }

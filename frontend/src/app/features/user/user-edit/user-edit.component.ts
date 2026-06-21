@@ -13,6 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ResetPasswordDialogComponent } from "../../login/reset-password-dialog/reset-password-dialog.component";
 import { MatDialog } from "@angular/material/dialog";
+import { extractErrorMessage } from '../../../shared/error-utils';
 
 @Component({
   selector: 'app-user-edit',
@@ -178,9 +179,7 @@ export class UserEditComponent implements OnInit {
         },
         error: (err) => {
           this.loading = false;
-          const message = err.status === 409 ? 'Email is already in use.'
-            : err.status === 400 ? err.error : 'Failed to update user. Please try again.';
-          this.toastService.showError(message);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to update user'));
         }
       });
     } else {
@@ -209,7 +208,7 @@ export class UserEditComponent implements OnInit {
           );
         },
         error: (err: any) => {
-          this.toastService.showError(err.error?.message || 'Failed to reset password');
+          this.toastService.showError(extractErrorMessage(err, 'Failed to reset password'));
         }
       });
     });

@@ -11,6 +11,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { PageEvent } from '@angular/material/paginator';
 import {MatDialog} from "@angular/material/dialog";
 import {ToastService} from "../../../core/services/toast.service";
+import { extractErrorMessage } from '../../../shared/error-utils';
 import {
   RequisitionChangeRequesterDialogComponent
 } from "../requisition-change-requester-dialog/requisition-change-requester-dialog.component";
@@ -374,14 +375,14 @@ export class RequisitionListComponent implements OnInit {
                 this.loadRequests();
                 },
               error: (err) => {
-                this.toastService.showError("Requester change failed: " + err.message);
+                this.toastService.showError(extractErrorMessage(err, 'Failed to change requester'));
               }
             });
           }
         });
         },
       error: (err) => {
-        this.toastService.showError("Could not fetch users for fallback selection: " + err.message);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load users for fallback selection'));
       }
     });
   }

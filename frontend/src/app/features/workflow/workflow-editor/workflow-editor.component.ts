@@ -7,6 +7,7 @@ import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
+import { extractErrorMessage } from 'src/app/shared/error-utils';
 import { AuthService } from "../../../core/services/auth.service";
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { WorkflowHelpDialogComponent } from '../workflow-help-dialog/workflow-help-dialog.component';
@@ -398,7 +399,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Failed to update workflow', err);
-            this.toastService.showError(this.getErrorMessage('Failed to update workflow', err), 15000);
+            this.toastService.showError(extractErrorMessage(err, 'Failed to update workflow'), 15000);
           }
         });
       } else {
@@ -409,24 +410,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Failed to save workflow', err);
-            this.toastService.showError(this.getErrorMessage('Failed to save workflow', err), 15000);
+            this.toastService.showError(extractErrorMessage(err, 'Failed to save workflow'), 15000);
           }
         });
       }
     } catch (err) {
       console.error('Failed to process workflow', err);
-      this.toastService.showError(this.getErrorMessage('Failed to process workflow', err), 15000);
+      this.toastService.showError(extractErrorMessage(err, 'Failed to process workflow'), 15000);
     }
-  }
-
-  private getErrorMessage(defaultMsg: string, err: any): string {
-    if (err?.error?.errors && Array.isArray(err.error.errors) && err.error.errors.length > 0) {
-      return defaultMsg + ':\n• ' + err.error.errors.join('\n• ');
-    }
-    if (err?.error?.message) {
-      return defaultMsg + ': ' + err.error.message;
-    }
-    return defaultMsg;
   }
 
   async exportXML() {

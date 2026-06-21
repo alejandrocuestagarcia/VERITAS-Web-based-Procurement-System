@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { VendorModuleService, VendorRatingDto } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/error-utils';
 
 export interface VendorEvaluationDialogData {
   vendorId: number;
@@ -52,11 +53,7 @@ export class VendorEvaluationDialogComponent {
       },
       error: (err) => {
         this.loading = false;
-        if (err.status === 409) {
-            this.toastService.showError('Vendor has already been evaluated for this request');
-        } else {
-            this.toastService.showError('Failed to evaluate vendor');
-        }
+        this.toastService.showError(extractErrorMessage(err, 'Failed to evaluate vendor'));
       }
     });
   }

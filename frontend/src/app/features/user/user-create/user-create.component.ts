@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/error-utils';
 import {
   TeamsModuleService,
   UserCreationRequestDto,
@@ -171,8 +172,7 @@ export class UserCreateComponent implements OnInit {
         },
         error: err => {
           this.loading = false;
-          const msg = typeof err?.error === 'string' ? err.error : err?.error?.message || 'Failed to create user.';
-          this.toastService.showError(msg);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to create user'));
         }
       })
     } else {

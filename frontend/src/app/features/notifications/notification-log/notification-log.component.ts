@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationModuleService, NotificationDto, PageNotificationDto } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/error-utils';
 import { NotificationStateService } from '../../../core/services/notification-state.service';
 import { PageEvent } from '@angular/material/paginator';
 import { Subscription } from 'rxjs';
@@ -53,7 +54,7 @@ export class NotificationLogComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error('Failed to load notifications', err);
-        this.toastService.showError('Failed to load notifications');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load notifications'));
         this.loading = false;
       }
     });
@@ -79,7 +80,7 @@ export class NotificationLogComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error('Failed to mark notification as read', err);
-        this.toastService.showError('Failed to mark notification as read');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to mark notification as read'));
       }
     });
   }
@@ -93,7 +94,7 @@ export class NotificationLogComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error('Failed to mark all notifications as read', err);
-        this.toastService.showError('Failed to mark all notifications as read');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to mark all notifications as read'));
       }
     });
   }
@@ -114,7 +115,7 @@ export class NotificationLogComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error('Failed to delete notification', err);
-        this.toastService.showError('Failed to delete notification');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to delete notification'));
       }
     });
   }
@@ -130,8 +131,8 @@ export class NotificationLogComponent implements OnInit, OnDestroy {
       next: (enabled: boolean) => {
         this.emailNotificationsEnabled = enabled;
       },
-      error: () => {
-        this.toastService.showError('Failed to load email preferences');
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load email preferences'));
       }
     });
   }
@@ -145,8 +146,8 @@ export class NotificationLogComponent implements OnInit, OnDestroy {
           enabled ? 'Email notifications enabled' : 'Email notifications disabled'
         );
       },
-      error: () => {
-        this.toastService.showError('Failed to update email preferences');
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Failed to update email preferences'));
         this.emailNotificationsEnabled = !enabled;
       }
     });

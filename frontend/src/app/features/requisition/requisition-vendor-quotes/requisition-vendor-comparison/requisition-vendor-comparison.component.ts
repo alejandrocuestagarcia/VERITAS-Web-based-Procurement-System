@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
 import { ToastService } from '../../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../../shared/error-utils';
 
 @Component({
   selector: 'app-requisition-vendor-comparison',
@@ -43,7 +44,7 @@ export class RequisitionVendorComparisonComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load requisition details', err);
-        this.toastService.showError('Failed to load requisition details');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition details'));
         this.loading = false;
         this.router.navigate(['/requisitions']);
       }
@@ -63,7 +64,7 @@ export class RequisitionVendorComparisonComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load quotes', err);
-        this.toastService.showError('Failed to load vendor quotes');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load vendor quotes'));
         this.loading = false;
       }
     });
@@ -140,7 +141,7 @@ export class RequisitionVendorComparisonComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to select quote', err);
-          this.toastService.showError('Failed to select quote');
+          this.toastService.showError(extractErrorMessage(err, 'Failed to select quote'));
           this.loading = false;
         }
       });

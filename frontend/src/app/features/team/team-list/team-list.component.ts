@@ -14,6 +14,7 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/error-utils';
 
 type DepartmentFilter = string;
 
@@ -186,8 +187,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
             this.toastService.showSuccess(`Team "${row.name}" deleted successfully.`);
           },
           error: (err) => {
-            const errorMessage = err?.error || err?.message || `Failed to delete team "${row.name}". Please try again.`;
-            this.toastService.showError(errorMessage);
+            this.toastService.showError(extractErrorMessage(err, `Failed to delete team "${row.name}"`));
           }
         });
       }

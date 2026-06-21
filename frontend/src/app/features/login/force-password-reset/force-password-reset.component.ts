@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/error-utils';
 
 @Component({
   selector: 'app-force-password-reset',
@@ -46,7 +47,7 @@ export class ForcePasswordResetComponent {
         },
         error: (err: any) => {
           this.loading = false;
-          this.toastService.showError(err.error?.message || 'Update failed');
+          this.toastService.showError(extractErrorMessage(err, 'Update failed'));
         }
       });
     }

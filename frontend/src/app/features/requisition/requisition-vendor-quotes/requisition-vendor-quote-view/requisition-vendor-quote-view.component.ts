@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../../shared/error-utils';
 
 @Component({
   selector: 'app-requisition-vendor-quote-view',
@@ -43,7 +44,7 @@ export class RequisitionVendorQuoteViewComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to load requisition', err);
-        this.toastService.showError('Failed to load requisition');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition'));
       }
     });
 
@@ -54,7 +55,7 @@ export class RequisitionVendorQuoteViewComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to load quote details', err);
-        this.toastService.showError('Failed to load quote details');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load quote details'));
         this.router.navigate([`/requisitions/${this.requisitionId}/vendor-quotes`]);
         this.loading = false;
       }

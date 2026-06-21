@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import { ToastService } from '../../../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../../../shared/error-utils';
 import {ActivatedRoute, Router} from '@angular/router';
 import {JiraConfigControllerService} from '../../../../../core/api/api/jiraConfigController.service';
 import {UserModuleService} from '../../../../../core/api/api/userModule.service';
@@ -188,9 +189,9 @@ export class JiraSettingsCreateComponent implements OnInit {
         });
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        this.toastService.showError('Failed to load config');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load config'));
         this.router.navigate(['/integrations']);
       }
     });
@@ -211,9 +212,9 @@ export class JiraSettingsCreateComponent implements OnInit {
             this.toastService.showSuccess('Config updated successfully');
             this.router.navigate(['/integrations']);
           },
-          error: () => {
+          error: (err) => {
             this.loading = false;
-            this.toastService.showError('Failed to update config');
+            this.toastService.showError(extractErrorMessage(err, 'Failed to update config'));
           }
         });
       } else {
@@ -222,9 +223,9 @@ export class JiraSettingsCreateComponent implements OnInit {
             this.toastService.showSuccess('Config created successfully');
             this.router.navigate(['/integrations']);
           },
-          error: () => {
+          error: (err) => {
             this.loading = false;
-            this.toastService.showError('Failed to create config');
+            this.toastService.showError(extractErrorMessage(err, 'Failed to create config'));
           }
         });
       }
