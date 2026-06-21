@@ -2058,8 +2058,12 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
+        User actor = new User();
+        actor.setId(21L);
+        actor.setRole(UserRole.FINANCE_OFFICER);
+
         assertThrows(WorkflowStateException.class,
-                () -> requisitionService.changeRequester(1L, 2L));
+                () -> requisitionService.changeRequester(1L, 2L, actor));
     }
 
     @Test
@@ -2070,12 +2074,20 @@ class RequisitionServiceUnitTest {
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
 
+        User actor = new User();
+        actor.setId(21L);
+        actor.setRole(UserRole.FINANCE_OFFICER);
+
         assertThrows(IllegalArgumentException.class,
-                () -> requisitionService.changeRequester(1L, null));
+                () -> requisitionService.changeRequester(1L, null, actor));
     }
 
     @Test
     void changeRequester_NewRequesterWrongRoleOrTeam_ThrowsIllegalArgumentException() {
+        User actor = new User();
+        actor.setId(21L);
+        actor.setRole(UserRole.FINANCE_OFFICER);
+
         Team team1 = new Team();
         team1.setTeamId(1L);
         User creator = new User();
@@ -2103,8 +2115,8 @@ class RequisitionServiceUnitTest {
         when(userRepository.findById(3L)).thenReturn(Optional.of(badUser2));
 
         assertAll(
-            () -> assertThrows(IllegalArgumentException.class, () -> requisitionService.changeRequester(1L, 2L)),
-            () -> assertThrows(IllegalArgumentException.class, () -> requisitionService.changeRequester(1L, 3L))
+            () -> assertThrows(IllegalArgumentException.class, () -> requisitionService.changeRequester(1L, 2L, actor)),
+            () -> assertThrows(IllegalArgumentException.class, () -> requisitionService.changeRequester(1L, 3L, actor))
         );
     }
 

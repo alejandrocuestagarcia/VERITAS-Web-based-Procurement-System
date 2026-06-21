@@ -339,7 +339,7 @@ class WorkflowEngineServiceUnitTest {
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
-        assertEquals("Not enough vendors", ex.getMessage());
+        assertEquals("A minimum of 2 distinct vendors is required", ex.getMessage());
     }
 
     @Test
