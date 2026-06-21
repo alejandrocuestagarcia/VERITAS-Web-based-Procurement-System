@@ -2,6 +2,7 @@ package com.veritas.backend.auth.entity;
 
 import com.veritas.backend.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class RefreshToken {
     private Long id;
 
     @Column(nullable = false, unique = true, columnDefinition = "TEXT")
+    @Size(max = 500)
     private String token;
 
     @Column(nullable = false)

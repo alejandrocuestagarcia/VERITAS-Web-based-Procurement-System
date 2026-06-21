@@ -713,7 +713,6 @@ public class BpmnValidator {
                         && !text.startsWith(ASSIGNEE_PREFIX)
                         && !text.startsWith("[AUTO_APPROVE]")
                         && !text.startsWith(TEAM_LEADER_PREFIX)) {
-                    log.info("within this block");
                     if (text.length() > 500) {
                         result.addError("Step '" + getNodeName(task) + "' description must be at most 500 characters");
                     }
