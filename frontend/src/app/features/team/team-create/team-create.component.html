@@ -85,10 +85,13 @@
               <div class="flex flex-col gap-2">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-select [(ngModel)]="selectedMemberCandidateId" [ngModelOptions]="{standalone: true}"
-                    [disabled]="submitting" placeholder="Select member">
+                    [disabled]="submitting || availableMemberCandidates.length === 0" placeholder="Select member">
                     <mat-select-trigger>
                       {{ selectedMemberCandidateOption?.displayName ?? 'Select member' }}
                     </mat-select-trigger>
+                    <mat-option *ngIf="availableMemberCandidates.length === 0" [disabled]="true">
+                      No users without a team available
+                    </mat-option>
                     <mat-option *ngFor="let candidate of availableMemberCandidates" [value]="candidate.id">
                       <div class="flex flex-col leading-tight py-1">
                         <span>{{ candidate.displayName }}</span>
@@ -98,9 +101,10 @@
                       </div>
                     </mat-option>
                   </mat-select>
+                  <mat-hint *ngIf="availableMemberCandidates.length === 0">No users without a team available.</mat-hint>
                 </mat-form-field>
                 <button type="button" mat-flat-button class="v-btn-brand" (click)="addMember()"
-                  [disabled]="submitting || selectedMemberCandidateId === null">
+                  [disabled]="submitting || selectedMemberCandidateId === null || availableMemberCandidates.length === 0">
                   Add
                 </button>
               </div>
