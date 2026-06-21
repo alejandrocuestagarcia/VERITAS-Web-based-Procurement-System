@@ -387,6 +387,11 @@ export class RequisitionDetailComponent implements OnInit {
   submitRequest(): void {
     if (!this.request || !this.request.id) return;
 
+    if (!this.request.requesterTeamId) {
+      this.toastService.showError('Requisition cannot be submitted because it has no team assigned.');
+      return;
+    }
+
     this.loading = true;
     this.requisitionService.getNextStepRole(this.request.id).subscribe({
       next: (role) => {

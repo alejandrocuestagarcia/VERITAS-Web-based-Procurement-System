@@ -118,6 +118,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         User user = userRepository.findById(authUser.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
 
+        if (user.getTeam() == null) {
+            throw new IllegalArgumentException("Requisition cannot be created because you are not assigned to a team.");
+        }
+
         Project project = projectRepository.findById(createDto.projectId())
                 .orElseThrow(
                         () -> new IllegalArgumentException("Project not found with ID: " + createDto.projectId()));
@@ -359,14 +363,20 @@ public class RequisitionServiceImpl implements RequisitionService {
                 log.error("Failed to notify finance officers for completed requisition {}", saved.getRequestName(), e);
             }
         }
-        if (saved.getState() != RequestStatus.FINISHED && saved.getAssignee() != null) {
-            notificationService.createNotification(
-                    saved.getAssignee(),
-                    saved,
-                    NotificationType.ASSIGNED,
-                    "Request '" + saved.getRequestName() + "' requires your action at step '" + saved.getCurrentStep().getName() + "'."
-            );
-            notifiedRecipients.add(saved.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+        if (saved.getState() != RequestStatus.FINISHED) {
+            if (saved.getAssignee() != null) {
+                notificationService.createNotification(
+                        saved.getAssignee(),
+                        saved,
+                        NotificationType.ASSIGNED,
+                        "Request '" + saved.getRequestName() + "' requires your action at step '" + (saved.getCurrentStep() != null ? saved.getCurrentStep().getName() : "Unknown") + "'."
+                );
+                notifiedRecipients.add(saved.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+            } else {
+                notifyEligibleUsers(saved, NotificationType.ASSIGNED,
+                        "Request '" + saved.getRequestName() + "' is in the global pool at step '" + (saved.getCurrentStep() != null ? saved.getCurrentStep().getName() : "Unknown") + "'.",
+                        notifiedRecipients);
+            }
         }
 
         if (!notifiedRecipients.isEmpty()) {
@@ -424,6 +434,10 @@ public class RequisitionServiceImpl implements RequisitionService {
                     "Request '" + savedRequest.getRequestName() + "' requires your action after revert."
             );
             notifiedRecipients.add(savedRequest.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+        } else {
+            notifyEligibleUsers(savedRequest, NotificationType.ASSIGNED,
+                    "Request '" + savedRequest.getRequestName() + "' is in the global pool after revert.",
+                    notifiedRecipients);
         }
 
         if (!notifiedRecipients.isEmpty()) {
@@ -441,6 +455,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
+        if (request.getTeam() == null) {
+            throw new IllegalArgumentException("Requisition cannot be submitted because it has no team assigned.");
+        }
+
         if (request.getState() != RequestStatus.DRAFT) {
             throw new WorkflowStateException("Only drafts can be submitted.");
         }
@@ -452,6 +470,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request savedRequest = requestRepository.save(request);
 
+        List<String> notifiedRecipients = new ArrayList<>();
         if (savedRequest.getAssignee() != null) {
             notificationService.createNotification(
                     savedRequest.getAssignee(),
@@ -459,8 +478,16 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.SUBMITTED,
                     "New requisition '" + savedRequest.getRequestName() + "' has been submitted and requires your action."
             );
+            notifiedRecipients.add(savedRequest.getAssignee().getEmail() + " (Reason: SUBMITTED)");
+        } else {
+            notifyEligibleUsers(savedRequest, NotificationType.SUBMITTED,
+                    "New requisition '" + savedRequest.getRequestName() + "' has been submitted and is in the global pool.",
+                    notifiedRecipients);
+        }
+
+        if (!notifiedRecipients.isEmpty()) {
             auditService.createNotificationLog(actor, savedRequest,
-                    "Notifications sent for submission to:\n- " + savedRequest.getAssignee().getEmail() + " (Reason: SUBMITTED)");
+                    "Notifications sent for submission to:\n- " + String.join("\n- ", notifiedRecipients));
         }
 
         return requisitionMapper.toDto(savedRequest);
@@ -1158,6 +1185,61 @@ public class RequisitionServiceImpl implements RequisitionService {
             if (!user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
+        }
+    }
+
+    private void notifyEligibleUsers(Request request, NotificationType type, String message, List<String> notifiedRecipients) {
+        WorkflowStep currentStep = request.getCurrentStep();
+        if (currentStep == null) return;
+
+        List<User> eligibleUsers = new ArrayList<>();
+        if (Boolean.TRUE.equals(currentStep.getIsTeamLeader())) {
+            if (request.getUser() != null && request.getUser().getTeam() != null && request.getUser().getTeam().getLeader() != null) {
+                eligibleUsers.add(request.getUser().getTeam().getLeader());
+            }
+        } else if (currentStep.getRole() != null) {
+            List<User> usersByRole = userRepository.findAllByRoleAndIsActiveTrue(currentStep.getRole());
+            if (currentStep.getRole() == UserRole.PROCUREMENT_OFFICER) {
+                Long reqDept = null;
+                if (request.getUser() != null && request.getUser().getTeam() != null
+                        && request.getUser().getTeam().getDepartment() != null) {
+                    reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
+                }
+                if (reqDept != null) {
+                    for (User u : usersByRole) {
+                        if (u.getDepartment() != null && reqDept.equals(u.getDepartment().getDepartmentId())) {
+                            eligibleUsers.add(u);
+                        }
+                    }
+                } else {
+                    eligibleUsers.addAll(usersByRole);
+                }
+            } else {
+                eligibleUsers.addAll(usersByRole);
+            }
+        } else {
+            List<User> allUsers = userRepository.findAll();
+            Long reqDept = null;
+            if (request.getUser() != null && request.getUser().getTeam() != null
+                    && request.getUser().getTeam().getDepartment() != null) {
+                reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
+            }
+            for (User u : allUsers) {
+                if (Boolean.TRUE.equals(u.getIsActive()) && u.getRole() != UserRole.REQUESTER) {
+                    if (u.getRole() == UserRole.PROCUREMENT_OFFICER) {
+                        if (reqDept == null || (u.getDepartment() != null && reqDept.equals(u.getDepartment().getDepartmentId()))) {
+                            eligibleUsers.add(u);
+                        }
+                    } else {
+                        eligibleUsers.add(u);
+                    }
+                }
+            }
+        }
+
+        for (User u : eligibleUsers) {
+            notificationService.createNotification(u, request, type, message);
+            notifiedRecipients.add(u.getEmail() + " (Reason: " + type + ", Global Pool)");
         }
     }
 }

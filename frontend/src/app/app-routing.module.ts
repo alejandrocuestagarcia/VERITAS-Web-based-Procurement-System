@@ -16,6 +16,7 @@ import { VendorListComponent } from "./features/vendor/vendor-list/vendor-list.c
 import { UserEditComponent } from "./features/user/user-edit/user-edit.component";
 import { VendorEditComponent } from "./features/vendor/vendor-edit/vendor-edit.component";
 import { roleGuard } from "./core/guards/role.guard";
+import { teamGuard } from "./core/guards/team.guard";
 import { TeamListComponent } from "./features/team/team-list/team-list.component";
 import { TeamCreateComponent } from "./features/team/team-create/team-create.component";
 import { TeamEditComponent } from "./features/team/team-edit/team-edit.component";
@@ -179,7 +180,7 @@ const routes: Routes = [
   {
     path: 'requisitions/create',
     component: RequisitionCreateComponent,
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, roleGuard, teamGuard],
     data: { roles: ['REQUESTER'] }
   },
   {

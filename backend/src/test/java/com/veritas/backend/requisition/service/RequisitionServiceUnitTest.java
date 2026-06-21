@@ -390,6 +390,24 @@ class RequisitionServiceUnitTest {
         verify(requestRepository, never()).save(any());
     }
 
+    @Test
+    void CreateRequest_UserWithoutTeam_ThrowsIllegalArgumentException() {
+        User userWithoutTeam = new User();
+        userWithoutTeam.setId(2L);
+        userWithoutTeam.setTeam(null);
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(userWithoutTeam));
+
+        RequisitionCreateDto createDto = new RequisitionCreateDto(
+                "Test", null, 1L, 1L, Priority.LOW,
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.createRequest(createDto, userWithoutTeam));
+        assertTrue(ex.getMessage().contains("not assigned to a team"));
+        verify(requestRepository, never()).save(any());
+    }
+
     // saveAttachment tests
 
     @Test
@@ -547,6 +565,7 @@ class RequisitionServiceUnitTest {
         request.setRequestID(100L);
         request.setState(RequestStatus.DRAFT);
         request.setWorkflowDefinition(testWorkflow);
+        request.setTeam(testTeam);
 
         when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
 
@@ -605,6 +624,7 @@ class RequisitionServiceUnitTest {
         Request request = new Request();
         request.setRequestID(101L);
         request.setState(RequestStatus.ACTIVE);
+        request.setTeam(testTeam);
 
         when(requestRepository.findById(101L)).thenReturn(Optional.of(request));
 
@@ -615,6 +635,24 @@ class RequisitionServiceUnitTest {
         );
 
         assertTrue(ex.getMessage().contains("Only drafts can be submitted."));
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void SubmitRequest_RequestWithoutTeam_ThrowsIllegalArgumentException() {
+        Request request = new Request();
+        request.setRequestID(102L);
+        request.setState(RequestStatus.DRAFT);
+        request.setTeam(null);
+
+        when(requestRepository.findById(102L)).thenReturn(Optional.of(request));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> requisitionService.submitRequest(102L, testUser, null)
+        );
+
+        assertTrue(ex.getMessage().contains("has no team assigned"));
         verify(requestRepository, never()).save(any());
     }
 
@@ -2361,6 +2399,7 @@ class RequisitionServiceUnitTest {
         request.setRequestID(100L);
         request.setState(RequestStatus.DRAFT);
         request.setWorkflowDefinition(testWorkflow);
+        request.setTeam(testTeam);
 
         when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any(Request.class))).thenAnswer(inv -> {

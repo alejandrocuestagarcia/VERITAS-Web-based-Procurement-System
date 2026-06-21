@@ -75,7 +75,7 @@ export class RequisitionListComponent implements OnInit {
     private requisitionService: RequisitionModuleService,
     private projectService: ProjectModuleService,
     private userService: UserModuleService,
-    private authService: AuthService,
+    public authService: AuthService,
     private dialog: MatDialog,
     private toastService: ToastService,
     private router: Router,
@@ -83,6 +83,7 @@ export class RequisitionListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.authService.getCurrentUser().subscribe();
     this.loadProjects();
     this.loadCreators();
 

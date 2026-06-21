@@ -311,6 +311,15 @@ public class UserServiceImpl implements UserService {
         .toList();
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public UserDto getUserDtoById(Long id) {
+    log.debug("Fetching user by id: {}", id);
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("User not found with id " + id));
+    return userMapper.toUserDto(user);
+  }
+
   private boolean hasPermissionLoss(UserRole oldRole, UserRole newRole) {
     if (oldRole == newRole) {
       return false;

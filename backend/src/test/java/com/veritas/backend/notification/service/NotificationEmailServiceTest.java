@@ -6,6 +6,7 @@ import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.mail.MailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ class NotificationEmailServiceTest {
                 .name("Alice")
                 .email("alice@veritas.com")
                 .notificationEmailEnabled(true)
+                .role(UserRole.REQUESTER)
                 .build();
 
         WorkflowStep step = new WorkflowStep();
@@ -49,6 +51,7 @@ class NotificationEmailServiceTest {
         request.setRequestKey("REQ-42");
         request.setRequestName("Office Supplies");
         request.setCurrentStep(step);
+        request.setAssignee(recipient);
 
         ReflectionTestUtils.setField(emailService, "frontendBaseUrl", "http://localhost:4200");
     }
@@ -198,5 +201,35 @@ class NotificationEmailServiceTest {
         String body = bodyCaptor.getValue();
         assertFalse(body.contains("Status: Completed"));
         assertFalse(body.contains("Current Step:"));
+    }
+
+    @Test
+    void sendNotificationEmail_FinanceOfficer_Skipped() {
+        recipient.setRole(UserRole.FINANCE_OFFICER);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.ASSIGNED, "Assigned to Finance Officer");
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void sendNotificationEmail_AssignedTypeWithNullAssignee_Skipped() {
+        request.setAssignee(null);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.ASSIGNED, "Assigned globally");
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void sendNotificationEmail_AssignedTypeWithDifferentAssignee_Skipped() {
+        User otherUser = User.builder().id(99L).build();
+        request.setAssignee(otherUser);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.ASSIGNED, "Assigned to other user");
+        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void sendNotificationEmail_AssignedTypeWithMatchingAssignee_SendsEmail() {
+        request.setAssignee(recipient);
+        emailService.sendNotificationEmail(recipient, request, NotificationType.ASSIGNED, "Assigned to Alice");
+
+        verify(mailService).sendEmail(eq("alice@veritas.com"), anyString(), anyString());
     }
 }

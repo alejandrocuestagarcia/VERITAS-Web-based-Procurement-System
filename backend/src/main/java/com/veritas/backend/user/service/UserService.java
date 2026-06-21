@@ -115,4 +115,13 @@ public interface UserService {
      * @return a list of {@link UserDto}
      */
     List<UserDto> getUsersByRole(UserRole role);
+
+    /**
+     * Retrieves a user by their ID and maps them to a DTO.
+     *
+     * @param id the ID of the user
+     * @return the mapped {@link UserDto}
+     * @throws jakarta.persistence.EntityNotFoundException if the user is not found
+     */
+    UserDto getUserDtoById(Long id);
 }

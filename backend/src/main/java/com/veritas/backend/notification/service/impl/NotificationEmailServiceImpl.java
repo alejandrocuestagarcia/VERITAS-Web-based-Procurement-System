@@ -5,6 +5,7 @@ import com.veritas.backend.notification.service.NotificationEmailService;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,19 @@ public class NotificationEmailServiceImpl implements NotificationEmailService {
             log.info("Skipping notification email for {} — email notifications disabled by user", recipient.getEmail());
             return;
         }
+
+        if (recipient.getRole() == UserRole.FINANCE_OFFICER) {
+            log.info("Skipping notification email for Finance Officer {} [type={}]", recipient.getEmail(), type);
+            return;
+        }
+
+        if ((type == NotificationType.ASSIGNED || type == NotificationType.SUBMITTED) && request != null) {
+            if (request.getAssignee() == null || !request.getAssignee().getId().equals(recipient.getId())) {
+                log.info("Skipping notification email for {} [type={}] — assignee is global/unassigned or does not match recipient", recipient.getEmail(), type);
+                return;
+            }
+        }
+
 
         try {
             String subject = buildSubject(type, request);

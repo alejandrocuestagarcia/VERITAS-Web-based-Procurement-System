@@ -117,4 +117,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllRequesters(pageable));
     }
 
+    @Operation(summary = "Get current user profile", description = "Retrieves the current user's profile.")
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User currentUser) {
+        log.info("GET /users/me – user: {}", currentUser.getEmail());
+        return ResponseEntity.ok(userService.getUserDtoById(currentUser.getId()));
+    }
+
 }

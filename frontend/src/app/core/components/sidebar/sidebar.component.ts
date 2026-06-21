@@ -34,6 +34,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
 
     if (this.authService.isLoggedIn()) {
+      this.authService.getCurrentUser().subscribe();
       this.stateSubscription = this.notificationStateService.getUnreadCountObservable().subscribe({
         next: (count) => {
           if (this.isInitialCheck) {
