@@ -1,0 +1,54 @@
+<div class="flex flex-col gap-1 p-4">
+  <h2 mat-dialog-title class="text-xl font-bold text-gray-900 mb-2">Configure Global Budget</h2>
+
+  <form [formGroup]="budgetForm" (ngSubmit)="onSubmit()">
+    <mat-dialog-content class="flex flex-col gap-4 !px-0">
+      <p class="text-sm text-gray-500 mb-4">
+        Configure the enterprise-wide annual budget and safety buffer percentage. All requisition validation rules will reference these values.
+      </p>
+
+      <div class="flex flex-col gap-2">
+        <div class="font-bold text-slate-700 text-sm">Total Annual Budget (EUR)</div>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix class="mr-2 text-slate-400">account_balance</mat-icon>
+          <input matInput type="number" formControlName="totalBudget" placeholder="e.g. 50000000">
+          <mat-error *ngIf="budgetForm.get('totalBudget')?.hasError('required')">
+            Total budget is required.
+          </mat-error>
+          <mat-error *ngIf="budgetForm.get('totalBudget')?.hasError('min')">
+            Total budget must be a positive number.
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="font-bold text-slate-700 text-sm">Safety Buffer (%)</div>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix class="mr-2 text-slate-400">security</mat-icon>
+          <input matInput type="number" formControlName="safetyBuffer" placeholder="e.g. 15">
+          <mat-error *ngIf="budgetForm.get('safetyBuffer')?.hasError('required')">
+            Safety buffer percentage is required.
+          </mat-error>
+          <mat-error *ngIf="budgetForm.get('safetyBuffer')?.hasError('min')">
+            Safety buffer cannot be negative.
+          </mat-error>
+          <mat-error *ngIf="budgetForm.get('safetyBuffer')?.hasError('max')">
+            Safety buffer cannot exceed 100%.
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="!px-0 gap-2 pt-4">
+      <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="loading">
+        Cancel
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="budgetForm.invalid || loading">
+        <span *ngIf="!loading">Save Configuration</span>
+        <span *ngIf="loading" class="flex items-center gap-2">
+          <mat-spinner diameter="16"></mat-spinner> Saving...
+        </span>
+      </button>
+    </mat-dialog-actions>
+  </form>
+</div>

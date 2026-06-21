@@ -36,6 +36,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 // Routing & App
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { NgApexchartsModule } from 'ng-apexcharts';
 import { environment } from '../environments/environment';
 import { BASE_PATH } from './core/api';
 import { AuthInterceptor } from "./core/interceptors/AuthInterceptor";
@@ -106,6 +107,8 @@ import { RequisitionChangeRequesterDialogComponent } from './features/requisitio
 import { RejectDialogComponent } from './shared/components/reject-dialog/reject-dialog.component';
 import { AssigneeSelectDialogComponent } from './shared/components/assignee-select-dialog/assignee-select-dialog.component';
 import { NotificationLogComponent } from './features/notifications/notification-log/notification-log.component';
+import { BudgetDashboardComponent } from './features/budget/budget-dashboard/budget-dashboard.component';
+import { EditBudgetDialogComponent } from './features/budget/edit-budget-dialog/edit-budget-dialog.component';
 
 @NgModule({
   declarations: [
@@ -181,7 +184,9 @@ import { NotificationLogComponent } from './features/notifications/notification-
     // Directives & Pipes
     HasRoleDirective,
     FormatEnumPipe,
-    SearchFilterPipe
+    SearchFilterPipe,
+    BudgetDashboardComponent,
+    EditBudgetDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -192,6 +197,7 @@ import { NotificationLogComponent } from './features/notifications/notification-
     CommonModule,
     RouterModule,
     AppRoutingModule,
+    NgApexchartsModule,
 
     // Material
     MatCardModule,

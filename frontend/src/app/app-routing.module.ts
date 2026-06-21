@@ -35,6 +35,7 @@ import { RequisitionVendorQuoteViewComponent } from "./features/requisition/requ
 import { ProjectEditComponent } from "./features/project/project-edit/project-edit.component";
 import { RequisitionVendorComparisonComponent } from "./features/requisition/requisition-vendor-quotes/requisition-vendor-comparison/requisition-vendor-comparison.component";
 import { NotificationLogComponent } from "./features/notifications/notification-log/notification-log.component";
+import { BudgetDashboardComponent } from "./features/budget/budget-dashboard/budget-dashboard.component";
 
 const routes: Routes = [
   {
@@ -255,6 +256,12 @@ const routes: Routes = [
     path: 'notifications',
     component: NotificationLogComponent,
     canActivate: [authGuard]
+  },
+  {
+    path: 'budget',
+    component: BudgetDashboardComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['FINANCE_OFFICER'] }
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }

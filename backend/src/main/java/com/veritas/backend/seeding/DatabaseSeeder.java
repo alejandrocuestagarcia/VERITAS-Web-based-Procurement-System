@@ -27,6 +27,9 @@ import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.entity.RequestItemUnit;
+import com.veritas.backend.requisition.entity.Invoice;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
+import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +65,7 @@ public class DatabaseSeeder implements ApplicationRunner {
     private final VendorRepository vendorRepository;
     private final RequestRepository requestRepository;
     private final InternalBudgetRepository internalBudgetRepository;
+    private final InvoiceRepository invoiceRepository;
 
     @Override
     @Transactional
@@ -263,7 +267,7 @@ public class DatabaseSeeder implements ApplicationRunner {
             for (int i = 0; i < extraProjectNames.length; i++) {
                 String projName = extraProjectNames[i];
                 String key = projName.toLowerCase().replaceAll("[^a-z]", "") + "-" + i;
-                Team projectTeam = allTeams.get(random.nextInt(allTeams.size()));
+                Team projectTeam = allTeams.get(i % allTeams.size());
                 BigDecimal budgetAmt = new BigDecimal(faker.number().numberBetween(50000, 250000));
                 LocalDate startDate = LocalDate.now().minusMonths(random.nextInt(1, 6));
                 LocalDate endDate = LocalDate.now().plusMonths(random.nextInt(6, 18));
@@ -307,7 +311,8 @@ public class DatabaseSeeder implements ApplicationRunner {
                         RequestStatus.DRAFT,
                         null,
                         BigDecimal.ZERO,
-                        List.of(draftItem));
+                        List.of(draftItem),
+                        null);
 
                 // 2. Active Request - Team Leader Confirmation
                 RequestItem requesterReviewItem = new RequestItem();
@@ -328,7 +333,8 @@ public class DatabaseSeeder implements ApplicationRunner {
                         RequestStatus.ACTIVE,
                         primaryRequester,
                         new BigDecimal("300.00"),
-                        List.of(requesterReviewItem));
+                        List.of(requesterReviewItem),
+                        null);
 
                 // 3. Active Request - Procurement Review
                 RequestItem chairsItem = new RequestItem();
@@ -355,7 +361,8 @@ public class DatabaseSeeder implements ApplicationRunner {
                         RequestStatus.ACTIVE,
                         primaryProcurement,
                         new BigDecimal("1200.00"),
-                        List.of(chairsItem, desksItem));
+                        List.of(chairsItem, desksItem),
+                        null);
 
                 // 4. Active Request - Finance Review
                 RequestItem licensesItem = new RequestItem();
@@ -376,7 +383,8 @@ public class DatabaseSeeder implements ApplicationRunner {
                         RequestStatus.ACTIVE,
                         primaryFinance,
                         new BigDecimal("4500.00"),
-                        List.of(licensesItem));
+                        List.of(licensesItem),
+                        null);
 
                 // 5. Finished Request
                 RequestItem finishedItem = new RequestItem();
@@ -397,7 +405,78 @@ public class DatabaseSeeder implements ApplicationRunner {
                         RequestStatus.FINISHED,
                         null,
                         new BigDecimal("990.00"),
-                        List.of(finishedItem));
+                        List.of(finishedItem),
+                        null
+                );
+
+                List<Project> allProjects = projectRepo.findAll();
+                Vendor vendor = vendorRepository.findAll().stream().findFirst().orElse(null);
+                // AI-GENERATED
+                for (int i = 0; i < 100; i++) {
+                    // Pick a random project to ensure even distribution across projects/departments
+                    Project userProject = allProjects.isEmpty() ? primaryProject : allProjects.get(random.nextInt(allProjects.size()));
+
+                    // Select a requester from the team associated with the project, falling back to a random requester
+                    User randomRequester = null;
+                    if (userProject != null && userProject.getTeam() != null) {
+                        randomRequester = userRepo.findAllByTeamTeamId(userProject.getTeam().getTeamId()).stream()
+                                .filter(u -> u.getRole() == UserRole.REQUESTER)
+                                .findFirst()
+                                .orElse(null);
+                    }
+                    if (randomRequester == null) {
+                        randomRequester = seededRequesters.isEmpty() ? primaryRequester : seededRequesters.get(random.nextInt(seededRequesters.size()));
+                    }
+
+                    int currentMonth = LocalDate.now().getMonthValue();
+                    int currentYear = LocalDate.now().getYear();
+                    int month = (i % currentMonth) + 1;
+                    int day = random.nextInt(1, 28);
+                    BigDecimal amount = new BigDecimal(random.nextInt(5000, 20000));
+
+                    if (userProject != null && userProject.getInternalBudget() != null) {
+                        InternalBudget projectBudget = internalBudgetRepository.findById(userProject.getInternalBudget().getId()).orElse(null);
+                        if (projectBudget != null) {
+                            BigDecimal totalAmount = projectBudget.getTotalAmount() != null ? projectBudget.getTotalAmount() : BigDecimal.ZERO;
+                            BigDecimal currentActual = projectBudget.getActualSpend() != null ? projectBudget.getActualSpend() : BigDecimal.ZERO;
+                            BigDecimal currentCommitted = projectBudget.getCommittedSpend() != null ? projectBudget.getCommittedSpend() : BigDecimal.ZERO;
+                            BigDecimal totalSpendAfter = currentActual.add(currentCommitted).add(amount);
+                            BigDecimal limit = totalAmount.multiply(new BigDecimal("0.60"));
+                            if (totalSpendAfter.compareTo(limit) > 0) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    String reqName = faker.commerce().productName() + " Acquisition";
+                    String reqDesc = "Dynamic procurement request for " + reqName.toLowerCase() + " to support business operations.";
+
+                    RequestItem paidItem = new RequestItem();
+                    paidItem.setName(reqName);
+                    paidItem.setQuantity(random.nextInt(1, 5));
+                    paidItem.setUnit(RequestItemUnit.PIECES);
+                    paidItem.setDescription("Rich seeded mock item");
+
+                    Request mockReq = seedMockRequest(
+                            reqName,
+                            reqDesc,
+                            Priority.values()[random.nextInt(Priority.values().length)],
+                            randomRequester,
+                            userProject,
+                            standardWorkflowDef,
+                            WorkflowComponent.END_EVENT,
+                            null,
+                            RequestStatus.FINISHED,
+                            null,
+                            amount,
+                            List.of(paidItem),
+                            LocalDateTime.of(currentYear, month, day, 10, 0)
+                    );
+
+                    if (vendor != null) {
+                        seedPaidInvoice(mockReq, vendor, amount, LocalDate.of(currentYear, month, day).plusDays(5));
+                    }
+                }
             }
 
             log.info("Rich dynamic mock data seeding complete.");
@@ -514,8 +593,10 @@ public class DatabaseSeeder implements ApplicationRunner {
             RequestStatus state,
             User assignee,
             BigDecimal budgetAmount,
-            List<RequestItem> items) {
+            List<RequestItem> items,
+            LocalDateTime createdAt) {
         Request request = new Request();
+        request.setCreatedAt(createdAt != null ? createdAt : LocalDateTime.now());
         request.setRequestName(name);
         request.setDescription(description);
         request.setPriority(priority);
@@ -525,8 +606,7 @@ public class DatabaseSeeder implements ApplicationRunner {
         request.setWorkflowDefinition(workflowDef);
 
         if (workflowDef != null) {
-            WorkflowStep step = workflowStepRepository.findAll().stream()
-                    .filter(s -> s.getWorkflowDefinition().getId().equals(workflowDef.getId()))
+            WorkflowStep step = workflowStepRepository.findAllByWorkflowDefinition(workflowDef).stream()
                     .filter(s -> {
                         if (stepComponent != null && s.getWorkflowComponent() != stepComponent) {
                             return false;
@@ -572,5 +652,32 @@ public class DatabaseSeeder implements ApplicationRunner {
         }
 
         return requestRepository.save(request);
+    }
+
+    // AI-GENERATED
+    private void seedPaidInvoice(Request request, Vendor vendor, BigDecimal amount, LocalDate date) {
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setVendor(vendor);
+        invoice.setInvoiceNumber("INV-" + request.getRequestKey());
+        invoice.setInvoiceDate(date);
+        invoice.setTotalAmount(amount);
+        invoice.setCurrency(com.veritas.backend.integrations.currency.entity.Currency.EUR);
+        invoice.setDueDate(date.plusDays(30));
+        invoice.setIsPaid(true);
+        invoice.setPaidAmountEur(amount);
+        invoiceRepository.save(invoice);
+
+        request.setInvoice(invoice);
+        requestRepository.save(request);
+
+        // Update budgets actual spend
+        InternalBudget budget = request.getBudget();
+        while (budget != null) {
+            BigDecimal currentSpent = budget.getActualSpend() != null ? budget.getActualSpend() : BigDecimal.ZERO;
+            budget.setActualSpend(currentSpent.add(amount));
+            internalBudgetRepository.save(budget);
+            budget = budget.getParentBudget();
+        }
     }
 }
