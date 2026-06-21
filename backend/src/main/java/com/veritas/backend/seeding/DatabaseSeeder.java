@@ -165,7 +165,8 @@ public class DatabaseSeeder implements ApplicationRunner {
                     RequestStatus.FINISHED,
                     null,
                     new BigDecimal("1500.00"),
-                    List.of(finishedItem)
+                    List.of(finishedItem),
+                    null
             );
             log.info("Seeded basic finished request");
         }

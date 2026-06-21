@@ -7,6 +7,7 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteRepository;
 import com.veritas.backend.user.entity.User;
@@ -17,6 +18,7 @@ import com.veritas.backend.workflow.entity.TransitionRule;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
 import com.veritas.backend.workflow.mapper.WorkflowMapper;
 import com.veritas.backend.workflow.repository.TransitionRuleRepository;
@@ -95,10 +97,52 @@ class WorkflowEngineServiceUnitTest {
         nextStep.setWorkflowComponent(WorkflowComponent.END_EVENT);
         nextStep.setName("End");
 
+        User creator = new User();
+        creator.setId(10L);
+        creator.setName("Creator");
+        creator.setEmail("creator@test.com");
+        creator.setRole(UserRole.REQUESTER);
+
+        Department department = new Department();
+        department.setDepartmentId(100L);
+        department.setName("Test Department");
+
+        InternalBudget deptBudget = new InternalBudget();
+        deptBudget.setId(1000L);
+        deptBudget.setBudgetName("Dept Budget");
+        department.setInternalBudget(deptBudget);
+
+        Team team = new Team();
+        team.setTeamId(20L);
+        team.setName("Test Team");
+        team.setDepartment(department);
+        team.setLeader(creator);
+
+        creator.setTeam(team);
+
+        Project project = new Project();
+        project.setId(30L);
+        project.setName("Test Project");
+        project.setProjectKey("PRJ");
+
+        InternalBudget projBudget = new InternalBudget();
+        projBudget.setId(2000L);
+        projBudget.setBudgetName("Proj Budget");
+        project.setInternalBudget(projBudget);
+
+        InternalBudget reqBudget = new InternalBudget();
+        reqBudget.setId(3000L);
+        reqBudget.setBudgetName("Req Budget");
+
         testRequest = new Request();
         testRequest.setCurrentStep(currentStep);
         testRequest.setRequestID(1L);
         testRequest.setAttachments(new ArrayList<>());
+        testRequest.setPriority(Priority.HIGH);
+        testRequest.setUser(creator);
+        testRequest.setTeam(team);
+        testRequest.setProject(project);
+        testRequest.setBudget(reqBudget);
 
         testTransition = new WorkflowTransition();
         testTransition.setFromStep(currentStep);

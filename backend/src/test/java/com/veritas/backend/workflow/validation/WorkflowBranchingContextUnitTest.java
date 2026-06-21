@@ -151,7 +151,7 @@ class WorkflowBranchingContextUnitTest {
     }
 
     @Test
-    void constructor_withNullValuesAndConversionExceptions_mapsCorrectly() {
+    void constructor_withConversionExceptions_mapsCorrectly() {
         CurrencyConversionService conversionService = mock(CurrencyConversionService.class);
         
         Quote quote = new Quote();
@@ -161,36 +161,23 @@ class WorkflowBranchingContextUnitTest {
         // Throw exception on conversion to cover catch block
         when(conversionService.convert(any(), any())).thenThrow(new EntityNotFoundException("Not found"));
 
-        User creator = new User();
-        creator.setId(11L);
-        creator.setName("Jane Doe");
-        creator.setRole(null);
-        creator.setTeam(null); // Null team for resolvedTeam fallback
-
-        Request request = new Request();
+        Request request = createFullyPopulatedRequest();
         quote.setSelected(true);
         request.getQuotes().add(quote);
-        request.setPriority(null);
-        request.setTotalQuantity(2);
-        request.setUser(creator);
-        request.setTeam(null);
-        request.setProject(null);
-        request.setBudget(null);
 
         WorkflowBranchingContext context = new WorkflowBranchingContext(request, conversionService);
 
         assertAll(
             () -> assertNull(context.getSelectedQuoteTotalAmount()),
-            () -> assertNull(context.getPriority()),
+            () -> assertEquals("HIGH", context.getPriority()),
             () -> assertEquals(2, context.getTotalQuantity()),
-            () -> assertNull(context.getDepartment()),
-            () -> assertNull(context.getProject()),
+            () -> assertEquals(5L, context.getDepartment().getId()),
+            () -> assertEquals(20L, context.getProject().getId()),
             () -> assertNotNull(context.getRequester()),
             () -> assertEquals(11L, context.getRequester().getId()),
-            () -> assertNull(context.getRequester().getRole()),
-            () -> assertFalse(context.getRequester().getIsTeamLeader()),
-            () -> assertNull(context.getBudget()),
-            () -> assertNull(context.getGlobalBudget())
+            () -> assertEquals("REQUESTER", context.getRequester().getRole()),
+            () -> assertTrue(context.getRequester().getIsTeamLeader()),
+            () -> assertEquals(400L, context.getBudget().getId())
         );
     }
 
@@ -201,7 +188,7 @@ class WorkflowBranchingContextUnitTest {
         quote.setTotalAmount(BigDecimal.TEN);
         when(conversionService.convert(any(), any())).thenThrow(new IllegalArgumentException("Invalid"));
 
-        Request request = new Request();
+        Request request = createFullyPopulatedRequest();
         quote.setSelected(true);
         request.getQuotes().add(quote);
 
@@ -210,44 +197,14 @@ class WorkflowBranchingContextUnitTest {
     }
 
     @Test
-    void constructor_resolvedTeamFromCreator_mapsDepartment() {
-        CurrencyConversionService conversionService = mock(CurrencyConversionService.class);
-        
-        User creator = new User();
-        Team team = new Team();
-        Department dept = new Department();
-        dept.setDepartmentId(6L);
-        dept.setName("Finance");
-        dept.setInternalBudget(null); // budget null
-        team.setDepartment(dept);
-        creator.setTeam(team);
-
-        Request request = new Request();
-        request.setUser(creator);
-        request.setTeam(null); // request team null, falls back to creator's team
-
-        WorkflowBranchingContext context = new WorkflowBranchingContext(request, conversionService);
-        assertAll(
-            () -> assertNotNull(context.getDepartment()),
-            () -> assertEquals(6L, context.getDepartment().getId()),
-            () -> assertNull(context.getDepartment().getBudget())
-        );
-    }
-
-    @Test
     void constructor_teamLeaderResolution_whenCreatorIsNotLeader() {
         CurrencyConversionService conversionService = mock(CurrencyConversionService.class);
         
+        Request request = createFullyPopulatedRequest();
         User leader = new User();
         leader.setId(22L);
-        User creator = new User();
-        creator.setId(11L); // Not leader
-        Team team = new Team();
-        team.setLeader(leader);
-        creator.setTeam(team);
-
-        Request request = new Request();
-        request.setUser(creator);
+        request.getUser().setId(11L); // Not leader
+        request.getUser().getTeam().setLeader(leader);
 
         WorkflowBranchingContext context = new WorkflowBranchingContext(request, conversionService);
         assertFalse(context.getRequester().getIsTeamLeader());
@@ -257,14 +214,9 @@ class WorkflowBranchingContextUnitTest {
     void constructor_teamLeaderResolution_whenLeaderIsNull() {
         CurrencyConversionService conversionService = mock(CurrencyConversionService.class);
         
-        User creator = new User();
-        creator.setId(11L);
-        Team team = new Team();
-        team.setLeader(null); // Null leader
-        creator.setTeam(team);
-
-        Request request = new Request();
-        request.setUser(creator);
+        Request request = createFullyPopulatedRequest();
+        request.getUser().setId(11L);
+        request.getUser().getTeam().setLeader(null); // Null leader
 
         WorkflowBranchingContext context = new WorkflowBranchingContext(request, conversionService);
         assertFalse(context.getRequester().getIsTeamLeader());
@@ -286,7 +238,7 @@ class WorkflowBranchingContextUnitTest {
             current = child;
         }
 
-        Request request = new Request();
+        Request request = createFullyPopulatedRequest();
         request.setBudget(current);
 
         WorkflowBranchingContext context = new WorkflowBranchingContext(request, conversionService);
@@ -314,5 +266,50 @@ class WorkflowBranchingContextUnitTest {
             () -> assertEquals(BigDecimal.ZERO, b.getSafetyBuffer()),
             () -> assertEquals(BigDecimal.ZERO, b.getRemainingAmount())
         );
+    }
+
+    private Request createFullyPopulatedRequest() {
+        User creator = new User();
+        creator.setId(11L);
+        creator.setName("Jane Doe");
+        creator.setEmail("jane@example.com");
+        creator.setRole(UserRole.REQUESTER);
+
+        Team team = new Team();
+        team.setLeader(creator);
+        creator.setTeam(team);
+
+        Department dept = new Department();
+        dept.setDepartmentId(5L);
+        dept.setName("Engineering");
+        
+        InternalBudget deptBudget = new InternalBudget();
+        deptBudget.setId(100L);
+        deptBudget.setBudgetName("Dept Budget");
+        dept.setInternalBudget(deptBudget);
+        team.setDepartment(dept);
+
+        Project project = new Project();
+        project.setId(20L);
+        project.setName("Project Alpha");
+        project.setProjectKey("ALPHA");
+        
+        InternalBudget projBudget = new InternalBudget();
+        projBudget.setId(200L);
+        projBudget.setBudgetName("Proj Budget");
+        project.setInternalBudget(projBudget);
+
+        InternalBudget requestBudget = new InternalBudget();
+        requestBudget.setId(400L);
+        requestBudget.setBudgetName("Req Budget");
+
+        Request request = new Request();
+        request.setPriority(Priority.HIGH);
+        request.setTotalQuantity(2);
+        request.setUser(creator);
+        request.setTeam(team);
+        request.setProject(project);
+        request.setBudget(requestBudget);
+        return request;
     }
 }

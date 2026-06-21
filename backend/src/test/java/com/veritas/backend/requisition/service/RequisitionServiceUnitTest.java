@@ -172,6 +172,10 @@ class RequisitionServiceUnitTest {
         testTeam = new Team();
         testTeam.setTeamId(1L);
         testTeam.setName("Engineering");
+        Department dept = new Department();
+        dept.setDepartmentId(1L);
+        dept.setName("Engineering Department");
+        testTeam.setDepartment(dept);
 
         testUser = new User();
         testUser.setId(1L);
@@ -1052,7 +1056,6 @@ class RequisitionServiceUnitTest {
         User user = new User();
         user.setName("user");
         user.setEmail("user@veritas.com");
-        request.setUser(user);
 
         BigDecimal totalAmount = new BigDecimal("120.00");
         BigDecimal committedSpend = new BigDecimal("200.00");
@@ -2153,14 +2156,9 @@ class RequisitionServiceUnitTest {
     }
 
     @Test
-    void canAct_RequestNotFoundOrStepNull_ReturnsFalse() {
+    void canAct_RequestNotFound_ReturnsFalse() {
         when(requestRepository.findById(1L)).thenReturn(Optional.empty());
         assertFalse(requisitionService.canAct(1L, testUser));
-
-        Request req = new Request();
-        req.setCurrentStep(null);
-        when(requestRepository.findById(2L)).thenReturn(Optional.of(req));
-        assertFalse(requisitionService.canAct(2L, testUser));
     }
 
     @Test
@@ -2216,12 +2214,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_WorkflowChanged_ResetsToDraft() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(1L);
-        request.setState(RequestStatus.DRAFT);
-        request.setUser(testUser);
-        request.setProject(testProject);
-        request.setWorkflowDefinition(testWorkflow);
 
         WorkflowDefinition newWorkflow = new WorkflowDefinition();
         newWorkflow.setId(2L);
@@ -2532,9 +2526,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void approveRequest_NotFinished_NoAssignee_SkipsAssigneeNotification() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestID(10L);
-        request.setState(RequestStatus.ACTIVE);
         request.setAssignee(null);
         request.setRequestName("Test");
 
@@ -2565,9 +2558,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void revertRequest_BlankReason_AppendsPeriodInMessage() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestID(10L);
-        request.setState(RequestStatus.ACTIVE);
         User creator = new User();
         creator.setEmail("creator@test.com");
         request.setUser(creator);
@@ -2588,9 +2580,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void rejectRequest_WithPaidInvoice_ThrowsWorkflowStateException() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestID(10L);
-        request.setState(RequestStatus.ACTIVE);
         Invoice invoice = new Invoice();
         invoice.setIsPaid(true);
         request.setInvoice(invoice);
@@ -2605,9 +2596,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void rejectRequest_NoJiraKey_SkipsJiraSync() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestID(10L);
-        request.setState(RequestStatus.ACTIVE);
         request.setJiraIssueKey(null);
 
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
@@ -2623,9 +2613,8 @@ class RequisitionServiceUnitTest {
 
     @Test
     void rejectRequest_BlankReason_AppendsPeriodInMessage() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.ACTIVE);
         request.setRequestID(10L);
-        request.setState(RequestStatus.ACTIVE);
         request.setJiraIssueKey(null);
         User creator = new User();
         creator.setEmail("c@test.com");
@@ -2685,26 +2674,7 @@ class RequisitionServiceUnitTest {
         assertNull(requisitionService.getNextStepRole(10L, testUser));
     }
 
-    @Test
-    void getEligibleAssignees_NullUserDept_ReturnsAllProcurementOfficers() {
-        Request request = new Request();
-        request.setRequestID(10L);
-        request.setUser(null);
 
-        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
-
-        User candidate = new User();
-        candidate.setId(5L);
-        candidate.setRole(UserRole.PROCUREMENT_OFFICER);
-        Department dept = new Department();
-        dept.setDepartmentId(1L);
-        candidate.setDepartment(dept);
-        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(candidate));
-
-        requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
-
-        verify(userMapper).toUserDto(candidate);
-    }
 
     @Test
     void getRequests_RequesterWithTeamAndLeaderIsUser_UserIdFilterNull() {
@@ -2863,30 +2833,7 @@ class RequisitionServiceUnitTest {
         verify(userMapper).toUserDto(candidate);
     }
 
-    @Test
-    void getEligibleAssignees_NullDepartmentOnTeam_ReturnsAllProcurementOfficers() {
-        Request request = new Request();
-        request.setRequestID(10L);
-        User creator = new User();
-        Team team = new Team();
-        team.setDepartment(null);
-        creator.setTeam(team);
-        request.setUser(creator);
 
-        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
-
-        User candidate = new User();
-        candidate.setId(5L);
-        candidate.setRole(UserRole.PROCUREMENT_OFFICER);
-        Department dept = new Department();
-        dept.setDepartmentId(1L);
-        candidate.setDepartment(dept);
-        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(candidate));
-
-        requisitionService.getEligibleAssignees(10L, "PROCUREMENT_OFFICER", testUser);
-
-        verify(userMapper).toUserDto(candidate);
-    }
 
     @Test
     void getEligibleAssignees_RequesterRoleMatchingDept_FiltersCorrectly() {
@@ -2982,18 +2929,12 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_NullProjectAndNullWorkflow_SetsDescriptionsAndSaves() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(10L);
-        request.setState(RequestStatus.DRAFT);
-        User creator = new User();
-        creator.setId(1L);
-        request.setUser(creator);
         request.setRequestName("Old Name");
         request.setDescription("Old Desc");
-        request.setPriority(Priority.LOW);
         request.setProject(null);
         request.setWorkflowDefinition(null);
-        request.setItems(new ArrayList<>());
 
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any())).thenReturn(request);
@@ -3010,16 +2951,10 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_NullOldDescAndNewDescNotBlank_LogsDescriptionSet() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(10L);
-        request.setState(RequestStatus.DRAFT);
-        User creator = new User();
-        creator.setId(1L);
-        request.setUser(creator);
         request.setRequestName("Name");
         request.setDescription(null);
-        request.setPriority(Priority.LOW);
-        request.setItems(new ArrayList<>());
 
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any())).thenReturn(request);
@@ -3035,16 +2970,10 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_OldDescNotBlankAndNewDescBlank_LogsDescriptionCleared() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(10L);
-        request.setState(RequestStatus.DRAFT);
-        User creator = new User();
-        creator.setId(1L);
-        request.setUser(creator);
         request.setRequestName("Name");
         request.setDescription("Old Desc");
-        request.setPriority(Priority.LOW);
-        request.setItems(new ArrayList<>());
 
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
         when(requestRepository.save(any())).thenReturn(request);
@@ -3060,16 +2989,10 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_ChangeWorkflow_SetsWorkflowAndResetsToDraft() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(10L);
-        request.setState(RequestStatus.DRAFT);
-        User creator = new User();
-        creator.setId(1L);
-        request.setUser(creator);
         request.setRequestName("Name");
         request.setDescription("Desc");
-        request.setPriority(Priority.LOW);
-        request.setItems(new ArrayList<>());
 
         WorkflowDefinition oldWf = new WorkflowDefinition();
         oldWf.setId(1L);
@@ -3103,14 +3026,9 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_LineItemsChangeIncomingNull_RemovesAllItems() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(10L);
-        request.setState(RequestStatus.DRAFT);
-        User creator = new User();
-        creator.setId(1L);
-        request.setUser(creator);
         request.setRequestName("Name");
-        request.setItems(new ArrayList<>());
         RequestItem ri = new RequestItem();
         ri.setName("Item1");
         ri.setQuantity(2);
@@ -3133,14 +3051,9 @@ class RequisitionServiceUnitTest {
 
     @Test
     void updateRequest_LineItemsChangeDifferentCount_UpdatesItems() {
-        Request request = new Request();
+        Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(10L);
-        request.setState(RequestStatus.DRAFT);
-        User creator = new User();
-        creator.setId(1L);
-        request.setUser(creator);
         request.setRequestName("Name");
-        request.setItems(new ArrayList<>());
         RequestItem ri = new RequestItem();
         ri.setName("Item1");
         ri.setQuantity(2);

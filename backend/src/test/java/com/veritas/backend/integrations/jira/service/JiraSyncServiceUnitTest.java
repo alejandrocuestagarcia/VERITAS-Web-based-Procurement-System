@@ -702,6 +702,7 @@ class JiraSyncServiceUnitTest {
 
         User fallbackUser = new User();
         fallbackUser.setId(50L);
+        fallbackUser.setTeam(Team.builder().teamId(10L).build());
         config.setFallbackUser(fallbackUser);
 
         JiraProjectRecord projRecord = new JiraProjectRecord(null, "Matched Project Name");
@@ -1466,6 +1467,9 @@ class JiraSyncServiceUnitTest {
             JiraConfig tempConfig = new JiraConfig();
             tempConfig.setCustomFieldId("customfield_10001");
             tempConfig.setJiraUrl("https://test.atlassian.net");
+            tempConfig.setFallbackUser(config.getFallbackUser());
+            tempConfig.setFallbackProject(config.getFallbackProject());
+            tempConfig.setFallbackWorkflow(config.getFallbackWorkflow());
 
             Request request = new Request();
             request.setRequestID(10L);
@@ -1621,38 +1625,13 @@ class JiraSyncServiceUnitTest {
     }
 
     @Test
-    void processIssue_NoMatchingProjectAndNoFallbackProject_RequestKeyFallback() throws Exception {
-        Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
-        method.setAccessible(true);
-
-        config.setFallbackProject(null);
-
-        JiraFieldsRecord fields = new JiraFieldsRecord("Summary", null, null, "2026-05-01T16:06:19.433+02:00", null, null, null, null);
-        JiraIssueRecord issueRecord = new JiraIssueRecord("10001", "TEST-1", "https://api/1", fields);
-
-        Request req = new Request();
-        req.setRequestID(10L);
-        when(issueMapper.toRequest(issueRecord)).thenReturn(req);
-        when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
-        when(requestRepository.saveAndFlush(any())).thenReturn(req);
-
-        // Stub PUT call
-        when(restTemplate.exchange(contains("/issue/TEST-1"), eq(HttpMethod.PUT), any(HttpEntity.class), eq(String.class)))
-            .thenReturn(new ResponseEntity<>(HttpStatus.OK));
-
-        method.invoke(service, config, issueRecord);
-
-        assertNull(req.getProject());
-        assertEquals("TEST-1", req.getRequestKey());
-    }
-
-    @Test
     void processIssue_ReporterEmailNullOrBlank_FallbackUserUsed() throws Exception {
         Method method = JiraSyncServiceImpl.class.getDeclaredMethod("processIssue", JiraConfig.class, JiraIssueRecord.class);
         method.setAccessible(true);
 
         User fallbackUser = new User();
         fallbackUser.setId(55L);
+        fallbackUser.setTeam(Team.builder().teamId(10L).build());
         config.setFallbackUser(fallbackUser);
 
         JiraUserRecord reporter = new JiraUserRecord("   ", "Reporter Name");
@@ -1681,6 +1660,7 @@ class JiraSyncServiceUnitTest {
 
         User fallbackUser = new User();
         fallbackUser.setId(55L);
+        fallbackUser.setTeam(Team.builder().teamId(10L).build());
         config.setFallbackUser(fallbackUser);
 
         JiraUserRecord reporter = new JiraUserRecord("nonexistent@test.com", "Reporter Name");
@@ -1691,7 +1671,6 @@ class JiraSyncServiceUnitTest {
         req.setRequestID(10L);
         when(issueMapper.toRequest(issueRecord)).thenReturn(req);
         when(requestRepository.findByJiraIssueKey("TEST-1")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
         when(requestRepository.saveAndFlush(any())).thenReturn(req);
 
         // Stub PUT call

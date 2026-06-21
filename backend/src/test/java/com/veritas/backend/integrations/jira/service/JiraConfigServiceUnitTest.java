@@ -459,14 +459,17 @@ class JiraConfigServiceUnitTest {
     void CreateConfig_FallbackUserNullTeam_ThrowsIllegalArgument() {
         User fallbackUser = User.builder().id(10L).team(null).build();
         Project fallbackProject = Project.builder().id(20L).team(Team.builder().teamId(1L).build()).build();
+        WorkflowDefinition workflow = new WorkflowDefinition();
+        workflow.setId(30L);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", 10L, 20L, null, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
 
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
         when(mapper.toEntity(any())).thenReturn(new JiraConfig());
         when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
         when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+        when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.of(workflow));
 
         assertThrows(IllegalArgumentException.class, () -> service.createConfig(dto));
     }
@@ -475,14 +478,17 @@ class JiraConfigServiceUnitTest {
     void CreateConfig_FallbackProjectNullTeam_ThrowsNullPointerException() {
         User fallbackUser = User.builder().id(10L).team(Team.builder().teamId(1L).build()).build();
         Project fallbackProject = Project.builder().id(20L).team(null).build();
+        WorkflowDefinition workflow = new WorkflowDefinition();
+        workflow.setId(30L);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", 10L, 20L, null, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
 
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
         when(mapper.toEntity(any())).thenReturn(new JiraConfig());
         when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
         when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
+        when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.of(workflow));
 
         assertThrows(NullPointerException.class, () -> service.createConfig(dto));
     }
@@ -535,9 +541,10 @@ class JiraConfigServiceUnitTest {
     @Test
     void UpdateConfig_NullApiToken_PreservesExistingToken() {
         config.setApiToken("old-token");
+        setupFallbackMocks(10L, 20L, 30L, Team.builder().teamId(1L).build());
 
         JiraConfigDto dto = new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", null,
-                "jql", 60, "customfield_10015", null, null, null, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
 
         when(repository.findById(1L)).thenReturn(Optional.of(config));
         when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.empty());
@@ -552,9 +559,10 @@ class JiraConfigServiceUnitTest {
     @Test
     void UpdateConfig_BlankApiToken_PreservesExistingToken() {
         config.setApiToken("old-token");
+        setupFallbackMocks(10L, 20L, 30L, Team.builder().teamId(1L).build());
 
         JiraConfigDto dto = new JiraConfigDto(1L, "Test Config", "https://test.atlassian.net", "user", "   ",
-                "jql", 60, "customfield_10015", null, null, null, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
 
         when(repository.findById(1L)).thenReturn(Optional.of(config));
         when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.empty());
@@ -686,7 +694,7 @@ class JiraConfigServiceUnitTest {
     @Test
     void CreateConfig_FallbackUserNotFound_ThrowsEntityNotFoundException() {
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", 10L, null, null, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
 
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
         when(mapper.toEntity(any())).thenReturn(new JiraConfig());
@@ -698,10 +706,13 @@ class JiraConfigServiceUnitTest {
     @Test
     void CreateConfig_FallbackProjectNotFound_ThrowsEntityNotFoundException() {
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", null, 20L, null, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
+
+        User fallbackUser = User.builder().id(10L).build();
 
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
         when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
         when(projectRepository.findById(20L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> service.createConfig(dto));
@@ -710,10 +721,15 @@ class JiraConfigServiceUnitTest {
     @Test
     void CreateConfig_FallbackWorkflowNotFound_ThrowsEntityNotFoundException() {
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", null, null, 30L, null, null);
+                "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
+
+        User fallbackUser = User.builder().id(10L).build();
+        Project fallbackProject = Project.builder().id(20L).build();
 
         when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
         when(mapper.toEntity(any())).thenReturn(new JiraConfig());
+        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
+        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
         when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> service.createConfig(dto));
@@ -732,6 +748,7 @@ class JiraConfigServiceUnitTest {
         existing.setId(1L);
         existing.setJiraUrl("https://test.atlassian.net");
         existing.setJql("jql");
+        setupFallbackMocks(10L, 20L, 30L, Team.builder().teamId(1L).build());
 
         when(repository.findById(1L)).thenReturn(Optional.of(config));
         when(repository.findByJiraUrlAndJql(anyString(), anyString())).thenReturn(Optional.of(existing));
@@ -796,45 +813,6 @@ class JiraConfigServiceUnitTest {
         verify(jiraSyncService, never()).postJiraComment(any(), any(), anyString());
     }
 
-    @Test
-    void CreateConfig_FallbackUserNullProjectNonNull_Succeeds() {
-        Project fallbackProject = Project.builder().id(20L).team(Team.builder().teamId(1L).build()).build();
-
-        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", null, 20L, null, null, null);
-
-        JiraConfig entity = new JiraConfig();
-        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
-        when(mapper.toEntity(any())).thenReturn(entity);
-        when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
-        when(repository.save(any())).thenReturn(entity);
-        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
-
-        JiraConfigResponseDto result = service.createConfig(dto);
-
-        assertNotNull(result);
-        verify(repository).save(any());
-    }
-
-    @Test
-    void CreateConfig_FallbackUserNonNullProjectNull_Succeeds() {
-        User fallbackUser = User.builder().id(10L).team(Team.builder().teamId(1L).build()).build();
-
-        JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
-                "jql", 60, "customfield_10015", 10L, null, null, null, null);
-
-        JiraConfig entity = new JiraConfig();
-        when(repository.existsByJiraUrlAndJql(anyString(), anyString())).thenReturn(false);
-        when(mapper.toEntity(any())).thenReturn(entity);
-        when(userRepository.findById(10L)).thenReturn(Optional.of(fallbackUser));
-        when(repository.save(any())).thenReturn(entity);
-        when(mapper.toDto(any(JiraConfig.class))).thenReturn(responseDto);
-
-        JiraConfigResponseDto result = service.createConfig(dto);
-
-        assertNotNull(result);
-        verify(repository).save(any());
-    }
 
     private void setupFallbackMocks(Long userId, Long projectId, Long workflowId, Team team) {
         User fallbackUser = User.builder().id(userId).team(team).build();

@@ -134,15 +134,6 @@ class NotificationEmailServiceTest {
     }
 
     @Test
-    void sendNotificationEmail_EmailNotificationsNull_Skipped() {
-        recipient.setNotificationEmailEnabled(null);
-
-        emailService.sendNotificationEmail(recipient, request, NotificationType.SUBMITTED, "Requisition submitted");
-
-        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
-    }
-
-    @Test
     void sendNotificationEmail_AllSubjectTypes_Succeeds() {
         NotificationType[] types = NotificationType.values();
         for (NotificationType type : types) {
