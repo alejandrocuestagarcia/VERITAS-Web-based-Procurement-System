@@ -43,7 +43,7 @@ export class ProjectListComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = extractErrorMessage(err, 'Failed to load projects');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load projects'));
         this.loading = false;
       }
     });

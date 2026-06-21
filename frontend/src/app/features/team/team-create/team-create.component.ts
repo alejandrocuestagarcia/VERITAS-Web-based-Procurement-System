@@ -126,7 +126,7 @@ export class TeamCreateComponent implements OnInit {
       },
       error: (err) => {
         this.submitting = false;
-        this.error = extractErrorMessage(err, 'Failed to create team');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to create team'));
       }
     });
   }

@@ -64,7 +64,7 @@ public class RequisitionQuoteController {
     }
 
     @Operation(summary = "Delete quote", description = "Deletes an existing quote.")
-    @DeleteMapping(value = "/{quoteId}")
+    @DeleteMapping(value = "/{quoteId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsProcurementOfficer
     public ResponseEntity<Void> deleteQuote(@PathVariable Long requestId, @PathVariable Long quoteId) {
@@ -74,7 +74,7 @@ public class RequisitionQuoteController {
     }
 
     @Operation(summary = "Select quote", description = "Selects a quote as the preferred one for a request.")
-    @PostMapping(value = "/{quoteId}/select")
+    @PostMapping(value = "/{quoteId}/select", produces = MediaType.APPLICATION_JSON_VALUE)
     @IsProcurementOfficer
     public ResponseEntity<Void> selectQuote(@PathVariable Long requestId, @PathVariable Long quoteId) {
         log.info("POST /requisitions/{}/quotes/{}/select", requestId, quoteId);

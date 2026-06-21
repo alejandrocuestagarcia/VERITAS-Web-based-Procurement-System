@@ -59,7 +59,7 @@ public class AuditController {
 
     @Operation(summary = "Get audit trace graph", description = "Returns audit entries linked with hash pointers for integrity visualization.")
     @IsRequester
-    @GetMapping("/trace")
+    @GetMapping(value = "/trace", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<AuditLogDto> getAuditTrace(@PathVariable Long requestId, @AuthenticationPrincipal User user) {
         requisitionService.checkRequestAccess(requestId, user);
         return List.of();

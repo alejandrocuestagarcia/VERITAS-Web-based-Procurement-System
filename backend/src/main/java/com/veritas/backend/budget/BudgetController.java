@@ -31,14 +31,14 @@ public class BudgetController {
 
     @Operation(summary = "Create Budget", description = "Create company budget, fails if a budget already exists.")
     @IsFinanceOfficer
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BudgetDto> createBudget(@RequestBody @Valid BudgetDto budgetDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(budgetService.createBudget(budgetDto));
     }
 
     @Operation(summary = "Edit Budget", description = "Edit the existing company budget")
     @IsFinanceOfficer
-    @PatchMapping
+    @PatchMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BudgetDto> editBudget(@RequestBody @Valid BudgetDto budgetDto) {
         return ResponseEntity.ok(budgetService.editBudget(budgetDto));
     }

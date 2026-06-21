@@ -57,7 +57,7 @@ public class DepartmentController {
     }
 
     @Operation(summary = "Update department", description = "Updates an existing department.")
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @IsFinanceOfficer
     public ResponseEntity<DepartmentDto> updateDepartment(@PathVariable Long id, @Valid @RequestBody DepartmentCreateDto request) {
         log.info("PUT /departments/{} – updating department with name: {}", id, request.name());
@@ -65,7 +65,7 @@ public class DepartmentController {
     }
 
     @Operation(summary = "Delete department", description = "Deletes an existing department.")
-    @DeleteMapping(value = "/{id}")
+    @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsFinanceOfficer
     public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {

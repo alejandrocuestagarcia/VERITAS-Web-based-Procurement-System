@@ -85,8 +85,7 @@ export class DepartmentCreateComponent implements OnInit {
         },
         error: (err) => {
           this.submitting = false;
-          this.error = extractErrorMessage(err, 'Failed to create department');
-          this.toastService.showError(this.error);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to create department'));
         }
       });
     }
