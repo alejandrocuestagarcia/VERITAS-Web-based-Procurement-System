@@ -229,7 +229,7 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(dto)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.message").value("Updated Department"));
+                                .andExpect(jsonPath("$.name").value("Updated Department"));
         }
 
         @Test
