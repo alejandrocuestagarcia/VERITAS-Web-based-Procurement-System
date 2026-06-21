@@ -1384,13 +1384,13 @@ class RequisitionServiceUnitTest {
         when(currencyConversionService.convert(BigDecimal.valueOf(200), Currency.EUR)).thenReturn(new CurrencyConversionResult(BigDecimal.valueOf(200), BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
 
         InvoiceDto expectedDto = mock(InvoiceDto.class);
-        when(invoiceMapper.toDto(eq(invoice), eq(BigDecimal.valueOf(200)))).thenReturn(expectedDto);
+        when(invoiceMapper.toDto(eq(invoice), eq(BigDecimal.valueOf(200)), any(LocalDateTime.class), eq(ExchangeRateSource.FRANKFURTER))).thenReturn(expectedDto);
 
         InvoiceDto result = requisitionService.getInvoice(requestId, testUser);
 
         assertNotNull(result);
         verify(currencyConversionService).convert(BigDecimal.valueOf(200), Currency.EUR);
-        verify(invoiceMapper).toDto(eq(invoice), eq(BigDecimal.valueOf(200)));
+        verify(invoiceMapper).toDto(eq(invoice), eq(BigDecimal.valueOf(200)), any(LocalDateTime.class), eq(ExchangeRateSource.FRANKFURTER));
     }
 
     //AI-GENERATED
@@ -1411,12 +1411,12 @@ class RequisitionServiceUnitTest {
         when(currencyConversionService.convert(any(), any())).thenThrow(new IllegalArgumentException("Conversion failed"));
 
         InvoiceDto expectedDto = mock(InvoiceDto.class);
-        when(invoiceMapper.toDto(eq(invoice), isNull())).thenReturn(expectedDto);
+        when(invoiceMapper.toDto(eq(invoice), isNull(), isNull(), isNull())).thenReturn(expectedDto);
 
         InvoiceDto result = requisitionService.getInvoice(requestId, testUser);
 
         assertNotNull(result);
-        verify(invoiceMapper).toDto(eq(invoice), isNull());
+        verify(invoiceMapper).toDto(eq(invoice), isNull(), isNull(), isNull());
     }
 
     // AI-Generated
@@ -2389,7 +2389,7 @@ class RequisitionServiceUnitTest {
             .totalAmountEuro(BigDecimal.TEN)
             .isPaid(false)
             .build();
-        when(invoiceMapper.toDto(any(Invoice.class), any())).thenReturn(expectedDto);
+        when(invoiceMapper.toDto(any(Invoice.class), any(), any(), any())).thenReturn(expectedDto);
 
         InvoiceDto result = requisitionService.createInvoice(1L, createDto, null, testUser);
 
@@ -2434,7 +2434,7 @@ class RequisitionServiceUnitTest {
             .totalAmountEuro(BigDecimal.TEN)
             .isPaid(false)
             .build();
-        when(invoiceMapper.toDto(any(Invoice.class), any())).thenReturn(expectedDto);
+        when(invoiceMapper.toDto(any(Invoice.class), any(), any(), any())).thenReturn(expectedDto);
 
         InvoiceDto result = requisitionService.getInvoice(1L, testUser);
         assertAll(

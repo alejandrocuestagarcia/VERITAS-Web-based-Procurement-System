@@ -67,7 +67,7 @@ public interface VendorService {
      *
      * @param vendorId the ID of the vendor to evaluate
      * @param requestId the ID of the request the evaluation relates to
-     * @param ratingData the evaluation scores and notes
+     * @param ratingData the evaluation scores
      * @param evaluator the user submitting the evaluation
      * @return the updated {@link VendorDto} reflecting the new evaluation
      * @throws EntityNotFoundException if the vendor or request is not found

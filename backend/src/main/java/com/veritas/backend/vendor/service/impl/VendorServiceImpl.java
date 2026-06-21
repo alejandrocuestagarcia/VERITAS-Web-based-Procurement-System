@@ -128,7 +128,6 @@ public class VendorServiceImpl implements VendorService {
         evaluation.setDeliveryScore(ratingData.deliveryScore());
         evaluation.setQualityScore(ratingData.qualityScore());
         evaluation.setGapScore(calculateGapScore(request));
-        evaluation.setNotes(ratingData.notes());
 
         vendorEvaluationRepository.save(evaluation);
         entityManager.flush();

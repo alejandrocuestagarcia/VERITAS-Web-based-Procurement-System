@@ -14,9 +14,7 @@ import com.veritas.backend.vendor.dto.VendorRatingDto;
 import com.veritas.backend.vendor.entity.Quote;
 import com.veritas.backend.vendor.entity.Vendor;
 import com.veritas.backend.vendor.repository.QuoteRepository;
-import com.veritas.backend.vendor.repository.VendorEvaluationRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
-import com.veritas.backend.vendor.service.VendorService;
 import jakarta.persistence.EntityExistsException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,9 +40,6 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private QuoteRepository quoteRepository;
-
-    @Autowired
-    private VendorEvaluationRepository vendorEvaluationRepository;
 
     @Autowired
     private RequestRepository requestRepository;
@@ -228,7 +223,7 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
         request.setInvoice(invoice);
         request = requestRepository.save(request);
 
-        VendorRatingDto ratingData = new VendorRatingDto(8, 9, 8, "Satisfactory performance");
+        VendorRatingDto ratingData = new VendorRatingDto(8, 9, 8);
         VendorDto resultDto = vendorService.rateVendor(vendor.getId(), request.getRequestID(), ratingData, evaluator);
 
         Vendor persistedVendor = vendorRepository.findById(vendor.getId()).orElseThrow();
