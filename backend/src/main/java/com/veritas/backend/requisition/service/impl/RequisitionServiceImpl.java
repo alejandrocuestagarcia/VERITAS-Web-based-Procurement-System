@@ -565,7 +565,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     @Override
     @Transactional
-    public RequisitionDto changeRequester(Long id, Long newRequesterId) {
+    public RequisitionDto changeRequester(Long id, Long newRequesterId, User actor) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
@@ -591,6 +591,11 @@ public class RequisitionServiceImpl implements RequisitionService {
             jiraSyncService.handleVeritasWorkflowChange(updatedRequest);
         }
 
+        auditService.createWorkflowTransitionLog(
+                actor, request, null, REQUESTER_CHANGED,
+                "Requester changed from " + (oldRequester != null ? oldRequester.getName() : "unknown")
+                        + " to " + newRequester.getName());
+
         List<String> notifiedRecipients = new ArrayList<>();
         if (oldRequester != null) {
             notificationService.createNotification(
@@ -609,9 +614,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         );
         notifiedRecipients.add(newRequester.getEmail() + " (Reason: ASSIGNED)");
 
-        Authentication authCtx = SecurityContextHolder.getContext().getAuthentication();
-        User changeActor = (User) authCtx.getPrincipal();
-        auditService.createNotificationLog(changeActor, updatedRequest,
+        auditService.createNotificationLog(actor, updatedRequest,
                 "Notifications sent for requester change to:\n- " + String.join("\n- ", notifiedRecipients));
 
         return requisitionMapper.toDto(updatedRequest);

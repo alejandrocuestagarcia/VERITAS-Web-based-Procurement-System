@@ -79,9 +79,9 @@ public class RequisitionController {
     @Operation(summary = "Change requester", description = "Change the assigned requester.")
     @IsFinanceOfficer
     @PatchMapping ("/{requestId}/requester-change")
-    public ResponseEntity<RequisitionDto> changeRequester(@PathVariable Long requestId, @RequestBody Long newRequesterId) {
+    public ResponseEntity<RequisitionDto> changeRequester(@PathVariable Long requestId, @RequestBody Long newRequesterId, @AuthenticationPrincipal User user) {
         log.info("PATCH /requisitions/{}/requester-change", requestId);
-        return ResponseEntity.ok(requisitionService.changeRequester(requestId, newRequesterId));
+        return ResponseEntity.ok(requisitionService.changeRequester(requestId, newRequesterId, user));
     }
 
     @Operation(summary = "Submit request", description = "Finalizes a draft and moves it into the workflow engine.")

@@ -62,56 +62,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     conditionExpression: ''
   };
 
-  readonly spelFields: { label: string; insert: string; type: string }[] = [
-    { label: 'selectedQuoteTotalAmount', insert: 'selectedQuoteTotalAmount ', type: 'number' },
-    { label: 'priority', insert: 'priority ', type: 'string' },
-    { label: 'totalQuantity', insert: 'totalQuantity ', type: 'number' },
-    { label: 'department', insert: 'department.', type: 'object' },
-    { label: 'project', insert: 'project.', type: 'object' },
-    { label: 'requester', insert: 'requester.', type: 'object' },
-    { label: 'budget', insert: 'budget.', type: 'object' },
-    { label: 'globalBudget', insert: 'globalBudget.', type: 'object' },
-  ];
+  spelFields: { label: string; insert: string; type: string }[] = [];
 
-  private readonly spelNested: Record<string, { label: string; insert: string; type: string }[]> = {
-    'department': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'budget', insert: 'budget.', type: 'object' },
-    ],
-    'project': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'key', insert: 'key ', type: 'string' }, { label: 'budget', insert: 'budget.', type: 'object' },
-    ],
-    'requester': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'email', insert: 'email ', type: 'string' }, { label: 'role', insert: 'role ', type: 'string' },
-      { label: 'isTeamLeader', insert: 'isTeamLeader ', type: 'boolean' },
-    ],
-    'budget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-    'globalBudget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-    'department.budget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-    'project.budget': [
-      { label: 'id', insert: 'id ', type: 'number' }, { label: 'name', insert: 'name ', type: 'string' },
-      { label: 'totalAmount', insert: 'totalAmount ', type: 'number' }, { label: 'committedSpend', insert: 'committedSpend ', type: 'number' },
-      { label: 'actualSpend', insert: 'actualSpend ', type: 'number' }, { label: 'safetyBuffer', insert: 'safetyBuffer ', type: 'number' },
-      { label: 'remainingAmount', insert: 'remainingAmount ', type: 'number' },
-    ],
-  };
+  private spelNested: Record<string, { label: string; insert: string; type: string }[]> = {};
 
   private readonly spelOperators = [
     { label: 'and', insert: 'and ' },
@@ -128,6 +81,27 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   ];
 
   autocompleteVisible = false;
+
+  private loadSpelFields(): void {
+    this.workflowService.getSpelFields().subscribe(fields => {
+        this.spelFields = [];
+        const nested: Record<string, { label: string; insert: string; type: string }[]> = {};
+        for (const f of fields) {
+          const path = f.path!;
+          const lastDot = path.lastIndexOf('.');
+          const label = lastDot >= 0 ? path.substring(lastDot + 1) : path;
+          const insert = f.isObject ? label + '.' : label + ' ';
+          const entry = { label, insert, type: f.type ?? 'string' };
+          if (lastDot >= 0) {
+            const parent = path.substring(0, lastDot).toLowerCase();
+            (nested[parent] ??= []).push(entry);
+          } else {
+            this.spelFields.push(entry);
+          }
+        }
+        this.spelNested = nested;
+      });
+  }
   autocompleteOptions: { label: string; insert: string; type?: string }[] = [];
   activeAutocompleteIndex = 0;
   autocompleteTop = 0;
@@ -159,8 +133,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
     let candidates: { label: string; insert: string; type?: string }[];
 
-    if (lastDot >= 0 && this.spelNested[parentPath]) {
-      candidates = this.spelNested[parentPath];
+    if (lastDot >= 0 && this.spelNested[parentPath.toLowerCase()]) {
+      candidates = this.spelNested[parentPath.toLowerCase()];
     } else if (lastDot >= 0) {
       candidates = [];
     } else {
@@ -201,17 +175,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     el.selectionEnd = cursor;
     el.focus();
 
-    this.updateConditionExpression(el.value);
+    if (this.advancedRuleEl && el === this.advancedRuleEl.nativeElement) {
+      this.updateRuleProperty('advancedRule', el.value);
+    } else {
+      this.updateConditionExpression(el.value);
+    }
 
     this.autocompleteVisible = false;
-    const savedValue = el.value;
     //AI GENERATED
     setTimeout(() => {
-      if (el.value !== savedValue) {
-        el.value = savedValue;
-        el.selectionStart = savedValue.length;
-        el.selectionEnd = savedValue.length;
-      }
       this.showAutocomplete(el);
     }, 0);
   }
@@ -268,6 +240,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
+    this.loadSpelFields();
     this.mode = this.data?.mode ?? (this.route.snapshot.data['mode'] as WorkflowMode) ?? 'create';
 
     const BpmnClass = this.mode === 'view' ? BpmnViewer : BpmnModeler;
@@ -680,6 +653,28 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.currentTask[key] = value;
   }
 
+  onMinRequiredVendorsChange(value: any) {
+    if (value === '' || value === null || value === undefined) {
+      this.updateRuleProperty('minRequiredVendors', 0);
+      return;
+    }
+    const intVal = parseInt(value, 10);
+    if (!isNaN(intVal) && intVal >= 0) {
+      this.updateRuleProperty('minRequiredVendors', intVal);
+    }
+  }
+
+  onMinVendorReliabilityScoreChange(value: any) {
+    if (value === '' || value === null || value === undefined) {
+      this.updateRuleProperty('minVendorReliabilityScore', null);
+      return;
+    }
+    const floatVal = parseFloat(value);
+    if (!isNaN(floatVal) && floatVal >= 0 && floatVal <= 10) {
+      this.updateRuleProperty('minVendorReliabilityScore', floatVal);
+    }
+  }
+
   updateRuleProperty(key: 'minRequiredVendors' | 'minVendorReliabilityScore' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'advancedRule', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
@@ -758,7 +753,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const element = elementRegistry.get(this.selectedElementId);
     if (!element) return;
 
-    const cleanValue = (value || '').trim();
+    const cleanValue = (value || '');
 
     if (cleanValue) {
       const wrappedExpression = cleanValue.startsWith('${') ? cleanValue : `\${${cleanValue}}`;
@@ -774,17 +769,6 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.applyTransitionRuleCss();
   }
 
-  validateVendorReliabilityInput(event: any) {
-    const input = event.target as HTMLInputElement;
-    if (input.value && input.value.includes('.')) {
-      const parts = input.value.split('.');
-      if (parts[1] && parts[1].length > 2) {
-        input.value = parts[0] + '.' + parts[1].substring(0, 2);
-        const numVal = parseFloat(input.value);
-        this.updateRuleProperty('minVendorReliabilityScore', numVal);
-      }
-    }
-  }
 
   private applyTransitionRuleCss() {
     const canvas = this.bpmnInstance.get('canvas');

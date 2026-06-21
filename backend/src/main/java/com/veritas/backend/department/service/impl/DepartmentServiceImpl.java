@@ -134,11 +134,11 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
         
         if (teamRepository.existsByDepartmentDepartmentId(id)) {
-            throw new IllegalStateException("Cannot delete department because there are teams pointing to it");
+            throw new IllegalStateException("Cannot delete department because there are teams that are part of the department");
         }
 
         if (userRepository.existsByDepartmentDepartmentId(id)) {
-            throw new IllegalStateException("Cannot delete department because there are users pointing to it");
+            throw new IllegalStateException("Cannot delete department because there are users that are part of the department");
         }
 
         departmentRepository.deleteById(id);

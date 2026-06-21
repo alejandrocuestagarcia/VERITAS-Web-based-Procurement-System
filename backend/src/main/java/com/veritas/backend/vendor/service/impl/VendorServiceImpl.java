@@ -37,6 +37,10 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public VendorDto createVendor(VendorDto vendorDto) {
+        vendorRepository.findByTaxId(vendorDto.taxId()).ifPresent(existing -> {
+            throw new EntityExistsException(
+                    "Vendor with tax ID '" + vendorDto.taxId() + "' already exists");
+        });
         return vendorMapper.toVendorDto(vendorRepository.save(vendorMapper.toVendor(vendorDto)));
     }
 

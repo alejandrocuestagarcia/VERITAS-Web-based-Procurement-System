@@ -1,6 +1,7 @@
 package com.veritas.backend.workflow.validation;
 
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.workflow.dto.SpelFieldDto;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
@@ -48,20 +49,20 @@ public class BpmnValidator {
     );
 
     private static final Set<String> ALLOWED_BRANCHING_PATHS = Set.of(
-            "selectedquotetotalamount",
+            "selectedQuoteTotalAmount",
             "priority",
-            "totalquantity",
+            "totalQuantity",
             "department",
             "department.id",
             "department.name",
             "department.budget",
             "department.budget.id",
             "department.budget.name",
-            "department.budget.totalamount",
-            "department.budget.committedspend",
-            "department.budget.actualspend",
-            "department.budget.safetybuffer",
-            "department.budget.remainingamount",
+            "department.budget.totalAmount",
+            "department.budget.committedSpend",
+            "department.budget.actualSpend",
+            "department.budget.safetyBuffer",
+            "department.budget.remainingAmount",
             "project",
             "project.id",
             "project.name",
@@ -69,34 +70,72 @@ public class BpmnValidator {
             "project.budget",
             "project.budget.id",
             "project.budget.name",
-            "project.budget.totalamount",
-            "project.budget.committedspend",
-            "project.budget.actualspend",
-            "project.budget.safetybuffer",
-            "project.budget.remainingamount",
+            "project.budget.totalAmount",
+            "project.budget.committedSpend",
+            "project.budget.actualSpend",
+            "project.budget.safetyBuffer",
+            "project.budget.remainingAmount",
             "requester",
             "requester.id",
             "requester.name",
             "requester.email",
             "requester.role",
-            "requester.isteamleader",
+            "requester.isTeamLeader",
             "budget",
             "budget.id",
             "budget.name",
-            "budget.totalamount",
-            "budget.committedspend",
-            "budget.actualspend",
-            "budget.safetybuffer",
-            "budget.remainingamount",
-            "globalbudget",
-            "globalbudget.id",
-            "globalbudget.name",
-            "globalbudget.totalamount",
-            "globalbudget.committedspend",
-            "globalbudget.actualspend",
-            "globalbudget.safetybuffer",
-            "globalbudget.remainingamount"
+            "budget.totalAmount",
+            "budget.committedSpend",
+            "budget.actualSpend",
+            "budget.safetyBuffer",
+            "budget.remainingAmount",
+            "globalBudget",
+            "globalBudget.id",
+            "globalBudget.name",
+            "globalBudget.totalAmount",
+            "globalBudget.committedSpend",
+            "globalBudget.actualSpend",
+            "globalBudget.safetyBuffer",
+            "globalBudget.remainingAmount"
     );
+
+    private static final Set<String> OBJECT_PATHS = Set.of(
+            "department", "project", "requester", "budget", "globalBudget",
+            "department.budget", "project.budget"
+    );
+
+    private static final Set<String> STRING_PATHS = Set.of(
+            "priority",
+            "department.name", "project.name", "project.key",
+            "requester.name", "requester.email", "requester.role",
+            "budget.name", "globalBudget.name",
+            "department.budget.name", "project.budget.name"
+    );
+
+    private static final Set<String> BOOLEAN_PATHS = Set.of("requester.isTeamLeader");
+
+    /**
+     * Returns the list of all allowed SpEL field paths with their types,
+     * derived from the canonical {@link #ALLOWED_BRANCHING_PATHS} set.
+     */
+    public static List<SpelFieldDto> getSpelFields() {
+        return ALLOWED_BRANCHING_PATHS.stream()
+                .map(path -> {
+                    String type;
+                    boolean isObject = OBJECT_PATHS.contains(path);
+                    if (isObject) {
+                        type = "object";
+                    } else if (BOOLEAN_PATHS.contains(path)) {
+                        type = "boolean";
+                    } else if (STRING_PATHS.contains(path)) {
+                        type = "string";
+                    } else {
+                        type = "number";
+                    }
+                    return new SpelFieldDto(path, type, isObject);
+                })
+                .toList();
+    }
 
     private final SpelExpressionParser spelParser = new SpelExpressionParser();
 
@@ -716,7 +755,7 @@ public class BpmnValidator {
         }
 
         for (String path : paths) {
-            if (!ALLOWED_BRANCHING_PATHS.contains(path.toLowerCase())) {
+            if (!ALLOWED_BRANCHING_PATHS.contains(path)) {
                 result.addError(contextDesc + " on transition from '" + getNodeName(source) + "' to '" + getNodeName(target) + "' references property '"
                         + path + "' which is not an allowed field");
             }

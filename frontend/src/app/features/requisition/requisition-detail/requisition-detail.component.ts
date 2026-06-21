@@ -32,7 +32,8 @@ const ACTION_CONFIGS: Record<string, ActionConfig> = {
   NOTIFICATION_SENT: { icon: 'notifications', color: 'text-indigo-600', bg: 'bg-indigo-100' },
   JIRA_SYNC: { icon: 'sync', color: 'text-violet-600', bg: 'bg-violet-100' },
   JIRA_UNSYNC: { icon: 'sync_disabled', color: 'text-stone-600', bg: 'bg-stone-100' },
-  JIRA_COMMENT_POSTED: { icon: 'comment', color: 'text-fuchsia-600', bg: 'bg-fuchsia-100' }
+  JIRA_COMMENT_POSTED: { icon: 'comment', color: 'text-fuchsia-600', bg: 'bg-fuchsia-100' },
+  REQUESTER_CHANGED: { icon: 'person_edit', color: 'text-yellow-600', bg: 'bg-yellow-100' }
 };
 
 const DEFAULT_ACTION_CONFIG: ActionConfig = {
@@ -103,13 +104,15 @@ export class RequisitionDetailComponent implements OnInit {
   private requestId!: number;
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (id) {
-      this.loadRequest(id);
-      this.requestId = id;
-    } else {
-      this.router.navigate(['/requisitions']);
-    }
+    this.route.paramMap.subscribe(params => {
+      const id = Number(params.get('id'));
+      if (id) {
+        this.loadRequest(id);
+        this.requestId = id;
+      } else {
+        this.router.navigate(['/requisitions']);
+      }
+    });
   }
 
   loadRequest(id: number): void {

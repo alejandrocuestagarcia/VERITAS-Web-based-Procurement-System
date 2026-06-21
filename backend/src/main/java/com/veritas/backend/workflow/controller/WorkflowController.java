@@ -2,6 +2,7 @@ package com.veritas.backend.workflow.controller;
 
 import com.veritas.backend.config.annotations.IsFinanceOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
+import com.veritas.backend.workflow.dto.SpelFieldDto;
 import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.net.URI;
+import java.util.List;
 
 import com.veritas.backend.user.entity.User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -81,5 +83,13 @@ public class WorkflowController {
         log.info("DELETE /workflows/{}", id);
         workflowService.deleteWorkflow(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @IsRequester
+    @Operation(summary = "Get SpEL fields", description = "Returns the list of allowed SpEL fields for use in routing expressions and transition rules.")
+    @GetMapping("/spel-fields")
+    public ResponseEntity<List<SpelFieldDto>> getSpelFields() {
+        log.info("GET /workflows/spel-fields");
+        return ResponseEntity.ok(workflowService.getSpelFields());
     }
 }

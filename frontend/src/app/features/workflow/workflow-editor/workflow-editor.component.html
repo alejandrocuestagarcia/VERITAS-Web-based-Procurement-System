@@ -172,7 +172,7 @@
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Condition</label>
 
             <div *ngIf="isEditable">
-              <textarea #routingEl rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+              <textarea #routingEl rows="3" spellcheck="false" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
                 (focus)="onTextareaFocus(routingEl)"
                 (input)="onTextareaInput(routingEl)"
                 (keydown)="onAutocompleteKeydown($event, routingEl)"
@@ -235,10 +235,11 @@
           <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minimum Vendors</label>
             <div *ngIf="isEditable">
-              <input type="number" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <input type="number" step="1" min="1" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 [ngModelOptions]="{standalone: true}"
-                [ngModel]="currentRule.minRequiredVendors" (ngModelChange)="updateRuleProperty('minRequiredVendors', $event)"
-                min="0" placeholder="0">
+                [ngModel]="currentRule.minRequiredVendors" (ngModelChange)="onMinRequiredVendorsChange($event)"
+                appNumericOnly="integer"
+                placeholder="1">
             </div>
             <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">
               <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minRequiredVendors }}</span>
@@ -249,11 +250,11 @@
           <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Min Vendor Reliability Score</label>
             <div *ngIf="isEditable">
-              <input type="number" step="0.01" min="0" max="10" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <input type="number" step="0.5" min="0" max="10" class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 [ngModelOptions]="{standalone: true}"
-                [ngModel]="currentRule.minVendorReliabilityScore" (ngModelChange)="updateRuleProperty('minVendorReliabilityScore', $event)"
-                (input)="validateVendorReliabilityInput($event)"
-                placeholder="e.g. 7.0">
+                [ngModel]="currentRule.minVendorReliabilityScore" (ngModelChange)="onMinVendorReliabilityScoreChange($event)"
+                appNumericOnly="decimal"
+                placeholder="e.g. 7">
             </div>
             <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm flex items-baseline gap-2">
               <span class="text-xl font-bold text-[#003d9b]">{{ currentRule.minVendorReliabilityScore != null ? currentRule.minVendorReliabilityScore : 'N/A' }}</span>
@@ -272,7 +273,7 @@
             </button>
             <div *ngIf="isAdvancedRuleExpanded" class="space-y-2 animate-in fade-in duration-200">
               <div *ngIf="isEditable">
-                <textarea #advancedRuleEl rows="3" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+                <textarea #advancedRuleEl rows="3" spellcheck="false" class="w-full p-3 text-xs bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
                   (focus)="onTextareaFocus(advancedRuleEl)"
                   (input)="onTextareaInput(advancedRuleEl)"
                   (keydown)="onAutocompleteKeydown($event, advancedRuleEl)"

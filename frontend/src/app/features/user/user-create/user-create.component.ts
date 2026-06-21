@@ -171,7 +171,8 @@ export class UserCreateComponent implements OnInit {
         },
         error: err => {
           this.loading = false;
-          this.toastService.showError('Failed to create user. Please try again.');
+          const msg = typeof err?.error === 'string' ? err.error : err?.error?.message || 'Failed to create user.';
+          this.toastService.showError(msg);
         }
       })
     } else {
