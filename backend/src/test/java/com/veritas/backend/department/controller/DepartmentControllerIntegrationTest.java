@@ -224,12 +224,12 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
                 String token = jwtService.generateAccessToken(financeOfficer);
                 DepartmentCreateDto dto = new DepartmentCreateDto("Updated Department", BigDecimal.valueOf(10000.0));
 
-                mockMvc.perform(put("/api/v1/departments/" + existingDept.getDepartmentId())
+                mockMvc.perform(patch("/api/v1/departments/" + existingDept.getDepartmentId())
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(dto)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.name").value("Updated Department"));
+                                .andExpect(jsonPath("$.message").value("Updated Department"));
         }
 
         @Test
