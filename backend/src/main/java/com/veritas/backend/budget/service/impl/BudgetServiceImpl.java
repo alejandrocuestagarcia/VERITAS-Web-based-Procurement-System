@@ -2,6 +2,7 @@ package com.veritas.backend.budget.service.impl;
 
 import com.veritas.backend.budget.dto.BudgetDashboardDto;
 import com.veritas.backend.budget.dto.BudgetDto;
+import com.veritas.backend.budget.dto.DepartmentDashboardBudgetDto;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.mapper.BudgetMapper;
@@ -24,10 +25,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
 public class BudgetServiceImpl implements BudgetService {
+
+    private static final double DEFAULT_FISCAL_RUNWAY_WEEKS = 52.0;
 
     private final InternalBudgetRepository internalBudgetRepository;
     private final DepartmentRepository departmentRepository;
@@ -35,60 +41,77 @@ public class BudgetServiceImpl implements BudgetService {
 
     private final BudgetMapper budgetMapper;
 
+    private record TargetSpendDetails(double runningRemaining, double actSpend, double totalBudg) {}
+
     @Override
     @Transactional(readOnly = true)
     public BudgetDashboardDto getFinanceDashboard(Long departmentId) {
-
         int year = LocalDate.now().getYear();
-
         InternalBudget globalBudget = internalBudgetRepository.findByBudgetType(BudgetType.GLOBAL).orElse(null);
 
-        BudgetDashboardDto dto = new BudgetDashboardDto();
-        if (globalBudget != null) {
-            dto.setExists(true);
-            dto.setTotalBudget(globalBudget.getTotalAmount() != null ? globalBudget.getTotalAmount().doubleValue() : 0.0);
-            dto.setCommittedFunds(globalBudget.getCommittedSpend() != null ? globalBudget.getCommittedSpend().doubleValue() : 0.0);
-            dto.setActualSpend(globalBudget.getActualSpend() != null ? globalBudget.getActualSpend().doubleValue() : 0.0);
-            dto.setSafetyBuffer(globalBudget.getSafetyBuffer() != null ? globalBudget.getSafetyBuffer().doubleValue() : 0.0);
-        } else {
-            dto.setExists(false);
-            dto.setTotalBudget(0.0);
-            dto.setCommittedFunds(0.0);
-            dto.setActualSpend(0.0);
-            dto.setSafetyBuffer(0.0);
-        }
+        boolean exists = globalBudget != null;
+        double totalBudget = globalBudget != null && globalBudget.getTotalAmount() != null ? globalBudget.getTotalAmount().doubleValue() : 0.0;
+        double committedFunds = globalBudget != null && globalBudget.getCommittedSpend() != null ? globalBudget.getCommittedSpend().doubleValue() : 0.0;
+        double actualSpend = globalBudget != null && globalBudget.getActualSpend() != null ? globalBudget.getActualSpend().doubleValue() : 0.0;
+        double safetyBuffer = globalBudget != null && globalBudget.getSafetyBuffer() != null ? globalBudget.getSafetyBuffer().doubleValue() : 0.0;
 
-        List<Object> department = departmentRepository.findAll().stream()
-                .map(dept -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("department", dept.getName());
-                    map.put("budget", dept.getInternalBudget() != null && dept.getInternalBudget().getTotalAmount() != null ? dept.getInternalBudget().getTotalAmount().doubleValue() : 0.0);
-                    map.put("spent", dept.getInternalBudget() != null && dept.getInternalBudget().getActualSpend() != null ? dept.getInternalBudget().getActualSpend().doubleValue() : 0.0);
-                    map.put("committed", dept.getInternalBudget() != null && dept.getInternalBudget().getCommittedSpend() != null ? dept.getInternalBudget().getCommittedSpend().doubleValue() : 0.0);
-                    map.put("safetyBuffer", dept.getInternalBudget() != null && dept.getInternalBudget().getSafetyBuffer() != null ? dept.getInternalBudget().getSafetyBuffer().doubleValue() : 0.0);
-                    return map;
-                })
+        List<DepartmentDashboardBudgetDto> department = getDepartmentBudgetStats();
+
+        TargetSpendDetails spendDetails = getTargetSpendDetails(departmentId, globalBudget, actualSpend, totalBudget);
+        List<Double> remainingBudget = calculateBurndownData(year, departmentId, spendDetails.runningRemaining());
+
+        double projBurn = calculateProjectedBurn(spendDetails.actSpend(), year);
+        double remaining = spendDetails.totalBudg() - spendDetails.actSpend();
+        double runway = calculateFiscalRunway(remaining, projBurn);
+
+        return new BudgetDashboardDto(
+                totalBudget,
+                committedFunds,
+                actualSpend,
+                safetyBuffer,
+                exists,
+                remainingBudget,
+                department,
+                projBurn,
+                runway
+        );
+    }
+
+    private List<DepartmentDashboardBudgetDto> getDepartmentBudgetStats() {
+        return departmentRepository.findAll().stream()
+                .map(dept -> new DepartmentDashboardBudgetDto(
+                        dept.getName(),
+                        dept.getInternalBudget() != null && dept.getInternalBudget().getTotalAmount() != null ? dept.getInternalBudget().getTotalAmount().doubleValue() : 0.0,
+                        dept.getInternalBudget() != null && dept.getInternalBudget().getActualSpend() != null ? dept.getInternalBudget().getActualSpend().doubleValue() : 0.0,
+                        dept.getInternalBudget() != null && dept.getInternalBudget().getCommittedSpend() != null ? dept.getInternalBudget().getCommittedSpend().doubleValue() : 0.0,
+                        dept.getInternalBudget() != null && dept.getInternalBudget().getSafetyBuffer() != null ? dept.getInternalBudget().getSafetyBuffer().doubleValue() : 0.0
+                ))
                 .collect(Collectors.toList());
+    }
 
+    private TargetSpendDetails getTargetSpendDetails(Long departmentId, InternalBudget globalBudget, double globalActualSpend, double globalTotalBudget) {
+        if (departmentId != null) {
+            Department dept = departmentRepository.findById(departmentId).orElse(null);
+            if (dept != null && dept.getInternalBudget() != null) {
+                double total = dept.getInternalBudget().getTotalAmount() != null ? dept.getInternalBudget().getTotalAmount().doubleValue() : 0.0;
+                double actual = dept.getInternalBudget().getActualSpend() != null ? dept.getInternalBudget().getActualSpend().doubleValue() : 0.0;
+                return new TargetSpendDetails(total, actual, total);
+            }
+            return new TargetSpendDetails(0.0, 0.0, 0.0);
+        } else {
+            double remaining = globalBudget != null && globalBudget.getTotalAmount() != null ? globalBudget.getTotalAmount().doubleValue() : 0.0;
+            return new TargetSpendDetails(remaining, globalActualSpend, globalTotalBudget);
+        }
+    }
+
+    private List<Double> calculateBurndownData(int year, Long departmentId, double runningRemaining) {
         List<Double> monthlySpend = new ArrayList<>(Collections.nCopies(12, 0.0));
         List<Object[]> queryResults;
-        double runningRemaining = 0.0;
-        double actSpend = 0.0;
-        double totalBudg = 0.0;
 
         if (departmentId != null) {
             queryResults = invoiceRepository.findActualMonthlySpendByDepartment(year, departmentId);
-            Department dept = departmentRepository.findById(departmentId).orElse(null);
-            if (dept != null && dept.getInternalBudget() != null) {
-                runningRemaining = dept.getInternalBudget().getTotalAmount() != null ? dept.getInternalBudget().getTotalAmount().doubleValue() : 0.0;
-                actSpend = dept.getInternalBudget().getActualSpend() != null ? dept.getInternalBudget().getActualSpend().doubleValue() : 0.0;
-                totalBudg = runningRemaining;
-            }
         } else {
             queryResults = invoiceRepository.findActualMonthlySpend(year);
-            runningRemaining = globalBudget != null && globalBudget.getTotalAmount() != null ? globalBudget.getTotalAmount().doubleValue() : 0.0;
-            actSpend = dto.getActualSpend() != null ? dto.getActualSpend() : 0.0;
-            totalBudg = dto.getTotalBudget() != null ? dto.getTotalBudget() : 0.0;
         }
 
         for (Object[] row : queryResults) {
@@ -100,32 +123,29 @@ public class BudgetServiceImpl implements BudgetService {
         List<Double> remainingBudget = new ArrayList<>();
         int currentMonth = LocalDate.now().getMonthValue();
 
+        double currentRemaining = runningRemaining;
         for (int i = 0; i < 12; i++) {
-                if (i < currentMonth) {
-                    runningRemaining -= monthlySpend.get(i);
-                    remainingBudget.add(runningRemaining);
-                } else {
-                    remainingBudget.add(null);
-                }
+            if (i < currentMonth) {
+                currentRemaining -= monthlySpend.get(i);
+                remainingBudget.add(currentRemaining);
+            } else {
+                remainingBudget.add(null);
+            }
         }
+        return remainingBudget;
+    }
 
-        dto.setBurndownData(remainingBudget);
-        dto.setDepartmentData(department);
-
-        double elapsedWeeks;
+    private double calculateProjectedBurn(double actSpend, int year) {
         LocalDate startOfYear = LocalDate.of(year, 1, 1);
         LocalDate today = LocalDate.now();
         long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startOfYear, today);
-        elapsedWeeks = Math.max(1.0, (double) daysBetween / 7.0);
+        double elapsedWeeks = Math.max(1.0, (double) daysBetween / 7.0);
 
-        double projBurn = elapsedWeeks > 0.0 ? actSpend / elapsedWeeks : 0.0;
-        double remaining = totalBudg - actSpend;
-        double runway = projBurn > 0.0 ? remaining / projBurn : 52.0;
+        return elapsedWeeks > 0.0 ? actSpend / elapsedWeeks : 0.0;
+    }
 
-        dto.setProjectedBurn(projBurn);
-        dto.setFiscalRunway(runway);
-
-        return dto;
+    private double calculateFiscalRunway(double remaining, double projBurn) {
+        return projBurn > 0.0 ? remaining / projBurn : DEFAULT_FISCAL_RUNWAY_WEEKS;
     }
 
     @Override
@@ -167,8 +187,9 @@ public class BudgetServiceImpl implements BudgetService {
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 if (newTotal.compareTo(departmentsBudgetSum) < 0) {
-                    throw new IllegalArgumentException("New global budget of " + newTotal
-                            + " is less than the sum of its department budgets (" + departmentsBudgetSum + ")");
+                    DecimalFormat df = new DecimalFormat("#,##0.00", new DecimalFormatSymbols(Locale.GERMANY));
+                    throw new IllegalArgumentException("New global budget of " + df.format(newTotal)
+                            + "€ is less than the sum of its department budgets " + df.format(departmentsBudgetSum) + "€");
                 }
             }
             budget.setTotalAmount(newTotal);

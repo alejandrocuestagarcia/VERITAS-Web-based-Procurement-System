@@ -17,6 +17,9 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.department.entity.Department;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -79,9 +82,10 @@ public class ProjectServiceImpl implements ProjectService {
                 if (newTotal.compareTo(deptLimit) > 0) {
                     log.warn("Project budget check failed – budget limit exceeded for department: {} (Limit: {}, Attempted: {})", 
                             department.getName(), deptLimit, newTotal);
-                    throw new IllegalArgumentException("Project budget of " + projectBudget 
-                            + " exceeds the remaining department budget of " + deptLimit.subtract(existingTotal) 
-                            + " (Total Limit: " + deptLimit + ")");
+                    DecimalFormat df = new DecimalFormat("#,##0.00", new DecimalFormatSymbols(Locale.GERMANY));
+                    throw new IllegalArgumentException("Project budget of " + df.format(projectBudget) + "€"
+                            + " exceeds the remaining department budget of " + df.format(deptLimit.subtract(existingTotal)) + "€"
+                            + " (Total Limit: " + df.format(deptLimit) + "€)");
                 }
             }
         }

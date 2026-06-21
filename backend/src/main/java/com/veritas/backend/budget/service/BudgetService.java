@@ -24,5 +24,16 @@ public interface BudgetService {
      * @throws EntityNotFoundException if no global budget exists
      */
     BudgetDto editBudget(BudgetDto budgetDto);
+
+    /**
+     * Retrieves the financial dashboard metrics.
+     * Computes the global budget, committed funds, actual spend, safety buffer,
+     * monthly burndown data, departmental resource utilization, projected burn rate,
+     * and fiscal runway. If a department ID is specified, the calculations are
+     * filtered/scaled for that department.
+     *
+     * @param departmentId the optional department ID to filter the dashboard data
+     * @return the financial dashboard metrics as a {@link BudgetDashboardDto}
+     */
     BudgetDashboardDto getFinanceDashboard(Long departmentId);
 }

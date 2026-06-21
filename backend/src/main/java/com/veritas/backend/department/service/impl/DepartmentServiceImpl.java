@@ -21,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.veritas.backend.budget.entity.InternalBudget;
 import java.math.BigDecimal;
 import java.util.List;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -46,9 +49,10 @@ public class DepartmentServiceImpl implements DepartmentService {
             BigDecimal limit = parentBudget.getTotalAmount();
             BigDecimal newTotal = existingTotal.add(departmentBudget);
             if (newTotal.compareTo(limit) > 0) {
-                throw new IllegalArgumentException("Department budget of " + departmentBudget 
-                        + " exceeds the remaining global budget of " + limit.subtract(existingTotal) 
-                        + " (Total Limit: " + limit + ")");
+                DecimalFormat df = new DecimalFormat("#,##0.00", new DecimalFormatSymbols(Locale.GERMANY));
+                throw new IllegalArgumentException("Department budget of " + df.format(departmentBudget) + "€"
+                        + " exceeds the remaining global budget of " + df.format(limit.subtract(existingTotal)) + "€"
+                        + " (Total Limit: " + df.format(limit) + "€)");
             }
         }
     }
@@ -101,8 +105,9 @@ public class DepartmentServiceImpl implements DepartmentService {
                     .map(p -> p.getInternalBudget().getTotalAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             if (request.budget().compareTo(projectsBudgetSum) < 0) {
-                throw new IllegalArgumentException("New department budget of " + request.budget() 
-                        + " is less than the sum of its projects' budgets (" + projectsBudgetSum + ")");
+                DecimalFormat df = new DecimalFormat("#,##0.00", new DecimalFormatSymbols(Locale.GERMANY));
+                throw new IllegalArgumentException("New department budget of " + df.format(request.budget()) + "€"
+                        + " is less than the sum of its projects' budgets (" + df.format(projectsBudgetSum) + "€)");
             }
 
             if (department.getInternalBudget() != null) {
