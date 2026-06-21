@@ -193,7 +193,7 @@ class VendorControllerUnitTest {
 
     @Test
     void rateVendor_ValidRequest_ReturnsDto() throws Exception {
-        VendorRatingDto ratingData = new VendorRatingDto(8, 9, 7, "Good performance");
+        VendorRatingDto ratingData = new VendorRatingDto(8, 9, 7);
         VendorDto ratedDto = new VendorDto(
                 1L, "Vendor 1", "TAX-123", 8.0, 9.0, 7.0, 0.1, 8.0,
                 "Description 1", "Contact 1", "contact1@veritas.com",
@@ -216,7 +216,7 @@ class VendorControllerUnitTest {
     @Test
     void rateVendor_InvalidRatingValue_ReturnsBadRequest() throws Exception {
         // Communication score is 11 (max is 10)
-        VendorRatingDto ratingData = new VendorRatingDto(11, 9, 7, "Invalid score");
+        VendorRatingDto ratingData = new VendorRatingDto(11, 9, 7);
 
         mockMvc.perform(post("/vendors/{id}/rate", 1L)
                 .param("requestId", "100")

@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.dto.InvoiceDto;
 import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.requisition.entity.Request;
-import com.veritas.backend.requisition.mapper.InvoiceMapper;
 import com.veritas.backend.vendor.entity.Vendor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,12 +29,12 @@ class InvoiceMapperUnitTest {
 
     @Test
     void toDto_NullInvoiceAndTotal_ReturnsNull() {
-        assertNull(mapper.toDto(null, null));
+        assertNull(mapper.toDto(null, null, null, null));
     }
 
     @Test
     void toDto_NullInvoiceWithTotal_MapsOnlyTotal() {
-        InvoiceDto dto = mapper.toDto(null, BigDecimal.TEN);
+        InvoiceDto dto = mapper.toDto(null, BigDecimal.TEN, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER);
         assertAll(
             () -> assertEquals(BigDecimal.TEN, dto.totalAmountEuro()),
             () -> assertNull(dto.invoiceId()),
@@ -63,7 +63,7 @@ class InvoiceMapperUnitTest {
         invoice.setRequest(null);
         invoice.setVendor(null);
 
-        InvoiceDto dto = mapper.toDto(invoice, BigDecimal.valueOf(110.0));
+        InvoiceDto dto = mapper.toDto(invoice, BigDecimal.valueOf(110.0), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER);
 
         assertAll(
             () -> assertEquals(1L, dto.invoiceId()),
@@ -100,7 +100,7 @@ class InvoiceMapperUnitTest {
         invoice.setRequest(request);
         invoice.setVendor(vendor);
 
-        InvoiceDto dto = mapper.toDto(invoice, BigDecimal.valueOf(92.5));
+        InvoiceDto dto = mapper.toDto(invoice, BigDecimal.valueOf(92.5), LocalDateTime.now(), ExchangeRateSource.FRANKFURTER);
 
         assertAll(
             () -> assertEquals(1L, dto.invoiceId()),

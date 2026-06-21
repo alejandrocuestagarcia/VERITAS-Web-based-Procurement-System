@@ -28,8 +28,7 @@ export class VendorEvaluationDialogComponent {
     this.form = this.fb.group({
       communicationScore: [5, [Validators.required, Validators.min(0), Validators.max(10)]],
       deliveryScore: [5, [Validators.required, Validators.min(0), Validators.max(10)]],
-      qualityScore: [5, [Validators.required, Validators.min(0), Validators.max(10)]],
-      notes: ['', []]
+      qualityScore: [5, [Validators.required, Validators.min(0), Validators.max(10)]]
     });
   }
 
@@ -40,8 +39,7 @@ export class VendorEvaluationDialogComponent {
     const ratingData: VendorRatingDto = {
       communicationScore: this.form.value.communicationScore,
       deliveryScore: this.form.value.deliveryScore,
-      qualityScore: this.form.value.qualityScore,
-      notes: this.form.value.notes
+      qualityScore: this.form.value.qualityScore
     };
 
     this.vendorService.rateVendor(this.data.vendorId, this.data.requestId, ratingData).subscribe({

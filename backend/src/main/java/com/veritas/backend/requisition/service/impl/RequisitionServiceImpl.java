@@ -1041,15 +1041,17 @@ public class RequisitionServiceImpl implements RequisitionService {
 
     private InvoiceDto mapToInvoiceDtoWithEuro(Invoice invoice) {
         BigDecimal totalAmountEuro;
+        CurrencyConversionResult conversion = null;
+
         try {
-            CurrencyConversionResult conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
+            conversion = currencyConversionService.convert(invoice.getTotalAmount(), invoice.getCurrency());
             totalAmountEuro = conversion.convertedAmount();
         } catch (IllegalArgumentException | EntityNotFoundException exception) {
             log.warn("Could not convert invoice {} amount {} {} to EUR: {}", invoice.getInvoiceId(), invoice.getTotalAmount(), invoice.getCurrency(), exception.getMessage());
             totalAmountEuro = null;
         }
 
-        return invoiceMapper.toDto(invoice, totalAmountEuro);
+        return invoiceMapper.toDto(invoice, totalAmountEuro, conversion != null ? conversion.fetchedAt() : null, conversion != null ? conversion.source() : null);
     }
 
     private void storeAttachment(MultipartFile file, Request request, Invoice invoice) {

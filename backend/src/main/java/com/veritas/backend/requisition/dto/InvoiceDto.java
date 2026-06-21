@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.veritas.backend.integrations.currency.entity.Currency;
+import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 
 @Builder
 public record InvoiceDto(
@@ -17,6 +18,8 @@ public record InvoiceDto(
     BigDecimal totalAmount,
     Currency currency,
     BigDecimal totalAmountEuro,
+    LocalDateTime exchangeRateFetchedAt,
+    ExchangeRateSource exchangeRateSource,
     LocalDate dueDate,
     Boolean isPaid,
     Long vendorId,

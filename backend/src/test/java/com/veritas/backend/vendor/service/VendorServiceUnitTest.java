@@ -333,7 +333,7 @@ class VendorServiceUnitTest {
         User evaluator = new User();
         evaluator.setId(5L);
 
-        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9, "Nice performance");
+        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9);
 
         when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
         when(requestRepository.findById(10L)).thenReturn(java.util.Optional.of(request));
@@ -378,7 +378,7 @@ class VendorServiceUnitTest {
         User evaluator = new User();
         evaluator.setId(5L);
 
-        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9, "Nice performance");
+        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9);
 
         when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
         when(requestRepository.findById(10L)).thenReturn(java.util.Optional.of(request));
@@ -407,7 +407,7 @@ class VendorServiceUnitTest {
         User evaluator = new User();
         evaluator.setId(5L);
 
-        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9, "Nice performance");
+        VendorRatingDto ratingDto = new VendorRatingDto(9, 8, 9);
 
         when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
         when(requestRepository.findById(10L)).thenReturn(java.util.Optional.of(request));
@@ -525,7 +525,7 @@ class VendorServiceUnitTest {
     void RateVendor_VendorNotFound_ThrowsEntityNotFoundException() {
         when(vendorRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User()));
+        assertThrows(EntityNotFoundException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5), new User()));
     }
 
     @Test
@@ -533,7 +533,7 @@ class VendorServiceUnitTest {
         when(vendorRepository.findById(1L)).thenReturn(Optional.of(new Vendor()));
         when(requestRepository.findById(10L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User()));
+        assertThrows(EntityNotFoundException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5), new User()));
     }
 
     @Test
@@ -542,7 +542,7 @@ class VendorServiceUnitTest {
         when(requestRepository.findById(10L)).thenReturn(Optional.of(new Request()));
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(true);
 
-        assertThrows(EntityExistsException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User()));
+        assertThrows(EntityExistsException.class, () -> vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5), new User()));
     }
 
     @Test
@@ -555,7 +555,7 @@ class VendorServiceUnitTest {
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
 
-        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User());
+        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5), new User());
 
         ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
@@ -578,7 +578,7 @@ class VendorServiceUnitTest {
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
 
-        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User());
+        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5), new User());
 
         ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
@@ -601,7 +601,7 @@ class VendorServiceUnitTest {
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
 
-        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5, ""), new User());
+        vendorService.rateVendor(1L, 10L, new VendorRatingDto(5, 5, 5), new User());
 
         ArgumentCaptor<VendorEvaluation> evaluationCaptor = ArgumentCaptor.forClass(VendorEvaluation.class);
         verify(vendorEvaluationRepository).save(evaluationCaptor.capture());
