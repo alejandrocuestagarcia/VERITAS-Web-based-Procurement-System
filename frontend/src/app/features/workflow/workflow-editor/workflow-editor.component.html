@@ -209,29 +209,49 @@
             </div>
           </div>
 
-          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent" class="space-y-2">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attachement Requirements</label>
-            <div class="space-y-2">
-              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-                <input type="checkbox" [checked]="currentRule.isPdfRequired" [disabled]="!isEditable"
-                   (change)="updateRuleProperty('isPdfRequired', !currentRule.isPdfRequired)"
-                   class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-                <span class="text-sm font-semibold text-slate-700">PDF Document Required</span>
+          <div *ngIf="!selectedFlowLeavesGateway && !selectedFlowLeavesStartEvent && !selectedFlowEntersEndEvent"
+            class="space-y-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attachment
+              Requirements</label>
+            <div *ngIf="isEditable" class="mt-2">
+              <mat-form-field appearance="outline" class="w-full bg-white-field" subscriptSizing="dynamic">
+                <mat-select [ngModelOptions]="{standalone: true}" [ngModel]="currentRule.requiredFileTypes"
+                  (ngModelChange)="updateRuleProperty('requiredFileTypes', $event)" placeholder="Select Required Types"
+                  multiple>
+                  <mat-select-trigger>
+                    {{ getSelectedFileTypesTriggerText() }}
+                  </mat-select-trigger>
+                  <mat-option *ngFor="let type of availableFileTypes" [value]="type.value">
+                    {{ type.label }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <div class="text-[10px] text-slate-400 font-medium px-1 mt-1">
+                Every selected format requires at least one matching attachment (AND connected).
               </div>
+            </div>
 
-              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-                <input type="checkbox" [checked]="currentRule.isCsvRequired" [disabled]="!isEditable"
-                   (change)="updateRuleProperty('isCsvRequired', !currentRule.isCsvRequired)"
-                   class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-                <span class="text-sm font-semibold text-slate-700">CSV Document Required</span>
-              </div>
+            <div class="flex flex-wrap gap-1.5 mt-2"
+              *ngIf="currentRule.requiredFileTypes && currentRule.requiredFileTypes.length > 0">
+              <span *ngFor="let type of currentRule.requiredFileTypes"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase">
+                {{ type }}
+              </span>
+            </div>
 
-              <div class="flex items-center gap-3 p-3 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
-                <input type="checkbox" [checked]="currentRule.isImageRequired" [disabled]="!isEditable"
-                   (change)="updateRuleProperty('isImageRequired', !currentRule.isImageRequired)"
-                   class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-                <span class="text-sm font-semibold text-slate-700">Image Required</span>
-              </div>
+            <div *ngIf="!isEditable && (!currentRule.requiredFileTypes || currentRule.requiredFileTypes.length === 0)"
+              class="p-3 bg-slate-50 border border-dashed border-[#e4e7ef] rounded-xl text-center">
+              <span class="text-[10px] text-slate-400 uppercase tracking-tighter">No attachment requirements</span>
+            </div>
+
+            <!-- AND Connection Information Message -->
+            <div *ngIf="currentRule.requiredFileTypes && currentRule.requiredFileTypes.length > 1"
+              class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2 shadow-sm animate-in fade-in duration-200">
+              <mat-icon style="font-size: 16px; width: 16px; height: 16px; line-height: 16px;"
+                class="text-blue-600 shrink-0 mt-0.5">info</mat-icon>
+              <p class="text-[10px] text-blue-700 leading-normal m-0 font-medium">
+                <strong>All</strong> selected formats must be uploaded. An attachment matching each category is required to transition the step.
+              </p>
             </div>
           </div>
 

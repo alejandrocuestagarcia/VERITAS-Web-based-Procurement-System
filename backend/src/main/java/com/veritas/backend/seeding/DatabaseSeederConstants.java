@@ -88,7 +88,7 @@ public class DatabaseSeederConstants {
    </bpmn:sequenceFlow>
    <bpmn:sequenceFlow id="Flow_1sapfpf" sourceRef="Activity_0fktd09" targetRef="Activity_0u8kehp">
      <bpmn:extensionElements>
-       <veritas:transitionRule type="veritas:transitionRule" isPdfRequired="true" />
+       <veritas:transitionRule type="veritas:transitionRule" requiredFileTypes="pdf" />
      </bpmn:extensionElements>
    </bpmn:sequenceFlow>
    <bpmn:sequenceFlow id="Flow_0u0m60m" sourceRef="Activity_0zpfhjd" targetRef="Event_0f7uyqa" />

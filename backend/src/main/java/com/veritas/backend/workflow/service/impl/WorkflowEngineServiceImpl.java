@@ -187,30 +187,67 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     }
                     final LocalDateTime finalEntryTime = entryTime;
 
-                    if (rule.getIsPdfRequired() != null && rule.getIsPdfRequired()) {
-                        boolean hasPdf = request.getAttachments().stream()
-                                .anyMatch(a -> "application/pdf".equalsIgnoreCase(a.getFileType())
-                                        && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
-                                                || a.getUploadedAt().isEqual(finalEntryTime)));
-                        if (!hasPdf)
-                            missingAttachments.add("PDF");
-                    }
-                    if (rule.getIsCsvRequired() != null && rule.getIsCsvRequired()) {
-                        boolean hasCsv = request.getAttachments().stream()
-                                .anyMatch(a -> "text/csv".equalsIgnoreCase(a.getFileType())
-                                        && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
-                                                || a.getUploadedAt().isEqual(finalEntryTime)));
-                        if (!hasCsv)
-                            missingAttachments.add("CSV");
-                    }
-                    if (rule.getIsImageRequired() != null && rule.getIsImageRequired()) {
-                        boolean hasImage = request.getAttachments().stream()
-                                .anyMatch(a -> a.getFileType() != null
-                                        && a.getFileType().toLowerCase().startsWith("image/")
-                                        && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
-                                                || a.getUploadedAt().isEqual(finalEntryTime)));
-                        if (!hasImage)
-                            missingAttachments.add("Image");
+                    if (rule.getRequiredFileTypes() != null && !rule.getRequiredFileTypes().isBlank()) {
+                        String[] requiredTypes = rule.getRequiredFileTypes().split(",");
+                        for (String reqType : requiredTypes) {
+                            String trimmedType = reqType.trim().toLowerCase();
+                            if (trimmedType.isEmpty()) continue;
+
+                            boolean hasMatch = request.getAttachments().stream()
+                                    .anyMatch(a -> {
+                                        String ext = "";
+                                        if (a.getFileName() != null && a.getFileName().contains(".")) {
+                                            ext = a.getFileName().substring(a.getFileName().lastIndexOf('.') + 1).toLowerCase();
+                                        }
+                                        String mime = a.getFileType() != null ? a.getFileType().toLowerCase() : "";
+
+                                        boolean matches = false;
+                                        switch (trimmedType) {
+                                            case "pdf":
+                                                matches = ext.equals("pdf") || mime.equals("application/pdf") || mime.endsWith("/pdf");
+                                                break;
+                                            case "csv":
+                                                matches = ext.equals("csv") || mime.equals("text/csv") || mime.endsWith("/csv");
+                                                break;
+                                            case "image":
+                                                matches = mime.startsWith("image/") || List.of("png", "jpg", "jpeg", "gif", "bmp", "svg", "webp").contains(ext);
+                                                break;
+                                            case "excel":
+                                                matches = List.of("xlsx", "xls").contains(ext)
+                                                        || mime.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                                        || mime.equals("application/vnd.ms-excel");
+                                                break;
+                                            case "word":
+                                                matches = List.of("docx", "doc").contains(ext)
+                                                        || mime.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                                                        || mime.equals("application/msword");
+                                                break;
+                                            case "powerpoint":
+                                                matches = List.of("pptx", "ppt").contains(ext)
+                                                        || mime.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation")
+                                                        || mime.equals("application/vnd.ms-powerpoint");
+                                                break;
+                                            case "zip":
+                                                matches = ext.equals("zip") || mime.equals("application/zip") || mime.endsWith("/zip") || mime.equals("application/x-zip-compressed");
+                                                break;
+                                            case "email":
+                                                matches = List.of("msg", "eml").contains(ext)
+                                                        || mime.equals("application/vnd.ms-outlook")
+                                                        || mime.equals("message/rfc822");
+                                                break;
+                                            default:
+                                                matches = ext.equals(trimmedType) || mime.endsWith("/" + trimmedType) || mime.equals(trimmedType);
+                                                break;
+                                        }
+
+                                        return matches && (finalEntryTime == null || a.getUploadedAt().isAfter(finalEntryTime)
+                                                || a.getUploadedAt().isEqual(finalEntryTime));
+                                    });
+
+                            if (!hasMatch) {
+                                missingAttachments.add(trimmedType.toUpperCase());
+                            }
+                        }
                     }
 
                     if (missingAttachments.size() == 1) {
