@@ -47,6 +47,8 @@ export class RequisitionListComponent implements OnInit {
     { value: 'OPEN', label: 'Open' },
     { value: 'AWAITING_PAYMENT', label: 'Awaiting Payment' },
     { value: 'CLOSED', label: 'Closed' },
+    { value: 'REJECTED', label: 'Rejected' },
+    { value: 'CANCELLED', label: 'Cancelled' },
   ];
 
   get isRequester(): boolean {
@@ -120,6 +122,10 @@ export class RequisitionListComponent implements OnInit {
       backendStatus = 'OPEN';
     } else if (this.status === 'AWAITING_PAYMENT' || this.status === 'CLOSED') {
       backendStatus = 'CLOSED';
+    } else if (this.status === 'REJECTED') {
+      backendStatus = 'REJECTED';
+    } else if (this.status === 'CANCELLED') {
+      backendStatus = 'CANCELLED';
     }
 
     this.requisitionService.getRequests(
@@ -135,9 +141,9 @@ export class RequisitionListComponent implements OnInit {
       next: (response) => {
         let list = response.content || [];
         if (this.status === 'AWAITING_PAYMENT') {
-          list = list.filter(req => req.isClosed && !req.isPaid);
+          list = list.filter(req => req.isClosed && req.closedReason === 'COMPLETED' && !req.isPaid);
         } else if (this.status === 'CLOSED') {
-          list = list.filter(req => req.isClosed && req.isPaid);
+          list = list.filter(req => req.isClosed && req.closedReason === 'COMPLETED' && req.isPaid);
         }
         this.requests.data = list;
         this.totalElements = response.totalElements || 0;

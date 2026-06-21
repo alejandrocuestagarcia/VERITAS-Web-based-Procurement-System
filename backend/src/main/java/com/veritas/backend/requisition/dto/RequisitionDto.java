@@ -1,6 +1,7 @@
 package com.veritas.backend.requisition.dto;
 
 import com.veritas.backend.requisition.entity.Priority;
+import com.veritas.backend.requisition.entity.ClosedReason;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,6 +36,7 @@ public record RequisitionDto(
     List<RequisitionItemDto> items,
     List<AttachmentDto> attachments,
     String state,
+    ClosedReason closedReason,
     String rejectionReason,
     String workflowStepDescription,
     Long assigneeId,

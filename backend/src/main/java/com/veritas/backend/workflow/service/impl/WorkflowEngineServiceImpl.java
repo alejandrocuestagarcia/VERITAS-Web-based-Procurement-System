@@ -8,6 +8,7 @@ import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.common.exception.WorkflowStateException;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.entity.ClosedReason;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
@@ -260,6 +261,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
                 if (componentType == WorkflowComponent.END_EVENT) {
                     request.setState(RequestStatus.FINISHED);
+                    request.setClosedReason(ClosedReason.COMPLETED);
                 }
 
                 break;

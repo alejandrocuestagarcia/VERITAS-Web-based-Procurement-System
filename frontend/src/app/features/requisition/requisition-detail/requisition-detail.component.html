@@ -12,18 +12,26 @@
           <span class="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
           OPEN
         </span>
-        <span *ngIf="request?.isClosed" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-100 shadow-sm">
+        <span *ngIf="request?.isClosed && request?.closedReason === 'COMPLETED'" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-100 shadow-sm">
           <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
           CLOSED
+        </span>
+        <span *ngIf="request?.isClosed && request?.closedReason === 'REJECTED'" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-100 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+          REJECTED
+        </span>
+        <span *ngIf="request?.isClosed && request?.closedReason === 'CANCELLED'" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-100 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-500 shrink-0"></span>
+          CANCELLED
         </span>
         <span *ngIf="request.state === 'DRAFT'" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 border border-gray-100 shadow-sm">
           <span class="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0"></span>
           DRAFT
         </span>
         <span *ngIf="request.isPaid" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-100 shadow-sm">
-        <span class="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0"></span>
-        PAID
-      </span>
+          <span class="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0"></span>
+          PAID
+        </span>
         <span *ngIf="request.responsibleRole" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
           RESPONSIBLE: {{ formatRole(request.responsibleRole) }}
         </span>
@@ -83,7 +91,7 @@
         </div>
       </ng-container>
 
-      <button *ngIf="request?.isClosed && !request?.isPaid && authService.hasRole('FINANCE_OFFICER')" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
+      <button *ngIf="request?.isClosed && request?.closedReason === 'COMPLETED' && !request?.isPaid && authService.hasRole('FINANCE_OFFICER')" (click)="processPayment()" class="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors">
         <mat-icon class="scale-90">payment</mat-icon>
         Pay Invoice
       </button>
@@ -216,7 +224,7 @@
         </ng-template>
       </div>
 
-      <div *ngIf="request.isClosed" class="bg-green-50/60 rounded-[20px] border border-green-200 shadow-sm p-7 border-l-[6px] border-l-green-500">
+      <div *ngIf="request.isClosed && request.closedReason === 'COMPLETED'" class="bg-green-50/60 rounded-[20px] border border-green-200 shadow-sm p-7 border-l-[6px] border-l-green-500">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div class="flex items-center gap-2">
             <mat-icon class="text-green-600">check_circle</mat-icon>
@@ -229,6 +237,16 @@
         </div>
         <p class="text-[14px] text-slate-600 leading-relaxed">
           This requisition has completed all workflow steps and has been <strong class="text-green-700 font-bold">approved</strong>.
+        </p>
+      </div>
+
+      <div *ngIf="request.isClosed && request.closedReason === 'CANCELLED'" class="bg-slate-50/60 rounded-[20px] border border-slate-200 shadow-sm p-7 border-l-[6px] border-l-slate-400">
+        <div class="flex items-center gap-2 mb-3">
+          <mat-icon class="text-slate-500">cancel</mat-icon>
+          <h3 class="text-[11px] font-bold text-slate-600 uppercase tracking-widest">Requisition CANCELLED</h3>
+        </div>
+        <p class="text-[14px] text-slate-600 leading-relaxed m-0">
+          This requisition has been CANCELLED by the creator and is closed.
         </p>
       </div>
     </div>

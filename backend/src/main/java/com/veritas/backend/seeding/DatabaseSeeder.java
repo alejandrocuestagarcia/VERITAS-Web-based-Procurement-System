@@ -7,6 +7,7 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.entity.ClosedReason;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
@@ -156,6 +157,7 @@ public class DatabaseSeeder implements ApplicationRunner {
             }
 
             basicFinishedReq.setState(RequestStatus.FINISHED);
+            basicFinishedReq.setClosedReason(ClosedReason.COMPLETED);
             requestRepository.save(basicFinishedReq);
             log.info("Seeded basic finished request");
         }
@@ -542,6 +544,9 @@ public class DatabaseSeeder implements ApplicationRunner {
         }
 
         request.setState(state);
+        if (state == RequestStatus.FINISHED) {
+            request.setClosedReason(ClosedReason.COMPLETED);
+        }
         request.setAssignee(assignee);
 
         // Increment project request counter and set request key

@@ -228,15 +228,25 @@
           <span class="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
           Open
         </span>
-        <span *ngIf="req?.isClosed && !req?.isPaid"
+        <span *ngIf="req?.isClosed && req?.closedReason === 'COMPLETED' && !req?.isPaid"
           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
           <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
           Awaiting Payment
         </span>
-        <span *ngIf="req?.isClosed && req?.isPaid"
+        <span *ngIf="req?.isClosed && req?.closedReason === 'COMPLETED' && req?.isPaid"
           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
           <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
           Closed
+        </span>
+        <span *ngIf="req?.isClosed && req?.closedReason === 'REJECTED'"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+          Rejected
+        </span>
+        <span *ngIf="req?.isClosed && req?.closedReason === 'CANCELLED'"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-500 shrink-0"></span>
+          Cancelled
         </span>
       </td>
     </ng-container>

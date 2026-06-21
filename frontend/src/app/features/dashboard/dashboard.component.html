@@ -193,11 +193,28 @@
               </div>
 
               <div class="flex items-center justify-between gap-3">
-                <span *ngIf="requisition.isClosed && !requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-700 border-amber-100 min-w-0">
+                <!-- Awaiting Payment -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'COMPLETED' && !requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-700 border-amber-100 min-w-0">
                   <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-amber-500"></span>
                   <span class="truncate">Awaiting Payment</span>
                 </span>
-                <span *ngIf="!(requisition.isClosed && !requisition.isPaid)" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border min-w-0"
+                <!-- Closed -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'COMPLETED' && requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-slate-100 text-slate-600 border-slate-200 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-slate-400"></span>
+                  <span class="truncate">Closed</span>
+                </span>
+                <!-- Rejected -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'REJECTED'" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-red-50 text-red-700 border-red-100 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-red-500"></span>
+                  <span class="truncate">Rejected</span>
+                </span>
+                <!-- Cancelled -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'CANCELLED'" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-gray-100 text-gray-700 border-gray-200 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-gray-500"></span>
+                  <span class="truncate">Cancelled</span>
+                </span>
+                <!-- Open / Active -->
+                <span *ngIf="!requisition.isClosed" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border min-w-0"
                       [ngClass]="(requisition.rejectionReason) ? 'bg-red-50 text-red-700 border-red-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
                   <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0" [ngClass]="(requisition.rejectionReason) ? 'bg-red-500' : 'bg-blue-500'"></span>
                   <span class="truncate" [title]="formatStatus(requisition.status)">{{ formatStatus(requisition.status) }}</span>
@@ -301,11 +318,28 @@
               </div>
 
               <div class="flex items-center justify-between gap-3">
-                <span *ngIf="requisition.isClosed && !requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-700 border-amber-100 min-w-0">
+                <!-- Awaiting Payment -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'COMPLETED' && !requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-amber-50 text-amber-700 border-amber-100 min-w-0">
                   <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-amber-500"></span>
                   <span class="truncate">Awaiting Payment</span>
                 </span>
-                <span *ngIf="!(requisition.isClosed && !requisition.isPaid)" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border min-w-0"
+                <!-- Closed -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'COMPLETED' && requisition.isPaid" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-slate-100 text-slate-600 border-slate-200 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-slate-400"></span>
+                  <span class="truncate">Closed</span>
+                </span>
+                <!-- Rejected -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'REJECTED'" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-red-50 text-red-700 border-red-100 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-red-500"></span>
+                  <span class="truncate">Rejected</span>
+                </span>
+                <!-- Cancelled -->
+                <span *ngIf="requisition.isClosed && requisition.closedReason === 'CANCELLED'" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border bg-gray-100 text-gray-700 border-gray-200 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 bg-gray-500"></span>
+                  <span class="truncate">Cancelled</span>
+                </span>
+                <!-- Open / Active -->
+                <span *ngIf="!requisition.isClosed" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border min-w-0"
                       [ngClass]="(requisition.rejectionReason) ? 'bg-red-50 text-red-700 border-red-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
                   <span class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0" [ngClass]="(requisition.rejectionReason) ? 'bg-red-500' : 'bg-blue-500'"></span>
                   <span class="truncate" [title]="formatStatus(requisition.status)">{{ formatStatus(requisition.status) }}</span>
