@@ -151,6 +151,10 @@ public class Request {
     @Column(name = "state", nullable = false)
     private RequestStatus state = RequestStatus.DRAFT;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "closed_reason")
+    private ClosedReason closedReason;
+
     @Column(name = "rejection_reason",columnDefinition = "TEXT")
     private String rejectionReason;
 

@@ -40,8 +40,7 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.vendor.repository.QuoteLineItemRepository;
-import com.veritas.backend.team.entity.Team;
-import com.veritas.backend.department.entity.Department;
+
 import java.math.BigDecimal;
 
 import lombok.extern.slf4j.Slf4j;
@@ -495,6 +494,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setDeletedAt(java.time.LocalDateTime.now());
         request.setRejectionReason(rejectionData.getReason());
         request.setState(RequestStatus.FINISHED);
+        request.setClosedReason(ClosedReason.REJECTED);
 
         auditService.createWorkflowTransitionLog(
                 actor,
@@ -548,13 +548,14 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         request.setDeletedAt(java.time.LocalDateTime.now());
         request.setState(RequestStatus.FINISHED);
+        request.setClosedReason(ClosedReason.CANCELLED);
 
         auditService.createWorkflowTransitionLog(
                 actor,
                 request,
                 null,
                 CANCEL,
-                "Request was canceled by " + actor.getName());
+                "Request was cancelled by " + actor.getName());
 
         freeRequestBudget(request);
 
@@ -840,6 +841,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(requestId).orElseThrow(
                 () -> new EntityNotFoundException("Request not found with id: " + requestId)
         );
+
+        if (request.getClosedReason() == ClosedReason.REJECTED || request.getClosedReason() == ClosedReason.CANCELLED) {
+            throw new WorkflowStateException("Cannot pay a request that has been " + request.getClosedReason());
+        }
 
         Invoice invoice = request.getInvoice();
         if (invoice == null) {

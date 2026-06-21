@@ -39,7 +39,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   readonly statuses = [
     { value: 'OPEN', label: 'Open' },
     { value: 'AWAITING_PAYMENT', label: 'Awaiting Payment' },
-    { value: 'CLOSED', label: 'Closed' }
+    { value: 'CLOSED', label: 'Closed' },
+    { value: 'REJECTED', label: 'Rejected' },
+    { value: 'CANCELLED', label: 'Cancelled' }
   ];
 
   private searchSub?: Subscription;

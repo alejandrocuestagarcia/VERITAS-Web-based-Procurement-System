@@ -3174,5 +3174,66 @@ class RequisitionServiceUnitTest {
 
         verify(requestRepository).save(any());
     }
+
+    @Test
+    void rejectRequest_SetsClosedReasonToRejected() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Invalid requisition");
+        requisitionService.rejectRequest(1L, testUser, rejectDto);
+
+        assertEquals(RequestStatus.FINISHED, request.getState());
+        assertEquals(ClosedReason.REJECTED, request.getClosedReason());
+        verify(requestRepository).save(request);
+    }
+
+    @Test
+    void cancelRequest_SetsClosedReasonToCANCELLED() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.DRAFT);
+        request.setUser(testUser);
+        testUser.setRole(UserRole.REQUESTER);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.cancelRequest(1L, testUser);
+
+        assertEquals(RequestStatus.FINISHED, request.getState());
+        assertEquals(ClosedReason.CANCELLED, request.getClosedReason());
+        verify(requestRepository).save(request);
+    }
+
+    @Test
+    void processPayment_ThrowsExceptionForRejectedOrCancelledRequest() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.FINISHED);
+        request.setClosedReason(ClosedReason.REJECTED);
+
+        Invoice invoice = new Invoice();
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () -> {
+            requisitionService.processPayment(1L, testUser);
+        });
+
+        request.setClosedReason(ClosedReason.CANCELLED);
+        assertThrows(WorkflowStateException.class, () -> {
+            requisitionService.processPayment(1L, testUser);
+        });
+    }
 }
 

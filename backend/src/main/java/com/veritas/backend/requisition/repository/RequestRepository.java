@@ -27,10 +27,12 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "LEFT JOIN r.assignee a " +
             "LEFT JOIN r.team t " +
             "LEFT JOIN t.department d " +
-            "WHERE r.deletedAt IS NULL " +
+            "WHERE (r.deletedAt IS NULL OR r.closedReason = 'REJECTED' OR r.closedReason = 'CANCELLED') " +
             "AND (:status IS NULL OR " +
             "      (:status = 'OPEN' AND r.state <> 'FINISHED') OR " +
-            "      (:status = 'CLOSED' AND r.state = 'FINISHED')) " +
+            "      (:status = 'CLOSED' AND r.state = 'FINISHED' AND r.closedReason = 'COMPLETED') OR " +
+            "      (:status = 'REJECTED' AND r.state = 'FINISHED' AND r.closedReason = 'REJECTED') OR " +
+            "      (:status = 'CANCELLED' AND r.state = 'FINISHED' AND r.closedReason = 'CANCELLED')) " +
             "AND (:userId IS NULL OR u.id = :userId) " +
             "AND (:assigneeId IS NULL OR a IS NULL OR a.id = :assigneeId) " +
             "AND (:teamId IS NULL OR t.teamId = :teamId) " +
