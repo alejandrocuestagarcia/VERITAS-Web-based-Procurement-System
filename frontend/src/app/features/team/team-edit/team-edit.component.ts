@@ -115,9 +115,9 @@ export class TeamEditComponent implements OnInit {
         this.applyTeamData(team);
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        this.error = 'Failed to load team data. Please try again.';
+        this.error = extractErrorMessage(err, 'Failed to load team data');
       }
     });
   }

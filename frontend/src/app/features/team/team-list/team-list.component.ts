@@ -224,8 +224,8 @@ export class TeamListComponent implements OnInit, AfterViewInit {
         this.applyFilters();
         this.loading = false;
       },
-      error: () => {
-        this.error = 'Failed to load team governance data.';
+      error: (err) => {
+        this.error = extractErrorMessage(err, 'Failed to load team governance data');
         this.loading = false;
       }
     });

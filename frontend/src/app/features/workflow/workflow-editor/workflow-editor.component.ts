@@ -84,7 +84,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   autocompleteVisible = false;
 
   private loadSpelFields(): void {
-    this.workflowService.getSpelFields().subscribe(fields => {
+    this.workflowService.getSpelFields().subscribe({
+      next: (fields) => {
         this.spelFields = [];
         const nested: Record<string, { label: string; insert: string; type: string }[]> = {};
         for (const f of fields) {
@@ -101,7 +102,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           }
         }
         this.spelNested = nested;
-      });
+      },
+      error: (err) => console.error('Failed to load SpEL fields', err)
+    });
   }
   autocompleteOptions: { label: string; insert: string; type?: string }[] = [];
   activeAutocompleteIndex = 0;
