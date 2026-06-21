@@ -7,7 +7,7 @@ import { ToastService } from 'src/app/core/services/toast.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { dummyBpmnXml } from './workflow-editor.constants';
-import { extractErrorMessage } from 'src/app/shared/error-utils';
+import { extractErrorMessage } from 'src/app/shared/utils/error-utils';
 import { AuthService } from "../../../core/services/auth.service";
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { WorkflowHelpDialogComponent } from '../workflow-help-dialog/workflow-help-dialog.component';

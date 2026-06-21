@@ -4,7 +4,7 @@ import {AuthResponseDto, LoginRequestDto} from "../../../core/api";
 import {Router} from "@angular/router";
 import {ToastService} from "../../../core/services/toast.service";
 import {AuthService} from "../../../core/services/auth.service";
-import {extractErrorMessage} from "../../../shared/error-utils";
+import {extractErrorMessage} from "../../../shared/utils/error-utils";
 
 @Component({
   selector: 'app-login',

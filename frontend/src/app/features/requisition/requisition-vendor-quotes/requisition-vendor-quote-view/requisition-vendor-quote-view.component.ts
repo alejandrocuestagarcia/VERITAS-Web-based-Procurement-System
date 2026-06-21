@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../../shared/error-utils';
+import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-requisition-vendor-quote-view',
@@ -69,7 +69,7 @@ export class RequisitionVendorQuoteViewComponent implements OnInit {
 
     const item = this.requisition.items.find(i => i.id === requestItemId);
     if (!item) return 'Linked item not found';
-    
+
     const unit = item.unit ? item.unit.charAt(0).toUpperCase() + item.unit.slice(1).toLowerCase() : '';
     return `${item.name} (Qty: ${item.quantity} ${unit})`;
   }

@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-force-password-reset',

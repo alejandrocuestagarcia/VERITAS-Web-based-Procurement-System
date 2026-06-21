@@ -15,7 +15,7 @@ import {
   ConfirmationDialogComponent
 } from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
 import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
-import { extractErrorMessage } from 'src/app/shared/error-utils';
+import { extractErrorMessage } from 'src/app/shared/utils/error-utils';
 
 interface ActionConfig {
   icon: string;

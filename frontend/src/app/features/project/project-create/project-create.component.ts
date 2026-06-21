@@ -5,7 +5,7 @@ import {
 } from "../../../core/api";
 import {Router} from "@angular/router";
 import {ToastService} from "../../../core/services/toast.service";
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-project-create',

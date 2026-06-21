@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { RequisitionModuleService, RequisitionDto, VendorModuleService, VendorDto, QuoteCreateDto, RequisitionQuotesModuleService, QuoteDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../../shared/error-utils';
+import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 
 export enum Currency {
   EUR = 'EUR',

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationModuleService, NotificationDto, PageNotificationDto } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import { NotificationStateService } from '../../../core/services/notification-state.service';
 import { PageEvent } from '@angular/material/paginator';
 import { Subscription } from 'rxjs';

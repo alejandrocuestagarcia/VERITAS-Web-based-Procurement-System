@@ -8,7 +8,7 @@ import {Router} from "@angular/router";
 import {MatDialog} from '@angular/material/dialog';
 import {ToastService} from "../../../core/services/toast.service";
 import {UserDeletionDialogComponent} from '../user-deletion-dialog/user-deletion-dialog.component';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-user-list',

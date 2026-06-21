@@ -12,7 +12,7 @@ import {
   DepartmentDto
 } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 interface TeamMemberOption {
   id: number;

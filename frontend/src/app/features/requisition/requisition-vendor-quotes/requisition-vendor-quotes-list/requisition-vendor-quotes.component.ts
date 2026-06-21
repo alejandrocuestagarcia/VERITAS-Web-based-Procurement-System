@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto, InvoiceCreateDtoCurrencyEnum } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../../shared/error-utils';
+import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';

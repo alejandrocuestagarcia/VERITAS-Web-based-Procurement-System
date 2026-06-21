@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { VendorModuleService, VendorRatingDto } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 export interface VendorEvaluationDialogData {
   vendorId: number;

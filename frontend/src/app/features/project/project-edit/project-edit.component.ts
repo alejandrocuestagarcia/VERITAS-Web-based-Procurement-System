@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators} from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {ProjectModuleService, TeamDto, TeamsModuleService} from "../../../core/api";
 
 @Component({

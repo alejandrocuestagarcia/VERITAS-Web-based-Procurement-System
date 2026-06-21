@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
 import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   DepartmentDto,
   DepartmentsModuleService,

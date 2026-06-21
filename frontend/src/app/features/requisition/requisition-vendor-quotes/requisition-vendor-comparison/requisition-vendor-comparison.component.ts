@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
 import { ToastService } from '../../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../../shared/error-utils';
+import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-requisition-vendor-comparison',

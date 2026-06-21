@@ -1,7 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../../../shared/error-utils';
+import { extractErrorMessage } from '../../../../../shared/utils/error-utils';
 import { JiraConfigControllerService, Pageable} from '../../../../../core/api';
 import { JiraConfigResponseDto } from '../../../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';

@@ -13,7 +13,7 @@ import {
 } from '../../../core/api';
 import { EditBudgetDialogComponent } from '../edit-budget-dialog/edit-budget-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   ApexAxisChartSeries,
   ApexChart,

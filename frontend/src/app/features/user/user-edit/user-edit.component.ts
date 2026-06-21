@@ -13,7 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ResetPasswordDialogComponent } from "../../login/reset-password-dialog/reset-password-dialog.component";
 import { MatDialog } from "@angular/material/dialog";
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-user-edit',

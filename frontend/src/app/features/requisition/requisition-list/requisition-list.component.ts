@@ -11,7 +11,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { PageEvent } from '@angular/material/paginator';
 import {MatDialog} from "@angular/material/dialog";
 import {ToastService} from "../../../core/services/toast.service";
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   RequisitionChangeRequesterDialogComponent
 } from "../requisition-change-requester-dialog/requisition-change-requester-dialog.component";

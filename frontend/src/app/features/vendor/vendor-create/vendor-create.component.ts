@@ -4,7 +4,7 @@ import { VendorModuleService } from '../../../core/api';
 import { VendorDto } from '../../../core/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
-import { extractErrorMessage } from '../../../shared/error-utils';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-vendor-create',
