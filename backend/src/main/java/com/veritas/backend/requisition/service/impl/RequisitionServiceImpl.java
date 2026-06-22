@@ -694,7 +694,18 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new WorkflowStateException("Only requests that are in DRAFT or need a Revision can be edited");
         }
 
-        if (!request.getUser().getId().equals(actor.getId())) {
+        boolean isCreator = request.getUser().getId().equals(actor.getId());
+        boolean isAuthorizedForCurrentStep = false;
+        if (request.getCurrentStep() != null) {
+            try {
+                workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
+                isAuthorizedForCurrentStep = true;
+            } catch (AccessDeniedException e) {
+                // Actor is not authorized for the current active step
+            }
+        }
+
+        if (!isCreator && !(request.getRevisionRequired() && isAuthorizedForCurrentStep)) {
             throw new AccessDeniedException("You are not authorized to edit this request");
         }
 
