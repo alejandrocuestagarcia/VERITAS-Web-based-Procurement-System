@@ -21,7 +21,7 @@
       <app-shared-form-field label="TEAM LEAD">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="loading"
+          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="restrictedLeadOptions.length === 0"
             (selectionChange)="onLeadChanged()">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
@@ -34,13 +34,21 @@
                   *ngIf="!option.currentTeam || option.currentTeam === teamName">
                   {{ option.subtitle }}
                 </span>
-                <span class="text-xs text-amber-600 font-semibold"
-                  *ngIf="option.currentTeam && option.currentTeam !== teamName">
-                  Assigned to {{ option.currentTeam }}
-                </span>
               </div>
             </mat-option>
           </mat-select>
+          <mat-hint *ngIf="restrictedLeadOptions.length === 0">No users without a team available.</mat-hint>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="DESCRIPTION">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>article</mat-icon>
+          <textarea matInput formControlName="description" rows="1"
+                    placeholder="Briefly describe the team's objectives and scope..."></textarea>
+          <mat-error
+            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
+            is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -54,17 +62,6 @@
           </mat-select>
           <mat-error
             *ngIf="teamForm.get('departmentId')?.hasError('required') && teamForm.get('departmentId')?.touched">Department
-            is required.</mat-error>
-        </mat-form-field>
-      </app-shared-form-field>
-
-      <app-shared-form-field label="DESCRIPTION" [fullWidth]="true">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>article</mat-icon>
-          <textarea matInput formControlName="description" rows="2"
-            placeholder="Briefly describe the team's objectives and scope..."></textarea>
-          <mat-error
-            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
             is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
@@ -87,10 +84,13 @@
               <div class="flex flex-col gap-2">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-select [(ngModel)]="selectedMemberCandidateId" [ngModelOptions]="{standalone: true}"
-                    [disabled]="submitting" placeholder="Select member">
+                    [disabled]="submitting || availableMemberCandidates.length === 0" placeholder="Select member">
                     <mat-select-trigger>
                       {{ selectedMemberCandidateOption?.displayName ?? 'Select member' }}
                     </mat-select-trigger>
+                    <mat-option *ngIf="availableMemberCandidates.length === 0" [disabled]="true">
+                      No users without a team available
+                    </mat-option>
                     <mat-option *ngFor="let candidate of availableMemberCandidates" [value]="candidate.id">
                       <div class="flex flex-col leading-tight py-1">
                         <span>{{ candidate.displayName }}</span>
@@ -105,9 +105,10 @@
                       </div>
                     </mat-option>
                   </mat-select>
+                  <mat-hint *ngIf="availableMemberCandidates.length === 0">No users without a team available.</mat-hint>
                 </mat-form-field>
                 <button type="button" mat-flat-button class="v-btn-brand" (click)="addMember()"
-                  [disabled]="submitting || selectedMemberCandidateId === null">
+                  [disabled]="submitting || selectedMemberCandidateId === null || availableMemberCandidates.length === 0">
                   Add
                 </button>
               </div>
