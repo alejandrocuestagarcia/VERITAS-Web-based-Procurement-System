@@ -131,6 +131,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
               error: (err) => {
                 this.loading = false;
                 this.toastService.showError(extractErrorMessage(err, 'Failed to load request details'));
+                this.router.navigate(['/dashboard']);
               }
             });
           },

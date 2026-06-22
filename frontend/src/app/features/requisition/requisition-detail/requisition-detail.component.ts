@@ -129,6 +129,8 @@ export class RequisitionDetailComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load request details', err);
         this.loading = false;
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load request details'));
+        this.router.navigate(['/dashboard']);
       }
     });
   }
