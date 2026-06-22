@@ -45,6 +45,7 @@ export class RequisitionVendorQuoteViewComponent implements OnInit {
       error: (err: any) => {
         console.error('Failed to load requisition', err);
         this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition'));
+        this.router.navigate(['/dashboard']);
       }
     });
 

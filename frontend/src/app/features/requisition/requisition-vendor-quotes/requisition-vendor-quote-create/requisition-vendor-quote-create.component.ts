@@ -160,6 +160,7 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
             console.error('Failed to load requisition', err);
             this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition'));
             this.loading = false;
+            this.router.navigate(['/dashboard']);
           }
         });
       },
@@ -258,6 +259,20 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate([`/requisitions/${this.requisitionId}/vendor-quotes`]);
+  }
+
+  getSelectedVendorName(): string {
+    const vendorId = this.quoteForm?.get('vendorId')?.value;
+    if (!vendorId) return 'Not Selected';
+    const vendor = this.vendors.find(v => v.id === Number(vendorId));
+    return vendor ? vendor.vendorName : 'Not Selected';
+  }
+
+  getSelectedVendorTaxId(): string {
+    const vendorId = this.quoteForm?.get('vendorId')?.value;
+    if (!vendorId) return 'Not Selected';
+    const vendor = this.vendors.find(v => v.id === Number(vendorId));
+    return vendor ? (vendor.taxId || 'Not Specified') : 'Not Selected';
   }
 
 }
