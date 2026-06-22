@@ -21,7 +21,7 @@
       <app-shared-form-field label="TEAM LEAD">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="loading || restrictedLeadOptions.length === 0"
+          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="restrictedLeadOptions.length === 0"
             (selectionChange)="onLeadChanged()">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}

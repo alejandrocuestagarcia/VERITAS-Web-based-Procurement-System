@@ -21,7 +21,7 @@
           <mat-icon matPrefix>person</mat-icon>
           <mat-select formControlName="leaderId"
             placeholder="{{ loadingLeads ? 'Loading leads...' : 'Select Lead (Optional)' }}"
-            (selectionChange)="onLeadChanged()">
+            (selectionChange)="onLeadChanged()" [disabled]="!loadingLeads && restrictedLeadOptions.length === 0">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
             </mat-select-trigger>
