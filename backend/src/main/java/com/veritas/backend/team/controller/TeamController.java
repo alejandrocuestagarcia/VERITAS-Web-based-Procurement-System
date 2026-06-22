@@ -70,7 +70,7 @@ public class TeamController {
 
     @Operation(summary = "Delete team", description = "Deletes a team and unlinks all its members.")
     @IsFinanceOfficer
-    @DeleteMapping(value = "/{id}")
+    @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTeam(@PathVariable Long id) {
         log.info("DELETE /teams/{}", id);

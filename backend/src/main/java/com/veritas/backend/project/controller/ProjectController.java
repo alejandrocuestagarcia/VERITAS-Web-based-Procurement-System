@@ -48,7 +48,7 @@ public class ProjectController {
 
     @Operation(summary = "Edit project", description = "Edits a projects basic info.")
     @IsFinanceOfficer
-    @PatchMapping("/{id}")
+    @PatchMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProjectDto> editProject(@PathVariable Long id, @RequestBody @Valid ProjectEditDto updatedProject) {
         log.info("PATCH /projects/{}", id);
         return ResponseEntity.ok(projectService.editProject(id, updatedProject));
@@ -66,7 +66,7 @@ public class ProjectController {
     }
 
     @Operation(summary = "Delete project", description = "Deletes an existing project.")
-    @DeleteMapping(value = "/{id}")
+    @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsFinanceOfficer
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {

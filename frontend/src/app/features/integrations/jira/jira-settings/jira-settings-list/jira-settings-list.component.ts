@@ -1,6 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../../../shared/utils/error-utils';
 import { JiraConfigControllerService, Pageable} from '../../../../../core/api';
 import { JiraConfigResponseDto } from '../../../../../core/api';
 import { MatTableDataSource } from '@angular/material/table';
@@ -54,9 +55,9 @@ export class JiraSettingsListComponent implements OnInit {
         this.totalPageElements = response.totalElements || 0;
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        this.toastService.showError('Failed to load Jira configs');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load Jira configs'));
       }
     });
   }
@@ -77,7 +78,7 @@ export class JiraSettingsListComponent implements OnInit {
     this.toastService.showInfo('Triggering sync...');
     this.jiraConfigService.triggerSync(config.id).subscribe({
       next: () => this.toastService.showInfo('Sync completed successfully'),
-      error: () => this.toastService.showError('Sync failed. Please check logs.')
+      error: (err) => this.toastService.showError(extractErrorMessage(err, 'Sync failed'))
     });
   }
 
@@ -92,7 +93,7 @@ export class JiraSettingsListComponent implements OnInit {
             this.toastService.showSuccess('Integration deleted successfully.');
             this.loadSettings();
           },
-          error: () => this.toastService.showError('Failed to delete integration.')
+          error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to delete integration'))
         });
       }
     });
@@ -113,7 +114,7 @@ export class JiraSettingsListComponent implements OnInit {
     this.toastService.showInfo('Triggering all sync...');
     this.jiraConfigService.triggerAllSyncs().subscribe({
       next: () => this.toastService.showInfo('Syncs completed successfully'),
-      error: () => this.toastService.showError('Syncs failed. Please check logs.')
+      error: (err) => this.toastService.showError(extractErrorMessage(err, 'Syncs failed'))
     });
   }
 }

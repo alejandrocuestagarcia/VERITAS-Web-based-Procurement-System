@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   TeamCreateDto,
   TeamsModuleService,
@@ -125,7 +126,7 @@ export class TeamCreateComponent implements OnInit {
       },
       error: (err) => {
         this.submitting = false;
-        this.error = this.extractErrorMessage(err);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to create team'));
       }
     });
   }
@@ -308,19 +309,6 @@ export class TeamCreateComponent implements OnInit {
     }
 
     return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  private extractErrorMessage(err: any): string {
-    if (typeof err?.error === 'string' && err.error.length > 0) {
-      return err.error;
-    }
-
-    const backendMessage = err?.error?.message;
-    if (backendMessage && typeof backendMessage === 'string') {
-      return backendMessage;
-    }
-
-    return 'Failed to create team. Please review the form and try again.';
   }
 
   private toArray<T>(value: unknown): T[] {

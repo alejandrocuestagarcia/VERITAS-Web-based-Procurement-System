@@ -12,6 +12,7 @@ import {
   DepartmentDto
 } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 interface TeamMemberOption {
   id: number;
@@ -114,9 +115,9 @@ export class TeamEditComponent implements OnInit {
         this.applyTeamData(team);
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        this.error = 'Failed to load team data. Please try again.';
+        this.error = extractErrorMessage(err, 'Failed to load team data');
       }
     });
   }
@@ -199,13 +200,8 @@ export class TeamEditComponent implements OnInit {
       },
       error: (err) => {
         this.submitting = false;
-
-        const message = err?.error && typeof err.error === 'object'
-          ? Object.values(err.error).join(', ')
-          : err?.error || 'Unknown error';
-
-        this.toastService.showError('Failed: ' + message);
-        this.error = this.extractErrorMessage(err);
+        this.error = extractErrorMessage(err, 'Failed to update the team.');
+        this.toastService.showError(this.error);
       }
     });
   }
@@ -382,19 +378,6 @@ export class TeamEditComponent implements OnInit {
     }
 
     return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  private extractErrorMessage(err: any): string {
-    if (typeof err?.error === 'string' && err.error.length > 0) {
-      return err.error;
-    }
-
-    const backendMessage = err?.error?.message;
-    if (backendMessage && typeof backendMessage === 'string') {
-      return backendMessage;
-    }
-
-    return 'Failed to update the team. Please review the form and try again.';
   }
 
   private toArray<T>(value: unknown): T[] {

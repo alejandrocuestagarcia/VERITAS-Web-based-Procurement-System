@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { VendorEditDto, VendorModuleService } from '../../../core/api';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-vendor-edit',
@@ -57,8 +58,8 @@ export class VendorEditComponent implements OnInit {
           primaryContactEmail: vendor.primaryContactEmail ?? '',
         });
       },
-      error: () => {
-        this.toastService.showError('Failed to load vendor details.');
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load vendor details'));
         this.router.navigate(['/vendors']);
       }
     });
@@ -85,9 +86,7 @@ export class VendorEditComponent implements OnInit {
         },
         error: (err) => {
           this.loading = false;
-          const message = err.status === 409 ? 'Tax ID is already in use.'
-            : err.status === 400 ? err.error : 'Failed to update vendor. Please try again.';
-          this.toastService.showError(message);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to update vendor'));
         }
       });
     } else {

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   DepartmentCreateDto,
   DepartmentsModuleService
@@ -71,7 +72,7 @@ export class DepartmentCreateComponent implements OnInit {
         },
         error: (err) => {
           this.submitting = false;
-          this.error = this.extractErrorMessage(err, 'Failed to update department.');
+          this.error = extractErrorMessage(err, 'Failed to update department');
           this.toastService.showError(this.error);
         }
       });
@@ -84,8 +85,7 @@ export class DepartmentCreateComponent implements OnInit {
         },
         error: (err) => {
           this.submitting = false;
-          this.error = this.extractErrorMessage(err, 'Failed to create department.');
-          this.toastService.showError(this.error);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to create department'));
         }
       });
     }
@@ -99,23 +99,11 @@ export class DepartmentCreateComponent implements OnInit {
           budget: dept.budget
         });
       },
-      error: () => {
-        this.toastService.showError('Failed to load department details.');
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load department details'));
         this.router.navigate(['/departments']);
       }
     });
   }
 
-  private extractErrorMessage(err: any, fallback: string): string {
-    if (typeof err?.error === 'string' && err.error.length > 0) {
-      return err.error;
-    }
-
-    const backendMessage = err?.error?.message;
-    if (backendMessage && typeof backendMessage === 'string') {
-      return backendMessage;
-    }
-
-    return fallback;
-  }
 }

@@ -167,7 +167,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.description").value("Team description is required"));
+                                .andExpect(jsonPath("$.message").value("description: Team description is required"));
         }
 
         @Test
@@ -201,7 +201,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isNotFound())
-                                .andExpect(content().string("Leader not found with id 999999"));
+                                .andExpect(jsonPath("$.message").value("Leader not found with id 999999"));
         }
 
         @Test

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   debounceTime,
   distinctUntilChanged,
@@ -98,8 +99,8 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.workflows = response.content || [];
       },
-      error: () => {
-        this.toastService.showError('Error searching workflows');
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Error searching workflows'));
       }
     });
   }
@@ -127,21 +128,21 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
 
                 this.patchFormWithRequest(req);
               },
-              error: () => {
+              error: (err) => {
                 this.loading = false;
-                this.toastService.showError('Failed to load request details');
+                this.toastService.showError(extractErrorMessage(err, 'Failed to load request details'));
               }
             });
           },
-          error: () => {
+          error: (err) => {
             this.loading = false;
-            this.toastService.showError('Failed to load workflows');
+            this.toastService.showError(extractErrorMessage(err, 'Failed to load workflows'));
           }
         });
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
-        this.toastService.showError('Failed to load projects');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load projects'));
       }
     });
   }
@@ -298,7 +299,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to download attachment', err);
-        this.toastService.showError('Failed to download attachment')
+        this.toastService.showError(extractErrorMessage(err, 'Failed to download attachment'))
       }
     });
   }
@@ -361,7 +362,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
     if (!this.isEditMode) {
       this.projectService.getAllProjects().subscribe({
         next: (projects) => this.projects = projects,
-        error: () => this.toastService.showError('Failed to load projects')
+        error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to load projects'))
       });
     }
   }
@@ -407,7 +408,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             this.loading = false;
-            this.toastService.showError('Failed to update request: ' + (err.error || 'Unknown error'));
+            this.toastService.showError(extractErrorMessage(err, 'Failed to update requisition'));
           }
         });
       } else {
@@ -417,7 +418,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             this.loading = false;
-            this.toastService.showError('Failed to create request: ' + (err.error || 'Unknown error'));
+            this.toastService.showError(extractErrorMessage(err, 'Failed to create requisition'));
           }
         });
       }
@@ -482,7 +483,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
               },
               error: (err) => {
                 this.loading = false;
-                this.toastService.showError('Failed to fetch assignees for role ' + role);
+                this.toastService.showError(extractErrorMessage(err, 'Failed to fetch assignees for role ' + role));
                 this.router.navigate(['/requisitions', requestId]);
               }
             });
@@ -492,7 +493,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.loading = false;
-          this.toastService.showError('Failed to determine next step role');
+          this.toastService.showError(extractErrorMessage(err, 'Failed to determine next step role'));
           this.router.navigate(['/requisitions', requestId]);
         }
       });
@@ -514,7 +515,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.loading = false;
-        this.toastService.showError('Request was saved, but failed to submit: ' + (err.error?.message || 'Unknown error'));
+        this.toastService.showError(extractErrorMessage(err, 'Failed to submit requisition'));
         this.router.navigate(['/requisitions', requestId]);
       }
     });

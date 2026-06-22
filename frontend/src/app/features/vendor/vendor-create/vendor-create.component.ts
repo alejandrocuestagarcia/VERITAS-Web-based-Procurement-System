@@ -4,6 +4,7 @@ import { VendorModuleService } from '../../../core/api';
 import { VendorDto } from '../../../core/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-vendor-create',
@@ -59,7 +60,7 @@ export class VendorCreateComponent implements OnInit {
         },
         error: err => {
           this.loading = false;
-          this.toastService.showError('Failed to add vendor. Please try again.');
+          this.toastService.showError(extractErrorMessage(err, 'Failed to add vendor'));
         }
       })
     } else {

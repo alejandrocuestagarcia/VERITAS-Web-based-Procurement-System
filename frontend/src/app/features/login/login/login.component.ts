@@ -4,6 +4,7 @@ import {AuthResponseDto, LoginRequestDto} from "../../../core/api";
 import {Router} from "@angular/router";
 import {ToastService} from "../../../core/services/toast.service";
 import {AuthService} from "../../../core/services/auth.service";
+import {extractErrorMessage} from "../../../shared/utils/error-utils";
 
 @Component({
   selector: 'app-login',
@@ -30,7 +31,7 @@ export class LoginComponent {
       return;
     }
     if (!this.loginRequest.email?.trim() || !this.loginRequest.password?.trim()) {
-      this.showError('Email and password must not be empty.');
+      this.toastService.showError('Email and password must not be empty');
       return;
     }
     this.authService.login(this.loginRequest).subscribe({
@@ -43,12 +44,9 @@ export class LoginComponent {
         }
       },
       error: (err: any) => {
-        this.showError(err.error);
+        this.toastService.showError(extractErrorMessage(err, 'Login failed'));
       }
     });
   }
 
-  private showError(message: string) {
-    this.toastService.showError(message);
-  }
 }

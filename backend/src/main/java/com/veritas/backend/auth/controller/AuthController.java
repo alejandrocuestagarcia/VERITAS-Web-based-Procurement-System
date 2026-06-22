@@ -44,7 +44,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Logout", description = "Logout as a user and invalidate token.")
-    @PostMapping("/logout")
+    @PostMapping(value = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@RequestBody RefreshTokenDto refreshToken) {
         log.info("POST /auth/logout");
@@ -52,7 +52,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Request password reset", description = "Request a password reset link by email.")
-    @PostMapping("/passwordreset")
+    @PostMapping(value = "/passwordreset", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> requestPasswordReset(@Valid @RequestBody PasswordResetRequestDto request) {
         log.info("POST /auth/passwordreset");
         passwordResetService.requestReset(request.email());
@@ -61,7 +61,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Confirm password reset", description = "Reset password using a valid token.")
-    @PostMapping("/passwordreset/confirm")
+    @PostMapping(value = "/passwordreset/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmDto request) {
         log.info("POST /auth/passwordreset/confirm");
         passwordResetService.confirmReset(request.token(), request.newPassword());
@@ -69,7 +69,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Admin Password Reset", description = "Allows an admin to set a temporary password for a user.")
-    @PostMapping("/admin/reset-password/{id}")
+    @PostMapping(value = "/admin/reset-password/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @IsAdministrator
     public ResponseEntity<String> adminResetPassword(@PathVariable Long id, @RequestBody String tempPassword) {
         log.info("POST /auth/admin/reset-password/{}", id);
@@ -78,7 +78,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Complete Password Change", description = "Finalizes the mandatory password reset process for a user.")
-    @PostMapping("/complete-password-change")
+    @PostMapping(value = "/complete-password-change", produces = MediaType.APPLICATION_JSON_VALUE)
     @IsRequester
     public ResponseEntity<String> completePasswordChange(@RequestBody String newPassword) {
         log.info("POST /auth/complete-password-change");

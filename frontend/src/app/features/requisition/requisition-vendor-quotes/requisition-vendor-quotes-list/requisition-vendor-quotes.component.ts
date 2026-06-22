@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto, InvoiceCreateDtoCurrencyEnum } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
@@ -89,7 +90,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to load requisition', err);
-        this.toastService.showError('Failed to load requisition');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition'));
       }
     });
   }
@@ -104,7 +105,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to load quotes', err);
-        this.toastService.showError('Failed to load vendor quotes');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load vendor quotes'));
         this.loading = false;
       }
     });
@@ -132,7 +133,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to select quote', err);
-        this.toastService.showError(err?.error?.message || err?.error || 'Failed to select quote');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to select quote'));
         this.submitting = false;
       }
     });
@@ -157,7 +158,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
           },
           error: (err: any) => {
             console.error('Failed to delete quote', err);
-            this.toastService.showError('Failed to delete quote');
+            this.toastService.showError(extractErrorMessage(err, 'Failed to delete quote'));
             this.loading = false;
           }
         });
@@ -250,8 +251,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       },
       error: (err: any) => {
         this.isUploadingInvoice = false;
-        const message = err?.error?.message || err?.error || 'Failed to upload invoice';
-        this.toastService.showError(message);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to upload invoice'));
       }
     });
   }
@@ -274,8 +274,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
             this.loading = false;
           },
           error: (err: any) => {
-            const message = err?.error?.message || err?.error || 'Failed to delete invoice';
-            this.toastService.showError(message);
+            this.toastService.showError(extractErrorMessage(err, 'Failed to delete invoice'));
             this.loading = false;
           }
         });

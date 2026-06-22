@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-reset-password',
@@ -64,18 +65,6 @@ export class ResetPasswordComponent {
 
   private handleResetError(err: any): void {
     this.loading = false;
-
-    if (err.error instanceof Blob) {
-      err.error.text().then((message: string) => this.showError(message));
-      return;
-    }
-
-    this.showError(
-      typeof err.error === 'string' ? err.error : 'Reset failed. Please request a new link.'
-    );
-  }
-
-  private showError(message: string): void {
-    this.toastService.showError(message);
+    this.toastService.showError(extractErrorMessage(err, 'Password Reset failed'));
   }
 }

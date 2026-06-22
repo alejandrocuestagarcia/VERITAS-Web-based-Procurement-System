@@ -7,6 +7,7 @@ import { ConfirmationDialogComponent } from '../../../shared/components/confirma
 import {Router} from "@angular/router";
 import {AuthService} from "../../../core/services/auth.service";
 import {ToastService} from "../../../core/services/toast.service";
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-project-list',
@@ -41,8 +42,8 @@ export class ProjectListComponent implements OnInit {
         this.dataSource.data = projects;
         this.loading = false;
       },
-      error: () => {
-        this.error = 'Failed to load projects.';
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load projects'));
         this.loading = false;
       }
     });
@@ -68,8 +69,8 @@ export class ProjectListComponent implements OnInit {
             this.toastService.showSuccess('Project deleted successfully.');
             this.loadData();
           },
-          error: () => {
-            this.toastService.showError('Cannot delete project. It may still have requisitions or other entities associated with it.');
+          error: (err) => {
+            this.toastService.showError(extractErrorMessage(err, 'Failed to delete project'));
           }
         });
       }

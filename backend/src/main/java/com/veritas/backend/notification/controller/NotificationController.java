@@ -42,7 +42,7 @@ public class NotificationController {
 
     @Operation(summary = "Mark notification as read", description = "Marks a single notification as read.")
     @PreAuthorize("isAuthenticated()")
-    @PatchMapping("/{id}/read")
+    @PatchMapping(value = "/{id}/read", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> markAsRead(@PathVariable Long id, @AuthenticationPrincipal User user) {
         log.info("PATCH /notifications/{}/read - user: {}", id, user.getEmail());
         notificationService.markAsRead(id, user.getId());
@@ -51,7 +51,7 @@ public class NotificationController {
 
     @Operation(summary = "Mark all as read", description = "Marks all notifications as read for the authenticated user.")
     @PreAuthorize("isAuthenticated()")
-    @PatchMapping("/read-all")
+    @PatchMapping(value = "/read-all", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> markAllAsRead(@AuthenticationPrincipal User user) {
         log.info("PATCH /notifications/read-all - user: {}", user.getEmail());
         notificationService.markAllAsRead(user.getId());
@@ -60,7 +60,7 @@ public class NotificationController {
 
     @Operation(summary = "Delete notification", description = "Deletes a notification.")
     @PreAuthorize("isAuthenticated()")
-    @DeleteMapping("/{id}")
+    @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteNotification(@PathVariable Long id, @AuthenticationPrincipal User user) {
         log.info("DELETE /notifications/{} - user: {}", id, user.getEmail());
         notificationService.deleteNotification(id, user.getId());
@@ -77,7 +77,7 @@ public class NotificationController {
 
     @Operation(summary = "Update email notification preference", description = "Updates the email notification status for the authenticated user.")
     @PreAuthorize("isAuthenticated()")
-    @PatchMapping("/email-preference")
+    @PatchMapping(value = "/email-preference", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> updateEmailPreference(@AuthenticationPrincipal User user, @RequestParam boolean enabled) {
         log.info("PATCH /notifications/email-preference - user: {}, enabled: {}", user.getEmail(), enabled);
         notificationService.updateEmailPreference(user.getId(), enabled);

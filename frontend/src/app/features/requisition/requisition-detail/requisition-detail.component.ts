@@ -15,6 +15,7 @@ import {
   ConfirmationDialogComponent
 } from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
 import { WorkflowEditorComponent } from '../../workflow/workflow-editor/workflow-editor.component';
+import { extractErrorMessage } from 'src/app/shared/utils/error-utils';
 
 interface ActionConfig {
   icon: string;
@@ -146,7 +147,7 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load audit logs', err);
-        this.showErrorFromResponse(err, 'Failed to load audit logs');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load audit logs'));
         this.auditLogs = [];
         this.auditLogsLoading = false;
       }
@@ -161,7 +162,7 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to export audit PDF', err);
-        this.showErrorFromResponse(err, 'Failed to export audit report');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to export audit report'));
       }
     });
   }
@@ -272,7 +273,7 @@ export class RequisitionDetailComponent implements OnInit {
           this.goBack();
         },
         error: (err) => {
-          this.toastService.showError(err.error);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to revert requisition'));
           this.loading = false;
         }
       });
@@ -299,7 +300,7 @@ export class RequisitionDetailComponent implements OnInit {
           this.goBack();
         },
         error: (err) => {
-          this.showErrorFromResponse(err, 'Failed to reject requisition');
+          this.toastService.showError(extractErrorMessage(err, 'Failed to reject requisition'));
           this.loading = false;
         }
       });
@@ -373,7 +374,7 @@ export class RequisitionDetailComponent implements OnInit {
         this.goBack();
       },
       error: (err) => {
-        this.showErrorFromResponse(err, 'Approval failed');
+        this.toastService.showError(extractErrorMessage(err, 'Approval failed'));
         this.loading = false;
       }
     });
@@ -439,7 +440,7 @@ export class RequisitionDetailComponent implements OnInit {
         this.goBack();
       },
       error: (err) => {
-        this.showErrorFromResponse(err, 'Submission failed');
+        this.toastService.showError(extractErrorMessage(err, 'Submission failed'));
         this.loading = false;
       }
     });
@@ -465,7 +466,7 @@ export class RequisitionDetailComponent implements OnInit {
             this.goBack();
           },
           error: (err) => {
-            this.toastService.showError(err.error?.message || err.error || "Cancellation failed");
+            this.toastService.showError(extractErrorMessage(err, 'Cancellation failed'));
             this.loading = false;
           }
         });
@@ -582,7 +583,7 @@ export class RequisitionDetailComponent implements OnInit {
       },
       error: (err) => {
         this.isProcessingPayment = false;
-        this.showErrorFromResponse(err, 'Failed to process payment');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to process payment'));
       }
     });
   }
@@ -636,7 +637,7 @@ export class RequisitionDetailComponent implements OnInit {
       uploadTasks.push(
         this.requisitionService.uploadAttachment(this.request.id, file as any).pipe(
           catchError((err) => {
-              this.showErrorFromResponse(err, 'Unknown error', `Failed to upload ${file.name}: `);
+            this.toastService.showError(extractErrorMessage(err, 'Failed to upload ' + file.name));
               return of(null);
             })
         )
@@ -662,33 +663,6 @@ export class RequisitionDetailComponent implements OnInit {
         this.toastService.showError('Upload failed');
       }
     });
-  }
-
-  private showErrorFromResponse(err: any, fallback: string = 'An error occurred', prefix: string = ''): void {
-    try {
-      // If the server returned a Blob (e.g., responseType: 'blob'), read its text
-      if (err?.error && typeof err.error === 'object' && typeof err.error.text === 'function') {
-        err.error.text().then((text: string) => {
-          let msg = text;
-          try {
-            const parsed = JSON.parse(text);
-            msg = parsed?.message || parsed?.error || text;
-          } catch {
-            // not JSON, use raw text
-          }
-          const finalMsg = prefix ? `${prefix}${msg}` : (msg || fallback);
-          this.toastService.showError(finalMsg);
-        }).catch(() => {
-          this.toastService.showError(prefix ? prefix + fallback : fallback);
-        });
-      } else {
-        const msg = err?.error?.message || err?.error || err?.message || fallback;
-        const finalMsg = prefix ? `${prefix}${msg}` : msg;
-        this.toastService.showError(finalMsg);
-      }
-    } catch (e) {
-      this.toastService.showError(fallback);
-    }
   }
 
   private downloadBlob(blob: Blob, fileName: string): void {

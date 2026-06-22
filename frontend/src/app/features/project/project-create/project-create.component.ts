@@ -5,6 +5,7 @@ import {
 } from "../../../core/api";
 import {Router} from "@angular/router";
 import {ToastService} from "../../../core/services/toast.service";
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
   selector: 'app-project-create',
@@ -76,12 +77,7 @@ export class ProjectCreateComponent implements OnInit {
         },
         error: err => {
           this.loading = false;
-
-          const message = err?.error && typeof err.error === 'object'
-            ? Object.values(err.error).join(', ')
-            : err?.error || 'Unknown error';
-
-          this.toastService.showError('Failed: ' + message);
+          this.toastService.showError(extractErrorMessage(err, 'Failed to create project'));
         }
       })
     } else {

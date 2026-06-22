@@ -344,7 +344,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.requestName").value("Request name is required"));
+                .andExpect(jsonPath("$.message").value("requestName: Request name is required"));
 
         assertEquals(0, requestRepository.count());
     }
@@ -375,7 +375,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.items").value("At least one item is required"));
+                .andExpect(jsonPath("$.message").value("items: At least one item is required"));
 
         assertEquals(0, requestRepository.count());
     }

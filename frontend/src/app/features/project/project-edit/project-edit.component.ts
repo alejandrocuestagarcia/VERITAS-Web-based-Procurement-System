@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators} from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {ProjectModuleService, TeamDto, TeamsModuleService} from "../../../core/api";
 
 @Component({
@@ -50,7 +51,7 @@ export class ProjectEditComponent implements OnInit{
 
         this.loadProject();
       },
-      error: () => this.toastService.showError('Failed to load organizational team selections.')
+      error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to load organizational team selections'))
     });
   }
 
@@ -65,8 +66,8 @@ export class ProjectEditComponent implements OnInit{
           endDate: project.endDate,
         });
       },
-      error: () => {
-        this.toastService.showError('Failed to load project details.');
+      error: (err) => {
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load project details'));
         this.router.navigate(['/projects']);
       }
     });
@@ -93,18 +94,7 @@ export class ProjectEditComponent implements OnInit{
         },
         error: (err) => {
           this.loading = false;
-          console.log(err)
-          if (err.status === 400) {
-            if (err.error instanceof Blob) {
-              err.error.text().then((text: string) => {
-                this.toastService.showError(text);
-              });
-            } else {
-              this.toastService.showError(err.error);
-            }
-          } else {
-            this.toastService.showError('Failed to update project. Please try again.');
-          }
+          this.toastService.showError(extractErrorMessage(err, 'Failed to update project'));
         }
       });
     } else {

@@ -4,6 +4,7 @@ import { forkJoin } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
 import { SharedTableComponent } from '../../../shared/components/table/shared-table.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   DepartmentDto,
   DepartmentsModuleService,
@@ -93,8 +94,7 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
             this.loadData();
           },
           error: (err) => {
-            const errorMsg = err.error?.message || err.error;
-            this.toastService.showError(errorMsg);
+            this.toastService.showError(extractErrorMessage(err, 'Failed to delete department'));
           }
         });
       }
@@ -136,8 +136,8 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
         this.totalTeams = normalizedTeams.length;
         this.loading = false;
       },
-      error: () => {
-        this.error = 'Failed to load department governance data.';
+      error: (err) => {
+        this.error = extractErrorMessage(err, 'Failed to load department governance data');
         this.loading = false;
       }
     });

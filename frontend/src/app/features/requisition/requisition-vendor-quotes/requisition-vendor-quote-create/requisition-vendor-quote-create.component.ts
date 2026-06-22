@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { RequisitionModuleService, RequisitionDto, VendorModuleService, VendorDto, QuoteCreateDto, RequisitionQuotesModuleService, QuoteDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 
 export enum Currency {
   EUR = 'EUR',
@@ -157,14 +158,14 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
           },
           error: (err: any) => {
             console.error('Failed to load requisition', err);
-            this.toastService.showError('Failed to load requisition');
+            this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition'));
             this.loading = false;
           }
         });
       },
       error: (err: any) => {
         console.error('Failed to load vendors', err);
-        this.toastService.showError('Failed to load vendors');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load vendors'));
         this.loading = false;
       }
     });
@@ -196,7 +197,7 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to load quote details', err);
-        this.toastService.showError('Failed to load quote details');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load quote details'));
         this.router.navigate([`/requisitions/${this.requisitionId}/vendor-quotes`]);
       }
     });
@@ -236,7 +237,7 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
         },
         error: (err: any) => {
           console.error('Failed to update quote', err);
-          this.error = this.extractErrorMessage(err, 'Failed to update quote');
+          this.error = extractErrorMessage(err, 'Failed to update quote');
           this.submitting = false;
         }
       });
@@ -248,7 +249,7 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
         },
         error: (err: any) => {
           console.error('Failed to create quote', err);
-          this.error = this.extractErrorMessage(err, 'Failed to create quote');
+          this.error = extractErrorMessage(err, 'Failed to create quote');
           this.submitting = false;
         }
       });
@@ -259,14 +260,4 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
     this.router.navigate([`/requisitions/${this.requisitionId}/vendor-quotes`]);
   }
 
-  private extractErrorMessage(err: any, fallback: string): string {
-    if (typeof err?.error === 'string' && err.error.length > 0) {
-      return err.error;
-    }
-    const msg = err?.error?.message;
-    if (msg && typeof msg === 'string') {
-      return msg;
-    }
-    return fallback;
-  }
 }

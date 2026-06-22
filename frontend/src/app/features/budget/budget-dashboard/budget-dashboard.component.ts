@@ -13,6 +13,7 @@ import {
 } from '../../../core/api';
 import { EditBudgetDialogComponent } from '../edit-budget-dialog/edit-budget-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { extractErrorMessage } from '../../../shared/utils/error-utils';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -178,7 +179,7 @@ export class BudgetDashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading data:', err);
-        this.toastService.showError('Failed to load financial governance data.');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load financial governance data'));
         this.loading = false;
       }
     });
