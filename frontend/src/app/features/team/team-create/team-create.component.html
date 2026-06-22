@@ -26,19 +26,16 @@
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
             </mat-select-trigger>
             <mat-option [value]="null">None</mat-option>
-            <mat-option *ngFor="let option of leadOptions" [value]="option.id" [disabled]="option.currentTeam">
+            <mat-option *ngFor="let option of restrictedLeadOptions" [value]="option.id">
               <div class="flex flex-col leading-tight py-1">
                 <span>{{ option.displayName }}</span>
-                <span class="text-xs text-amber-600 font-semibold" *ngIf="option.currentTeam">
-                  Assigned to {{ option.currentTeam }}
-                </span>
-                <span class="text-xs text-slate-500 font-semibold" *ngIf="!option.currentTeam">
+                <span class="text-xs text-slate-500 font-semibold">
                   {{ option.subtitle }}
                 </span>
               </div>
             </mat-option>
           </mat-select>
-          <mat-hint *ngIf="!loadingLeads && leadOptions.length === 0">No leads available to select.</mat-hint>
+          <mat-hint *ngIf="!loadingLeads && restrictedLeadOptions.length === 0">No users without a team available.</mat-hint>
         </mat-form-field>
       </app-shared-form-field>
 

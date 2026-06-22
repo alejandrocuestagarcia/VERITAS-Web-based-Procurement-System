@@ -343,6 +343,10 @@ export class TeamCreateComponent implements OnInit {
     return [];
   }
 
+  get restrictedLeadOptions(): TeamMemberOption[] {
+    return this.leadOptions.filter((option) => !option.currentTeam);
+  }
+
   get selectedLeadOption(): TeamMemberOption | null {
     const leaderId = this.normalizeLeaderId(this.teamForm?.value?.leaderId);
     if (leaderId === null) return null;

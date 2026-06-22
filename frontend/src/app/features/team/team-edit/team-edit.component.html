@@ -21,7 +21,7 @@
       <app-shared-form-field label="TEAM LEAD">
         <mat-form-field appearance="outline" class="w-full">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="loading"
+          <mat-select formControlName="leaderId" placeholder="Select Lead (Optional)" [disabled]="loading || restrictedLeadOptions.length === 0"
             (selectionChange)="onLeadChanged()">
             <mat-select-trigger>
               {{ selectedLeadOption?.displayName ?? 'Select Lead (Optional)' }}
@@ -34,13 +34,21 @@
                   *ngIf="!option.currentTeam || option.currentTeam === teamName">
                   {{ option.subtitle }}
                 </span>
-                <span class="text-xs text-amber-600 font-semibold"
-                  *ngIf="option.currentTeam && option.currentTeam !== teamName">
-                  Assigned to {{ option.currentTeam }}
-                </span>
               </div>
             </mat-option>
           </mat-select>
+          <mat-hint *ngIf="restrictedLeadOptions.length === 0">No users without a team available.</mat-hint>
+        </mat-form-field>
+      </app-shared-form-field>
+
+      <app-shared-form-field label="DESCRIPTION">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-icon matPrefix>article</mat-icon>
+          <textarea matInput formControlName="description" rows="1"
+                    placeholder="Briefly describe the team's objectives and scope..."></textarea>
+          <mat-error
+            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
+            is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -54,17 +62,6 @@
           </mat-select>
           <mat-error
             *ngIf="teamForm.get('departmentId')?.hasError('required') && teamForm.get('departmentId')?.touched">Department
-            is required.</mat-error>
-        </mat-form-field>
-      </app-shared-form-field>
-
-      <app-shared-form-field label="DESCRIPTION" [fullWidth]="true">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-icon matPrefix>article</mat-icon>
-          <textarea matInput formControlName="description" rows="2"
-            placeholder="Briefly describe the team's objectives and scope..."></textarea>
-          <mat-error
-            *ngIf="teamForm.get('description')?.hasError('required') && teamForm.get('description')?.touched">Description
             is required.</mat-error>
         </mat-form-field>
       </app-shared-form-field>
