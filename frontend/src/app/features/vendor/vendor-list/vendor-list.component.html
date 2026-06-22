@@ -15,7 +15,7 @@
       <mat-icon>filter_list_off</mat-icon>
     </button>
 
-    <div class="flex flex-col min-w-[150px]">
+    <div class="flex flex-col min-w-[150px] pl-4">
       <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Minimum Rating</span>
       <mat-slider min="0" max="10" step="0.5" discrete>
         <input matSliderThumb [value]="minimumRating" (valueChange)="onSliderChange($event)">
@@ -65,7 +65,7 @@
           <button mat-icon-button (click)="editVendor(vendor)" matTooltip="Edit Vendor">
             <mat-icon>edit</mat-icon>
           </button>
-          
+
           <button mat-icon-button color="warn" (click)="deleteVendor(vendor)" matTooltip="Delete Vendor">
             <mat-icon>delete</mat-icon>
           </button>
