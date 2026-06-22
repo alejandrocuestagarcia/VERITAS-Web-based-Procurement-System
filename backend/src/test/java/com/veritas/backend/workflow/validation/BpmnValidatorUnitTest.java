@@ -160,6 +160,57 @@ class BpmnValidatorUnitTest {
         }
 
         @Test
+        void Validate_ProcessNameTooLong_Error() {
+                String longName = "A".repeat(121);
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"" + longName + "\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Step\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Workflow name must be at most 120 characters")));
+        }
+
+        @Test
+        void Validate_ProcessDescriptionTooLong_Error() {
+                String longDesc = "B".repeat(1001);
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                                "    <bpmn:documentation>" + longDesc + "</bpmn:documentation>\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Step\" />\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("Workflow description must be at most 1000 characters")));
+        }
+
+        @Test
         void Validate_UnsupportedFlowNode_Error() {
                 String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                                 "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
@@ -746,6 +797,34 @@ class BpmnValidatorUnitTest {
                                 () -> validator.validate(xml, model));
 
                 assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("non-blank name")));
+        }
+
+        @Test
+        void Validate_TaskDescriptionTooLong_Error() {
+                String longDesc = "D".repeat(501);
+                String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n" +
+                                "                  id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n"
+                                +
+                                "  <bpmn:process id=\"Process_1\" name=\"Long Task Desc\" isExecutable=\"true\">\n" +
+                                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                                "    <bpmn:task id=\"Task_1\" name=\"Review Task\">\n" +
+                                "      <bpmn:documentation>[ASSIGNEE]FINANCE_OFFICER</bpmn:documentation>\n" +
+                                "      <bpmn:documentation>" + longDesc + "</bpmn:documentation>\n" +
+                                "    </bpmn:task>\n" +
+                                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n"
+                                +
+                                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n"
+                                +
+                                "  </bpmn:process>\n" +
+                                "</bpmn:definitions>";
+                BpmnModelInstance model = parse(xml);
+
+                BpmnValidationException ex = assertThrows(BpmnValidationException.class,
+                                () -> validator.validate(xml, model));
+
+                assertTrue(ex.getErrors().stream().anyMatch(e -> e.contains("description must be at most 500 characters")));
         }
 
         @Test

@@ -5,9 +5,11 @@ import java.math.BigDecimal;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 public record QuoteLineItemCreateDto(
     @NotBlank(message = "Product description is required")
+    @Size(max = 255, message = "Product description must be at most 255 characters")
     String productDescription,
     
     @NotNull(message = "Quantity is required")

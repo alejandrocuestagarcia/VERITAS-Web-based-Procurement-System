@@ -65,9 +65,9 @@ export class UserCreateComponent implements OnInit {
 
   private initForm(): void {
     this.userForm = this.fb.group({
-      name: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(120)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
+      password: ['', [Validators.required, Validators.maxLength(72)]],
       role: [null, Validators.required],
       teamId: [null],
       departmentId: [null],

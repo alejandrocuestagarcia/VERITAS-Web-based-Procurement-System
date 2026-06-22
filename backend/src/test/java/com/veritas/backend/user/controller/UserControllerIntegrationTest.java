@@ -278,6 +278,19 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
   @Test
   @WithMockUser(roles = "FINANCE_OFFICER")
+  void UserCreation_InvalidNameLength_ReturnsBadRequest() throws Exception {
+    UserCreationRequestDto request = new UserCreationRequestDto(
+        "invalidname@veritas.com", "A".repeat(121), "securePassword123",
+        UserRole.ADMINISTRATOR, null, null, false);
+
+    mockMvc.perform(post("/api/v1/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
   void UserCreation_DuplicateEmail_ReturnsConflict() throws Exception {
     UserCreationRequestDto request1 = new UserCreationRequestDto(
         "duplicate@veritas.com", "First User", "securePassword123",
@@ -419,6 +432,26 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(edit)))
             .andExpect(status().isConflict());
+  }
+
+  @Test
+  @WithMockUser(roles = "FINANCE_OFFICER")
+  void UserEdit_InvalidNameLength_ReturnsBadRequest() throws Exception {
+    User requester = User.builder()
+            .name("Test Requester")
+            .email("requester@test.com")
+            .team(testTeam)
+            .isActive(true)
+            .passwordHash(encoder.encode("password"))
+            .role(UserRole.REQUESTER)
+            .build();
+    userRepository.save(requester);
+
+    UserEditDto edit = new UserEditDto(null, "A".repeat(121), null, null, null, null);
+    mockMvc.perform(patch("/api/v1/users/" + requester.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(edit)))
+            .andExpect(status().isBadRequest());
   }
 
   @Test

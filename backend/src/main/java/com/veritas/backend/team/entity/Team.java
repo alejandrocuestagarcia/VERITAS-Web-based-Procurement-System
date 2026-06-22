@@ -33,7 +33,8 @@ public class Team {
     private String name;
 
     @NotBlank(message = "Team description is required")
-    @Size(max = 500, message = "Team description must be at most 500 characters")
+    @Size(max = 3000, message = "Team description must be at most 3000 characters")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @OneToOne(fetch = FetchType.LAZY)

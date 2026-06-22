@@ -164,6 +164,7 @@ public class BpmnValidator {
         // --- Structural validations ---
         Process process = validateProcessPresence(modelInstance, result);
         validateProcessName(process, result);
+        validateProcessDescription(modelInstance, result);
 
         Collection<StartEvent> startEvents = modelInstance.getModelElementsByType(StartEvent.class);
         Collection<EndEvent> endEvents = modelInstance.getModelElementsByType(EndEvent.class);
@@ -216,6 +217,7 @@ public class BpmnValidator {
         validateTaskNames(tasks, result);
         validateTaskNameUniqueness(tasks, result);
         validateAssigneeRoles(tasks, result);
+        validateTaskDescriptions(tasks, result);
 
         // --- Sequence flow / transition validations ---
         validateConditionExpressions(sequenceFlows, result);
@@ -280,6 +282,20 @@ public class BpmnValidator {
         String name = process.getName();
         if (name == null || name.isBlank()) {
             result.addError("Workflow name must not be blank");
+        } else if (name.length() > 120) {
+            result.addError("Workflow name must be at most 120 characters");
+        }
+    }
+
+    private void validateProcessDescription(BpmnModelInstance modelInstance, BpmnValidationResult result) {
+        if (modelInstance == null) return;
+        Optional<Documentation> documentation = modelInstance.getModelElementsByType(Documentation.class)
+                .stream().findFirst();
+        if (documentation.isPresent()) {
+            String text = documentation.get().getTextContent();
+            if (text != null && text.length() > 1000) {
+                result.addError("Workflow description must be at most 1000 characters");
+            }
         }
     }
 
@@ -683,6 +699,22 @@ public class BpmnValidator {
                         }
                     } catch (IllegalArgumentException e) {
                         result.addError("Invalid role assigned in BPMN: " + roleName);
+                    }
+                }
+            }
+        }
+    }
+
+    private void validateTaskDescriptions(Collection<Task> tasks, BpmnValidationResult result) {
+        for (Task task : tasks) {
+            for (Documentation doc : task.getDocumentations()) {
+                String text = doc.getTextContent();
+                if (text != null && !text.isBlank()
+                        && !text.startsWith(ASSIGNEE_PREFIX)
+                        && !text.startsWith("[AUTO_APPROVE]")
+                        && !text.startsWith(TEAM_LEADER_PREFIX)) {
+                    if (text.length() > 500) {
+                        result.addError("Step '" + getNodeName(task) + "' description must be at most 500 characters");
                     }
                 }
             }

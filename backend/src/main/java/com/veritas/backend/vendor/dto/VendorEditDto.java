@@ -10,7 +10,7 @@ public record VendorEditDto(
         @Size(max = 60, message = "Tax ID must be at most 60 characters")
         String taxId,
 
-        @Size(max = 500, message = "Description must be at most 500 characters")
+        @Size(max = 3000, message = "Description must be at most 3000 characters")
         String description,
 
         @Size(max = 120, message = "Primary contact name must be at most 120 characters")

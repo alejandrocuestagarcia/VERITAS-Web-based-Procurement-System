@@ -13,6 +13,9 @@
           <mat-error *ngIf="projectForm.get('name')?.hasError('required') && projectForm.get('name')?.touched">
             Project name is required
           </mat-error>
+          <mat-error *ngIf="projectForm.get('name')?.hasError('maxlength') && projectForm.get('name')?.touched">
+            Project name must be at most 120 characters
+          </mat-error>
         </mat-form-field>
       </app-shared-form-field>
 

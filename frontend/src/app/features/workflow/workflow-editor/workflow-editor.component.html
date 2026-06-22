@@ -43,6 +43,9 @@
                 <mat-error *ngIf="workflowForm.get('title')?.hasError('required') && workflowForm.get('title')?.touched">
                   Workflow Title is required
                 </mat-error>
+                <mat-error *ngIf="workflowForm.get('title')?.hasError('maxlength') && workflowForm.get('title')?.touched">
+                  Workflow Title must be at most 120 characters
+                </mat-error>
               </mat-form-field>
             </div>
 
@@ -391,7 +394,11 @@
               <textarea class="w-full p-3 text-sm bg-white border border-[#e4e7ef] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-y"
                 [ngModelOptions]="{standalone: true}"
                 [ngModel]="currentTask.description" (ngModelChange)="updateTaskProperty('description', $event)"
+                maxlength="500"
                 placeholder="Enter custom instructions for this task..."></textarea>
+              <div class="text-[10px] text-slate-400 text-right px-1 mt-1 font-medium">
+                {{ (currentTask.description || '').length }}/500 characters
+              </div>
             </div>
             <div *ngIf="!isEditable" class="p-4 bg-white border border-[#e4e7ef] rounded-xl shadow-sm">
               <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{ currentTask.description || 'No instructions provided' }}</p>
@@ -410,6 +417,9 @@
       <textarea matInput formControlName="description"
         placeholder="Enter optional description or notes about this workflow..." cdkTextareaAutosize
         cdkAutosizeMinRows="2" cdkAutosizeMaxRows="5"></textarea>
+      <mat-error *ngIf="workflowForm.get('description')?.hasError('maxlength') && workflowForm.get('description')?.touched">
+        Workflow Description must be at most 1000 characters
+      </mat-error>
     </mat-form-field>
   </div>
 

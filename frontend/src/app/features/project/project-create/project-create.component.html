@@ -11,6 +11,9 @@
           <mat-error *ngIf="projectForm.get('name')?.hasError('required') && projectForm.get('name')?.touched">
             Project name is required
           </mat-error>
+          <mat-error *ngIf="projectForm.get('name')?.hasError('maxlength') && projectForm.get('name')?.touched">
+            Project name must be at most 120 characters
+          </mat-error>
         </mat-form-field>
       </app-shared-form-field>
 
@@ -20,6 +23,9 @@
           <input matInput formControlName="projectKey" placeholder="e.g. SKY-001">
           <mat-error *ngIf="projectForm.get('projectKey')?.hasError('required') && projectForm.get('projectKey')?.touched">
             Project key is required
+          </mat-error>
+          <mat-error *ngIf="projectForm.get('projectKey')?.hasError('maxlength') && projectForm.get('projectKey')?.touched">
+            Project key must be at most 120 characters
           </mat-error>
         </mat-form-field>
       </app-shared-form-field>

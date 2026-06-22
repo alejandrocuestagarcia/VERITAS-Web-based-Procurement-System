@@ -17,7 +17,7 @@ public class TeamCreateDto {
     private String name;
 
     @NotBlank(message = "Team description is required")
-    @Size(max = 500, message = "Team description must be at most 500 characters")
+    @Size(max = 3000, message = "Team description must be at most 3000 characters")
     private String description;
 
     @NotNull(message = "Department is required")

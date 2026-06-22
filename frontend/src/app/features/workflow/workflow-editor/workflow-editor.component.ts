@@ -237,8 +237,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     @Optional() public dialogRef: MatDialogRef<WorkflowEditorComponent>
   ) {
     this.workflowForm = this.fb.group({
-      title: ['', Validators.required],
-      description: [''],
+      title: ['', [Validators.required, Validators.maxLength(120)]],
+      description: ['', Validators.maxLength(1000)],
       departmentId: [null]
     });
   }

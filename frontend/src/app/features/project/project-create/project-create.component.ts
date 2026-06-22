@@ -43,8 +43,8 @@ export class ProjectCreateComponent implements OnInit {
 
   private initForm(): void {
     this.projectForm = this.fb.group({
-      name: ['', Validators.required],
-      projectKey: ['', [Validators.required]],
+      name: ['', [Validators.required, Validators.maxLength(120)]],
+      projectKey: ['', [Validators.required, Validators.maxLength(120)]],
       teamId: [null, Validators.required],
       startDate: [null, [Validators.required, this.dateNotInPastValidator()]],
       endDate: [null, [Validators.required, this.dateNotInPastValidator()]],
@@ -77,7 +77,12 @@ export class ProjectCreateComponent implements OnInit {
         },
         error: err => {
           this.loading = false;
-          this.toastService.showError(extractErrorMessage(err, 'Failed to create project'));
+
+          const message = err?.error && typeof err.error === 'object' && !Array.isArray(err.error)
+            ? Object.values(err.error).join(', ')
+            : err?.error?.message || err?.error || 'Unknown error';
+
+          this.toastService.showError('Failed: ' + message);
         }
       })
     } else {
