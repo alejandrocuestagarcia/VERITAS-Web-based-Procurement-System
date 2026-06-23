@@ -30,28 +30,4 @@ public class TransitionRule {
 
     @Column(name = "advanced_rule")
     private String advancedRule;
-
-    public boolean getIsPdfRequired() {
-        return this.isPdfRequired;
-    }
-
-    public boolean getIsCsvRequired() {
-        return this.isCsvRequired;
-    }
-
-    public boolean getIsImageRequired() {
-        return this.isImageRequired;
-    }
-
-    public void setIsPdfRequired(boolean isPdfRequired) {
-        this.isPdfRequired = isPdfRequired;
-    }
-
-    public void setIsCsvRequired(boolean isCsvRequired) {
-        this.isCsvRequired = isCsvRequired;
-    }
-
-    public void setIsImageRequired(boolean isImageRequired) {
-        this.isImageRequired = isImageRequired;
-    }
 }

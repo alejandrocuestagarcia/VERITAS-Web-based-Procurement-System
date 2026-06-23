@@ -150,9 +150,6 @@ public class DatabaseSeeder implements ApplicationRunner {
             finishedItem.setUnit(RequestItemUnit.PIECES);
             finishedItem.setDescription("High-throughput firewall license pack");
 
-            basicFinishedReq.setState(RequestStatus.FINISHED);
-            basicFinishedReq.setClosedReason(ClosedReason.COMPLETED);
-            requestRepository.save(basicFinishedReq);
             seedMockRequest(
                     "Core Edge Firewall Requisition",
                     "Acquisition of high-throughput firewall licenses to secure core edge network endpoints and prevent unauthorized traffic.",

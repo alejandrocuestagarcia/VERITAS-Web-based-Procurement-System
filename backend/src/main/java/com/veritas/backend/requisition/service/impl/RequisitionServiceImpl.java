@@ -930,7 +930,11 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     private void freeRequestBudget(Request request) {
-        BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend();
+        if (request.getBudget() == null) {
+            return;
+        }
+        BigDecimal requestCommittedSpent = request.getBudget().getCommittedSpend() != null 
+                ? request.getBudget().getCommittedSpend() : BigDecimal.ZERO;
         InternalBudget budget = request.getBudget();
         while (budget != null) {
             BigDecimal currentCommitted = budget.getCommittedSpend() != null ? budget.getCommittedSpend() : BigDecimal.ZERO;
