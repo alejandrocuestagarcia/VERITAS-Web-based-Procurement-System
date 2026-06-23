@@ -53,37 +53,40 @@ public class AuthController {
 
     @Operation(summary = "Request password reset", description = "Request a password reset link by email.")
     @PostMapping(value = "/passwordreset", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> requestPasswordReset(@Valid @RequestBody PasswordResetRequestDto request) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequestDto request) {
         log.info("POST /auth/passwordreset");
         passwordResetService.requestReset(request.email());
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-            .body("If the email exists, a reset link has been sent.");
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Confirm password reset", description = "Reset password using a valid token.")
     @PostMapping(value = "/passwordreset/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmDto request) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmDto request) {
         log.info("POST /auth/passwordreset/confirm");
         passwordResetService.confirmReset(request.token(), request.newPassword());
-        return ResponseEntity.ok("Password reset successful");
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Admin Password Reset", description = "Allows an admin to set a temporary password for a user.")
     @PostMapping(value = "/admin/reset-password/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsAdministrator
-    public ResponseEntity<String> adminResetPassword(@PathVariable Long id, @RequestBody String tempPassword) {
+    public ResponseEntity<Void> adminResetPassword(@PathVariable Long id, @RequestBody String tempPassword) {
         log.info("POST /auth/admin/reset-password/{}", id);
         authService.adminResetPassword(id, tempPassword);
-        return ResponseEntity.ok("Password reset successful");
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Complete Password Change", description = "Finalizes the mandatory password reset process for a user.")
     @PostMapping(value = "/complete-password-change", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsRequester
-    public ResponseEntity<String> completePasswordChange(@RequestBody String newPassword) {
+    public ResponseEntity<Void> completePasswordChange(@RequestBody String newPassword) {
         log.info("POST /auth/complete-password-change");
         authService.completePasswordChange(newPassword);
-        return ResponseEntity.ok("Password reset successful");
+        return ResponseEntity.noContent().build();
     }
 }
 

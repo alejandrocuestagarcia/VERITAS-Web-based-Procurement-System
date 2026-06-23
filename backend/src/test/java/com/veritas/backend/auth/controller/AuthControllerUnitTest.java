@@ -87,49 +87,45 @@ class AuthControllerUnitTest {
     }
 
     @Test
-    void requestPasswordReset_ValidRequest_ReturnsAccepted() throws Exception {
+    void requestPasswordReset_ValidRequest_ReturnsNoContent() throws Exception {
         PasswordResetRequestDto request = new PasswordResetRequestDto("test@veritas.com");
 
         mockMvc.perform(post("/auth/passwordreset")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isAccepted())
-                .andExpect(content().string("If the email exists, a reset link has been sent."));
+                .andExpect(status().isNoContent());
 
         verify(passwordResetService).requestReset("test@veritas.com");
     }
 
     @Test
-    void confirmPasswordReset_ValidRequest_ReturnsOk() throws Exception {
+    void confirmPasswordReset_ValidRequest_ReturnsNoContent() throws Exception {
         PasswordResetConfirmDto request = new PasswordResetConfirmDto("token", "new_password");
 
         mockMvc.perform(post("/auth/passwordreset/confirm")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Password reset successful"));
+                .andExpect(status().isNoContent());
 
         verify(passwordResetService).confirmReset("token", "new_password");
     }
 
     @Test
-    void adminResetPassword_ValidRequest_ReturnsOk() throws Exception {
+    void adminResetPassword_ValidRequest_ReturnsNoContent() throws Exception {
         mockMvc.perform(post("/auth/admin/reset-password/{id}", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("tempPassword"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Password reset successful"));
+                .andExpect(status().isNoContent());
 
         verify(authService).adminResetPassword(1L, "tempPassword");
     }
 
     @Test
-    void completePasswordChange_ValidRequest_ReturnsOk() throws Exception {
+    void completePasswordChange_ValidRequest_ReturnsNoContent() throws Exception {
         mockMvc.perform(post("/auth/complete-password-change")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("newPassword"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Password reset successful"));
+                .andExpect(status().isNoContent());
 
         verify(authService).completePasswordChange("newPassword");
     }

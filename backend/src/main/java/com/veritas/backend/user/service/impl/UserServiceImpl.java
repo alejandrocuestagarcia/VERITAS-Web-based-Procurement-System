@@ -255,6 +255,8 @@ public class UserServiceImpl implements UserService {
       actualUser.setIsActive(false);
       actualUser.setNotificationEmailEnabled(false);
       actualUser.setDeletedAt(LocalDateTime.now());
+      actualUser.setName("Inactive");
+      actualUser.setEmail("inactive_" + actualUser.getId() + "@veritas.com");
 
       if (fallbackUserId != null) {
         User fallbackUser = userRepository.findById(fallbackUserId)
