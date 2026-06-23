@@ -22,7 +22,7 @@ public class InternalBudget {
     @Column(name = "budget_id")
     private Long id;
 
-    @Column(name = "budget_name")
+    @Column(name = "budget_name", nullable = false)
     private String budgetName;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -47,6 +47,6 @@ public class InternalBudget {
     private BigDecimal safetyBuffer = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "budget_type")
+    @Column(name = "budget_type", nullable = false)
     private BudgetType budgetType;
 }

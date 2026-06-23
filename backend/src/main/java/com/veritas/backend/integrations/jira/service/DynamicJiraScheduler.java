@@ -64,7 +64,7 @@ public class DynamicJiraScheduler {
 
     public void scheduleConfig(JiraConfig config) {
         cancelConfig(config.getId());
-        if (config.getSyncIntervalMinutes() != null && config.getSyncIntervalMinutes() > 0) {
+        if (config.getSyncIntervalMinutes() > 0) {
             Runnable task = () -> {
                 log.info("Running scheduled sync for config: {}", config.getName());
                 syncService.runManualSync(config.getId());

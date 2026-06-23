@@ -49,22 +49,22 @@ public class Request {
     private VendorEvaluation vendorEvaluation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User user;
 
-    @Column(name = "request_key")
+    @Column(name = "request_key", nullable = false, unique = true)
     private String requestKey;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
-    @JoinColumn(name = "budget_id")
+    @JoinColumn(name = "budget_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private InternalBudget budget;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
+    @JoinColumn(name = "team_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Team team;
@@ -78,13 +78,13 @@ public class Request {
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workflow_definition_id")
+    @JoinColumn(name = "workflow_definition_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WorkflowDefinition workflowDefinition;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_step_id")
+    @JoinColumn(name = "current_step_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WorkflowStep currentStep;
@@ -95,26 +95,24 @@ public class Request {
     @EqualsAndHashCode.Exclude
     private User assignee;
 
-    @Column(name = "total_quantity")
-    private Integer totalQuantity;
+    @Column(name = "total_quantity", nullable = false)
+    private int totalQuantity = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
+    @JoinColumn(name = "project_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Project project;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
+        this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -127,6 +125,7 @@ public class Request {
     private LocalDateTime deletedAt;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false)
     private Priority priority;
 
     @Column(name = "jira_issue_key", unique = true)
@@ -159,12 +158,17 @@ public class Request {
     private String rejectionReason;
 
     @Column(name = "revision_required", nullable = false)
-    private Boolean revisionRequired = false;
+    private boolean revisionRequired = false;
+
+    public boolean getRevisionRequired() {
+        return this.revisionRequired;
+    }
+
+    public void setRevisionRequired(boolean revisionRequired) {
+        this.revisionRequired = revisionRequired;
+    }
 
     public Quote getSelectedQuote() {
-        if (quotes == null) {
-            return null;
-        }
         return quotes.stream()
                 .filter(Quote::isSelected)
                 .findFirst()

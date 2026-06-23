@@ -13,7 +13,7 @@ export class RejectDialogComponent {
 
   constructor(
     public dialogRef: MatDialogRef<RejectDialogComponent>,
-    @Optional() @Inject(MAT_DIALOG_DATA) public data: { isRevert?: boolean }
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: { isRevert?: boolean } | null
   ) {}
 
   onCancel(): void {

@@ -22,7 +22,7 @@ public class Invoice {
     private Long invoiceId;
 
     @OneToOne
-    @JoinColumn(name = "request_id")
+    @JoinColumn(name = "request_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Request request;
@@ -33,17 +33,18 @@ public class Invoice {
     private List<Attachment> attachments = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vendor_id")
+    @JoinColumn(name = "vendor_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Vendor vendor;
 
-    @Column(name = "invoice_number")
+    @Column(name = "invoice_number", nullable = false)
     private String invoiceNumber;
 
-    @Column(name = "invoice_date")
+    @Column(name = "invoice_date", nullable = false)
     private LocalDate invoiceDate;
 
+    @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
     @Column(name = "currency", nullable = false, length = 3)
@@ -51,13 +52,23 @@ public class Invoice {
     private Currency currency;
     
     private LocalDate dueDate;
-    private Boolean isPaid = false;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid = false;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
     @Column(name = "paid_amount_eur")
     private BigDecimal paidAmountEur;
+
+    public boolean getIsPaid() {
+        return this.isPaid;
+    }
+
+    public void setIsPaid(boolean isPaid) {
+        this.isPaid = isPaid;
+    }
 
     @PrePersist
     protected void onCreate() {

@@ -60,26 +60,50 @@ public class User implements UserDetails {
     @EqualsAndHashCode.Exclude
     private Department department;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @Column(name = "is_active")
-    private Boolean isActive;
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private boolean isActive = true;
 
     @Column(name = "requires_password_change", nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
-    private Boolean requiresPasswordChange = false;
+    private boolean requiresPasswordChange = false;
 
     @Column(name = "notification_email_enabled", nullable = false, columnDefinition = "boolean default true")
     @Builder.Default
-    private Boolean notificationEmailEnabled = true;
+    private boolean notificationEmailEnabled = true;
 
+    public boolean getIsActive() {
+        return this.isActive;
+    }
+
+    public boolean getRequiresPasswordChange() {
+        return this.requiresPasswordChange;
+    }
+
+    public boolean getNotificationEmailEnabled() {
+        return this.notificationEmailEnabled;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public void setRequiresPasswordChange(boolean requiresPasswordChange) {
+        this.requiresPasswordChange = requiresPasswordChange;
+    }
+
+    public void setNotificationEmailEnabled(boolean notificationEmailEnabled) {
+        this.notificationEmailEnabled = notificationEmailEnabled;
+    }
 
     @PrePersist
     protected void onCreate() {
@@ -110,6 +134,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return Boolean.TRUE.equals(this.isActive);
+        return this.isActive;
     }
 }

@@ -25,7 +25,7 @@ public class NotificationEmailServiceImpl implements NotificationEmailService {
     @Override
     @Async
     public void sendNotificationEmail(User recipient, Request request, NotificationType type, String message) {
-        if (!Boolean.TRUE.equals(recipient.getNotificationEmailEnabled())) {
+        if (!recipient.getNotificationEmailEnabled()) {
             log.info("Skipping notification email for {} — email notifications disabled by user", recipient.getEmail());
             return;
         }

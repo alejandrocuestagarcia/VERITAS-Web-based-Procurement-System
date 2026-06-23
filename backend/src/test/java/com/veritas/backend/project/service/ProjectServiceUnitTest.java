@@ -1,6 +1,7 @@
 package com.veritas.backend.project.service;
 
 import com.veritas.backend.budget.entity.InternalBudget;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
@@ -239,13 +240,21 @@ class ProjectServiceUnitTest {
                 .id(projectId)
                 .name("Old Project Name")
                 .team(team)
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(10000.00))
+                        .build())
                 .build();
 
         Project savedProject = Project.builder()
                 .id(projectId)
                 .name("Updated Project Name")
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(50000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(50000.00))
+                        .build())
                 .build();
 
         ProjectDto expectedDto = new ProjectDto(projectId, "Updated Project Name", null, null, BigDecimal.valueOf(50000.00), null, null, null, null,null, null, null);
@@ -333,7 +342,10 @@ class ProjectServiceUnitTest {
         Department department = Department.builder()
                 .departmentId(1L)
                 .name("Engineering")
-                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(60000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(60000.00))
+                        .build())
                 .build();
         Team team = Team.builder().teamId(10L).department(department).build();
 
@@ -341,14 +353,22 @@ class ProjectServiceUnitTest {
                 .id(projectId)
                 .name("Old Project Name")
                 .team(team)
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(10000.00))
+                        .build())
                 .build();
 
         Project otherProject = Project.builder()
                 .id(2L)
                 .name("Other Project")
                 .team(team)
-                .internalBudget(InternalBudget.builder().budgetName("Other Budget").totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Other Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(20000.00))
+                        .build())
                 .build();
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
@@ -365,14 +385,20 @@ class ProjectServiceUnitTest {
         Department department1 = Department.builder()
                 .departmentId(1L)
                 .name("Engineering")
-                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(60000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(60000.00))
+                        .build())
                 .build();
         Team team1 = Team.builder().teamId(10L).department(department1).build();
 
         Department department2 = Department.builder()
                 .departmentId(2L)
                 .name("Marketing")
-                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(30000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetType(BudgetType.DEPARTMENT)
+                        .totalAmount(BigDecimal.valueOf(30000.00))
+                        .build())
                 .build();
         Team team2 = Team.builder().teamId(20L).department(department2).build();
 
@@ -380,14 +406,22 @@ class ProjectServiceUnitTest {
                 .id(projectId)
                 .name("Old Project Name")
                 .team(team1)
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(20000.00))
+                        .build())
                 .build();
 
         Project marketingProject = Project.builder()
                 .id(3L)
                 .name("Marketing Project")
                 .team(team2)
-                .internalBudget(InternalBudget.builder().budgetName("Marketing Budget").totalAmount(BigDecimal.valueOf(20000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Marketing Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(20000.00))
+                        .build())
                 .build();
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));

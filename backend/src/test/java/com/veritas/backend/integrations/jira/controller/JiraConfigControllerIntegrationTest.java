@@ -12,6 +12,9 @@ import com.veritas.backend.BaseDBIntegrationTest;
 import com.veritas.backend.integrations.jira.dto.JiraConfigDto;
 import com.veritas.backend.integrations.jira.repository.JiraConfigRepository;
 import com.veritas.backend.integrations.jira.entity.JiraConfig;
+import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.util.RequestFactory;
+import com.veritas.backend.util.UserFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -39,11 +42,21 @@ class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
     @Autowired
     private JiraConfigRepository repository;
 
+    @Autowired
+    private UserFactory userFactory;
 
+    @Autowired
+    private RequestFactory requestFactory;
 
     @BeforeEach
     void setUp() {
         repository.deleteAll();
+
+        var team = userFactory.createTeam("Jira Fallback Team");
+        var user = userFactory.createUser("jira-fallback@veritas.com", team, UserRole.REQUESTER);
+        var project = requestFactory.createProject("Jira Fallback Project", "JFP", team);
+        var workflowStep = requestFactory.createWorkflowWithStartStep("Jira Fallback Workflow");
+        var workflow = workflowStep.getWorkflowDefinition();
 
         JiraConfig config1 = new JiraConfig();
         config1.setName("Production Config");
@@ -53,6 +66,9 @@ class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
         config1.setJql("project = PROD");
         config1.setSyncIntervalMinutes(60);
         config1.setCustomFieldId("customfield_1001");
+        config1.setFallbackUser(user);
+        config1.setFallbackProject(project);
+        config1.setFallbackWorkflow(workflow);
 
         JiraConfig config2 = new JiraConfig();
         config2.setName("Dev Environment");
@@ -62,6 +78,9 @@ class JiraConfigControllerIntegrationTest extends BaseDBIntegrationTest {
         config2.setJql("project = DEV");
         config2.setSyncIntervalMinutes(30);
         config2.setCustomFieldId("customfield_1002");
+        config2.setFallbackUser(user);
+        config2.setFallbackProject(project);
+        config2.setFallbackWorkflow(workflow);
 
         repository.saveAll(List.of(config1, config2));
     }

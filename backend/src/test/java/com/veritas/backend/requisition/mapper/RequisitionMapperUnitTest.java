@@ -71,25 +71,6 @@ class RequisitionMapperUnitTest {
     }
 
     @Test
-    void toDto_NullCurrentStep_ReturnsDraftStatus() {
-        Request request = buildRequest();
-        request.setCurrentStep(null);
-
-        RequisitionDto dto = mapper.toDto(request);
-        assertEquals("DRAFT", dto.status());
-    }
-
-    @Test
-    void toDto_NullCurrentStepWithJiraKey_ReturnsJiraSyncedStatus() {
-        Request request = buildRequest();
-        request.setCurrentStep(null);
-        request.setJiraIssueKey("JIRA-123");
-
-        RequisitionDto dto = mapper.toDto(request);
-        assertEquals("Jira Synced", dto.status());
-    }
-
-    @Test
     void toDto_ResponsibleRoleEdgeCases() {
         WorkflowStep step = new WorkflowStep();
         step.setRole(UserRole.FINANCE_OFFICER);
@@ -104,18 +85,6 @@ class RequisitionMapperUnitTest {
             },
             () -> {
                 step.setRole(null);
-                RequisitionDto dto = mapper.toDto(request);
-                assertNull(dto.responsibleRole());
-            },
-            () -> {
-                request.setCurrentStep(null);
-                request.setJiraIssueKey("JIRA-123");
-                RequisitionDto dto = mapper.toDto(request);
-                assertEquals("REQUESTER", dto.responsibleRole());
-            },
-            () -> {
-                request.setCurrentStep(null);
-                request.setJiraIssueKey(null);
                 RequisitionDto dto = mapper.toDto(request);
                 assertNull(dto.responsibleRole());
             }
@@ -187,11 +156,6 @@ class RequisitionMapperUnitTest {
                 step.setDescription(null);
                 RequisitionDto dto = mapper.toDto(request);
                 assertNull(dto.workflowStepDescription());
-            },
-            () -> {
-                request.setCurrentStep(null);
-                RequisitionDto dto = mapper.toDto(request);
-                assertNull(dto.workflowStepDescription());
             }
         );
     }
@@ -200,11 +164,6 @@ class RequisitionMapperUnitTest {
     void toDto_resolveSelectedVendorEdgeCases() {
         Request request = buildRequest();
         assertAll(
-            () -> {
-                request.setQuotes(null);
-                assertNull(mapper.resolveSelectedVendorId(request));
-                assertNull(mapper.resolveSelectedVendorName(request));
-            },
             () -> {
                 request.setQuotes(Collections.emptyList());
                 assertNull(mapper.resolveSelectedVendorId(request));
@@ -242,6 +201,7 @@ class RequisitionMapperUnitTest {
     @Test
     void toDto_NullAssociationFields_MapsCorrectly() {
         Request request = new Request();
+        request.setCurrentStep(new WorkflowStep());
         request.setProject(null);
         request.setTeam(null);
         request.setUser(null);
@@ -252,7 +212,7 @@ class RequisitionMapperUnitTest {
         assertAll(
             () -> assertNull(dto.projectName()),
             () -> assertNull(dto.projectKey()),
-            () -> assertEquals("N/A", dto.workflowName()),
+            () -> assertNull(dto.workflowName()),
             () -> assertNull(dto.teamName()),
             () -> assertNull(dto.requesterName()),
             () -> assertNull(dto.requesterId()),
@@ -267,6 +227,7 @@ class RequisitionMapperUnitTest {
     @Test
     void toDto_NullLists_MapsNullLists() {
         Request request = new Request();
+        request.setCurrentStep(new WorkflowStep());
         request.setItems(null);
         request.setAttachments(null);
 
@@ -309,6 +270,11 @@ class RequisitionMapperUnitTest {
         request.setAssignee(assignee);
         request.setTeam(requestTeam);
         request.setWorkflowDefinition(workflow);
+
+        WorkflowStep step = new WorkflowStep();
+        step.setName("Start");
+        step.setRole(UserRole.REQUESTER);
+        request.setCurrentStep(step);
 
         RequisitionDto dto = mapper.toDto(request);
         assertAll(
@@ -395,6 +361,11 @@ class RequisitionMapperUnitTest {
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(null);
         request.setWorkflowDefinition(workflow);
+
+        WorkflowStep step = new WorkflowStep();
+        step.setName(null);
+        step.setRole(null);
+        request.setCurrentStep(step);
 
         RequisitionDto dto = mapper.toDto(request);
         assertAll(

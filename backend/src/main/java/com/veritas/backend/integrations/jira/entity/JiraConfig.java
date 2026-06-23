@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import com.veritas.backend.config.JpaEncryptionConverter;
+import java.time.LocalDateTime;
 
 import static jakarta.persistence.FetchType.LAZY;
 
@@ -46,32 +47,32 @@ public class JiraConfig {
     private String jql;
 
     @Column(nullable = false)
-    private Integer syncIntervalMinutes;
+    private int syncIntervalMinutes;
 
     @Column(name = "custom_field_id", nullable = false)
     private String customFieldId;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "fallback_user_id")
+    @JoinColumn(name = "fallback_user_id", nullable = false)
     private User fallbackUser;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "fallback_project_id")
+    @JoinColumn(name = "fallback_project_id", nullable = false)
     private Project fallbackProject;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "fallback_workflow_id")
+    @JoinColumn(name = "fallback_workflow_id", nullable = false)
     private WorkflowDefinition fallbackWorkflow;
 
     @Column(name = "last_sync_time")
-    private java.time.LocalDateTime lastSyncTime;
+    private LocalDateTime lastSyncTime;
 
-    public java.time.LocalDateTime getNextSyncTime() {
-        if (syncIntervalMinutes == null || syncIntervalMinutes <= 0) {
+    public LocalDateTime getNextSyncTime() {
+        if (syncIntervalMinutes <= 0) {
             return null;
         }
         if (lastSyncTime == null) {
-            return java.time.LocalDateTime.now();
+            return LocalDateTime.now();
         }
         return lastSyncTime.plusMinutes(syncIntervalMinutes);
     }

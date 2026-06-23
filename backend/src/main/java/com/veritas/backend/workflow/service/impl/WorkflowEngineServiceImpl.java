@@ -111,7 +111,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 if (toStep.getWorkflowComponent() != WorkflowComponent.END_EVENT &&
                         toStep.getWorkflowComponent() != WorkflowComponent.BRANCH) {
                     if (toStep.getRole() == UserRole.REQUESTER) {
-                        if (Boolean.TRUE.equals(toStep.getIsTeamLeader())) {
+                        if (toStep.getIsTeamLeader()) {
                             if (request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null) {
                                 throw new WorkflowStateException("The requester's team leader could not be resolved because the requester does not belong to a team or the team has no team leader assigned.");
                             }
@@ -142,7 +142,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                     List<String> validationErrors = new ArrayList<>();
                     List<String> missingAttachments = new ArrayList<>();
 
-                    if (rule.getMinRequiredVendors() != null && rule.getMinRequiredVendors() > 0) {
+                    if (rule.getMinRequiredVendors() > 0) {
                         Long requestId = request.getRequestID();
                         List<Quote> quotes = requestId != null
                                 ? quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)
@@ -182,8 +182,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         entryTime = auditLogRepository
                                 .findFirstByRequestAndNewStepOrderByTimestampAsc(request, currentStep)
                                 .map(AuditLog::getTimestamp)
-                                .orElse(request.getCreatedAt() != null ? request.getCreatedAt()
-                                        : LocalDateTime.MIN);
+                                .orElse(request.getCreatedAt());
                     }
                     final LocalDateTime finalEntryTime = entryTime;
 
@@ -288,7 +287,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                 WorkflowComponent componentType = toStep.getWorkflowComponent();
 
                 //Automated Approval
-                if (componentType == WorkflowComponent.STEP && Boolean.TRUE.equals(nextStep.getIsAutomatedApproval())) {
+                if (componentType == WorkflowComponent.STEP && nextStep.getIsAutomatedApproval()) {
                     moveToNextStep(request, null, gatewayDepth + 1, null);
                 }
 
@@ -373,7 +372,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
     @Override
     public void checkAuthorization(Request request, User actor, WorkflowStep currentStep) {
-        if (Boolean.TRUE.equals(currentStep.getIsAutomatedApproval())) {
+        if (currentStep.getIsAutomatedApproval()) {
             return;
         }
 
@@ -384,7 +383,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
         User attachedActor = userRepository.findById(actor.getId()).orElse(actor);
 
         if (currentStep.getRole() != null) {
-            if (Boolean.TRUE.equals(currentStep.getIsTeamLeader())) {
+            if (currentStep.getIsTeamLeader()) {
                 if (request.getUser() == null || request.getUser().getTeam() == null || request.getUser().getTeam().getLeader() == null
                         || !request.getUser().getTeam().getLeader().getId().equals(attachedActor.getId())) {
                     throw new AccessDeniedException("Only the requester's team leader is authorized for this step.");
@@ -419,8 +418,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
 
     private void checkReqDeptMatchesUser(Request request, User attachedActor) {
         Long reqDept = null;
-        if (request.getUser() != null && request.getUser().getTeam() != null
-                && request.getUser().getTeam().getDepartment() != null) {
+        if (request.getUser().getTeam() != null) {
             reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
         }
         Long actorDept = attachedActor.getDepartment() != null ? attachedActor.getDepartment().getDepartmentId()

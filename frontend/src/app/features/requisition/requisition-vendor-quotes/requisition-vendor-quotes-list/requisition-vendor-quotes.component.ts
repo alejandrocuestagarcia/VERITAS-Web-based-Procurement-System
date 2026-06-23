@@ -64,7 +64,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       invoiceNumber: ['', [Validators.required, Validators.pattern(/.*\S.*/)]],
       totalAmount: [null, [Validators.required, Validators.min(0.01)]],
       dueDate: ['', Validators.required],
-      invoiceDate: ['']
+      invoiceDate: ['', Validators.required]
     });
   }
 
@@ -228,7 +228,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       totalAmount: formValue.totalAmount,
       currency: (this.selectedQuote?.currency as unknown as InvoiceCreateDtoCurrencyEnum) || InvoiceCreateDtoCurrencyEnum.Eur,
       dueDate: this.formatDate(formValue.dueDate),
-      invoiceDate: formValue.invoiceDate ? this.formatDate(formValue.invoiceDate) : undefined
+      invoiceDate: this.formatDate(formValue.invoiceDate)
     };
 
     this.requisitionService.createInvoice(

@@ -19,19 +19,35 @@ public class WorkflowDefinition {
     private WorkflowDefinition previousVersion;
     @Column(columnDefinition = "TEXT")
     private String description;
+
     @Column(nullable = false)
-    private Integer version;
+    private int version;
+
     @Column(nullable = false)
-    private Boolean isActive;
+    private boolean isActive;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String bpmnXml;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+    
     private LocalDateTime deactivatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private Department department;
+
+    public boolean getIsActive() {
+        return this.isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 
     @PrePersist
     protected void onCreate() {

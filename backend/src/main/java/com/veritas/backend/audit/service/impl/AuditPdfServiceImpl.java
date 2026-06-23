@@ -121,13 +121,13 @@ public class AuditPdfServiceImpl implements AuditPdfService {
         drawSectionTitle(ctx, "Request Details");
 
         String[][] metadata = {
-                {"Request Key", defaultStr(request.getRequestKey())},
-                {"Requester", request.getUser() != null ? defaultStr(request.getUser().getEmail()) : "N/A"},
-                {"Team", request.getTeam() != null ? defaultStr(request.getTeam().getName()) : "N/A"},
-                {"Project", request.getProject() != null ? defaultStr(request.getProject().getName()) : "N/A"},
-                {"Priority", request.getPriority() != null ? request.getPriority().name() : "N/A"},
-                {"State", request.getState() != null ? request.getState().name() : "N/A"},
-                {"Created", request.getCreatedAt() != null ? request.getCreatedAt().format(DATE_ONLY_FORMAT) : "N/A"},
+                {"Request Key", request.getRequestKey()},
+                {"Requester", request.getUser().getEmail()},
+                {"Team", request.getTeam().getName()},
+                {"Project", request.getProject().getName()},
+                {"Priority", request.getPriority().name()},
+                {"State", request.getState().name()},
+                {"Created", request.getCreatedAt().format(DATE_ONLY_FORMAT)},
         };
 
         for (String[] row : metadata) {
@@ -174,7 +174,7 @@ public class AuditPdfServiceImpl implements AuditPdfService {
             String[] rowData = {
                     defaultStr(item.getName()),
                     defaultStr(item.getDescription()),
-                    item.getQuantity() != null ? item.getQuantity().toString() : "",
+                    String.valueOf(item.getQuantity()),
                     item.getUnit() != null ? item.getUnit().toString() : "N/A"
             };
 

@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import com.veritas.backend.util.UserFactory;
+import com.veritas.backend.util.RequestFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -74,6 +76,12 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   private WorkflowStepRepository workflowStepRepository;
 
   @Autowired
+  private UserFactory userFactory;
+
+  @Autowired
+  private RequestFactory requestFactory;
+
+  @Autowired
   private JdbcTemplate jdbcTemplate;
 
   @Autowired
@@ -94,11 +102,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     userRepository.deleteAll();
     teamRepository.deleteAll();
 
-    testTeam = new Team();
-    testTeam.setName("Test Team");
-    testTeam.setDescription("Description Placeholder");
-
-    testTeam = teamRepository.save(testTeam);
+    testTeam = userFactory.createTeam("Test Team");
   }
 
   @AfterEach
@@ -193,27 +197,13 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   @WithMockUser(roles = "ADMINISTRATOR")
   void GetPendingRequisitions_UserHasRequests_ReturnsList() throws Exception {
 
-    User alex = User.builder()
-            .name("Alexander Sterling")
-            .email("alex@test.com")
-            .isActive(true)
-            .passwordHash(encoder.encode("password123"))
-            .role(UserRole.REQUESTER)
-            .build();
+    User alex = userFactory.createUser("alex@test.com", testTeam, UserRole.REQUESTER);
+    alex.setName("Alexander Sterling");
     alex = userRepository.save(alex);
 
-    WorkflowStep startStep = new WorkflowStep();
-    startStep.setName("Start");
-    startStep.setWorkflowComponent(WorkflowComponent.START_EVENT);
-    startStep = workflowStepRepository.save(startStep);
-
-    Request dummyRequest = new Request();
-    dummyRequest.setRequestName("New Laptop for Alex");
-    dummyRequest.setUser(alex);
+    Request dummyRequest = requestFactory.createValidRequest("New Laptop for Alex", alex);
     dummyRequest.setPriority(Priority.MEDIUM);
-    dummyRequest.setCurrentStep(startStep);
-
-    requestRepository.save(dummyRequest);
+    dummyRequest = requestRepository.save(dummyRequest);
 
     mockMvc.perform(get("/api/v1/users/" + alex.getId() + "/pending-requests"))
             .andExpect(status().isOk())
@@ -471,10 +461,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     testTeam.setLeader(user);
     teamRepository.save(testTeam);
 
-    Team newTeam = new Team();
-    newTeam.setName("Other Team");
-    newTeam.setDescription("IT Department Team");
-    teamRepository.save(newTeam);
+    Team newTeam = userFactory.createTeam("Other Team");
 
     UserEditDto edit = new UserEditDto(null, null, null, newTeam.getTeamId(), null, true);
     mockMvc.perform(patch("/api/v1/users/" + user.getId())

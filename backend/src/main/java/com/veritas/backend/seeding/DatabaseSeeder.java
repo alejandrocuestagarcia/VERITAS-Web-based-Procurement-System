@@ -142,27 +142,29 @@ public class DatabaseSeeder implements ApplicationRunner {
 
         // 7. Seed Initial Finished Request
         if (requestRepository.count() == 0) {
-            Request basicFinishedReq = new Request();
-            basicFinishedReq.setRequestName("Core Edge Firewall Requisition");
-            basicFinishedReq.setDescription(
-                    "Acquisition of high-throughput firewall licenses to secure core edge network endpoints and prevent unauthorized traffic.");
-            basicFinishedReq.setPriority(Priority.MEDIUM);
-            basicFinishedReq.setUser(requester);
-            basicFinishedReq.setProject(p1 != null ? p1 : p2);
-            basicFinishedReq.setTeam(teamOne);
-
             var workflowDef = workflowDefinitionRepository.findAll().stream().findFirst().orElse(null);
-            if (workflowDef != null) {
-                basicFinishedReq.setWorkflowDefinition(workflowDef);
-                WorkflowStep endStep = workflowStepRepository
-                        .findFirstByWorkflowDefinitionAndWorkflowComponent(workflowDef, WorkflowComponent.END_EVENT)
-                        .orElse(null);
-                basicFinishedReq.setCurrentStep(endStep);
-            }
 
-            basicFinishedReq.setState(RequestStatus.FINISHED);
-            basicFinishedReq.setClosedReason(ClosedReason.COMPLETED);
-            requestRepository.save(basicFinishedReq);
+            RequestItem finishedItem = new RequestItem();
+            finishedItem.setName("Core Edge Firewall Requisition Licenses");
+            finishedItem.setQuantity(1);
+            finishedItem.setUnit(RequestItemUnit.PIECES);
+            finishedItem.setDescription("High-throughput firewall license pack");
+
+            seedMockRequest(
+                    "Core Edge Firewall Requisition",
+                    "Acquisition of high-throughput firewall licenses to secure core edge network endpoints and prevent unauthorized traffic.",
+                    Priority.MEDIUM,
+                    requester,
+                    p1 != null ? p1 : p2,
+                    workflowDef,
+                    WorkflowComponent.END_EVENT,
+                    null,
+                    RequestStatus.FINISHED,
+                    null,
+                    new BigDecimal("1500.00"),
+                    List.of(finishedItem),
+                    null
+            );
             log.info("Seeded basic finished request");
         }
 
@@ -631,7 +633,7 @@ public class DatabaseSeeder implements ApplicationRunner {
 
         // Increment project request counter and set request key
         if (project != null) {
-            int currentCounter = project.getRequestCounter() != null ? project.getRequestCounter() : 0;
+            int currentCounter = project.getRequestCounter();
             project.setRequestCounter(currentCounter + 1);
             projectRepo.save(project);
             request.setRequestKey(project.getProjectKey() + "-" + project.getRequestCounter());

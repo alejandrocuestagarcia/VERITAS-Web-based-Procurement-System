@@ -30,6 +30,7 @@ public class Team {
 
     @NotBlank(message = "Team name is required")
     @Size(max = 120, message = "Team name must be at most 120 characters")
+    @Column(nullable = false)
     private String name;
 
     @NotBlank(message = "Team description is required")
@@ -46,14 +47,26 @@ public class Team {
 
     @Builder.Default
     @NotNull(message = "Active state is required")
-    private Boolean isActive = true;
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
     private LocalDateTime expiresAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Department department;
+
+    public boolean getIsActive() {
+        return this.isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 
     /*
     Safer pattern than inline initialization. It ensures that if a creation date or an active status
@@ -62,12 +75,6 @@ public class Team {
     */
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
+        this.createdAt = LocalDateTime.now();
     }
 }

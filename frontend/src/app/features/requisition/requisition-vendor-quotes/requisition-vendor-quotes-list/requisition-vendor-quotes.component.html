@@ -232,11 +232,14 @@
               </div>
 
               <div class="flex flex-col">
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice Date</label>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice Date *</label>
                 <mat-form-field appearance="outline" class="w-full">
                   <input matInput [matDatepicker]="invoiceDatePicker" formControlName="invoiceDate" placeholder="Choose invoice date">
                   <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker"></mat-datepicker-toggle>
                   <mat-datepicker #invoiceDatePicker></mat-datepicker>
+                  <mat-error *ngIf="invoiceForm.get('invoiceDate')?.hasError('required') && invoiceForm.get('invoiceDate')?.touched">
+                    Invoice date is required.
+                  </mat-error>
                 </mat-form-field>
               </div>
 

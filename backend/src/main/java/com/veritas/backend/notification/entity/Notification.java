@@ -30,11 +30,11 @@ public class Notification {
 
     private String message;
 
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     @Builder.Default
-    private Boolean isRead = false;
+    private boolean isRead = false;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,10 +46,16 @@ public class Notification {
     @Column(nullable = false)
     private NotificationType type;
 
+    public boolean getIsRead() {
+        return this.isRead;
+    }
+
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
+    }
+
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
+        createdAt = LocalDateTime.now();
     }
 }

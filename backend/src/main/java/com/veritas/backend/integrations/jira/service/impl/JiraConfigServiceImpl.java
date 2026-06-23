@@ -99,7 +99,7 @@ public class JiraConfigServiceImpl implements JiraConfigService {
 
             if (request.getState() == RequestStatus.FINISHED
                     && request.getInvoice() != null
-                    && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                    && request.getInvoice().getIsPaid()) {
                 continue;
             }
 
@@ -149,42 +149,26 @@ public class JiraConfigServiceImpl implements JiraConfigService {
     }
 
     private void resolveFallbackEntities(JiraConfigDto dto, JiraConfig entity) {
-        if (dto.fallbackUserId() != null) {
-            entity.setFallbackUser(userRepository.findById(dto.fallbackUserId())
-                .orElseThrow(() -> new EntityNotFoundException("Fallback user not found")));
-        } else {
-            entity.setFallbackUser(null);
-        }
+        entity.setFallbackUser(userRepository.findById(dto.fallbackUserId())
+            .orElseThrow(() -> new EntityNotFoundException("Fallback user not found")));
         
-        if (dto.fallbackProjectId() != null) {
-            entity.setFallbackProject(projectRepository.findById(dto.fallbackProjectId())
-                .orElseThrow(() -> new EntityNotFoundException("Fallback project not found")));
-        } else {
-            entity.setFallbackProject(null);
-        }
+        entity.setFallbackProject(projectRepository.findById(dto.fallbackProjectId())
+            .orElseThrow(() -> new EntityNotFoundException("Fallback project not found")));
         
-        if (dto.fallbackWorkflowId() != null) {
-            entity.setFallbackWorkflow(workflowDefinitionRepository.findById(dto.fallbackWorkflowId())
-                .orElseThrow(() -> new EntityNotFoundException("Fallback workflow not found")));
-        } else {
-            entity.setFallbackWorkflow(null);
+        entity.setFallbackWorkflow(workflowDefinitionRepository.findById(dto.fallbackWorkflowId())
+            .orElseThrow(() -> new EntityNotFoundException("Fallback workflow not found")));
+
+        var userTeam = entity.getFallbackUser().getTeam();
+        var projectTeam = entity.getFallbackProject().getTeam();
+        if (userTeam == null || !userTeam.getTeamId().equals(projectTeam.getTeamId())) {
+            throw new IllegalArgumentException("Fallback user and fallback project must belong to the same team.");
         }
 
-        if (entity.getFallbackUser() != null && entity.getFallbackProject() != null) {
-            var userTeam = entity.getFallbackUser().getTeam();
-            var projectTeam = entity.getFallbackProject().getTeam();
-            if (userTeam == null || !userTeam.getTeamId().equals(projectTeam.getTeamId())) {
-                throw new IllegalArgumentException("Fallback user and fallback project must belong to the same team.");
-            }
-        }
-
-        if (entity.getFallbackWorkflow() != null && entity.getFallbackProject() != null) {
-            var workflowDept = entity.getFallbackWorkflow().getDepartment();
-            var projectDept = entity.getFallbackProject().getTeam().getDepartment();
-            if (workflowDept != null && projectDept != null
-                    && !workflowDept.getDepartmentId().equals(projectDept.getDepartmentId())) {
-                throw new IllegalArgumentException("Fallback workflow must be global or belong to the same department as the fallback project.");
-            }
+        var workflowDept = entity.getFallbackWorkflow().getDepartment();
+        var projectDept = entity.getFallbackProject().getTeam().getDepartment();
+        if (workflowDept != null && projectDept != null
+                && !workflowDept.getDepartmentId().equals(projectDept.getDepartmentId())) {
+            throw new IllegalArgumentException("Fallback workflow must be global or belong to the same department as the fallback project.");
         }
     }
 

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.audit.service.impl.AuditServiceImpl;
+import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.integrations.currency.dto.CurrencyConversionResult;
@@ -218,6 +219,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             request.setDescription(mapDescription(issueRecord.fields().description()));
         }
 
+        Project resolvedProject = null;
         if (issueRecord.fields() != null && issueRecord.fields().project() != null) {
             JiraProjectRecord jiraProj = issueRecord.fields().project();
             Optional<Project> matchedProject = Optional.empty();
@@ -227,37 +229,27 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             if (matchedProject.isEmpty() && jiraProj.name() != null && !jiraProj.name().isBlank()) {
                 matchedProject = projectRepository.findByName(jiraProj.name());
             }
-
             if (matchedProject.isPresent()) {
-                Project project = matchedProject.get();
-                request.setProject(project);
-                if (request.getRequestKey() == null) {
-                    project.setRequestCounter(project.getRequestCounter() + 1);
-                    projectRepository.saveAndFlush(project);
-                    request.setRequestKey(project.getProjectKey() + "-" + project.getRequestCounter());
-                }
-            } else if (config.getFallbackProject() != null) {
-                Project fallbackProject = config.getFallbackProject();
-                request.setProject(fallbackProject);
-                if (request.getRequestKey() == null) {
-                    fallbackProject.setRequestCounter(fallbackProject.getRequestCounter() + 1);
-                    projectRepository.saveAndFlush(fallbackProject);
-                    request.setRequestKey(fallbackProject.getProjectKey() + "-" + fallbackProject.getRequestCounter());
-                }
+                resolvedProject = matchedProject.get();
             }
         }
 
+        if (resolvedProject == null) {
+            resolvedProject = config.getFallbackProject();
+        }
+
+        request.setProject(resolvedProject);
         if (request.getRequestKey() == null) {
-            request.setRequestKey(key);
+            resolvedProject.setRequestCounter(resolvedProject.getRequestCounter() + 1);
+            projectRepository.saveAndFlush(resolvedProject);
+            request.setRequestKey(resolvedProject.getProjectKey() + "-" + resolvedProject.getRequestCounter());
         }
 
         if (request.getWorkflowDefinition() == null) {
-            if (config.getFallbackWorkflow() != null) {
-                request.setWorkflowDefinition(config.getFallbackWorkflow());
-            }
+            request.setWorkflowDefinition(config.getFallbackWorkflow());
         }
 
-        if (request.getCurrentStep() == null && request.getWorkflowDefinition() != null) {
+        if (request.getCurrentStep() == null) {
             workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(
                     request.getWorkflowDefinition(), WorkflowComponent.START_EVENT
             ).ifPresent(request::setCurrentStep);
@@ -266,27 +258,34 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         if (request.getUser() == null && issueRecord.fields() != null && issueRecord.fields().reporter() != null) {
             String email = issueRecord.fields().reporter().emailAddress();
             if (email != null && !email.isBlank()) {
-                Optional<User> matchedUser = userRepository.findByEmail(email.toLowerCase().trim());
+                Optional<User> matchedUser = userRepository.findByEmailAndIsActiveTrue(email.toLowerCase().trim());
                 if (matchedUser.isPresent()) {
                     User user = matchedUser.get();
-                    request.setUser(user);
-                    request.setTeam(user.getTeam());
+                    if (user.getTeam() != null) {
+                        request.setUser(user);
+                        request.setTeam(user.getTeam());
+                    } else {
+                        log.warn("Skipping Jira reporter match for request {} because matched user {} has no team", key, user.getEmail());
+                    }
                 }
             }
         }
         
-        if (request.getUser() == null && config.getFallbackUser() != null) {
-            request.setUser(config.getFallbackUser());
-            request.setTeam(config.getFallbackUser().getTeam());
+        if (request.getUser() == null) {
+            User fallbackUser = config.getFallbackUser();
+            if (fallbackUser.getTeam() == null) {
+                throw new IllegalStateException("Fallback user has no team configured on Jira config ID " + config.getId());
+            }
+            request.setUser(fallbackUser);
+            request.setTeam(fallbackUser.getTeam());
         }
 
         if (request.getBudget() == null) {
             InternalBudget budget = new InternalBudget();
             budget.setBudgetName("Request: " + request.getRequestName());
+            budget.setBudgetType(BudgetType.REQUEST);
             budget.setTotalAmount(BigDecimal.ZERO);
-            if (request.getProject() != null) {
-                budget.setParentBudget(request.getProject().getInternalBudget());
-            }
+            budget.setParentBudget(request.getProject().getInternalBudget());
             internalBudgetRepository.save(budget);
 
             request.setBudget(budget);
@@ -748,8 +747,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String targetStepName = null;
         if (RequestStatus.FINISHED.equals(request.getState())) {
             targetStepName = "Delegated Ready";
-        } else if (request.getCurrentStep() != null) {
-            targetStepName = request.getCurrentStep().getName();
+        } else {
+            targetStepName = request.getCurrentStep() != null ? request.getCurrentStep().getName() : null;
         }
         
         if (targetStepName != null && !targetStepName.isBlank()) {
@@ -762,7 +761,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         String extraContext = null;
         if (RequestStatus.FINISHED.equals(request.getState())) {
             if (request.getInvoice() != null) {
-                if (Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+                if (request.getInvoice().getIsPaid()) {
                     stepNameForComment = "Paid";
                 } else {
                     stepNameForComment = "Finished and Awaiting Payment";
@@ -781,7 +780,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         }
 
         User actor = null;
-        if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && Boolean.TRUE.equals(request.getInvoice().getIsPaid())) {
+        if (RequestStatus.FINISHED.equals(request.getState()) && request.getInvoice() != null && request.getInvoice().getIsPaid()) {
             Optional<AuditLog> paymentLog = auditLogRepository.findFirstByRequestAndActionOrderByTimestampDesc(request, PAID);
             if (paymentLog.isPresent()) {
                 actor = paymentLog.get().getActor();

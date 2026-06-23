@@ -16,11 +16,11 @@ public class WorkflowTransition {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "from_step_id")
+    @JoinColumn(name = "from_step_id", nullable = false)
     private WorkflowStep fromStep;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "to_step_id")
+    @JoinColumn(name = "to_step_id", nullable = false)
     private WorkflowStep toStep;
 
     @Column(name = "condition_expression")

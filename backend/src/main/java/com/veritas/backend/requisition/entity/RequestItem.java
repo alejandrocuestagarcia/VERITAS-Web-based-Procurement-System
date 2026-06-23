@@ -24,7 +24,7 @@ public class RequestItem {
     private String name;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private int quantity;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

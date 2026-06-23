@@ -14,12 +14,13 @@ public class TransitionRule {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "transition_id")
+    @JoinColumn(name = "transition_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WorkflowTransition transition;
 
-    private Integer minRequiredVendors = 0;
+    @Column(name = "min_required_vendors", nullable = false)
+    private int minRequiredVendors = 0;
 
     @Column(name = "required_file_types")
     private String requiredFileTypes;

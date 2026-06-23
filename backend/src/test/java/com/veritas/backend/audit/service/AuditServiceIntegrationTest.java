@@ -9,6 +9,7 @@ import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.team.repository.TeamRepository;
+import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
@@ -26,6 +27,9 @@ import static com.veritas.backend.common.model.AuditActionConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.data.domain.Sort;
 
+import com.veritas.backend.util.UserFactory;
+import com.veritas.backend.util.RequestFactory;
+
 @SpringBootTest
 class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
 
@@ -36,40 +40,18 @@ class AuditServiceIntegrationTest extends BaseDBIntegrationTest {
     AuditLogRepository auditLogRepository;
 
     @Autowired
-    UserRepository userRepository;
+    UserFactory userFactory;
 
     @Autowired
-    RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired
-    RequestRepository requestRepository;
-
-    @Autowired
-    TeamRepository teamRepository;
-
-    @Autowired
-    PasswordEncoder encoder;
+    RequestFactory requestFactory;
 
     User testActor;
     Request testRequest;
     @BeforeEach
     void setup() {
-        auditLogRepository.deleteAll();
-        requestRepository.deleteAll();
-        refreshTokenRepository.deleteAll();
-        userRepository.deleteAll();
-
-        testActor = userRepository.save(User.builder()
-                .name("Test Actor")
-                .email("actor@yahoo.com")
-                .passwordHash(encoder.encode("password123"))
-                .role(UserRole.PROCUREMENT_OFFICER)
-                .isActive(true)
-                .build());
-
-        testRequest = new Request();
-        testRequest.setRequestName("Test Request");
-        testRequest = requestRepository.save(testRequest);
+        Team team = userFactory.createTeam("Engineering");
+        testActor = userFactory.createUser("actor@yahoo.com", team, UserRole.PROCUREMENT_OFFICER);
+        testRequest = requestFactory.createValidRequest("Test Request", testActor);
     }
 
     @Test

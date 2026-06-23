@@ -848,25 +848,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                                 .andExpect(status().isBadRequest());
         }
 
-        @Test
-        void GetTeam_ReturnsTeamWithNullDepartmentAndNullLeader() throws Exception {
-                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
 
-                // Create team directly in the repository with null department
-                Team team = new Team();
-                team.setName("No Dept Team");
-                team.setDescription("A team without a department");
-                team.setDepartment(null);
-                team.setIsActive(true);
-                team = teamRepository.save(team);
-
-                mockMvc.perform(get("/api/v1/teams/" + team.getTeamId())
-                                .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.name").value("No Dept Team"))
-                                .andExpect(jsonPath("$.department").value(nullValue()))
-                                .andExpect(jsonPath("$.leaderId").value(nullValue()));
-        }
 
         @Test
         void GetTeam_TeamNotFound_ReturnsNotFound() throws Exception {

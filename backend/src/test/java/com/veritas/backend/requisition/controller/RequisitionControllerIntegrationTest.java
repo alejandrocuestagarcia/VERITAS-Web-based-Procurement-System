@@ -50,6 +50,9 @@ import com.veritas.backend.workflow.repository.TransitionRuleRepository;
 import com.veritas.backend.audit.entity.AuditLog;
 import com.veritas.backend.audit.repository.AuditLogRepository;
 import com.veritas.backend.vendor.repository.VendorRepository;
+import com.veritas.backend.util.RequestFactory;
+import com.veritas.backend.util.UserFactory;
+import com.veritas.backend.util.InvoiceFactory;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -115,6 +118,13 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     private InternalBudgetRepository internalBudgetRepository;
     @Autowired
     private VendorRepository vendorRepository;
+
+    @Autowired
+    private RequestFactory requestFactory;
+    @Autowired
+    private UserFactory userFactory;
+    @Autowired
+    private InvoiceFactory invoiceFactory;
 
     private String requesterToken;
     private String financeOfficerToken;
@@ -207,7 +217,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
                 .team(team)
                 .startDate(LocalDate.of(2026, 1, 1))
                 .endDate(LocalDate.of(2026, 12, 31))
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(10000.00))
+                        .build())
                 .requestCounter(0)
                 .build();
         project = projectRepository.save(project);
@@ -226,6 +240,13 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         startStep.setWorkflowComponent(WorkflowComponent.START_EVENT);
         startStep.setName("Start");
         workflowStepRepository.save(startStep);
+    }
+
+    private User getRequester() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.REQUESTER)
+                .findFirst()
+                .orElseThrow();
     }
 
     private RequisitionCreateDto validCreateDto() {
@@ -399,8 +420,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void ApproveRequest_AlreadyFinished_ReturnsConflictStatus() throws Exception {
         // 1. Create a request and manually save it as FINISHED
-        Request request = new Request();
-        request.setRequestName("Finished Test");
+        Request request = requestFactory.createValidRequest("Finished Test", getRequester());
         request.setState(RequestStatus.FINISHED);
         request = requestRepository.save(request);
 
@@ -417,15 +437,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void RejectRequest_AlreadyFinished_ReturnsConflictStatus() throws Exception {
         // 1. Create a request and manually save it as FINISHED
-        Request request = new Request();
-        request.setRequestName("Finished Test Rejection");
+        Request request = requestFactory.createValidRequest("Finished Test Rejection", getRequester());
         request.setState(RequestStatus.FINISHED);
         request = requestRepository.save(request);
 
-        Invoice invoice = new Invoice();
-        invoice.setRequest(request);
-        invoice.setTotalAmount(new BigDecimal("100.00"));
-        invoice.setCurrency(Currency.EUR);
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("100.00"));
         invoice.setIsPaid(true);
         invoiceRepository.save(invoice);
 
@@ -445,15 +461,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void RevertRequest_NoHistoryExists_ReturnsConflictStatus() throws Exception {
         // 1. Create an active request but don't add any AuditLogs to the DB
-        Request request = new Request();
-        request.setRequestName("Orphan Step Test");
+        Request request = requestFactory.createValidRequest("Orphan Step Test", getRequester());
         request.setState(RequestStatus.ACTIVE);
-
-        // Fetch the Start event we built in setUp() to simulate starting point
-        WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
-        WorkflowStep startStep = workflowStepRepository.findAll().get(0);
-        request.setWorkflowDefinition(workflow);
-        request.setCurrentStep(startStep);
         request = requestRepository.save(request);
 
         RequisitionRejectDto rejectDto = new RequisitionRejectDto();
@@ -471,8 +480,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void RevertRequest_InDraft_ReturnsConflictStatus() throws Exception {
         // 1. Create a request and manually save it as DRAFT
-        Request request = new Request();
-        request.setRequestName("Finished Test Rejection");
+        Request request = requestFactory.createValidRequest("Finished Test Rejection", getRequester());
         request.setState(RequestStatus.DRAFT);
         request = requestRepository.save(request);
 
@@ -491,8 +499,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void RevertRequest_AlreadyFinished_ReturnsConflictStatus() throws Exception {
         // 1. Create a request and manually save it as FINISHED
-        Request request = new Request();
-        request.setRequestName("Finished Test Rejection");
+        Request request = requestFactory.createValidRequest("Finished Test Rejection", getRequester());
         request.setState(RequestStatus.FINISHED);
         request = requestRepository.save(request);
 
@@ -520,8 +527,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         stepOne.setName("Manager Review");
         stepOne = workflowStepRepository.save(stepOne);
 
-        Request request = new Request();
-        request.setRequestName("Draft Loopback Test");
+        Request request = requestFactory.createValidRequest("Draft Loopback Test", getRequester());
         request.setState(RequestStatus.ACTIVE);
         request.setWorkflowDefinition(workflow);
         request.setCurrentStep(stepOne);
@@ -563,12 +569,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     //AI-Generated
     @Test
     void RejectRequest_SoftDeletesRequestAndSavesReason() throws Exception {
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Soft Delete Test Rejection");
-        request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
-        request = requestRepository.save(request);
+        Request request = requestFactory.createValidRequest("Soft Delete Test Rejection", getRequester());
 
         RequisitionRejectDto rejectDto = new RequisitionRejectDto();
         rejectDto.setReason("Item is obsolete");
@@ -626,9 +627,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     //AI-Generated
     @Test
     void ChangeRequester_NewRequesterFromDifferentTeam_ReturnsBadRequest() throws Exception {
+        Department department = departmentRepository.findAll().get(0);
         Team otherTeam = teamRepository.save(Team.builder()
                 .name("Marketing")
                 .description("Marketing Team")
+                .department(department)
                 .isActive(true)
                 .build());
 
@@ -668,26 +671,16 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void ProcessPayment_AsFinanceOfficerWithValidRequestAndInvoice_ReturnsNoContentAndUpdatesBudget() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Long budgetId = project.getInternalBudget().getId();
-        InternalBudget budget = internalBudgetRepository.findById(budgetId).orElseThrow();
+        Request request = requestFactory.createValidRequest("Office Furniture", getRequester());
+        InternalBudget budget = request.getBudget();
         budget.setCommittedSpend(new BigDecimal("500.00"));
         budget.setActualSpend(new BigDecimal("1000.00"));
         budget = internalBudgetRepository.save(budget);
 
-        Request request = new Request();
-        request.setRequestName("Office Furniture");
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
-        request.setBudget(budget);
         request = requestRepository.save(request);
 
-        Invoice invoice = new Invoice();
-        invoice.setRequest(request);
-        invoice.setTotalAmount(new BigDecimal("300.00"));
-        invoice.setCurrency(Currency.EUR);
-        invoice.setIsPaid(false);
-        invoice = invoiceRepository.save(invoice);
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("300.00"));
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/pay")
@@ -708,11 +701,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void ProcessPayment_AsFinanceOfficerWithMissingInvoice_ReturnsNotFound() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Office Furniture No Invoice");
+        Request request = requestFactory.createValidRequest("Office Furniture No Invoice", getRequester());
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
         request = requestRepository.save(request);
 
         // Act & Assert
@@ -734,11 +724,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void ProcessPayment_AsRequester_ReturnsForbidden() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Office Furniture");
+        Request request = requestFactory.createValidRequest("Office Furniture", getRequester());
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
         request = requestRepository.save(request);
 
         // Act & Assert
@@ -750,26 +737,16 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void ProcessPayment_TransitionRequestToFinished() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Long budgetId = project.getInternalBudget().getId();
-        InternalBudget budget = internalBudgetRepository.findById(budgetId).orElseThrow();
+        Request request = requestFactory.createValidRequest("Office Supplies Finished", getRequester());
+        InternalBudget budget = request.getBudget();
         budget.setCommittedSpend(new BigDecimal("500.00"));
         budget.setActualSpend(new BigDecimal("1000.00"));
         budget = internalBudgetRepository.save(budget);
 
-        Request request = new Request();
-        request.setRequestName("Office Supplies Finished");
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
-        request.setBudget(budget);
         request = requestRepository.save(request);
 
-        Invoice invoice = new Invoice();
-        invoice.setRequest(request);
-        invoice.setTotalAmount(new BigDecimal("200.00"));
-        invoice.setCurrency(Currency.EUR);
-        invoice.setIsPaid(false);
-        invoice = invoiceRepository.save(invoice);
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("200.00"));
 
         // Act
         mockMvc.perform(post("/api/v1/requisitions/" + request.getRequestID() + "/pay")
@@ -784,17 +761,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void RejectRequest_AlreadyPaid_ReturnsConflictStatus() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Reject Paid Request");
+        Request request = requestFactory.createValidRequest("Reject Paid Request", getRequester());
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
         request = requestRepository.save(request);
 
-        Invoice invoice = new Invoice();
-        invoice.setRequest(request);
-        invoice.setTotalAmount(new BigDecimal("100.00"));
-        invoice.setCurrency(Currency.EUR);
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("100.00"));
         invoice.setIsPaid(true); // Manually seed as already paid
         invoice = invoiceRepository.save(invoice);
 
@@ -813,17 +784,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void RevertRequest_AlreadyPaid_ReturnsConflictStatus() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Revert Paid Request");
+        Request request = requestFactory.createValidRequest("Revert Paid Request", getRequester());
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
         request = requestRepository.save(request);
 
-        Invoice invoice = new Invoice();
-        invoice.setRequest(request);
-        invoice.setTotalAmount(new BigDecimal("100.00"));
-        invoice.setCurrency(Currency.EUR);
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("100.00"));
         invoice.setIsPaid(true); // Manually seed as already paid
         invoice = invoiceRepository.save(invoice);
 
@@ -842,17 +807,11 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     @Test
     void ApproveRequest_AlreadyPaid_ReturnsConflictStatus() throws Exception {
         // Arrange
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Approve Paid Request");
+        Request request = requestFactory.createValidRequest("Approve Paid Request", getRequester());
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
         request = requestRepository.save(request);
 
-        Invoice invoice = new Invoice();
-        invoice.setRequest(request);
-        invoice.setTotalAmount(new BigDecimal("100.00"));
-        invoice.setCurrency(Currency.EUR);
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("100.00"));
         invoice.setIsPaid(true); // Manually seed as already paid
         invoice = invoiceRepository.save(invoice);
 
@@ -1106,11 +1065,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         automatedToEnd.setToStep(endStep);
         workflowTransitionRepository.save(automatedToEnd);
 
-        Project project = projectRepository.findAll().get(0);
-        Request request = new Request();
-        request.setRequestName("Automated Approval Requisition");
+        Request request = requestFactory.createValidRequest("Automated Approval Requisition", getRequester());
         request.setState(RequestStatus.ACTIVE);
-        request.setProject(project);
         request.setWorkflowDefinition(workflow);
         request.setCurrentStep(stepOne);
         request = requestRepository.save(request);
@@ -1141,20 +1097,21 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
     // AI-GENERATED
     @Test
     void DeleteInvoice_AsProcurementOfficer_ReturnsNoContentAndDeletesInvoice() throws Exception {
-            Request request = new Request();
-            request.setRequestName("Delete Invoice Test");
+            WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
+            WorkflowStep procStep = new WorkflowStep();
+            procStep.setWorkflowDefinition(workflow);
+            procStep.setWorkflowComponent(WorkflowComponent.STEP);
+            procStep.setName("Procurement Review");
+            procStep.setRole(UserRole.PROCUREMENT_OFFICER);
+            procStep = workflowStepRepository.save(procStep);
+
+            Request request = requestFactory.createValidRequest("Delete Invoice Test", getRequester());
             request.setState(RequestStatus.ACTIVE);
-            request.setProject(projectRepository.findAll().get(0));
-            request.setTeam(teamRepository.findAll().get(0));
-            request.setCurrentStep(workflowStepRepository.findAll().get(0));
+            request.setWorkflowDefinition(workflow);
+            request.setCurrentStep(procStep);
             request = requestRepository.save(request);
 
-            Invoice invoice = new Invoice();
-            invoice.setRequest(request);
-            invoice.setTotalAmount(new BigDecimal("100.00"));
-            invoice.setCurrency(Currency.EUR);
-            invoice.setIsPaid(false);
-            invoice = invoiceRepository.save(invoice);
+            Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("100.00"));
             request.setInvoice(invoice);
             requestRepository.save(request);
 
@@ -1179,12 +1136,8 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void DeleteInvoice_AsRequester_ReturnsForbidden() throws Exception {
-            Project project = projectRepository.findAll().get(0);
-            Request request = new Request();
-            request.setRequestName("Delete Invoice Forbidden");
+            Request request = requestFactory.createValidRequest("Delete Invoice Forbidden", getRequester());
             request.setState(RequestStatus.ACTIVE);
-            request.setProject(project);
-            request.setTeam(teamRepository.findAll().get(0));
             request = requestRepository.save(request);
 
             mockMvc.perform(delete("/api/v1/requisitions/" + request.getRequestID() + "/invoice")
@@ -1194,7 +1147,6 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
 
     @Test
     void DeleteInvoice_PaidInvoice_ReturnsConflict() throws Exception {
-            Project project = projectRepository.findAll().get(0);
             WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
             WorkflowStep procStep = new WorkflowStep();
             procStep.setWorkflowDefinition(workflow);
@@ -1203,19 +1155,13 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
             procStep.setRole(UserRole.PROCUREMENT_OFFICER);
             procStep = workflowStepRepository.save(procStep);
 
-            Request request = new Request();
-            request.setRequestName("Delete Paid Invoice");
+            Request request = requestFactory.createValidRequest("Delete Paid Invoice", getRequester());
             request.setState(RequestStatus.ACTIVE);
-            request.setProject(project);
-            request.setTeam(teamRepository.findAll().get(0));
             request.setWorkflowDefinition(workflow);
             request.setCurrentStep(procStep);
             request = requestRepository.save(request);
 
-            Invoice invoice = new Invoice();
-            invoice.setRequest(request);
-            invoice.setTotalAmount(new BigDecimal("100.00"));
-            invoice.setCurrency(Currency.EUR);
+            Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("100.00"));
             invoice.setIsPaid(true);
             invoice = invoiceRepository.save(invoice);
             request.setInvoice(invoice);
@@ -1238,8 +1184,7 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         stepOne.setName("Manager Review");
         stepOne = workflowStepRepository.save(stepOne);
 
-        Request request = new Request();
-        request.setRequestName("Revision Required Test");
+        Request request = requestFactory.createValidRequest("Revision Required Test", getRequester());
         request.setState(RequestStatus.ACTIVE);
         request.setWorkflowDefinition(workflow);
         request.setCurrentStep(stepOne);
@@ -1275,18 +1220,14 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
         WorkflowStep startStep = workflowStepRepository.findAll().get(0);
 
-        Project project = projectRepository.findAll().get(0);
         User owner = userRepository.findByEmail("req-integration@veritas.com").orElseThrow();
 
-        Request request = new Request();
-        request.setRequestName("Original Name");
+        Request request = requestFactory.createValidRequest("Original Name", owner);
         request.setState(RequestStatus.DRAFT);
         request.setWorkflowDefinition(workflow);
         request.setCurrentStep(startStep);
-        request.setProject(project);
         request.setItems(new ArrayList<>());
         request.setRevisionRequired(true);
-        request.setUser(owner); // Owner
         request = requestRepository.save(request);
 
         RequisitionUpdateDto updateDto = new RequisitionUpdateDto(

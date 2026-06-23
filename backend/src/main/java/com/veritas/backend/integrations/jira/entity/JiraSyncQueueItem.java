@@ -36,13 +36,13 @@ public class JiraSyncQueueItem {
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer retries = 0;
+    private int retries = 0;
 
     @Column(nullable = false)
     @Builder.Default
     private String status = "PENDING";
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "last_attempt")

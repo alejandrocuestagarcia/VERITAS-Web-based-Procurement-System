@@ -22,36 +22,36 @@ public class Quote {
     private Long quoteID;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vendor_id")
+    @JoinColumn(name = "vendor_id", nullable = false)
     private Vendor vendorID;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id")
+    @JoinColumn(name = "request_id", nullable = false)
     private Request request;
 
     @Column(name = "is_selected")
     private boolean isSelected = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 3)
+    @Column(length = 3, nullable = false)
     private Currency currency;
 
-    @Column(name = "base_amount")
+    @Column(name = "base_amount", nullable = false)
     private BigDecimal baseAmount;
 
-    @Column(name = "shipping_costs")
+    @Column(name = "shipping_costs", nullable = false)
     private BigDecimal shippingCosts;
 
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
     @Column(name = "shipping_time", nullable = false)
-    private Integer shippingTime;
+    private int shippingTime;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

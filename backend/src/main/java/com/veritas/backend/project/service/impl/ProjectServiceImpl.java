@@ -47,6 +47,10 @@ public class ProjectServiceImpl implements ProjectService {
         log.debug("Fetching projects for user: {} (role={})", user.getEmail(), user.getRole());
 
         if (user.getRole() == UserRole.REQUESTER) {
+            if (user.getTeam() == null) {
+                log.warn("Requester {} has no team assigned; returning no projects", user.getEmail());
+                return List.of();
+            }
             List<ProjectDto> teamProjects = projectRepository.findByTeam(user.getTeam()).stream()
                     .map(projectMapper::toProjectDto)
                     .toList();
@@ -55,6 +59,10 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         if (user.getRole() == UserRole.PROCUREMENT_OFFICER) {
+            if (user.getDepartment() == null) {
+                log.warn("Procurement officer {} has no department assigned; returning no projects", user.getEmail());
+                return List.of();
+            }
             List<ProjectDto> departmentProjects = projectRepository.findByTeamDepartment(user.getDepartment()).stream()
                     .map(projectMapper::toProjectDto)
                     .toList();
@@ -230,4 +238,3 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.deleteById(id);
     }
 }
-

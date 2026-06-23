@@ -120,7 +120,11 @@ class ProjectControllerIntegrationTest extends BaseDBIntegrationTest {
                 .team(testingTeam)
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusDays(30))
-                .internalBudget(InternalBudget.builder().budgetName("Test Budget").totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .internalBudget(InternalBudget.builder()
+                        .budgetName("Test Budget")
+                        .budgetType(BudgetType.PROJECT)
+                        .totalAmount(BigDecimal.valueOf(10000.00))
+                        .build())
                 .build());
     }
 
