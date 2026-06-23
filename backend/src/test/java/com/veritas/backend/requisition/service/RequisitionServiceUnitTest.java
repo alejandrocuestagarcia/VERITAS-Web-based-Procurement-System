@@ -839,6 +839,9 @@ class RequisitionServiceUnitTest {
         request.setProject(testProject);
         request.setWorkflowDefinition(testWorkflow);
 
+        InternalBudget budget = new InternalBudget();
+        request.setBudget(budget);
+
         WorkflowStep currentStep = new WorkflowStep();
         request.setCurrentStep(currentStep);
 
