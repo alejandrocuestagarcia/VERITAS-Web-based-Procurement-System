@@ -46,8 +46,6 @@ import java.math.BigDecimal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -922,7 +920,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     }
                 }
                 String messageSuffix = includesSafetyBuffer ? " exhausted including safety buffer." : " exhausted.";
-                throw new WorkflowStateException("Budget of : " + budgetIdentifier + messageSuffix);
+                throw new WorkflowStateException("Budget of " + budgetIdentifier + messageSuffix);
             }
 
             currentBudget = currentBudget.getParentBudget();

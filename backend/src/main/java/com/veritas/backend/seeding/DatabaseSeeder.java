@@ -106,7 +106,7 @@ public class DatabaseSeeder implements ApplicationRunner {
         Team talentAcquisitionTeam = seedTeam("Talent Acquisition & Ops", talentPeopleOps,
                 "Enterprise talent acquisition and people operations core team");
 
-        seedEssentialUsers(corePlatformTeam, talentAcquisitionTeam);
+        seedEssentialUsers(corePlatformTeam, talentAcquisitionTeam, cloudPlatformEng);
 
         User requester       = userRepo.findByEmail("requester@veritas.com").orElseThrow();
         User hrRequester     = userRepo.findByEmail("hr_requester@veritas.com").orElseThrow();
@@ -180,10 +180,10 @@ public class DatabaseSeeder implements ApplicationRunner {
     // ══════════════════════════════════════════════
     // 1–3  Departments, teams, users
     // ══════════════════════════════════════════════
-    private void seedEssentialUsers(Team corePlatformTeam, Team talentAcquisitionTeam) {
+    private void seedEssentialUsers(Team corePlatformTeam, Team talentAcquisitionTeam, Department cloudPlatformEng) {
         seedUser("Veritas Admin",       "admin@veritas.com",       UserRole.ADMINISTRATOR,       null, null);
         seedUser("Veritas Finance",     "finance@veritas.com",     UserRole.FINANCE_OFFICER,     null, null);
-        seedUser("Veritas Procurement", "procurement@veritas.com", UserRole.PROCUREMENT_OFFICER, null, null);
+        seedUser("Veritas Procurement", "procurement@veritas.com", UserRole.PROCUREMENT_OFFICER, cloudPlatformEng, null);
 
         User requester = seedUser("Veritas Requester", "requester@veritas.com",
                 UserRole.REQUESTER, null, corePlatformTeam);
@@ -526,8 +526,10 @@ public class DatabaseSeeder implements ApplicationRunner {
         return userRepo.findByEmail(email).orElseGet(() -> {
             User u = User.builder().name(name).email(email).passwordHash(encoder.encode("password123"))
                     .role(role).department(dept).team(team).isActive(true).requiresPasswordChange(false).build();
-            log.info("Seeded user: {} (role={})", userRepo.save(u).getEmail(), u.getRole());
-            return u;
+            User saved = userRepo.save(u);
+            log.info("Seeded user: {} (role={}, dept={})", saved.getEmail(), saved.getRole(),
+                    saved.getDepartment() != null ? saved.getDepartment().getName() : "none");
+            return saved;
         });
     }
 
