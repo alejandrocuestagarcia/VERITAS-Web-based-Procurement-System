@@ -1110,6 +1110,38 @@ class RequisitionServiceUnitTest {
         verify(quoteRepository).deleteByRequestID(1L);
     }
 
+    //AI-Generated
+    @Test
+    void UpdateRequest_ItemsChangedWithInvoice_DeletesInvoice() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+
+        RequestItem currentItem = new RequestItem();
+        currentItem.setName("Old Item");
+        currentItem.setQuantity(5);
+        currentItem.setUnit(RequestItemUnit.PIECES);
+        request.setItems(new ArrayList<>(List.of(currentItem)));
+
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(10L);
+        invoice.setAttachments(new ArrayList<>());
+        request.setInvoice(invoice);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.updateRequest(1L, updates, testUser);
+
+        assertNull(request.getInvoice());
+        verify(invoiceRepository).delete(invoice);
+        verify(requestItemRepository).deleteByRequestID(1L);
+        verify(quoteLineItemRepository).deleteByQuoteRequestID(1L);
+        verify(quoteRepository).deleteByRequestID(1L);
+    }
+
     @Test
     void ProcessPayment_WithInvalidRequestId_ThrowsEntityNotFoundException() {
         when(requestRepository.findById(100L)).thenReturn(Optional.empty());

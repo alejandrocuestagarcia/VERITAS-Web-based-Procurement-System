@@ -46,8 +46,6 @@ import java.math.BigDecimal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -790,6 +788,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         }
 
         if (itemsChanged) {
+            deleteInvoiceQuoteChanged(request);
             quoteLineItemRepository.deleteByQuoteRequestID(id);
             quoteRepository.deleteByRequestID(id);
 
@@ -1163,6 +1162,24 @@ public class RequisitionServiceImpl implements RequisitionService {
             if (!user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
+        }
+    }
+
+    private void deleteInvoiceQuoteChanged(Request request) {
+        Invoice invoice = request.getInvoice();
+        if (invoice != null) {
+            for (Attachment attachment : invoice.getAttachments()) {
+                try {
+                    Path filePath = Paths.get(attachment.getStoragePath());
+                    Files.deleteIfExists(filePath);
+                } catch (IOException e) {
+                    log.error("Could not delete file: " + attachment.getFileName(), e);
+                }
+                request.getAttachments().remove(attachment);
+                attachmentRepository.delete(attachment);
+            }
+            request.setInvoice(null);
+            invoiceRepository.delete(invoice);
         }
     }
 }
