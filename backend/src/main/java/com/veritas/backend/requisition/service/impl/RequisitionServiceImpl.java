@@ -937,7 +937,7 @@ public class RequisitionServiceImpl implements RequisitionService {
                     }
                 }
                 String messageSuffix = includesSafetyBuffer ? " exhausted including safety buffer." : " exhausted.";
-                throw new WorkflowStateException("Budget of : " + budgetIdentifier + messageSuffix);
+                throw new WorkflowStateException("Budget of " + budgetIdentifier + messageSuffix);
             }
 
             currentBudget = currentBudget.getParentBudget();

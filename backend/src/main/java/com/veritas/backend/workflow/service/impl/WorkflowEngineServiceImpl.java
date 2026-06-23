@@ -482,7 +482,7 @@ public class WorkflowEngineServiceImpl implements WorkflowEngineService {
                         budgetIdentifier = "Budget";
                     }
                 }
-                throw new WorkflowStateException("Budget of : " + budgetIdentifier + " exhausted including safety buffer.");
+                throw new WorkflowStateException("Budget of " + budgetIdentifier + " exhausted including safety buffer.");
             }
 
             currentBudget = currentBudget.getParentBudget();
