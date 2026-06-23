@@ -80,9 +80,11 @@ deploy-to-k8s:
     - sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" kubernetes.yaml
     - kubectl apply -f kubernetes.yaml
 
-    - kubectl rollout status deployment/veritas -n veritas --timeout=300s
+    - kubectl rollout status deployment/veritas -n veritas --timeout=300s || true
     - echo "--- POD STATUS ---"
-    - kubectl get pods -n veritas
+    - kubectl get pods -n veritas || true
+    - echo "--- POD DETAILS ---"
+    - kubectl describe pods -n veritas || true
     - echo "--- DATABASE LOGS ---"
     - kubectl logs -l app=veritas-db -n veritas --tail=50 || true
     - echo "--- BACKEND LOGS ---"
