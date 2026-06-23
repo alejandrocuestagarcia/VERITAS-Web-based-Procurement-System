@@ -981,49 +981,6 @@ public class RequisitionServiceImpl implements RequisitionService {
     }
 
     @Override
-    @Transactional
-    public InvoiceDto updateInvoice(Long requestId, InvoiceCreateDto updateDto, MultipartFile file, User actor) {
-        Request request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
-
-        workflowEngineService.checkAuthorization(request, actor, request.getCurrentStep());
-
-        Invoice invoice = request.getInvoice();
-        if (invoice == null) {
-            throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
-        }
-
-        if (invoice.getIsPaid()) {
-            throw new IllegalStateException("Cannot edit an invoice that has already been paid.");
-        }
-
-        invoice.setInvoiceNumber(updateDto.getInvoiceNumber());
-        invoice.setInvoiceDate(updateDto.getInvoiceDate());
-        invoice.setTotalAmount(updateDto.getTotalAmount());
-        invoice.setCurrency(updateDto.getCurrency());
-        invoice.setDueDate(updateDto.getDueDate());
-
-        if (file != null && !file.isEmpty()) {
-            List<Attachment> attachments = new ArrayList<>(invoice.getAttachments());
-            for (Attachment attachment : attachments) {
-                try {
-                    Path filePath = Paths.get(attachment.getStoragePath());
-                    Files.deleteIfExists(filePath);
-                } catch (IOException e) {
-                    throw new RuntimeException("Could not delete file: " + attachment.getFileName(), e);
-                }
-                request.getAttachments().remove(attachment);
-                attachmentRepository.delete(attachment);
-            }
-            invoice.getAttachments().clear();
-            storeAttachment(file, request, invoice);
-        }
-
-        Invoice savedInvoice = invoiceRepository.save(invoice);
-        return this.mapToInvoiceDtoWithEuro(savedInvoice);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public InvoiceDto getInvoice(Long requestId, User actor) {
         Request request = requestRepository.findById(requestId)

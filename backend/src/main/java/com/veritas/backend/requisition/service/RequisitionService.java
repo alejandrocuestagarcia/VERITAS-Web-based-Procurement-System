@@ -235,19 +235,6 @@ public interface RequisitionService {
     InvoiceDto createInvoice(Long requestId, InvoiceCreateDto createDto, MultipartFile file, User actor);
 
     /**
-     * Updates an invoice for a request.
-     * Optionally attaches a new uploaded file to the invoice, replacing the existing file.
-     *
-     * @param requestId the request ID
-     * @param updateDto the invoice update payload
-     * @param file an optional new invoice file to attach
-     * @return the updated {@link InvoiceDto}
-     * @throws EntityNotFoundException if the request or invoice is not found
-     * @throws IllegalStateException if the invoice has already been paid
-     */
-    InvoiceDto updateInvoice(Long requestId, InvoiceCreateDto updateDto, MultipartFile file, User actor);
-
-    /**
      * Returns the invoice for a given request, including EUR-converted total where available.
      *
      * @param requestId the request ID

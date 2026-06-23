@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { environment } from 'src/environments/environment';
-import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto, InvoiceCreateDtoCurrencyEnum, InvoiceDto } from '../../../../core/api';
+import { RequisitionModuleService, RequisitionDto, QuoteDto, RequisitionQuotesModuleService, InvoiceCreateDto, InvoiceCreateDtoCurrencyEnum } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -28,10 +28,6 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   invoiceFile: File | null = null;
   invoiceForm!: FormGroup;
   hasInvoice = false;
-  isViewingInvoice = false;
-  isEditingInvoice = false;
-  invoice: InvoiceDto | null = null;
-  invoiceAttachment: any = null;
 
   get hasPreferredQuote(): string {
     const selected = this.quotes.find(q => q.isSelected);
@@ -87,21 +83,10 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     this.dataSource.filter = value.trim().toLowerCase();
   }
 
-  findInvoiceAttachment(): void {
-    if (this.invoice && this.requisition?.attachments) {
-      this.invoiceAttachment = this.requisition.attachments.find(
-        (a: any) => a.invoiceId === this.invoice?.invoiceId
-      ) || null;
-    } else {
-      this.invoiceAttachment = null;
-    }
-  }
-
   loadRequisition(): void {
     this.requisitionService.getRequestById(this.requisitionId).subscribe({
       next: (req: RequisitionDto) => {
         this.requisition = req;
-        this.findInvoiceAttachment();
       },
       error: (err: any) => {
         console.error('Failed to load requisition', err);
@@ -129,15 +114,11 @@ export class RequisitionVendorQuotesComponent implements OnInit {
 
   checkInvoiceExists(): void {
     this.requisitionService.getInvoice(this.requisitionId).subscribe({
-      next: (inv) => {
+      next: () => {
         this.hasInvoice = true;
-        this.invoice = inv;
-        this.findInvoiceAttachment();
       },
       error: () => {
         this.hasInvoice = false;
-        this.invoice = null;
-        this.invoiceAttachment = null;
       }
     });
   }
@@ -186,53 +167,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     });
   }
 
-  viewInvoice(): void {
-    if (!this.invoice) return;
-    this.isViewingInvoice = true;
-    this.isEditingInvoice = false;
-    this.invoiceFile = null;
-
-    this.invoiceForm.patchValue({
-      invoiceNumber: this.invoice.invoiceNumber,
-      totalAmount: this.invoice.totalAmount,
-      dueDate: this.invoice.dueDate ? new Date(this.invoice.dueDate) : null,
-      invoiceDate: this.invoice.invoiceDate ? new Date(this.invoice.invoiceDate) : null
-    });
-    this.invoiceForm.disable();
-    this.isInvoiceDrawerOpen = true;
-  }
-
-  startEditingInvoice(): void {
-    this.isEditingInvoice = true;
-    this.invoiceForm.enable();
-  }
-
-  cancelEditingInvoice(): void {
-    if (this.isViewingInvoice) {
-      if (this.isEditingInvoice) {
-        this.isEditingInvoice = false;
-        this.invoiceForm.disable();
-        if (this.invoice) {
-          this.invoiceForm.patchValue({
-            invoiceNumber: this.invoice.invoiceNumber,
-            totalAmount: this.invoice.totalAmount,
-            dueDate: this.invoice.dueDate ? new Date(this.invoice.dueDate) : null,
-            invoiceDate: this.invoice.invoiceDate ? new Date(this.invoice.invoiceDate) : null
-          });
-        }
-        this.invoiceFile = null;
-      } else {
-        this.closeInvoiceDrawer();
-      }
-    } else {
-      this.closeInvoiceDrawer();
-    }
-  }
-
   openInvoiceDrawer(): void {
-    this.isViewingInvoice = false;
-    this.isEditingInvoice = true;
-    this.invoiceForm.enable();
     this.invoiceForm.reset();
     this.invoiceFile = null;
 
@@ -242,6 +177,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
 
     const defaultDue = new Date();
     this.invoiceForm.patchValue({ dueDate: defaultDue });
+
     this.invoiceForm.patchValue({ invoiceDate: new Date() });
 
     this.isInvoiceDrawerOpen = true;
@@ -250,10 +186,6 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   closeInvoiceDrawer(): void {
     this.isInvoiceDrawerOpen = false;
     this.invoiceFile = null;
-    this.isViewingInvoice = false;
-    this.isEditingInvoice = false;
-    this.invoiceForm.enable();
-    this.invoiceForm.reset();
   }
 
   onFileSelected(event: Event): void {
@@ -282,19 +214,6 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     }
   }
 
-  downloadAttachment(attachment: any): void {
-    if (!attachment || !attachment.attachmentId) return;
-    this.requisitionService.downloadAttachment(attachment.attachmentId).subscribe({
-      next: (blob) => {
-        this.downloadBlob(blob, attachment.fileName || 'download');
-      },
-      error: (err) => {
-        console.error('Failed to download attachment', err);
-        this.toastService.showError('Failed to download attachment');
-      }
-    });
-  }
-
   submitInvoice(): void {
     if (this.invoiceForm.invalid) {
       this.invoiceForm.markAllAsTouched();
@@ -312,43 +231,22 @@ export class RequisitionVendorQuotesComponent implements OnInit {
       invoiceDate: this.formatDate(formValue.invoiceDate)
     };
 
-    if (this.isViewingInvoice) {
-      this.requisitionService.updateInvoice(
-        this.requisitionId,
-        invoiceData,
-        this.invoiceFile || undefined
-      ).subscribe({
-        next: () => {
-          this.isUploadingInvoice = false;
-          this.toastService.showSuccess('Invoice updated successfully');
-          this.closeInvoiceDrawer();
-          this.loadRequisition();
-          this.checkInvoiceExists();
-        },
-        error: (err: any) => {
-          this.isUploadingInvoice = false;
-          this.toastService.showError(extractErrorMessage(err, 'Failed to update invoice'));
-        }
-      });
-    } else {
-      this.requisitionService.createInvoice(
-        this.requisitionId,
-        invoiceData,
-        this.invoiceFile || undefined
-      ).subscribe({
-        next: () => {
-          this.isUploadingInvoice = false;
-          this.toastService.showSuccess('Invoice uploaded successfully');
-          this.closeInvoiceDrawer();
-          this.loadRequisition();
-          this.checkInvoiceExists();
-        },
-        error: (err: any) => {
-          this.isUploadingInvoice = false;
-          this.toastService.showError(extractErrorMessage(err, 'Failed to upload invoice'));
-        }
-      });
-    }
+    this.requisitionService.createInvoice(
+      this.requisitionId,
+      invoiceData,
+      this.invoiceFile || undefined
+    ).subscribe({
+      next: () => {
+        this.isUploadingInvoice = false;
+        this.toastService.showSuccess('Invoice uploaded successfully');
+        this.closeInvoiceDrawer();
+        this.hasInvoice = true;
+      },
+      error: (err: any) => {
+        this.isUploadingInvoice = false;
+        this.toastService.showError(extractErrorMessage(err, 'Failed to upload invoice'));
+      }
+    });
   }
 
   deleteInvoice(): void {
@@ -365,9 +263,7 @@ export class RequisitionVendorQuotesComponent implements OnInit {
         this.requisitionService.deleteInvoice(this.requisitionId).subscribe({
           next: () => {
             this.toastService.showSuccess('Invoice deleted successfully');
-            this.closeInvoiceDrawer();
-            this.loadRequisition();
-            this.checkInvoiceExists();
+            this.hasInvoice = false;
             this.loading = false;
           },
           error: (err: any) => {
@@ -398,22 +294,6 @@ export class RequisitionVendorQuotesComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([`/requisitions/${this.requisitionId}`]);
-  }
-
-  private downloadBlob(blob: Blob, fileName: string): void {
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = downloadUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    // Revoke the object URL and remove the temporary link asynchronously
-    // to avoid cancelling the download in some browsers.
-    setTimeout(() => {
-      window.URL.revokeObjectURL(downloadUrl);
-      document.body.removeChild(a);
-    }, 100);
   }
 
   private formatDate(date: Date | string | null | undefined): string {
