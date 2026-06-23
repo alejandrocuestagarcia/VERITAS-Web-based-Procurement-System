@@ -184,7 +184,7 @@ class WorkflowEngineServiceUnitTest {
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
-        assertEquals("Budget of : Test Request exhausted including safety buffer.", ex.getMessage());
+        assertEquals("Budget of Test Request exhausted including safety buffer.", ex.getMessage());
     }
 
     //AI-GENERATED
@@ -212,7 +212,7 @@ class WorkflowEngineServiceUnitTest {
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
-        assertEquals("Budget of : Project Budget exhausted including safety buffer.", ex.getMessage());
+        assertEquals("Budget of Project Budget exhausted including safety buffer.", ex.getMessage());
     }
 
     //AI-GENERATED
@@ -250,7 +250,7 @@ class WorkflowEngineServiceUnitTest {
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
-        assertEquals("Budget of : Department Budget exhausted including safety buffer.", ex.getMessage());
+        assertEquals("Budget of Department Budget exhausted including safety buffer.", ex.getMessage());
     }
 
     //AI-GENERATED
@@ -298,7 +298,7 @@ class WorkflowEngineServiceUnitTest {
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
 
-        assertEquals("Budget of : Global Budget exhausted including safety buffer.", ex.getMessage());
+        assertEquals("Budget of Global Budget exhausted including safety buffer.", ex.getMessage());
     }
 
     @Test
