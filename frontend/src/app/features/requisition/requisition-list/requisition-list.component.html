@@ -10,8 +10,10 @@
   (pageChanged)="onPageChange($event)"
   (searchChanged)="onSearchChange($any($event))">
 
-  <div actions *appHasRole="['REQUESTER']">
-    <button mat-flat-button class="v-btn-brand" (click)="createNewRequest()">
+  <div actions *appHasRole="['REQUESTER']"
+       [matTooltip]="!authService.hasTeamSync() ? 'Requisition creation is blocked because you are not assigned to any team.' : ''"
+       matTooltipPosition="above">
+    <button mat-flat-button class="v-btn-brand" [disabled]="!authService.hasTeamSync()" (click)="createNewRequest()">
       <mat-icon>add</mat-icon>
       <span>New Requisition</span>
     </button>

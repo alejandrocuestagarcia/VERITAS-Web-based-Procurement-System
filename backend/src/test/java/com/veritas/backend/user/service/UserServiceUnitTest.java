@@ -179,6 +179,8 @@ class UserServiceUnitTest {
 
         assertFalse(savedUser.getIsActive());
         assertNotNull(savedUser.getDeletedAt());
+        assertEquals("Inactive", savedUser.getName());
+        assertEquals("inactive_" + savedUser.getId() + "@veritas.com", savedUser.getEmail());
 
 
         verify(userRepository, times(1)).findById(1L);

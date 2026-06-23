@@ -40,6 +40,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   requestId?: number;
   requestState?: string;
   revisionRequired = false;
+  requestTeamId?: number;
 
   projects: ProjectDto[] = [];
   projectSearch: string = '';
@@ -123,6 +124,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
                 this.loading = false;
                 this.requestState = req.state;
                 this.revisionRequired = req.revisionRequired || false;
+                this.requestTeamId = req.requesterTeamId;
 
                 this.existingAttachments = req.attachments || [];
 
@@ -373,6 +375,10 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(submitAfterSave = false): void {
+    if (this.isEditMode && submitAfterSave && !this.requestTeamId) {
+      this.toastService.showError('Requisition cannot be submitted because it has no team assigned.');
+      return;
+    }
     if (this.basicInfoForm.valid && this.lineItemsForm.valid) {
       this.loading = true;
       const request: any = {

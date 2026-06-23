@@ -45,8 +45,11 @@
       <mat-icon class="text-on-surface text-lg">close</mat-icon>
     </button>
 
-    <div *ngIf="!authService.isPasswordChangeRequired() && authService.hasRole('REQUESTER')" class="flex pb-6">
-      <button routerLink="/requisitions/create" mat-flat-button class="v-btn-brand w-full"
+    <div *ngIf="!authService.isPasswordChangeRequired() && authService.hasRole('REQUESTER')" class="flex pb-6 w-full"
+         [matTooltip]="!authService.hasTeamSync() ? 'Requisition creation is blocked because you are not assigned to any team.' : ''"
+         matTooltipPosition="above">
+      <button [routerLink]="authService.hasTeamSync() ? '/requisitions/create' : null" mat-flat-button class="v-btn-brand w-full"
+              [disabled]="!authService.hasTeamSync()"
               (click)="closeMenu()">
         <mat-icon>add</mat-icon>
         <span>New Requisition</span>

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Router } from "@angular/router";
-import { AuthModuleService, RefreshTokenDto, LoginRequestDto, AuthResponseDto } from "../api";
-import { tap } from 'rxjs';
+import { AuthModuleService, RefreshTokenDto, LoginRequestDto, AuthResponseDto, UserModuleService, UserDto } from "../api";
+import { tap, Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +13,11 @@ export class AuthService {
     refreshToken: ''
   };
 
+  private currentUserProfile: UserDto | null = null;
+
   constructor(
     private authApi: AuthModuleService,
+    private userApi: UserModuleService,
     private router: Router
   ) {
   }
@@ -69,7 +73,33 @@ export class AuthService {
     return roles.includes(userRole);
   }
 
+  getCurrentUser(): Observable<UserDto | null> {
+    if (this.currentUserProfile) {
+      return of(this.currentUserProfile);
+    }
+    return this.userApi.getCurrentUser().pipe(
+      tap(profile => this.currentUserProfile = profile),
+      catchError(() => {
+        this.currentUserProfile = null;
+        return of(null);
+      })
+    );
+  }
+
+  hasTeamSync(): boolean {
+    const role = this.getRole();
+    if (role !== 'REQUESTER') {
+      return true;
+    }
+    return this.currentUserProfile?.teamId != null;
+  }
+
+  clearProfile(): void {
+    this.currentUserProfile = null;
+  }
+
   login(loginRequest: LoginRequestDto) {
+    this.clearProfile();
     return this.authApi.login(loginRequest).pipe(
       tap((res: AuthResponseDto) => {
         if (res.accessToken && res.refreshToken) {
@@ -83,6 +113,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.clearProfile();
     const refreshToken = localStorage.getItem('refresh_token');
 
     localStorage.removeItem('access_token');

@@ -118,6 +118,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         User user = userRepository.findById(authUser.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found"));
 
+        if (user.getTeam() == null) {
+            throw new IllegalArgumentException("Requisition cannot be created because you are not assigned to a team.");
+        }
+
         Project project = projectRepository.findById(createDto.projectId())
                 .orElseThrow(
                         () -> new IllegalArgumentException("Project not found with ID: " + createDto.projectId()));
@@ -329,44 +333,36 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request saved = requestRepository.save(request);
 
         List<String> notifiedRecipients = new ArrayList<>();
-        notificationService.createNotification(
-                saved.getUser(),
-                saved,
-                NotificationType.APPROVED,
-                "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
-        );
-        notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
-        if (saved.getState() == RequestStatus.FINISHED) {
+        if (saved.getUser() != null) {
             notificationService.createNotification(
                     saved.getUser(),
                     saved,
-                    NotificationType.FINISHED,
-                    "Your request '" + saved.getRequestName() + "' has been completed."
+                    NotificationType.APPROVED,
+                    "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
             );
-            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
-            try {
-                List<User> financeOfficers = userRepository.findAllByRoleAndIsActiveTrue(UserRole.FINANCE_OFFICER);
-                for (User fo : financeOfficers) {
-                    notificationService.createNotification(
-                            fo,
-                            saved,
-                            NotificationType.ASSIGNED,
-                            "Requisition '" + saved.getRequestName() + "' is completed and requires payment processing."
-                    );
-                    notifiedRecipients.add(fo.getEmail() + " (Reason: ASSIGNED)");
-                }
-            } catch (Exception e) {
-                log.error("Failed to notify finance officers for completed requisition {}", saved.getRequestName(), e);
+            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
+        }
+        if (saved.getState() == RequestStatus.FINISHED) {
+            if (saved.getUser() != null) {
+                notificationService.createNotification(
+                        saved.getUser(),
+                        saved,
+                        NotificationType.FINISHED,
+                        "Your request '" + saved.getRequestName() + "' has been completed."
+                );
+                notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
             }
         }
-        if (saved.getState() != RequestStatus.FINISHED && saved.getAssignee() != null) {
-            notificationService.createNotification(
-                    saved.getAssignee(),
-                    saved,
-                    NotificationType.ASSIGNED,
-                    "Request '" + saved.getRequestName() + "' requires your action at step '" + saved.getCurrentStep().getName() + "'."
-            );
-            notifiedRecipients.add(saved.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+        if (saved.getState() != RequestStatus.FINISHED) {
+            if (saved.getAssignee() != null) {
+                notificationService.createNotification(
+                        saved.getAssignee(),
+                        saved,
+                        NotificationType.ASSIGNED,
+                        "Request '" + saved.getRequestName() + "' requires your action at step '" + (saved.getCurrentStep() != null ? saved.getCurrentStep().getName() : "Unknown") + "'."
+                );
+                notifiedRecipients.add(saved.getAssignee().getEmail() + " (Reason: ASSIGNED)");
+            }
         }
 
         if (!notifiedRecipients.isEmpty()) {
@@ -441,6 +437,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with id: " + id));
 
+        if (request.getTeam() == null) {
+            throw new IllegalArgumentException("Requisition cannot be submitted because it has no team assigned.");
+        }
+
         if (request.getState() != RequestStatus.DRAFT) {
             throw new WorkflowStateException("Only drafts can be submitted.");
         }
@@ -452,6 +452,7 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         Request savedRequest = requestRepository.save(request);
 
+        List<String> notifiedRecipients = new ArrayList<>();
         if (savedRequest.getAssignee() != null) {
             notificationService.createNotification(
                     savedRequest.getAssignee(),
@@ -459,8 +460,12 @@ public class RequisitionServiceImpl implements RequisitionService {
                     NotificationType.SUBMITTED,
                     "New requisition '" + savedRequest.getRequestName() + "' has been submitted and requires your action."
             );
+            notifiedRecipients.add(savedRequest.getAssignee().getEmail() + " (Reason: SUBMITTED)");
+        }
+
+        if (!notifiedRecipients.isEmpty()) {
             auditService.createNotificationLog(actor, savedRequest,
-                    "Notifications sent for submission to:\n- " + savedRequest.getAssignee().getEmail() + " (Reason: SUBMITTED)");
+                    "Notifications sent for submission to:\n- " + String.join("\n- ", notifiedRecipients));
         }
 
         return requisitionMapper.toDto(savedRequest);

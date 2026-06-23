@@ -26,10 +26,10 @@
 
         <div *ngIf="isEditable" class="w-full flex flex-col gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">
+            <h1 class="font-manrope text-2xl font-bold text-on-surface m-0 mb-1 leading-tight">
               {{ workflowVersion ? 'Edit Workflow' : 'Add New Workflow' }}
             </h1>
-            <p class="text-sm text-slate-500 m-0">
+            <p class="text-[13px] text-muted-grey m-0">
               Design the multi-level step chains, assign responsible user roles, and define document constraint rules for this workflow.
             </p>
           </div>
@@ -63,9 +63,12 @@
           </div>
         </div>
         <div *ngIf="!isEditable">
-          <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">
+          <h1 class="font-manrope text-2xl font-bold text-on-surface m-0 mb-1 leading-tight">
             {{ workflowForm.value.title || 'Untitled Workflow' }}
           </h1>
+          <p class="text-[13px] text-muted-grey m-0 mb-2">
+            View the step chain structure, roles, and constraint rules for this procurement workflow.
+          </p>
           <div class="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
               [ngClass]="workflowIsActive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-100 text-slate-600 border border-slate-200'">

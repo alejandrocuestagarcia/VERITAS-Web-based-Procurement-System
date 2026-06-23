@@ -7,8 +7,8 @@
       <div>
         <div *ngIf="routingSubtitle" class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1"
           [innerHTML]="routingSubtitle"></div>
-        <h1 class="text-2xl font-bold text-slate-900 m-0 mb-1">{{ title }}</h1>
-        <p *ngIf="subtitle" class="text-sm text-slate-500 m-0">{{ subtitle }}</p>
+        <h1 class="font-manrope text-2xl font-bold text-on-surface m-0 mb-1 leading-tight">{{ title }}</h1>
+        <p *ngIf="subtitle" class="text-[13px] text-muted-grey m-0">{{ subtitle }}</p>
       </div>
       <div class="flex gap-3 items-center w-full sm:w-auto sm:shrink-0 pt-1 max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:z-50 max-sm:bg-surface max-sm:border-t max-sm:border-slate-200 max-sm:p-4 max-sm:shadow-[0_-4px_12px_rgba(0,0,0,0.08)] sm:static sm:p-0 sm:border-none sm:shadow-none">
         <button mat-flat-button type="button" (click)="cancelled.emit()" class="v-btn-secondary flex-1 sm:flex-initial">Discard</button>

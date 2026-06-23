@@ -255,6 +255,8 @@ public class UserServiceImpl implements UserService {
       actualUser.setIsActive(false);
       actualUser.setNotificationEmailEnabled(false);
       actualUser.setDeletedAt(LocalDateTime.now());
+      actualUser.setName("Inactive");
+      actualUser.setEmail("inactive_" + actualUser.getId() + "@veritas.com");
 
       if (fallbackUserId != null) {
         User fallbackUser = userRepository.findById(fallbackUserId)
@@ -309,6 +311,15 @@ public class UserServiceImpl implements UserService {
     return userRepository.findAllByRoleAndIsActiveTrue(role).stream()
         .map(userMapper::toUserDto)
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public UserDto getUserDtoById(Long id) {
+    log.debug("Fetching user by id: {}", id);
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("User not found with id " + id));
+    return userMapper.toUserDto(user);
   }
 
   private boolean hasPermissionLoss(UserRole oldRole, UserRole newRole) {
