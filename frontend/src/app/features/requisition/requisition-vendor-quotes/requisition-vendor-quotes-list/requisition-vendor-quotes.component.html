@@ -27,14 +27,14 @@
     <span>Add Vendor Quote</span>
   </button>
 
-  <button actions mat-flat-button class="v-btn-brand" (click)="openInvoiceDrawer()" *ngIf="selectedQuote && !hasInvoice">
+  <button actions mat-flat-button class="v-btn-outline-brand" (click)="openInvoiceDrawer()" *ngIf="selectedQuote && !hasInvoice">
     <mat-icon>receipt_long</mat-icon>
     <span>Upload Invoice</span>
   </button>
 
-  <button actions mat-flat-button color="warn" (click)="deleteInvoice()" *ngIf="hasInvoice">
-    <mat-icon>delete</mat-icon>
-    <span>Delete Invoice</span>
+  <button actions mat-flat-button class="v-btn-outline-brand" (click)="viewInvoice()" *ngIf="hasInvoice">
+    <mat-icon>visibility</mat-icon>
+    <span>View Invoice</span>
   </button>
 
   <button filters mat-stroked-button class="v-btn-secondary" type="button"
@@ -155,7 +155,7 @@
             <div class="flex flex-col">
               <h2 class="text-xl font-bold text-gray-900" id="invoice-drawer-title">
                 <mat-icon class="mr-2 align-middle text-blue-600" style="font-size: 24px;">receipt_long</mat-icon>
-                Upload Invoice
+                {{ !isViewingInvoice ? 'Upload Invoice' : (isEditingInvoice ? 'Edit Invoice' : 'Invoice Details') }}
               </h2>
               <p class="text-xs text-gray-500 mt-1 font-medium">
                 For requisition: {{ requisition?.requestName }}
@@ -191,7 +191,7 @@
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice Number *</label>
                 <input formControlName="invoiceNumber" type="text" placeholder="e.g. INV-2026-00482"
-                       class="w-full px-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+                       class="w-full px-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:bg-gray-50 disabled:text-gray-500"
                        [class.border-red-500]="invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid"
                        [class.border-gray-300]="!(invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid)"
                        [class.focus:ring-red-500]="invoiceForm.get('invoiceNumber')?.touched && invoiceForm.get('invoiceNumber')?.invalid"
@@ -207,7 +207,7 @@
                 <div class="relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">{{ selectedQuote?.currency }}</span>
                   <input formControlName="totalAmount" type="number" step="0.01" min="0"
-                         class="w-full pl-12 pr-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2"
+                         class="w-full pl-12 pr-4 py-2.5 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 disabled:bg-gray-50 disabled:text-gray-500"
                          [class.border-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
                          [class.border-gray-300]="!(invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid)"
                          [class.focus:ring-red-500]="invoiceForm.get('totalAmount')?.touched && invoiceForm.get('totalAmount')?.invalid"
@@ -223,7 +223,7 @@
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Due Date *</label>
                 <mat-form-field appearance="outline" class="w-full">
                   <input matInput [matDatepicker]="dueDatePicker" formControlName="dueDate" placeholder="Choose due date">
-                  <mat-datepicker-toggle matIconSuffix [for]="dueDatePicker"></mat-datepicker-toggle>
+                  <mat-datepicker-toggle matIconSuffix [for]="dueDatePicker" [disabled]="invoiceForm.get('dueDate')?.disabled"></mat-datepicker-toggle>
                   <mat-datepicker #dueDatePicker></mat-datepicker>
                   <mat-error *ngIf="invoiceForm.get('dueDate')?.hasError('required') && invoiceForm.get('dueDate')?.touched">
                     Due date is required.
@@ -235,7 +235,7 @@
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice Date *</label>
                 <mat-form-field appearance="outline" class="w-full">
                   <input matInput [matDatepicker]="invoiceDatePicker" formControlName="invoiceDate" placeholder="Choose invoice date">
-                  <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker"></mat-datepicker-toggle>
+                  <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker" [disabled]="invoiceForm.get('invoiceDate')?.disabled"></mat-datepicker-toggle>
                   <mat-datepicker #invoiceDatePicker></mat-datepicker>
                   <mat-error *ngIf="invoiceForm.get('invoiceDate')?.hasError('required') && invoiceForm.get('invoiceDate')?.touched">
                     Invoice date is required.
@@ -243,15 +243,38 @@
                 </mat-form-field>
               </div>
 
-              <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice File</label>
+              <div *ngIf="isViewingInvoice" class="space-y-1.5">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Attached Invoice File</label>
+                <div *ngIf="invoiceAttachment" (click)="downloadAttachment(invoiceAttachment)"
+                     class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/50 transition-colors group cursor-pointer">
+                  <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100/50 text-blue-600 flex items-center justify-center shrink-0">
+                      <mat-icon class="scale-[0.85]">{{ invoiceAttachment.fileType?.includes('pdf') || invoiceAttachment.fileName?.endsWith('.pdf') ? 'picture_as_pdf' : invoiceAttachment.fileType?.includes('image') ? 'image' : 'insert_drive_file' }}</mat-icon>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="text-[13px] font-bold text-slate-800 truncate" [title]="invoiceAttachment.fileName">{{ invoiceAttachment.fileName }}</span>
+                      <span class="text-[11px] font-semibold text-slate-400">{{ ((invoiceAttachment.fileSize || 0) / 1024) | number:'1.0-0' }} KB • {{ invoiceAttachment.uploadedAt | date:'MMM d, yyyy' }}</span>
+                    </div>
+                  </div>
+                  <mat-icon class="text-slate-300 group-hover:text-blue-500 scale-90 transition-colors">download</mat-icon>
+                </div>
+                <div *ngIf="!invoiceAttachment" class="p-3 text-xs text-amber-600 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-2">
+                  <mat-icon class="scale-90 text-amber-500">warning</mat-icon>
+                  <span>No invoice document file attached.</span>
+                </div>
+              </div>
+
+              <div *ngIf="isEditingInvoice">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  {{ isViewingInvoice ? 'Replace Invoice File (Optional)' : 'Invoice File' }}
+                </label>
                 <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
                      (click)="invoiceFileInput.click()"
                      (dragover)="$event.preventDefault()"
                      (drop)="onFileDrop($event)">
                   <mat-icon class="text-gray-400 mb-2" style="font-size: 40px; width: 40px; height: 40px;">cloud_upload</mat-icon>
                   <p class="text-sm font-semibold text-gray-600" *ngIf="!invoiceFile">
-                    Click or drag & drop an invoice file
+                    Click or drag & drop a file to {{ isViewingInvoice ? 'replace the current one' : 'upload' }}
                   </p>
                   <p class="text-sm font-semibold text-green-700" *ngIf="invoiceFile">
                     <mat-icon class="align-middle text-green-600 scale-90">check_circle</mat-icon>
@@ -265,16 +288,40 @@
           </div>
 
           <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between">
-            <button mat-stroked-button class="v-btn-secondary" (click)="closeInvoiceDrawer()">
-              Cancel
+            <button mat-stroked-button class="v-btn-secondary" (click)="cancelEditingInvoice()">
+              {{ isViewingInvoice && !isEditingInvoice ? 'Close' : 'Cancel' }}
             </button>
-            <button mat-flat-button class="v-btn-brand"
-                    [disabled]="isUploadingInvoice"
-                    (click)="submitInvoice()">
-              <mat-icon class="scale-90 mr-1" *ngIf="!isUploadingInvoice">upload</mat-icon>
-              <mat-spinner *ngIf="isUploadingInvoice" diameter="18" class="mr-2"></mat-spinner>
-              {{ isUploadingInvoice ? 'Uploading...' : 'Upload Invoice' }}
-            </button>
+
+            <ng-container *ngIf="isViewingInvoice; else createAction">
+              <div class="flex items-center gap-2" *ngIf="!isEditingInvoice">
+                <button mat-flat-button color="warn" *ngIf="!invoice?.isPaid" (click)="deleteInvoice()">
+                  <mat-icon class="scale-90 mr-1">delete</mat-icon>
+                  <span>Delete Invoice</span>
+                </button>
+                <button mat-flat-button class="v-btn-brand" *ngIf="!invoice?.isPaid" (click)="startEditingInvoice()">
+                  <mat-icon class="scale-90 mr-1">edit</mat-icon>
+                  <span>Edit Invoice</span>
+                </button>
+              </div>
+
+              <button mat-flat-button class="v-btn-brand" *ngIf="isEditingInvoice"
+                      [disabled]="isUploadingInvoice"
+                      (click)="submitInvoice()">
+                <mat-icon class="scale-90 mr-1" *ngIf="!isUploadingInvoice">save</mat-icon>
+                <mat-spinner *ngIf="isUploadingInvoice" diameter="18" class="mr-2"></mat-spinner>
+                {{ isUploadingInvoice ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </ng-container>
+
+            <ng-template #createAction>
+              <button mat-flat-button class="v-btn-brand"
+                      [disabled]="isUploadingInvoice"
+                      (click)="submitInvoice()">
+                <mat-icon class="scale-90 mr-1" *ngIf="!isUploadingInvoice">upload</mat-icon>
+                <mat-spinner *ngIf="isUploadingInvoice" diameter="18" class="mr-2"></mat-spinner>
+                {{ isUploadingInvoice ? 'Uploading...' : 'Upload Invoice' }}
+              </button>
+            </ng-template>
           </div>
         </ng-container>
       </div>
