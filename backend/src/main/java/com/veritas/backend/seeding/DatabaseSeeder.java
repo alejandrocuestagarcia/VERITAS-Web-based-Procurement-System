@@ -60,7 +60,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-//AI-REFACTORED
+// AI-GENERATED
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "app.seeding.enabled", havingValue = "true", matchIfMissing = true)
@@ -304,7 +304,6 @@ public class DatabaseSeeder implements ApplicationRunner {
             log.info("Seeded manually crafted requests with quotes and budget tracking");
         }
 
-        // AI-GENERATED
         // 8. Seed Dynamic Rich Test Data (Faker)
         if (userRepo.count() <= 5) {
             log.info("Initializing rich dynamic mock data seeding with Faker...");
@@ -526,7 +525,6 @@ public class DatabaseSeeder implements ApplicationRunner {
             }
 
             List<Project> allProjects = projectRepo.findAll();
-            // AI-GENERATED
             Random dynamicRandom = new Random(42);
             for (int i = 0; i < 100; i++) {
                 Project userProject = allProjects.isEmpty() ? primaryProject : allProjects.get(dynamicRandom.nextInt(allProjects.size()));
@@ -850,7 +848,6 @@ public class DatabaseSeeder implements ApplicationRunner {
         return saved;
     }
 
-    // AI-GENERATED
     /**
      * Creates 3-5 vendor quotes for a request, each with line items matching the
      * request items.
@@ -950,7 +947,6 @@ public class DatabaseSeeder implements ApplicationRunner {
         }
     }
 
-    // AI-GENERATED
     private Invoice seedPaidInvoice(Request request, Vendor vendor, BigDecimal amount, LocalDate date) {
         Invoice invoice = new Invoice();
         invoice.setRequest(request);
@@ -980,7 +976,6 @@ public class DatabaseSeeder implements ApplicationRunner {
         return savedInvoice;
     }
 
-    // AI-GENERATED
     /**
      * Creates an unpaid invoice for a request awaiting payment.
      * Does NOT update actualSpend since payment hasn't happened yet.
@@ -1003,7 +998,6 @@ public class DatabaseSeeder implements ApplicationRunner {
         return savedInvoice;
     }
 
-    // AI-GENERATED
     /**
      * Creates a vendor evaluation for a finished request with realistic random scores.
      */
@@ -1038,7 +1032,6 @@ public class DatabaseSeeder implements ApplicationRunner {
                 vendor.getVendorName(), request.getRequestKey());
     }
 
-    // AI-GENERATED
     /**
      * Attaches a sample invoice PDF to a finished request's invoice.
      */
