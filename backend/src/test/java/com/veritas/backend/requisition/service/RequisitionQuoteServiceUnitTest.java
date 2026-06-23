@@ -13,6 +13,8 @@ import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
 import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
+import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.vendor.entity.Quote;
@@ -85,6 +87,12 @@ class RequisitionQuoteServiceUnitTest {
 
     @Mock
     private RequisitionServiceImpl requisitionService;
+
+    @Mock
+    private InvoiceRepository invoiceRepository;
+
+    @Mock
+    private AttachmentRepository attachmentRepository;
 
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;
@@ -1087,5 +1095,52 @@ class RequisitionQuoteServiceUnitTest {
         quoteService.deleteQuoteForRequest(requestId, quoteId);
 
         verify(quoteRepository).delete(quote);
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_WithInvoice_DeletesInvoiceAndAttachments() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        com.veritas.backend.requisition.entity.Invoice invoice = new com.veritas.backend.requisition.entity.Invoice();
+        invoice.setInvoiceId(100L);
+        com.veritas.backend.requisition.entity.Attachment attachment = new com.veritas.backend.requisition.entity.Attachment();
+        attachment.setAttachmentId(200L);
+        attachment.setStoragePath("/tmp/nonexistent-test-file-path");
+        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        request.setInvoice(invoice);
+
+        Quote quoteToSelect = new Quote();
+        quoteToSelect.setQuoteID(quoteId);
+        quoteToSelect.setRequest(request);
+        quoteToSelect.setSelected(false);
+        quoteToSelect.setTotalAmount(BigDecimal.valueOf(150));
+        quoteToSelect.setCurrency(Currency.EUR);
+
+        Quote currentlySelectedQuote = new Quote();
+        currentlySelectedQuote.setQuoteID(11L);
+        currentlySelectedQuote.setRequest(request);
+        currentlySelectedQuote.setSelected(true);
+        currentlySelectedQuote.setTotalAmount(BigDecimal.valueOf(100));
+        currentlySelectedQuote.setCurrency(Currency.EUR);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quoteToSelect, currentlySelectedQuote));
+
+        quoteService.selectQuoteForRequest(requestId, quoteId);
+
+        assertAll(
+            () -> assertTrue(quoteToSelect.isSelected()),
+            () -> assertFalse(currentlySelectedQuote.isSelected()),
+            () -> assertNull(request.getInvoice())
+        );
+
+        verify(attachmentRepository).delete(attachment);
+        verify(invoiceRepository).delete(invoice);
     }
 }

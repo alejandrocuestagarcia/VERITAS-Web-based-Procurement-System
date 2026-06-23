@@ -32,6 +32,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.veritas.backend.common.exception.WorkflowStateException;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.integrations.currency.entity.Currency;
+import com.veritas.backend.requisition.entity.Attachment;
+import com.veritas.backend.requisition.entity.Invoice;
+import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.math.RoundingMode;
 import java.math.BigDecimal;
 import java.util.List;
@@ -50,6 +58,8 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final CurrencyConversionService currencyConversionService;
     private final InternalBudgetRepository internalBudgetRepository;
     private final RequisitionServiceImpl requisitionService;
+    private final InvoiceRepository invoiceRepository;
+    private final AttachmentRepository attachmentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -212,6 +222,24 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         // Unselect all other quotes for this request
         BigDecimal oldAmountEur = BigDecimal.ZERO;
         List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
+        Quote currentlySelectedQuote = otherQuotes.stream().filter(Quote::isSelected).findFirst().orElse(null);
+
+        if (request.getInvoice() != null && (currentlySelectedQuote == null || !currentlySelectedQuote.getQuoteID().equals(quoteId))) {
+            Invoice invoice = request.getInvoice();
+            for (Attachment attachment : invoice.getAttachments()) {
+                try {
+                    Path filePath = Paths.get(attachment.getStoragePath());
+                    Files.deleteIfExists(filePath);
+                } catch (IOException e) {
+                    log.error("Could not delete file: " + attachment.getFileName(), e);
+                }
+                request.getAttachments().remove(attachment);
+                attachmentRepository.delete(attachment);
+            }
+            request.setInvoice(null);
+            invoiceRepository.delete(invoice);
+        }
+
         for (Quote quote : otherQuotes) {
             if (quote.isSelected()) {
                 BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;

@@ -125,11 +125,35 @@ export class RequisitionVendorQuotesComponent implements OnInit {
 
   selectQuote(quote: QuoteDto): void {
     if (!quote.quoteId) return;
+    if (quote.isSelected) return;
+
+    if (this.hasInvoice) {
+      const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+        maxWidth: '500px',
+        data: {
+          title: 'Select Quote',
+          message: 'Selecting a different quote will automatically delete the currently uploaded invoice since it was created for the previous quote. Do you want to proceed?'
+        }
+      });
+
+      dialogRef.afterClosed().subscribe((confirmed: any) => {
+        if (confirmed) {
+          this.executeQuoteSelection(quote);
+        }
+      });
+    } else {
+      this.executeQuoteSelection(quote);
+    }
+  }
+
+  private executeQuoteSelection(quote: QuoteDto): void {
+    if (!quote.quoteId) return;
     this.submitting = true;
     this.quoteService.selectQuote(this.requisitionId, quote.quoteId).subscribe({
       next: () => {
         this.toastService.showSuccess('Quote selected successfully');
         this.loadQuotes();
+        this.checkInvoiceExists();
         this.submitting = false;
       },
       error: (err: any) => {
