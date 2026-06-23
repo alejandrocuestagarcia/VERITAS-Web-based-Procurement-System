@@ -68,6 +68,7 @@ build-image:
     - cd backend && ./gradlew jib --no-configuration-cache -Djib.to.image=$IMAGE_TAG
   only:
     - master
+    - db-reset-test
 
 deploy-to-k8s:
   stage: deploy
@@ -86,8 +87,11 @@ deploy-to-k8s:
     - echo "--- POD DETAILS ---"
     - kubectl describe pods -n veritas || true
     - echo "--- DATABASE LOGS ---"
-    - kubectl logs -l app=veritas-db -n veritas --tail=50 || true
+    - kubectl logs -l app=veritas-db -n veritas --tail=500 || true
     - echo "--- BACKEND LOGS ---"
-    - kubectl logs -l app=veritas -n veritas --tail=50 || true
+    - kubectl logs -l app=veritas -n veritas --tail=500 || true
+    - echo "--- PVCS ---"
+    - kubectl get pvc -n veritas || true
   only:
     - master
+    - db-reset-test
