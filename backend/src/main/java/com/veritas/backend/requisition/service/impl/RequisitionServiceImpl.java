@@ -333,34 +333,24 @@ public class RequisitionServiceImpl implements RequisitionService {
         Request saved = requestRepository.save(request);
 
         List<String> notifiedRecipients = new ArrayList<>();
-        notificationService.createNotification(
-                saved.getUser(),
-                saved,
-                NotificationType.APPROVED,
-                "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
-        );
-        notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
-        if (saved.getState() == RequestStatus.FINISHED) {
+        if (saved.getUser() != null) {
             notificationService.createNotification(
                     saved.getUser(),
                     saved,
-                    NotificationType.FINISHED,
-                    "Your request '" + saved.getRequestName() + "' has been completed."
+                    NotificationType.APPROVED,
+                    "Your request '" + saved.getRequestName() + "' has been approved at step '" + stepApprovedAt + "'."
             );
-            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
-            try {
-                List<User> financeOfficers = userRepository.findAllByRoleAndIsActiveTrue(UserRole.FINANCE_OFFICER);
-                for (User fo : financeOfficers) {
-                    notificationService.createNotification(
-                            fo,
-                            saved,
-                            NotificationType.ASSIGNED,
-                            "Requisition '" + saved.getRequestName() + "' is completed and requires payment processing."
-                    );
-                    notifiedRecipients.add(fo.getEmail() + " (Reason: ASSIGNED)");
-                }
-            } catch (Exception e) {
-                log.error("Failed to notify finance officers for completed requisition {}", saved.getRequestName(), e);
+            notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: APPROVED)");
+        }
+        if (saved.getState() == RequestStatus.FINISHED) {
+            if (saved.getUser() != null) {
+                notificationService.createNotification(
+                        saved.getUser(),
+                        saved,
+                        NotificationType.FINISHED,
+                        "Your request '" + saved.getRequestName() + "' has been completed."
+                );
+                notifiedRecipients.add(saved.getUser().getEmail() + " (Reason: FINISHED)");
             }
         }
         if (saved.getState() != RequestStatus.FINISHED) {
@@ -372,10 +362,6 @@ public class RequisitionServiceImpl implements RequisitionService {
                         "Request '" + saved.getRequestName() + "' requires your action at step '" + (saved.getCurrentStep() != null ? saved.getCurrentStep().getName() : "Unknown") + "'."
                 );
                 notifiedRecipients.add(saved.getAssignee().getEmail() + " (Reason: ASSIGNED)");
-            } else {
-                notifyEligibleUsers(saved, NotificationType.ASSIGNED,
-                        "Request '" + saved.getRequestName() + "' is in the global pool at step '" + (saved.getCurrentStep() != null ? saved.getCurrentStep().getName() : "Unknown") + "'.",
-                        notifiedRecipients);
             }
         }
 
@@ -434,10 +420,6 @@ public class RequisitionServiceImpl implements RequisitionService {
                     "Request '" + savedRequest.getRequestName() + "' requires your action after revert."
             );
             notifiedRecipients.add(savedRequest.getAssignee().getEmail() + " (Reason: ASSIGNED)");
-        } else {
-            notifyEligibleUsers(savedRequest, NotificationType.ASSIGNED,
-                    "Request '" + savedRequest.getRequestName() + "' is in the global pool after revert.",
-                    notifiedRecipients);
         }
 
         if (!notifiedRecipients.isEmpty()) {
@@ -479,10 +461,6 @@ public class RequisitionServiceImpl implements RequisitionService {
                     "New requisition '" + savedRequest.getRequestName() + "' has been submitted and requires your action."
             );
             notifiedRecipients.add(savedRequest.getAssignee().getEmail() + " (Reason: SUBMITTED)");
-        } else {
-            notifyEligibleUsers(savedRequest, NotificationType.SUBMITTED,
-                    "New requisition '" + savedRequest.getRequestName() + "' has been submitted and is in the global pool.",
-                    notifiedRecipients);
         }
 
         if (!notifiedRecipients.isEmpty()) {
@@ -1185,61 +1163,6 @@ public class RequisitionServiceImpl implements RequisitionService {
             if (!user.getDepartment().getDepartmentId().equals(request.getTeam().getDepartment().getDepartmentId())) {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
-        }
-    }
-
-    private void notifyEligibleUsers(Request request, NotificationType type, String message, List<String> notifiedRecipients) {
-        WorkflowStep currentStep = request.getCurrentStep();
-        if (currentStep == null) return;
-
-        List<User> eligibleUsers = new ArrayList<>();
-        if (Boolean.TRUE.equals(currentStep.getIsTeamLeader())) {
-            if (request.getUser() != null && request.getUser().getTeam() != null && request.getUser().getTeam().getLeader() != null) {
-                eligibleUsers.add(request.getUser().getTeam().getLeader());
-            }
-        } else if (currentStep.getRole() != null) {
-            List<User> usersByRole = userRepository.findAllByRoleAndIsActiveTrue(currentStep.getRole());
-            if (currentStep.getRole() == UserRole.PROCUREMENT_OFFICER) {
-                Long reqDept = null;
-                if (request.getUser() != null && request.getUser().getTeam() != null
-                        && request.getUser().getTeam().getDepartment() != null) {
-                    reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
-                }
-                if (reqDept != null) {
-                    for (User u : usersByRole) {
-                        if (u.getDepartment() != null && reqDept.equals(u.getDepartment().getDepartmentId())) {
-                            eligibleUsers.add(u);
-                        }
-                    }
-                } else {
-                    eligibleUsers.addAll(usersByRole);
-                }
-            } else {
-                eligibleUsers.addAll(usersByRole);
-            }
-        } else {
-            List<User> allUsers = userRepository.findAll();
-            Long reqDept = null;
-            if (request.getUser() != null && request.getUser().getTeam() != null
-                    && request.getUser().getTeam().getDepartment() != null) {
-                reqDept = request.getUser().getTeam().getDepartment().getDepartmentId();
-            }
-            for (User u : allUsers) {
-                if (Boolean.TRUE.equals(u.getIsActive()) && u.getRole() != UserRole.REQUESTER) {
-                    if (u.getRole() == UserRole.PROCUREMENT_OFFICER) {
-                        if (reqDept == null || (u.getDepartment() != null && reqDept.equals(u.getDepartment().getDepartmentId()))) {
-                            eligibleUsers.add(u);
-                        }
-                    } else {
-                        eligibleUsers.add(u);
-                    }
-                }
-            }
-        }
-
-        for (User u : eligibleUsers) {
-            notificationService.createNotification(u, request, type, message);
-            notifiedRecipients.add(u.getEmail() + " (Reason: " + type + ", Global Pool)");
         }
     }
 }

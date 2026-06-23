@@ -2372,12 +2372,6 @@ class RequisitionServiceUnitTest {
             r.setState(RequestStatus.FINISHED);
             return r;
         });
-
-        User financeOfficer = new User();
-        financeOfficer.setEmail("fo@veritas.com");
-        financeOfficer.setRole(UserRole.FINANCE_OFFICER);
-        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.FINANCE_OFFICER)).thenReturn(List.of(financeOfficer));
-
         RequisitionDto expectedDto = mock(RequisitionDto.class);
         when(requisitionMapper.toDto(any(Request.class))).thenReturn(expectedDto);
 
@@ -2386,7 +2380,6 @@ class RequisitionServiceUnitTest {
         assertNotNull(result);
         verify(notificationService).createNotification(eq(creator), any(), eq(NotificationType.APPROVED), anyString());
         verify(notificationService).createNotification(eq(creator), any(), eq(NotificationType.FINISHED), anyString());
-        verify(notificationService).createNotification(eq(financeOfficer), any(), eq(NotificationType.ASSIGNED), anyString());
     }
 
     @Test
