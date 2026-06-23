@@ -241,22 +241,22 @@
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice PDF</label>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Invoice File</label>
                 <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
                      (click)="invoiceFileInput.click()"
                      (dragover)="$event.preventDefault()"
                      (drop)="onFileDrop($event)">
                   <mat-icon class="text-gray-400 mb-2" style="font-size: 40px; width: 40px; height: 40px;">cloud_upload</mat-icon>
                   <p class="text-sm font-semibold text-gray-600" *ngIf="!invoiceFile">
-                    Click or drag & drop a PDF file
+                    Click or drag & drop an invoice file
                   </p>
                   <p class="text-sm font-semibold text-green-700" *ngIf="invoiceFile">
                     <mat-icon class="align-middle text-green-600 scale-90">check_circle</mat-icon>
                     {{ invoiceFile.name }} ({{ (invoiceFile.size / 1024).toFixed(1) }} KB)
                   </p>
-                  <p class="text-xs text-gray-400 mt-1">PDF only, max 10 MB</p>
+                  <p class="text-xs text-gray-400 mt-1">Any file format, max 10 MB</p>
                 </div>
-                <input #invoiceFileInput type="file" accept=".pdf,application/pdf" class="hidden" (change)="onFileSelected($event)" />
+                <input #invoiceFileInput type="file" class="hidden" (change)="onFileSelected($event)" />
               </div>
             </form>
           </div>

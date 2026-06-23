@@ -217,17 +217,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                         if (minReliability != null && !minReliability.isBlank()) {
                             rule.setMinVendorReliabilityScore(Double.parseDouble(minReliability));
                         }
-                        String pdfRequired = child.getAttribute("isPdfRequired");
-                        if (pdfRequired != null) {
-                            rule.setIsPdfRequired(Boolean.parseBoolean(pdfRequired));
-                        }
-                        String csvRequired = child.getAttribute("isCsvRequired");
-                        if (csvRequired != null) {
-                            rule.setIsCsvRequired(Boolean.parseBoolean(csvRequired));
-                        }
-                        String imageRequired = child.getAttribute("isImageRequired");
-                        if (imageRequired != null) {
-                            rule.setIsImageRequired(Boolean.parseBoolean(imageRequired));
+                        String requiredFileTypes = child.getAttribute("requiredFileTypes");
+                        if (requiredFileTypes != null && !requiredFileTypes.isBlank()) {
+                            rule.setRequiredFileTypes(requiredFileTypes);
                         }
                         String advancedRule = child.getAttribute("advancedRule");
                         if (advancedRule != null && !advancedRule.isBlank()) {

@@ -21,8 +21,13 @@ import org.springframework.data.domain.Pageable;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.workflow.entity.AttachmentType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @Slf4j
@@ -91,5 +96,20 @@ public class WorkflowController {
     public ResponseEntity<List<SpelFieldDto>> getSpelFields() {
         log.info("GET /workflows/spel-fields");
         return ResponseEntity.ok(workflowService.getSpelFields());
+    }
+
+    @IsRequester
+    @Operation(summary = "Get allowed attachment types", description = "Retrieves the list of supported attachment file types and their labels.")
+    @GetMapping("/attachment-types")
+    public ResponseEntity<Map<String, String>> getAttachmentTypes() {
+        log.info("GET /workflows/attachment-types");
+        Map<String, String> types = Arrays.stream(AttachmentType.values())
+                .collect(Collectors.toMap(
+                        t -> t.name().toLowerCase(),
+                        AttachmentType::getLabel,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
+        return ResponseEntity.ok(types);
     }
 }

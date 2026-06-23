@@ -51,10 +51,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     automatedApproval: false
   };
   public roles = Object.values(UserDtoRoleEnum).filter(r => r !== UserDtoRoleEnum.Administrator);
+  public availableFileTypes: { value: string; label: string }[] = [];
   public currentRule: any = {
-    isPdfRequired: false,
-    isCsvRequired: false,
-    isImageRequired: false,
+    requiredFileTypes: [],
     minRequiredVendors: 0,
     minVendorReliabilityScore: null,
     optionalFailureMessage: '',
@@ -67,6 +66,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private spelNested: Record<string, { label: string; insert: string; type: string }[]> = {};
 
+  getSelectedFileTypesTriggerText(): string {
+    const selected = this.currentRule.requiredFileTypes || [];
+    if (selected.length === 0) return '';
+    return selected.map((s: string) => s.toUpperCase()).join(', ');
+  }
   private readonly spelOperators = [
     { label: 'and', insert: 'and ' },
     { label: 'or', insert: 'or ' },
@@ -300,6 +304,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       }
     });
 
+    this.workflowService.getAttachmentTypes().subscribe({
+      next: (typesMap) => {
+        this.availableFileTypes = Object.entries(typesMap || {}).map(([key, label]) => ({
+          value: key,
+          label: label
+        }));
+      },
+      error: (err) => {
+        console.error('Failed to load attachment types', err);
+      }
+    });
+
     if (this.mode === 'create') {
       await this.loadXml(dummyBpmnXml);
     } else {
@@ -516,10 +532,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         e.$type === 'veritas:transitionRule' || e.type === 'veritas:transitionRule'
       );
       if (rule) {
+        const typesArr = rule.requiredFileTypes
+          ? rule.requiredFileTypes.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
+          : [];
+
         this.currentRule = {
-          isPdfRequired: String(rule.isPdfRequired) === 'true',
-          isCsvRequired: String(rule.isCsvRequired) === 'true',
-          isImageRequired: String(rule.isImageRequired) === 'true',
+          requiredFileTypes: typesArr,
           minRequiredVendors: parseInt(rule.minRequiredVendors || '0'),
           minVendorReliabilityScore: rule.minVendorReliabilityScore ? parseFloat(rule.minVendorReliabilityScore) : null,
           optionalFailureMessage: rule.optionalFailureMessage || '',
@@ -532,9 +550,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       }
     }
     this.currentRule = {
-      isPdfRequired: false,
-      isCsvRequired: false,
-      isImageRequired: false,
+      requiredFileTypes: [],
       minRequiredVendors: 0,
       minVendorReliabilityScore: null,
       optionalFailureMessage: '',
@@ -551,9 +567,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.selectedFlowEntersEndEvent = false;
     this.isAdvancedRuleExpanded = false;
     this.currentRule = {
-      isPdfRequired: false,
-      isCsvRequired: false,
-      isImageRequired: false,
+      requiredFileTypes: [],
       minRequiredVendors: 0,
       minVendorReliabilityScore: null,
       optionalFailureMessage: '',
@@ -669,7 +683,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
-  updateRuleProperty(key: 'minRequiredVendors' | 'minVendorReliabilityScore' | 'isPdfRequired' | 'isCsvRequired' | 'isImageRequired' | 'advancedRule', value: any) {
+  updateRuleProperty(key: 'minRequiredVendors' | 'minVendorReliabilityScore' | 'requiredFileTypes' | 'advancedRule', value: any) {
     const directEditing = this.bpmnInstance.get('directEditing');
     if (directEditing.isActive()) {
       directEditing.complete();
@@ -712,9 +726,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       }
     }
 
-    rule[key] = value;
+    if (key === 'requiredFileTypes') {
+      const joinedTypes = (value as string[]).join(',');
+      rule.requiredFileTypes = joinedTypes;
+    } else {
+      rule[key] = value;
+    }
 
-    const isRuleEmpty = !rule.isPdfRequired && !rule.isCsvRequired && !rule.isImageRequired && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0) && (rule.minVendorReliabilityScore === null || rule.minVendorReliabilityScore === undefined || rule.minVendorReliabilityScore === '') && !rule.advancedRule;
+    const isRuleEmpty = (!rule.requiredFileTypes || rule.requiredFileTypes.trim() === '') && (!rule.minRequiredVendors || rule.minRequiredVendors <= 0) && (rule.minVendorReliabilityScore === null || rule.minVendorReliabilityScore === undefined || rule.minVendorReliabilityScore === '') && !rule.advancedRule;
 
     if (isRuleEmpty) {
       if (extensionElements.values) {

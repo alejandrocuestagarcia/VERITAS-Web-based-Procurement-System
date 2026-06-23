@@ -20,9 +20,9 @@ public class TransitionRule {
     private WorkflowTransition transition;
 
     private Integer minRequiredVendors = 0;
-    private Boolean isPdfRequired = false;
-    private Boolean isCsvRequired = false;
-    private Boolean isImageRequired = false;
+
+    @Column(name = "required_file_types")
+    private String requiredFileTypes;
 
     @Column(name = "min_vendor_reliability_score")
     private Double minVendorReliabilityScore;

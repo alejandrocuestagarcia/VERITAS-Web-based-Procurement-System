@@ -1,6 +1,7 @@
 package com.veritas.backend.workflow.validation;
 
 import com.veritas.backend.user.entity.UserRole;
+import com.veritas.backend.workflow.entity.AttachmentType;
 import com.veritas.backend.workflow.dto.SpelFieldDto;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -886,6 +887,19 @@ public class BpmnValidator {
                         } catch (NumberFormatException e) {
                             result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
                                     + "' has non-numeric minVendorReliabilityScore: '" + minReliability + "'");
+                        }
+                    }
+                    String requiredFileTypes = child.getAttribute("requiredFileTypes");
+                    if (requiredFileTypes != null && !requiredFileTypes.isBlank()) {
+                        for (String type : requiredFileTypes.split(",")) {
+                            String trimmed = type.trim().toUpperCase();
+                            if (trimmed.isEmpty()) continue;
+                            try {
+                                AttachmentType.valueOf(trimmed);
+                            } catch (IllegalArgumentException e) {
+                                result.addError("Transition rule on a transition leaving '" + getNodeName(flow.getSource())
+                                        + "' has invalid required file type: '" + type + "'. Allowed types: " + Arrays.toString(AttachmentType.values()));
+                            }
                         }
                     }
                     String advancedRule = child.getAttribute("advancedRule");

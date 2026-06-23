@@ -266,7 +266,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsPdfRequired(true);
+        rule.setRequiredFileTypes("pdf");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
@@ -279,7 +279,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsPdfRequired(true);
+        rule.setRequiredFileTypes("pdf");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         Attachment pdf = new Attachment();
@@ -294,7 +294,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsCsvRequired(true);
+        rule.setRequiredFileTypes("csv");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
@@ -307,7 +307,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsImageRequired(true);
+        rule.setRequiredFileTypes("image");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         Attachment pdf = new Attachment();
@@ -316,7 +316,7 @@ class WorkflowEngineServiceUnitTest {
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
-        assertEquals("Image attachment required", ex.getMessage());
+        assertEquals("IMAGE attachment required", ex.getMessage());
     }
 
     @Test
@@ -530,7 +530,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsPdfRequired(true);
+        rule.setRequiredFileTypes("pdf");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -561,7 +561,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsPdfRequired(true);
+        rule.setRequiredFileTypes("pdf");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -589,7 +589,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsCsvRequired(true);
+        rule.setRequiredFileTypes("csv");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -619,7 +619,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsCsvRequired(true);
+        rule.setRequiredFileTypes("csv");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -647,7 +647,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsImageRequired(true);
+        rule.setRequiredFileTypes("image");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -665,7 +665,7 @@ class WorkflowEngineServiceUnitTest {
 
         WorkflowStateException ex = assertThrows(WorkflowStateException.class,
                 () -> workflowEngineService.moveToNextStep(testRequest, testActor, null));
-        assertEquals("Image attachment required", ex.getMessage());
+        assertEquals("IMAGE attachment required", ex.getMessage());
     }
 
     @Test
@@ -677,7 +677,7 @@ class WorkflowEngineServiceUnitTest {
         when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
 
         TransitionRule rule = new TransitionRule();
-        rule.setIsImageRequired(true);
+        rule.setRequiredFileTypes("image");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         LocalDateTime entryTime = LocalDateTime.of(2026, 5, 26, 14, 0, 0);
@@ -1149,9 +1149,7 @@ class WorkflowEngineServiceUnitTest {
         
         TransitionRule rule = new TransitionRule();
         rule.setMinVendorReliabilityScore(7.0);
-        rule.setIsPdfRequired(true);
-        rule.setIsCsvRequired(true);
-        rule.setIsImageRequired(true);
+        rule.setRequiredFileTypes("pdf,csv,image");
         when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
 
         Quote quote = new Quote();
@@ -1163,7 +1161,7 @@ class WorkflowEngineServiceUnitTest {
         
         assertAll(
             () -> assertTrue(ex.getMessage().contains("Selected quote has no associated vendor")),
-            () -> assertTrue(ex.getMessage().contains("Missing required attachments: PDF, CSV, Image"))
+            () -> assertTrue(ex.getMessage().contains("Missing required attachments: PDF, CSV, IMAGE"))
         );
     }
 
