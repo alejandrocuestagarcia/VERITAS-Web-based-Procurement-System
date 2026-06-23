@@ -203,10 +203,11 @@
             <!-- Selection Action Button -->
             <div class="mt-6">
               <button mat-flat-button class="w-full py-2.5 rounded-xl font-bold transition-all"
-                      [class.v-btn-brand]="quote === recommendedQuote"
-                      [class.v-btn-secondary]="quote !== recommendedQuote"
+                      [class.v-btn-brand]="quote === recommendedQuote && !quote.isSelected"
+                      [class.v-btn-secondary]="quote !== recommendedQuote && !quote.isSelected"
+                      [disabled]="quote.isSelected"
                       (click)="selectQuote(quote)">
-                Select Vendor
+                {{ quote.isSelected ? 'Selected' : 'Select Vendor' }}
               </button>
             </div>
 

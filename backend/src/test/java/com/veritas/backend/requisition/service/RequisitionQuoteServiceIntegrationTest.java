@@ -30,6 +30,10 @@ import com.veritas.backend.budget.entity.InternalBudget;
 import com.veritas.backend.budget.repository.InternalBudgetRepository;
 import com.veritas.backend.util.RequestFactory;
 import com.veritas.backend.util.UserFactory;
+import com.veritas.backend.requisition.entity.Attachment;
+import com.veritas.backend.requisition.entity.Invoice;
+import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,6 +84,12 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
 
     @Autowired
     private InternalBudgetRepository internalBudgetRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private AttachmentRepository attachmentRepository;
 
     @Autowired
     private RequestFactory requestFactory;
@@ -151,6 +161,8 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
         jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
 
+        attachmentRepository.deleteAll();
+        invoiceRepository.deleteAll();
         quoteLineItemRepository.deleteAll();
         quoteRepository.deleteAll();
         requestRepository.deleteAll();
@@ -508,5 +520,58 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
                 () -> assertEquals(0, updatedProjBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(200))),
                 () -> assertEquals(0, updatedDeptBudget.getCommittedSpend().compareTo(BigDecimal.valueOf(200)))
         );
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuote_WithExistingInvoice_DeletesInvoiceAndAttachments() {
+        Quote quote1 = saveTestQuote(Currency.EUR, BigDecimal.valueOf(100));
+        Quote quote2 = saveTestQuote(Currency.EUR, BigDecimal.valueOf(150));
+
+        // Select first quote initially
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote1.getQuoteID());
+
+        // Create and save an invoice associated with the request
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setVendor(vendor);
+        invoice.setInvoiceDate(java.time.LocalDate.now());
+        invoice.setCreatedAt(java.time.LocalDateTime.now());
+        invoice.setInvoiceNumber("INV-001");
+        invoice.setTotalAmount(BigDecimal.valueOf(100));
+        invoice.setCurrency(Currency.EUR);
+        invoice.setIsPaid(false);
+        invoice = invoiceRepository.save(invoice);
+
+        // Update request reference
+        request.setInvoice(invoice);
+        request = requestRepository.save(request);
+
+        // Add an attachment to the invoice
+        Attachment attachment = new Attachment();
+        attachment.setFileName("invoice.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(1234L);
+        attachment.setUploadedAt(java.time.LocalDateTime.now());
+        attachment.setStoragePath("/tmp/nonexistent-test-invoice.pdf");
+        attachment.setRequest(request);
+        attachment.setInvoice(invoice);
+        attachment = attachmentRepository.save(attachment);
+
+        invoice.setAttachments(List.of(attachment));
+        invoice = invoiceRepository.save(invoice);
+
+        // Verify pre-conditions
+        assertTrue(invoiceRepository.findById(invoice.getInvoiceId()).isPresent());
+        assertTrue(attachmentRepository.findById(attachment.getAttachmentId()).isPresent());
+
+        // Select quote2, which should trigger invoice and attachment deletion
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote2.getQuoteID());
+
+        // Verify post-conditions
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertNull(updatedRequest.getInvoice());
+        assertTrue(invoiceRepository.findById(invoice.getInvoiceId()).isEmpty());
+        assertTrue(attachmentRepository.findById(attachment.getAttachmentId()).isEmpty());
     }
 }
