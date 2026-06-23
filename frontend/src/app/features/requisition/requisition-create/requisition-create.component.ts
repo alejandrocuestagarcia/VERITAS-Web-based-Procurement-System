@@ -523,7 +523,11 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.router.navigate(['/requisitions']);
+    if (this.isEditMode && this.requestId) {
+      this.router.navigate(['/requisitions', this.requestId]);
+    } else {
+      this.router.navigate(['/requisitions']);
+    }
   }
 
   ngOnDestroy(): void {
