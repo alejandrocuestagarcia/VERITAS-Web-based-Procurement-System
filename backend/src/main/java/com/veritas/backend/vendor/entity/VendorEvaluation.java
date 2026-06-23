@@ -39,6 +39,6 @@ public class VendorEvaluation {
     @Column(name = "gap_score", nullable = false)
     private Double gapScore;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

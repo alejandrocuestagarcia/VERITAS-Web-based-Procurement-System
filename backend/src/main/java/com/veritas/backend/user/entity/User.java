@@ -60,7 +60,7 @@ public class User implements UserDetails {
     @EqualsAndHashCode.Exclude
     private Department department;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)

@@ -48,7 +48,7 @@ public class Quote {
     @Column(name = "shipping_time", nullable = false)
     private int shippingTime;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)

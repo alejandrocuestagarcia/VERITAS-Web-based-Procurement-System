@@ -42,7 +42,7 @@ public class JiraSyncQueueItem {
     @Builder.Default
     private String status = "PENDING";
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "last_attempt")
