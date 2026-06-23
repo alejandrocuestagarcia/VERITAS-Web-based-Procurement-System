@@ -242,7 +242,7 @@ class WorkflowServiceUnitTest {
                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n" +
                 "      <bpmn:extensionElements>\n" +
-                "        <veritas:transitionRule minRequiredVendors=\"3\" isPdfRequired=\"true\" isCsvRequired=\"true\" isImageRequired=\"false\" />\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"3\" requiredFileTypes=\"pdf,csv\" />\n" +
                 "      </bpmn:extensionElements>\n" +
                 "    </bpmn:sequenceFlow>\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n" +
@@ -263,9 +263,7 @@ class WorkflowServiceUnitTest {
         TransitionRule rule = rulesList.getFirst();
         assertAll("TransitionRule fields",
                 () -> assertEquals(3, rule.getMinRequiredVendors()),
-                () -> assertTrue(rule.getIsPdfRequired()),
-                () -> assertTrue(rule.getIsCsvRequired()),
-                () -> assertFalse(rule.getIsImageRequired())
+                () -> assertEquals("pdf,csv", rule.getRequiredFileTypes())
         );
     }
 
@@ -691,7 +689,7 @@ class WorkflowServiceUnitTest {
                 "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\" />\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"Task_2\">\n" +
                 "      <bpmn:extensionElements>\n" +
-                "        <veritas:transitionRule minRequiredVendors=\"3\" minVendorReliabilityScore=\"4.5\" isPdfRequired=\"true\" isCsvRequired=\"false\" isImageRequired=\"true\" advancedRule=\"totalQuantity &gt; 10\" />\n" +
+                "        <veritas:transitionRule minRequiredVendors=\"3\" minVendorReliabilityScore=\"4.5\" requiredFileTypes=\"pdf,image\" advancedRule=\"totalQuantity &gt; 10\" />\n" +
                 "      </bpmn:extensionElements>\n" +
                 "    </bpmn:sequenceFlow>\n" +
                 "    <bpmn:sequenceFlow id=\"Flow_3\" sourceRef=\"Task_2\" targetRef=\"EndEvent_1\" />\n" +
@@ -708,9 +706,7 @@ class WorkflowServiceUnitTest {
         assertAll("TransitionRule fields with all attributes",
                 () -> assertEquals(3, rule.getMinRequiredVendors()),
                 () -> assertEquals(4.5, rule.getMinVendorReliabilityScore()),
-                () -> assertTrue(rule.getIsPdfRequired()),
-                () -> assertFalse(rule.getIsCsvRequired()),
-                () -> assertTrue(rule.getIsImageRequired()),
+                () -> assertEquals("pdf,image", rule.getRequiredFileTypes()),
                 () -> assertEquals("totalQuantity > 10", rule.getAdvancedRule())
         );
     }
