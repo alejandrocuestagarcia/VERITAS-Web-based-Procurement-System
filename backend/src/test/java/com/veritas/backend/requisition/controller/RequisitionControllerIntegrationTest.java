@@ -1220,12 +1220,16 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         WorkflowDefinition workflow = workflowDefinitionRepository.findAll().get(0);
         WorkflowStep startStep = workflowStepRepository.findAll().get(0);
 
+        Project project = projectRepository.findAll().get(0);
+        Team team = teamRepository.findAll().get(0);
         User owner = userRepository.findByEmail("req-integration@veritas.com").orElseThrow();
 
         Request request = requestFactory.createValidRequest("Original Name", owner);
         request.setState(RequestStatus.DRAFT);
         request.setWorkflowDefinition(workflow);
         request.setCurrentStep(startStep);
+        request.setProject(project);
+        request.setTeam(team);
         request.setItems(new ArrayList<>());
         request.setRevisionRequired(true);
         request = requestRepository.save(request);
