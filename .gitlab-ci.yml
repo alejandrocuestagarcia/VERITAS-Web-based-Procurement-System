@@ -68,7 +68,7 @@ build-image:
     - cd backend && ./gradlew jib --no-configuration-cache -Djib.to.image=$IMAGE_TAG
   only:
     - master
-    - db-reset-test
+    - fix/db-reset-test
 
 deploy-to-k8s:
   stage: deploy
@@ -94,4 +94,4 @@ deploy-to-k8s:
     - kubectl get pvc -n veritas || true
   only:
     - master
-    - db-reset-test
+    - fix/db-reset-test
