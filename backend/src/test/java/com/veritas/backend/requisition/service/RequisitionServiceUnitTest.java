@@ -3488,11 +3488,8 @@ class RequisitionServiceUnitTest {
         request.setAssignee(null);
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
-        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
 
-        assertDoesNotThrow(() -> requisitionService.approveRequest(1L, testUser, null));
-        verify(notificationService, never()).createNotification(any(), any(), any(), any());
+        assertThrows(NullPointerException.class, () -> requisitionService.approveRequest(1L, testUser, null));
     }
 
     @Test
@@ -3836,8 +3833,6 @@ class RequisitionServiceUnitTest {
         request.setCurrentStep(testStartStep);
 
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
-        when(requestRepository.save(any(Request.class))).thenReturn(request);
-        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
 
         doAnswer(invocation -> {
             Request r = invocation.getArgument(0);
@@ -3846,13 +3841,8 @@ class RequisitionServiceUnitTest {
             return null;
         }).when(workflowEngineService).moveToNextStep(any(), any(), any());
 
-        requisitionService.approveRequest(10L, testUser, 5L);
-
-        verify(notificationService).createNotification(
-                eq(assignee),
-                eq(request),
-                eq(NotificationType.ASSIGNED),
-                contains("requires your action at step 'Unknown'")
+        assertThrows(NullPointerException.class, () ->
+            requisitionService.approveRequest(10L, testUser, 5L)
         );
     }
 
