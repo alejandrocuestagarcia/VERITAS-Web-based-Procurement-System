@@ -77,7 +77,7 @@ export class UserListComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('VERITAS Error:', err);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load users'));
         this.loading = false;
       }
     });
@@ -209,7 +209,7 @@ export class UserListComponent implements OnInit {
         this.userSessions = response.activeSessions ?? 0;
       },
       error: (err) => {
-        console.error('Error fetching user stats:', err);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load user stats'));
       }
     })
 
