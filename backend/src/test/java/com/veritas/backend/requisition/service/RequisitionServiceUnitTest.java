@@ -22,6 +22,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 
 import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.budget.entity.BudgetType;
@@ -807,7 +809,6 @@ class RequisitionServiceUnitTest {
         verify(requestRepository, never()).save(any());
     }
 
-    //AI-Generated
     @Test
     void UpdateRequest_NotOwner_ThrowsAccessDeniedException() {
         Request request = new Request();
@@ -822,6 +823,64 @@ class RequisitionServiceUnitTest {
                 "Updated", "Desc", 1L, 1L, Priority.HIGH, List.of());
 
         when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class,
+                () -> requisitionService.updateRequest(1L, updates, anotherUser));
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void UpdateRequest_NotOwnerButAuthorizedWithRevisionRequired_AllowsEdit() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setRevisionRequired(true);
+        request.setUser(testUser);
+        request.setProject(testProject);
+        request.setWorkflowDefinition(testWorkflow);
+
+        WorkflowStep currentStep = new WorkflowStep();
+        request.setCurrentStep(currentStep);
+
+        User anotherUser = new User();
+        anotherUser.setId(999L);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated Laptop", "Need an updated laptop", 1L, 1L, Priority.HIGH,
+                List.of(new RequisitionItemCreateDto("MacBook Pro 16", 1, RequestItemUnit.PIECES, "updated")));
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        // Mock authorization succeeds for anotherUser
+        doNothing().when(workflowEngineService).checkAuthorization(request, anotherUser, currentStep);
+
+        assertDoesNotThrow(() -> requisitionService.updateRequest(1L, updates, anotherUser));
+        verify(requestRepository).save(request);
+    }
+
+    @Test
+    void UpdateRequest_NotOwnerAndNotAuthorizedWithRevisionRequired_ThrowsAccessDeniedException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setRevisionRequired(true);
+        request.setUser(testUser);
+
+        WorkflowStep currentStep = new WorkflowStep();
+        request.setCurrentStep(currentStep);
+
+        User anotherUser = new User();
+        anotherUser.setId(999L);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated", "Desc", 1L, 1L, Priority.HIGH, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        // Mock authorization throws AccessDeniedException
+        doThrow(new AccessDeniedException("Not authorized")).when(workflowEngineService).checkAuthorization(request, anotherUser, currentStep);
 
         assertThrows(AccessDeniedException.class,
                 () -> requisitionService.updateRequest(1L, updates, anotherUser));
