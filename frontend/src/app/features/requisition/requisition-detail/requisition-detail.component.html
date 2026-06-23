@@ -566,21 +566,21 @@
 
                       <div class="border-t border-blue-200/50 my-1"></div>
 
-                      <div class="flex items-baseline justify-between gap-2">
-                        <span class="text-sm font-bold text-blue-800">Payment Amount</span>
-                        <span class="text-3xl font-black text-blue-900 tracking-tight">
+                      <div class="flex flex-col gap-1.5 mt-2">
+                        <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">Payment Amount</span>
+                        <span class="text-2xl sm:text-3xl font-black text-blue-900 tracking-tight break-all">
                           {{ (invoice?.totalAmount || selectedQuote?.totalAmount) | currency:selectedQuote?.currency }}
+                        </span>
 
-                          <ng-container *ngIf="invoice?.currency !== 'EUR'">
-                            ({{ invoice?.totalAmountEuro | currency:'EUR' }})
-                            <mat-icon class="text-slate-400 scale-75 cursor-help"
-                              [matTooltip]="
-                                'Euro conversion is an approximation based on current exchange rates and may vary.'
-                                + ' Source: ' + (invoice?.exchangeRateSource === 'FRANKFURTER' ? 'Frankfurter API' : 'ExchangeRate API') +
-                                '. Fetched: ' + (invoice?.exchangeRateFetchedAt | date:'dd.MM.yyyy HH:mm')">
-                              info_outline
-                            </mat-icon>
-                          </ng-container>
+                        <span *ngIf="invoice?.currency !== 'EUR'" class="text-xs sm:text-sm font-medium text-slate-500 flex items-center gap-1 mt-0.5 whitespace-nowrap">
+                          ({{ invoice?.totalAmountEuro | currency:'EUR' }})
+                          <mat-icon class="text-slate-400 scale-75 cursor-help"
+                            [matTooltip]="
+                              'Euro conversion is an approximation based on current exchange rates and may vary.'
+                              + ' Source: ' + (invoice?.exchangeRateSource === 'FRANKFURTER' ? 'Frankfurter API' : 'ExchangeRate API') +
+                              '. Fetched: ' + (invoice?.exchangeRateFetchedAt | date:'dd.MM.yyyy HH:mm')">
+                            info_outline
+                          </mat-icon>
                         </span>
                       </div>
                     </div>
