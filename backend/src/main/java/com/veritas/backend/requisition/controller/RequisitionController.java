@@ -188,6 +188,18 @@ public class RequisitionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice);
     }
 
+    @Operation(summary = "Update invoice", description = "Updates an invoice for a requisition. Requires invoice metadata. Optionally updates the invoice file.")
+    @IsProcurementOfficer
+    @PutMapping(value = "/{id}/invoice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<InvoiceDto> updateInvoice(
+            @PathVariable Long id,
+            @Valid @RequestPart("invoice") InvoiceCreateDto invoiceData,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @AuthenticationPrincipal User user) {
+        InvoiceDto invoice = requisitionService.updateInvoice(id, invoiceData, file, user);
+        return ResponseEntity.ok(invoice);
+    }
+
     @Operation(summary = "Get invoice", description = "Returns the invoice details for a requisition.")
     @IsRequester
     @GetMapping("/{id}/invoice")
