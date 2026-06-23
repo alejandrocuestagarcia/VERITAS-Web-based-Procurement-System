@@ -204,10 +204,10 @@ class NotificationEmailServiceTest {
     }
 
     @Test
-    void sendNotificationEmail_FinanceOfficer_Skipped() {
+    void sendNotificationEmail_FinanceOfficer_SendsEmail() {
         recipient.setRole(UserRole.FINANCE_OFFICER);
         emailService.sendNotificationEmail(recipient, request, NotificationType.ASSIGNED, "Assigned to Finance Officer");
-        verify(mailService, never()).sendEmail(anyString(), anyString(), anyString());
+        verify(mailService).sendEmail(eq("alice@veritas.com"), anyString(), anyString());
     }
 
     @Test

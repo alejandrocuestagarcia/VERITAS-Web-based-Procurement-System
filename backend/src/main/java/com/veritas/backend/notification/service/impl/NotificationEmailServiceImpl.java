@@ -31,10 +31,6 @@ public class NotificationEmailServiceImpl implements NotificationEmailService {
             return;
         }
 
-        if (recipient.getRole() == UserRole.FINANCE_OFFICER) {
-            log.info("Skipping notification email for Finance Officer {} [type={}]", recipient.getEmail(), type);
-            return;
-        }
 
         if ((type == NotificationType.ASSIGNED || type == NotificationType.SUBMITTED) && request != null) {
             if (request.getAssignee() == null || !request.getAssignee().getId().equals(recipient.getId())) {
