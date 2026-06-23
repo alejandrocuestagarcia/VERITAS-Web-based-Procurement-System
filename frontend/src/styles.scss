@@ -163,6 +163,15 @@ body {
   &:hover {
     opacity: 0.9;
   }
+
+  &:disabled,
+  &[disabled],
+  &.mat-mdc-button-disabled {
+    background: #cbd5e1 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+  }
 }
 
 .v-btn-secondary {
@@ -178,6 +187,16 @@ body {
 
   &:hover {
     opacity: 0.9;
+  }
+
+  &:disabled,
+  &[disabled],
+  &.mat-mdc-button-disabled {
+    background: #f1f5f9 !important;
+    color: #cbd5e1 !important;
+    border-color: #e2e8f0 !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
   }
 }
 

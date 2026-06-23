@@ -415,7 +415,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             this.loading = false;
-            this.toastService.showError(extractErrorMessage(err, 'Failed to update request: ' + (err.error?.message || err.error || 'Unknown error')));
+            this.toastService.showError(extractErrorMessage(err, 'Failed to update requisition'));
           }
         });
       } else {
@@ -425,7 +425,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             this.loading = false;
-            this.toastService.showError(extractErrorMessage(err, 'Failed to create request: ' + (err.error?.message || err.error || 'Unknown error')));
+            this.toastService.showError(extractErrorMessage(err, 'Failed to create requisition'));
           }
         });
       }

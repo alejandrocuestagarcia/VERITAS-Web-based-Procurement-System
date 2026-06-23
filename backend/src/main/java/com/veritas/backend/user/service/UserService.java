@@ -121,7 +121,7 @@ public interface UserService {
      *
      * @param id the ID of the user
      * @return the mapped {@link UserDto}
-     * @throws jakarta.persistence.EntityNotFoundException if the user is not found
+     * @throws EntityNotFoundException if the user is not found
      */
     UserDto getUserDtoById(Long id);
 }
