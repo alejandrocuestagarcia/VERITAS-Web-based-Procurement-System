@@ -92,7 +92,7 @@ class DepartmentServiceIntegrationTest extends BaseDBIntegrationTest {
         departmentRepository.save(createTestDepartment("Engineering"));
         departmentRepository.save(createTestDepartment("Marketing"));
 
-        List<DepartmentDto> result = departmentService.getAllDepartments();
+        List<DepartmentDto> result = departmentService.getAllDepartments(false);
 
         assertEquals(2, result.size());
         List<String> names = result.stream().map(DepartmentDto::name).toList();
