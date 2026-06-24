@@ -55,4 +55,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                      Pageable pageable);
 
     boolean existsByProjectId(Long projectId);
+
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Request r WHERE r.project.id = :projectId AND r.state <> 'FINISHED'")
+    boolean existsActiveRequisitionsByProjectId(@Param("projectId") Long projectId);
 }

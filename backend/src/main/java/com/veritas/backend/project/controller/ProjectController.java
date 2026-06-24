@@ -33,9 +33,11 @@ public class ProjectController {
     @Operation(summary = "List projects", description = "Retrieves all projects.")
     @IsRequester
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ProjectDto>> getAllProjects(@AuthenticationPrincipal User user) {
-        log.info("GET /projects – requested by user: {}", user.getEmail());
-        return ResponseEntity.ok(projectService.getProjectsForUser(user));
+    public ResponseEntity<List<ProjectDto>> getAllProjects(
+            @AuthenticationPrincipal User user,
+            @RequestParam(value = "includeInactive", defaultValue = "false") boolean includeInactive) {
+        log.info("GET /projects?includeInactive={} – requested by user: {}", includeInactive, user.getEmail());
+        return ResponseEntity.ok(projectService.getProjectsForUser(user, includeInactive));
     }
 
     @Operation(summary = "Get project", description = "Retrieves a project.")

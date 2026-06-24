@@ -13,14 +13,12 @@ import java.util.List;
 public interface ProjectService {
 
     /**
-     * Returns all projects visible to the given user based on their role.
-     * Requesters see only their team's projects, procurement officers see their department's projects,
-     * and all other roles see every project.
-     *
-     * @param user the authenticated user
-     * @return a list of accessible {@link ProjectDto}
+     * Retrieves all projects scoped to the given user based on their role and team/department.
+     * @param user the user requesting projects
+     * @param includeInactive if true, includes deactivated projects
+     * @return a list of project DTOs
      */
-    List<ProjectDto> getProjectsForUser(User user);
+    List<ProjectDto> getProjectsForUser(User user, boolean includeInactive);
 
     /**
      * Creates a new project with an initialized internal budget, assigned to the specified team.
@@ -57,11 +55,14 @@ public interface ProjectService {
     ProjectDto editProject(Long id, ProjectEditDto updatedProject);
 
     /**
-     * Deletes a project by ID. Deletion is blocked if any requisitions or Jira configurations reference it.
+     * Deletes or deactivates a project by ID.
+     * If the project has no requisitions and is not a Jira fallback project, it is hard-deleted.
+     * If the project has only finished requisitions, it is soft-deleted (deactivated) by setting isActive to false.
+     * Deletion is blocked if the project has open or in-progress requisitions, or is used as a Jira fallback configuration.
      *
      * @param id the ID of the project to delete
      * @throws EntityNotFoundException if no project exists with the given ID
-     * @throws IllegalStateException if the project is referenced by requisitions or a Jira fallback configuration
+     * @throws IllegalStateException if the project has active requisitions or is referenced by a Jira fallback configuration
      */
     void deleteProject(Long id);
 }
