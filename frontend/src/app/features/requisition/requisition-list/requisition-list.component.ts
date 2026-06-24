@@ -103,7 +103,7 @@ export class RequisitionListComponent implements OnInit {
   loadProjects(): void {
     this.projectService.getAllProjects().subscribe({
       next: (projects) => this.projects = projects,
-      error: (err) => console.error('Failed to load projects', err)
+      error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to load projects'))
     });
   }
 
@@ -111,7 +111,7 @@ export class RequisitionListComponent implements OnInit {
     if (!this.isRequester) {
       this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
         next: (response) => this.creators = (response.content || []).filter(u => u.role === UserDtoRoleEnum.Requester),
-        error: (err) => console.error('Failed to load creators', err)
+        error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to load creators'))
       });
     }
   }
@@ -152,7 +152,7 @@ export class RequisitionListComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Failed to load requests', err);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load requests'));
         this.loading = false;
       }
     });

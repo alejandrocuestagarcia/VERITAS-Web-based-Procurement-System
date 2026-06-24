@@ -137,7 +137,7 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = extractErrorMessage(err, 'Failed to load department governance data');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load department governance data'));
         this.loading = false;
       }
     });

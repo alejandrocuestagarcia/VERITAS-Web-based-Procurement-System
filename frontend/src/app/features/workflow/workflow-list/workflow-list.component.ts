@@ -2,12 +2,13 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {MatTableDataSource} from '@angular/material/table';
 import {PageEvent} from '@angular/material/paginator';
 import {AuthService} from "../../../core/services/auth.service";
-import {Pageable, WorkflowModuleService} from "../../../core/api";
+import {WorkflowModuleService} from "../../../core/api";
 import {WorkflowDto} from "../../../core/api";
 import {SharedTableComponent} from "../../../shared/components/table/shared-table.component";
 import { MatDialog } from "@angular/material/dialog";
 import { ToastService } from "../../../core/services/toast.service";
 import { ConfirmationDialogComponent } from "../../../shared/components/confirmation-dialog/confirmation-dialog.component";
+import { extractErrorMessage } from "../../../shared/utils/error-utils";
 
 @Component({
   selector: 'app-workflow-list',
@@ -65,7 +66,7 @@ export class WorkflowListComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error("Fetch failed", err);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load workflows'));
         this.loading = false;
       }
     });

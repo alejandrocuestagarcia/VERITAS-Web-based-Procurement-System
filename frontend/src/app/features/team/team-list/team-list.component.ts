@@ -225,7 +225,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = extractErrorMessage(err, 'Failed to load team governance data');
+        this.toastService.showError(extractErrorMessage(err, 'Failed to load team governance data'));
         this.loading = false;
       }
     });
