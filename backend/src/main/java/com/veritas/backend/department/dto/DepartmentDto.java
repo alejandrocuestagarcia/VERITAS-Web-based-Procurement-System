@@ -11,5 +11,6 @@ public record DepartmentDto(
         BigDecimal budget,
         BigDecimal committedSpend,
         BigDecimal actualSpend,
-        BigDecimal safetyBuffer) {
+        BigDecimal safetyBuffer,
+        Boolean isActive) {
 }

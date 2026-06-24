@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.veritas.backend.budget.entity.InternalBudget;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -74,8 +75,9 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<DepartmentDto> getAllDepartments() {
-        return departmentRepository.findAll().stream()
+    public List<DepartmentDto> getAllDepartments(boolean includeInactive) {
+        List<Department> departments = includeInactive ? departmentRepository.findAll() : departmentRepository.findByIsActiveTrue();
+        return departments.stream()
                 .map(departmentMapper::toDepartmentDto)
                 .toList();
     }
@@ -89,6 +91,11 @@ public class DepartmentServiceImpl implements DepartmentService {
     public DepartmentDto updateDepartment(Long id, DepartmentCreateDto request) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Department not found with id " + id));
+
+        if (!department.getIsActive()) {
+            throw new IllegalStateException("Cannot edit a deactivated department");
+        }
+
         if (departmentRepository.existsByName(request.name()) && !department.getName().equals(request.name())) {
             throw new EntityExistsException("Department with name " + request.name() + " already exists");
         }
@@ -128,19 +135,30 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public void deleteDepartment(Long id) {
-        if (!departmentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Department not found with id " + id);
-        }
-        
-        if (teamRepository.existsByDepartmentDepartmentId(id)) {
-            throw new IllegalStateException("Cannot delete department because there are teams that are part of the department");
+    public boolean deleteDepartment(Long id) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Department not found with id " + id));
+
+        if (teamRepository.existsByDepartmentDepartmentIdAndIsActiveTrue(id)) {
+            throw new IllegalStateException("Cannot delete department because there are active teams that are part of the department");
         }
 
         if (userRepository.existsByDepartmentDepartmentId(id)) {
             throw new IllegalStateException("Cannot delete department because there are users that are part of the department");
         }
 
-        departmentRepository.deleteById(id);
+        if (teamRepository.existsByDepartmentDepartmentId(id)) {
+            // Soft-delete
+            department.setIsActive(false);
+            department.setDeactivatedAt(LocalDateTime.now());
+            departmentRepository.save(department);
+            log.info("Department soft-deleted (deactivated) – id: {}, name: {}", id, department.getName());
+            return true;
+        } else {
+            // Hard-delete
+            departmentRepository.deleteById(id);
+            log.info("Department hard-deleted – id: {}, name: {}", id, department.getName());
+            return false;
+        }
     }
 }

@@ -20,11 +20,12 @@ public interface DepartmentService {
     public DepartmentDto createDepartment(DepartmentCreateDto request);
 
     /**
-     * Returns all departments.
+     * Retrieves all departments, optionally including deactivated ones.
      *
-     * @return a list of all departments as {@link DepartmentDto}
+     * @param includeInactive whether to include soft-deleted departments
+     * @return a list of DepartmentDto objects
      */
-    public List<DepartmentDto> getAllDepartments();
+    List<DepartmentDto> getAllDepartments(boolean includeInactive);
 
     /**
      * Returns a single department by its ID.
@@ -50,8 +51,9 @@ public interface DepartmentService {
      * Deletes a department by ID. Deletion is blocked if any teams or users are still associated with it.
      *
      * @param id the ID of the department to delete
+     * @return a boolean flag indicating whether the deletion was soft deleted (true) or not
      * @throws ntityNotFoundException if no department exists with the given ID
      * @throws IllegalStateException if the department still has associated teams or users
      */
-    public void deleteDepartment(Long id);
+    public boolean deleteDepartment(Long id);
 }
