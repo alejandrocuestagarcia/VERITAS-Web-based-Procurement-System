@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -69,12 +70,12 @@ public class ProjectController {
 
     @Operation(summary = "Delete project", description = "Deletes an existing project.")
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsFinanceOfficer
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteProject(@PathVariable Long id) {
         log.info("DELETE /projects/{}", id);
-        projectService.deleteProject(id);
-        return ResponseEntity.noContent().build();
+        boolean softDeleted = projectService.deleteProject(id);
+        String message = softDeleted ? "Project deactivated successfully." : "Project deleted successfully.";
+        return ResponseEntity.ok(Map.of("message", message));
     }
 }
 

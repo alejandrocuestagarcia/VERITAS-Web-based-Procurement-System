@@ -65,8 +65,8 @@ export class ProjectListComponent implements OnInit {
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
         this.projectService.deleteProject(project.id!).subscribe({
-          next: () => {
-            this.toastService.showSuccess('Project deleted successfully.');
+          next: (res) => {
+            this.toastService.showSuccess(res?.['message'] || 'Project deleted successfully.');
             this.loadData();
           },
           error: (err) => {

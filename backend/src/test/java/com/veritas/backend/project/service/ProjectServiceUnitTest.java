@@ -309,7 +309,7 @@ class ProjectServiceUnitTest {
 
         projectService.deleteProject(projectId);
 
-        verify(projectRepository).deleteById(projectId);
+        verify(projectRepository).delete(project);
         verify(projectRepository, never()).save(any());
     }
 
@@ -326,7 +326,7 @@ class ProjectServiceUnitTest {
 
         projectService.deleteProject(projectId);
 
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository, never()).delete(any());
         ArgumentCaptor<Project> captor = ArgumentCaptor.forClass(Project.class);
         verify(projectRepository).save(captor.capture());
         Project saved = captor.getValue();
@@ -348,7 +348,7 @@ class ProjectServiceUnitTest {
         );
         assertEquals("Cannot delete project because it has open or in-progress requisitions", ex.getMessage());
 
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository, never()).delete(any());
         verify(projectRepository, never()).save(any());
     }
 
@@ -362,7 +362,7 @@ class ProjectServiceUnitTest {
 
         assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
 
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository, never()).delete(any());
         verify(projectRepository, never()).save(any());
     }
 

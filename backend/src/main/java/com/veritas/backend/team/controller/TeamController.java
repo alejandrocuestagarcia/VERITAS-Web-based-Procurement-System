@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -73,10 +75,11 @@ public class TeamController {
     @Operation(summary = "Delete team", description = "Deletes a team and unlinks all its members.")
     @IsFinanceOfficer
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTeam(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteTeam(@PathVariable Long id) {
         log.info("DELETE /teams/{}", id);
-        teamService.deleteTeam(id);
-        log.info("Team deleted successfully – id: {}", id);
+        boolean softDeleted = teamService.deleteTeam(id);
+        String message = softDeleted ? "Team deactivated successfully." : "Team deleted successfully.";
+        log.info(message + " – id: {}", id);
+        return ResponseEntity.ok(Map.of("message", message));
     }
 }

@@ -228,7 +228,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public void deleteProject(Long id) {
+    public boolean deleteProject(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found with id " + id));
 
@@ -246,10 +246,12 @@ public class ProjectServiceImpl implements ProjectService {
             project.setDeactivatedAt(LocalDateTime.now());
             projectRepository.save(project);
             log.info("Project soft-deleted (deactivated) – id: {}", id);
+            return true;
         } else {
             // Hard-delete: no requisitions reference this project
-            projectRepository.deleteById(id);
+            projectRepository.delete(project);
             log.info("Project hard-deleted – id: {}", id);
+            return false;
         }
     }
 }

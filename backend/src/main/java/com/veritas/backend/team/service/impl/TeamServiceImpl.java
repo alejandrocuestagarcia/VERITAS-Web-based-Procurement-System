@@ -217,8 +217,8 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional
-    public void deleteTeam(Long id) {
-        Team team = teamRepository.findById(Objects.requireNonNull(id))
+    public boolean deleteTeam(Long id) {
+        Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
 
         // Block deletion if there are assigned users
@@ -237,12 +237,14 @@ public class TeamServiceImpl implements TeamService {
             team.setLeader(null);
             teamRepository.save(team);
             log.info("Team soft-deleted (deactivated) – id: {}, name: {}", id, team.getName());
+            return true;
         } else {
             // Hard-delete: no projects reference this team
             team.setLeader(null);
             teamRepository.save(team);
             teamRepository.delete(team);
             log.info("Team hard-deleted – id: {}, name: {}", id, team.getName());
+            return false;
         }
     }
 

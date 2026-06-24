@@ -24,7 +24,7 @@ interface TeamRow {
   departmentLabel: string;
   departmentFilter: DepartmentFilter;
   projectsText: string;
-  statusLabel: 'ACTIVE' | 'ON HOLD';
+  statusLabel: 'Active' | 'Inactive';
   isActive: boolean;
   membersCount: number;
   icon: string;
@@ -181,10 +181,9 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
         this.teamsService.deleteTeam(row.id).subscribe({
-          next: () => {
-            this.dataSource.data = this.dataSource.data.filter(r => r.id !== row.id);
-            this.totalTeams = this.dataSource.data.length;
-            this.toastService.showSuccess(`Team "${row.name}" deleted successfully.`);
+          next: (res) => {
+            this.toastService.showSuccess(res?.['message'] || `Team "${row.name}" deleted successfully.`);
+            this.loadData();
           },
           error: (err) => {
             this.toastService.showError(extractErrorMessage(err, `Failed to delete team "${row.name}"`));
@@ -247,7 +246,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
         departmentFilter: department.filter,
         projectNames: projectNames,
         projectsText: this.formatProjects(projectNames),
-        statusLabel: isActive ? 'ACTIVE' : 'ON HOLD',
+        statusLabel: isActive ? 'Active' : 'Inactive',
         isActive,
         membersCount: team.members?.length ?? 0,
         icon: "groups"

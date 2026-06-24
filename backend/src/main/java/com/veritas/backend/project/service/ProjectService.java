@@ -61,8 +61,9 @@ public interface ProjectService {
      * Deletion is blocked if the project has open or in-progress requisitions, or is used as a Jira fallback configuration.
      *
      * @param id the ID of the project to delete
+     * @return a boolean flag indicating whether the deletion was soft deleted (true) or not
      * @throws EntityNotFoundException if no project exists with the given ID
      * @throws IllegalStateException if the project has active requisitions or is referenced by a Jira fallback configuration
      */
-    void deleteProject(Long id);
+    boolean deleteProject(Long id);
 }

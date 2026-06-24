@@ -63,8 +63,9 @@ public interface TeamService {
      * Deletion is blocked if the team has active projects or assigned users.
      *
      * @param id the ID of the team to delete
+     * @return a boolean flag indicating whether the deletion was soft deleted (true) or not
      * @throws EntityNotFoundException if no team exists with the given ID
      * @throws IllegalArgumentException if the team still has active projects or assigned users
      */
-    void deleteTeam(Long id);
+    boolean deleteTeam(Long id);
 }

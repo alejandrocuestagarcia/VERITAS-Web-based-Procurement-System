@@ -868,7 +868,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isOk());
 
                 assertFalse(teamRepository.existsById(team.getTeamId()));
         }
@@ -921,7 +921,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isOk());
 
                 Team refreshedTeam = teamRepository.findById(team.getTeamId()).orElseThrow();
                 assertFalse(refreshedTeam.getIsActive(), "Team should be deactivated");
