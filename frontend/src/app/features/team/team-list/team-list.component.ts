@@ -199,7 +199,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
     this.error = null;
 
     forkJoin({
-      teams: this.teamsService.getAllTeams(),
+      teams: this.teamsService.getAllTeams(true),
       projects: this.projectService.getAllProjects(true),
       departments: this.departmentsService.getAllDepartments()
     }).subscribe({
