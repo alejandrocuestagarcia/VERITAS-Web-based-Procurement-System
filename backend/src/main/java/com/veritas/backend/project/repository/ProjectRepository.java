@@ -20,6 +20,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     Optional<Project> findByIdAndTeamDepartment(@Param("id") Long id, @Param("department") Department department);
     boolean existsByNameOrProjectKey(String name, String projectKey);
     boolean existsByTeamTeamId(Long teamId);
+    boolean existsByTeamTeamIdAndIsActiveTrue(Long teamId);
 
     Optional<Project> findByProjectKey(String projectKey);
     Optional<Project> findByName(String name);

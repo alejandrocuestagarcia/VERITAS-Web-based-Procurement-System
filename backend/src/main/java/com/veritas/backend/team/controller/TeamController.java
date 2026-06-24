@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,9 +37,10 @@ public class TeamController {
     @Operation(summary = "List teams", description = "Retrieves all teams.")
     @IsFinanceOfficer
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<TeamDto> getAllTeams() {
-        log.info("GET /teams");
-        return teamService.getAllTeams();
+    public List<TeamDto> getAllTeams(
+            @RequestParam(value = "includeInactive", defaultValue = "false") boolean includeInactive) {
+        log.info("GET /teams?includeInactive={}", includeInactive);
+        return teamService.getAllTeams(includeInactive);
     }
 
     @Operation(summary = "Get team", description = "Retrieves a team.")

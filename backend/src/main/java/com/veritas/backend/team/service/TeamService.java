@@ -12,11 +12,12 @@ import java.util.List;
 public interface TeamService {
 
     /**
-     * Returns all teams.
+     * Returns all teams, optionally including inactive (deactivated) teams.
      *
-     * @return a list of all {@link TeamDto}
+     * @param includeInactive if true, includes deactivated teams
+     * @return a list of {@link TeamDto}
      */
-    List<TeamDto> getAllTeams();
+    List<TeamDto> getAllTeams(boolean includeInactive);
 
     /**
      * Returns a single team by ID.
@@ -56,11 +57,14 @@ public interface TeamService {
     TeamDto editTeam(Long id, TeamEditDto edits);
 
     /**
-     * Deletes a team. Deletion is blocked if any projects or users are still associated with it.
+     * Deletes or deactivates a team by ID.
+     * If the team has no projects, it is hard-deleted.
+     * If the team has only inactive projects, it is soft-deleted (deactivated).
+     * Deletion is blocked if the team has active projects or assigned users.
      *
      * @param id the ID of the team to delete
      * @throws EntityNotFoundException if no team exists with the given ID
-     * @throws IllegalArgumentException if the team still has assigned projects or users
+     * @throws IllegalArgumentException if the team still has active projects or assigned users
      */
     void deleteTeam(Long id);
 }
