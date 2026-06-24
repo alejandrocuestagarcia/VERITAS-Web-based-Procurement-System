@@ -37,7 +37,7 @@ export class ProjectListComponent implements OnInit {
 
   private loadData(): void {
     this.loading = true;
-    this.projectService.getAllProjects().subscribe({
+    this.projectService.getAllProjects(true).subscribe({
       next: (projects) => {
         this.dataSource.data = projects;
         this.loading = false;
@@ -78,7 +78,7 @@ export class ProjectListComponent implements OnInit {
   }
 
   private setDisplayedColumns(): void {
-    this.displayedColumns = ['name', 'team', 'budget', 'committed', 'actual', 'startDate', 'endDate'];
+    this.displayedColumns = ['name', 'team', 'budget', 'committed', 'actual', 'startDate', 'endDate', 'status'];
 
     if (this.isFinanceOfficer || this.isAdministrator) {
       this.displayedColumns.push('actions');
