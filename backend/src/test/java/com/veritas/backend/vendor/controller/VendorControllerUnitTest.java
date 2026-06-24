@@ -55,7 +55,7 @@ class VendorControllerUnitTest {
     @Test
     void getAllVendors_ValidRequest_ReturnsPage() throws Exception {
         VendorDto vendorDto = new VendorDto(
-                1L, "Vendor 1", "TAX-123", 4.5, 4.2, 4.8, 0.1, 4.5,
+                1L, "Vendor 1", "TAX-123", 4.5, 4.2, 4.8, 0.1, 4.5, null,
                 "Description 1", "Contact 1", "contact1@veritas.com",
                 LocalDateTime.now(), LocalDateTime.now(), null
         );
@@ -96,7 +96,7 @@ class VendorControllerUnitTest {
     @Test
     void getVendor_ValidRequest_ReturnsDto() throws Exception {
         VendorDto vendorDto = new VendorDto(
-                1L, "Vendor 1", "TAX-123", 4.5, 4.2, 4.8, 0.1, 4.5,
+                1L, "Vendor 1", "TAX-123", 4.5, 4.2, 4.8, 0.1, 4.5, null,
                 "Description 1", "Contact 1", "contact1@veritas.com",
                 LocalDateTime.now(), LocalDateTime.now(), null
         );
@@ -114,12 +114,12 @@ class VendorControllerUnitTest {
     @Test
     void createVendor_ValidRequest_ReturnsDto() throws Exception {
         VendorDto createDto = new VendorDto(
-                null, "Vendor New", "TAX-999", null, null, null, null, null,
+                null, "Vendor New", "TAX-999", null, null, null, null, null, null,
                 "Description New", "Contact New", "new@veritas.com",
                 null, null, null
         );
         VendorDto savedDto = new VendorDto(
-                2L, "Vendor New", "TAX-999", 0.0, 0.0, 0.0, 0.0, 0.0,
+                2L, "Vendor New", "TAX-999", 0.0, 0.0, 0.0, 0.0, 0.0, null,
                 "Description New", "Contact New", "new@veritas.com",
                 LocalDateTime.now(), LocalDateTime.now(), null
         );
@@ -140,7 +140,7 @@ class VendorControllerUnitTest {
     void createVendor_InvalidRequest_ReturnsBadRequest() throws Exception {
         // Blank vendorName, taxId, description to trigger validation error
         VendorDto invalidDto = new VendorDto(
-                null, "", "", null, null, null, null, null,
+                null, "", "", null, null, null, null, null, null,
                 "", "Contact New", "invalid-email-format",
                 null, null, null
         );
@@ -159,7 +159,7 @@ class VendorControllerUnitTest {
                 "Vendor Edited", "TAX-EDITED", "Description Edited", "Contact Edited", "edited@veritas.com"
         );
         VendorDto updatedDto = new VendorDto(
-                1L, "Vendor Edited", "TAX-EDITED", 4.5, 4.2, 4.8, 0.1, 4.5,
+                1L, "Vendor Edited", "TAX-EDITED", 4.5, 4.2, 4.8, 0.1, 4.5, null,
                 "Description Edited", "Contact Edited", "edited@veritas.com",
                 LocalDateTime.now(), LocalDateTime.now(), null
         );
@@ -195,7 +195,7 @@ class VendorControllerUnitTest {
     void rateVendor_ValidRequest_ReturnsDto() throws Exception {
         VendorRatingDto ratingData = new VendorRatingDto(8, 9, 7);
         VendorDto ratedDto = new VendorDto(
-                1L, "Vendor 1", "TAX-123", 8.0, 9.0, 7.0, 0.1, 8.0,
+                1L, "Vendor 1", "TAX-123", 8.0, 9.0, 7.0, 0.1, 8.0, null,
                 "Description 1", "Contact 1", "contact1@veritas.com",
                 LocalDateTime.now(), LocalDateTime.now(), null
         );

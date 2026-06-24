@@ -356,3 +356,10 @@ textarea.help-code-block {
   }
 
 }
+
+.tooltip-nowrap {
+  .mdc-tooltip__surface {
+    white-space: pre !important;
+    max-width: none !important;
+  }
+}

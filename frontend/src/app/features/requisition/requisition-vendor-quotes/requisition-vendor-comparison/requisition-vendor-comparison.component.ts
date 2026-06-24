@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
+import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, RecommendedQuoteDto } from 'src/app/core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { extractErrorMessage } from '../../../../shared/utils/error-utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -15,6 +15,7 @@ export class RequisitionVendorComparisonComponent implements OnInit {
   requestId!: number;
   requisition: RequisitionDto | null = null;
   quotes: QuoteDto[] = [];
+  recommendations: RecommendedQuoteDto[] = [];
   recommendedQuote: QuoteDto | null = null;
   budgetCeiling = 0;
   loading = true;
@@ -73,31 +74,45 @@ export class RequisitionVendorComparisonComponent implements OnInit {
   }
 
   loadQuotes(): void {
-    this.quotesService.getQuotesForRequest(this.requestId).subscribe({
-      next: (quotes) => {
-        this.quotes = quotes || [];
+    this.loading = true;
+    this.quotesService.getQuoteRecommendations(this.requestId).subscribe({
+      next: (recommendations) => {
+        this.recommendations = recommendations || [];
+        this.quotes = this.recommendations.map(r => r.quote).filter((q): q is QuoteDto => !!q);
+
+        const topRec = this.recommendations.find(r => r.rank === 1);
+        this.recommendedQuote = topRec?.quote || null;
+
         if (this.quotes.length > 0) {
-          this.recommendedQuote = this.getRecommendedQuote();
           const maxQuoteAmount = Math.max(...this.quotes.map(q => q.totalAmountEuro ?? q.totalAmount ?? 0));
           this.budgetCeiling = Math.round(maxQuoteAmount * 1.15 / 1000) * 1000;
         }
         this.loading = false;
       },
       error: (err) => {
-        console.error('Failed to load quotes', err);
+        console.error('Failed to load quote recommendations', err);
         this.toastService.showError(extractErrorMessage(err, 'Failed to load vendor quotes'));
         this.loading = false;
       }
     });
   }
 
-  getRecommendedQuote(): QuoteDto | null {
-    if (!this.quotes || this.quotes.length === 0) return null;
-    return this.quotes.reduce((prev, curr) => {
-      const prevEuro = prev.totalAmountEuro ?? prev.totalAmount ?? 0;
-      const currEuro = curr.totalAmountEuro ?? curr.totalAmount ?? 0;
-      return prevEuro < currEuro ? prev : curr;
-    });
+  getRecommendationForQuote(quote: QuoteDto): RecommendedQuoteDto | undefined {
+    return this.recommendations.find(r => r.quote?.quoteId === quote.quoteId);
+  }
+
+  getScoreColor(score: number | undefined): string {
+    if (score === undefined || score === null) return 'bg-gray-200';
+    if (score >= 0.8) return 'bg-blue-500';
+    if (score >= 0.5) return 'bg-amber-500';
+    return 'bg-rose-500';
+  }
+
+  getScoreTextColor(score: number | undefined): string {
+    if (score === undefined || score === null) return 'text-gray-400';
+    if (score >= 0.8) return 'text-blue-600';
+    if (score >= 0.5) return 'text-amber-600';
+    return 'text-rose-600';
   }
 
   getExchangeRateLabel(quote: QuoteDto): string | null {
@@ -196,5 +211,20 @@ export class RequisitionVendorComparisonComponent implements OnInit {
     } else {
       this.router.navigate(['/requisitions']);
     }
+  }
+
+  getTooltipText(rec: RecommendedQuoteDto): string {
+    const pricePercent = rec.priceScore != null ? Math.round(rec.priceScore * 100) : 0;
+    const vendorPercent = rec.vendorScore != null ? Math.round(rec.vendorScore * 100) : 0;
+    const leadTimePercent = rec.leadTimeScore != null ? Math.round(rec.leadTimeScore * 100) : 0;
+
+    const priceSuffix = pricePercent === 100 ? ' (Cheapest)' : '';
+    const leadTimeSuffix = leadTimePercent === 100 ? ' (Fastest)' : '';
+    const vendorSuffix = vendorPercent === 100 ? ' (Best)' : '';
+
+    return `Breakdown:\n` +
+           `• Price Score: ${pricePercent}%${priceSuffix}\n` +
+           `• Vendor Score: ${vendorPercent}%${vendorSuffix}\n` +
+           `• Lead Time Score: ${leadTimePercent}%${leadTimeSuffix}`;
   }
 }

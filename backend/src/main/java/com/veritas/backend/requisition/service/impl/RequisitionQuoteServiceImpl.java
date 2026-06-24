@@ -8,6 +8,8 @@ import jakarta.persistence.EntityNotFoundException;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
 import com.veritas.backend.requisition.dto.QuoteLineItemCreateDto;
+import com.veritas.backend.requisition.dto.RecommendedQuoteDto;
+import com.veritas.backend.requisition.service.QuoteRecommendationService;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.entity.RequestItem;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
@@ -61,6 +63,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final RequisitionServiceImpl requisitionService;
     private final InvoiceRepository invoiceRepository;
     private final AttachmentRepository attachmentRepository;
+    private final QuoteRecommendationService quoteRecommendationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -75,6 +78,14 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         return quotes.stream()
             .map(this::mapToDtoWithEuro)
             .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RecommendedQuoteDto> getQuoteRecommendations(Long requestId) {
+        List<QuoteDto> quotes = getQuotesForRequest(requestId);
+        Double globalAvg = vendorRepository.getAverageOverallScore();
+        return quoteRecommendationService.rankQuotes(quotes, globalAvg);
     }
 
     @Override

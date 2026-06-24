@@ -87,7 +87,7 @@ class VendorServiceIntegrationTest extends BaseDBIntegrationTest {
                 null,
                 "Integration Test Vendor",
                 "TAX-INT-456",
-                null, null, null, null, null,
+                null, null, null, null, null, null,
                 "Integration test description",
                 "Boban Bobanovic",
                 "boban@example.com",

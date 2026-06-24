@@ -68,7 +68,7 @@ class VendorServiceUnitTest {
                 1L,
                 "Test Vendor",
                 "TAX-123",
-                null, null, null, null, null,
+                null, null, null, null, null, null,
                 "A test vendor description",
                 "John Doe",
                 "john@example.com",
@@ -119,7 +119,7 @@ class VendorServiceUnitTest {
 
         VendorDto dto = new VendorDto(
                 1L, "Test Vendor", "TAX-123",
-                null, null, null, null, null,
+                null, null, null, null, null, null,
                 "A test vendor description",
                 "John Doe",
                 "john@example.com",
@@ -201,7 +201,7 @@ class VendorServiceUnitTest {
             1L,
             "Updated",
             "TAX-001",
-            null, null, null, null, null,
+            null, null, null, null, null, null,
             "Updated desc",
             null,
             null,
@@ -241,7 +241,7 @@ class VendorServiceUnitTest {
             1L,
             "New Vendor",
             "TAX-NEW",
-            null, null, null, null, null,
+            null, null, null, null, null, null,
             "New description",
             "New Contact",
             "new@vendor.com",
@@ -297,7 +297,7 @@ class VendorServiceUnitTest {
             1L,
             vendor.getVendorName(),
             vendor.getTaxId(),
-            null, null, null, null, null,
+            null, null, null, null, null, null,
             vendor.getDescription(),
             vendor.getPrimaryContactName(),
             vendor.getPrimaryContactEmail(),
@@ -340,7 +340,7 @@ class VendorServiceUnitTest {
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
         when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
 
-        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 10.0, 9.0, "Desc", "Contact", "email@test.com", null, null, null);
+        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 10.0, 9.0, null, "Desc", "Contact", "email@test.com", null, null, null);
         when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(returnDto);
 
         VendorDto result = vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
@@ -385,7 +385,7 @@ class VendorServiceUnitTest {
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
         when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
 
-        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 8.0, 8.5, "Desc", "Contact", "email@test.com", null, null, null);
+        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 8.0, 8.5, null, "Desc", "Contact", "email@test.com", null, null, null);
         when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(returnDto);
 
         vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
@@ -414,7 +414,7 @@ class VendorServiceUnitTest {
         when(vendorEvaluationRepository.existsByVendorIdAndRequestRequestID(1L, 10L)).thenReturn(false);
         when(vendorRepository.findById(1L)).thenReturn(java.util.Optional.of(vendor));
 
-        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 10.0, 9.0, "Desc", "Contact", "email@test.com", null, null, null);
+        VendorDto returnDto = new VendorDto(1L, "VendorName", "TAX-ID", 9.0, 8.0, 9.0, 10.0, 9.0, null, "Desc", "Contact", "email@test.com", null, null, null);
         when(vendorMapper.toVendorDto(any(Vendor.class))).thenReturn(returnDto);
 
         vendorService.rateVendor(1L, 10L, ratingDto, evaluator);
@@ -503,7 +503,7 @@ class VendorServiceUnitTest {
     void GetVendorById_Found_ReturnsDto() {
         Vendor vendor = new Vendor();
         vendor.setId(1L);
-        VendorDto dto = new VendorDto(1L, "V", "T", null, null, null, null, null, null, null, null, null, null, null);
+        VendorDto dto = new VendorDto(1L, "V", "T", null, null, null, null, null, null, null, null, null, null, null, null);
 
         when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
         when(vendorMapper.toVendorDto(vendor)).thenReturn(dto);

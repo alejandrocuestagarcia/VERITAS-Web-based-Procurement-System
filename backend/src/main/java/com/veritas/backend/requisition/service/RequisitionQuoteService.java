@@ -2,6 +2,7 @@ package com.veritas.backend.requisition.service;
 
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
+import com.veritas.backend.requisition.dto.RecommendedQuoteDto;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -19,6 +20,18 @@ public interface RequisitionQuoteService {
      * @throws AccessDeniedException if the user is not permitted to access the request
      */
     List<QuoteDto> getQuotesForRequest(Long requestId);
+
+    /**
+     * Returns all quotes for the given request ranked by recommendation score.
+     * Each quote is enriched with price, vendor reliability, and lead time scores,
+     * a composite recommendation score, a rank, and a human-readable explanation.
+     *
+     * @param requestId the ID of the request
+     * @return a list of {@link RecommendedQuoteDto} sorted by recommendation score descending
+     * @throws EntityNotFoundException if the request does not exist
+     * @throws AccessDeniedException if the user is not permitted to access the request
+     */
+    List<RecommendedQuoteDto> getQuoteRecommendations(Long requestId);
 
     /**
      * Returns a single quote by ID, validated to belong to the given request.
