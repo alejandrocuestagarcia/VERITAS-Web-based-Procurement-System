@@ -1257,5 +1257,58 @@ class RequisitionControllerIntegrationTest extends BaseDBIntegrationTest {
         assertFalse(updatedRequest.getRevisionRequired());
     }
 
+    //AI-Generated
+    @Test
+    void UpdateRequest_WhenLineItemsModified_DeletesAttachedInvoiceAndAttachments() throws Exception {
+        User owner = userRepository.findByEmail("req-integration@veritas.com").orElseThrow();
+
+        Request request = requestFactory.createValidRequest("Line Items Modify Test", owner);
+        request.setState(RequestStatus.DRAFT);
+        request.setItems(new ArrayList<>());
+        request = requestRepository.save(request);
+
+        // Save an item so that we have an item to start with
+        RequestItem item = RequestItem.builder()
+                .request(request)
+                .name("Old Item")
+                .quantity(1)
+                .unit(RequestItemUnit.PIECES)
+                .description("old")
+                .build();
+        requestItemRepository.save(item);
+        request.getItems().add(item);
+        request = requestRepository.save(request);
+
+        Invoice invoice = invoiceFactory.createInvoice(request, null, new BigDecimal("150.00"));
+        request.setInvoice(invoice);
+        requestRepository.save(request);
+
+        Path tempFile = Files.createTempFile("update-req-attachment", ".pdf");
+        Attachment attachment = new Attachment();
+        attachment.setRequest(request);
+        attachment.setFileName("invoice.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(100L);
+        attachment.setStoragePath(tempFile.toString());
+        attachment.setInvoice(invoice);
+        attachmentRepository.save(attachment);
+
+        RequisitionUpdateDto updateDto = new RequisitionUpdateDto(
+                "Line Items Modify Test", "Desc", projectId, workflowId, Priority.HIGH, 
+                List.of(new RequisitionItemCreateDto("New Item Name", 1, RequestItemUnit.PIECES, "new"))
+        );
+
+        mockMvc.perform(patch("/api/v1/requisitions/" + request.getRequestID())
+                        .header("Authorization", "Bearer " + requesterToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDto)))
+                .andExpect(status().isOk());
+
+        // Check that invoice and attachment records are deleted, and physical file is deleted
+        assertEquals(0, invoiceRepository.count());
+        assertEquals(0, attachmentRepository.count());
+        assertFalse(Files.exists(tempFile));
+    }
+
 }
 
