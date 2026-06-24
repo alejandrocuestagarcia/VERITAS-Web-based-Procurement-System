@@ -54,12 +54,10 @@
         <app-shared-form-field label="ASSIGNED TEAM">
           <mat-form-field appearance="outline" class="w-full">
             <mat-icon matPrefix>groups</mat-icon>
-            <mat-select formControlName="teamId" placeholder="Select assigned team">
+            <mat-select formControlName="teamId" [placeholder]="userForm.get('teamId')?.value === null ? 'No team selected' : 'Select assigned team'">
+              <mat-option [value]="null">None</mat-option>
               <mat-option *ngFor="let team of teams" [value]="team.id">{{ team.name }}</mat-option>
             </mat-select>
-            <mat-error *ngIf="userForm.get('teamId')?.hasError('required')">
-              Team assignment is required for Requesters
-            </mat-error>
           </mat-form-field>
         </app-shared-form-field>
 

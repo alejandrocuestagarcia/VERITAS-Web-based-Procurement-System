@@ -81,7 +81,7 @@ export class UserCreateComponent implements OnInit {
       const promote = this.userForm.get('promoteToTeamLeader');
 
       if (role === UserDtoRoleEnum.Requester) {
-        teamId?.setValidators(Validators.required);
+        teamId?.clearValidators();
         deptId?.clearValidators();
         deptId?.setValue(null);
       } else if (role === UserDtoRoleEnum.ProcurementOfficer) {

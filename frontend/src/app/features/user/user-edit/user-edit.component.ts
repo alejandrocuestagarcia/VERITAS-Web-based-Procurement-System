@@ -87,7 +87,7 @@ export class UserEditComponent implements OnInit {
     const leader = this.userForm.get('isTeamLeader');
 
     if (role === UserDtoRoleEnum.Requester) {
-      teamId?.setValidators(Validators.required);
+      teamId?.clearValidators();
       deptId?.clearValidators();
       deptId?.setValue(null);
     } else if (role === UserDtoRoleEnum.ProcurementOfficer) {
