@@ -108,7 +108,7 @@ export class RequisitionCreateComponent implements OnInit, OnDestroy {
 
   loadRequestDetails(id: number): void {
     this.loading = true;
-    this.projectService.getAllProjects().subscribe({
+    this.projectService.getAllProjects(true).subscribe({
       next: (projects) => {
         this.projects = projects;
         const pageable = { page: 0, size: 100, sort: ['name,asc'] };

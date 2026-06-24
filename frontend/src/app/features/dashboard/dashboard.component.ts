@@ -80,7 +80,7 @@ export class DashboardComponent implements OnInit {
         0,
         50
       ),
-      projects: this.projectService.getAllProjects()
+      projects: this.projectService.getAllProjects(true)
     };
 
     forkJoin(dataSources$).pipe(

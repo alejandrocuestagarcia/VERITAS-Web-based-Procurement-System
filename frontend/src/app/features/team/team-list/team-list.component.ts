@@ -200,7 +200,7 @@ export class TeamListComponent implements OnInit, AfterViewInit {
 
     forkJoin({
       teams: this.teamsService.getAllTeams(),
-      projects: this.projectService.getAllProjects(),
+      projects: this.projectService.getAllProjects(true),
       departments: this.departmentsService.getAllDepartments()
     }).subscribe({
       next: ({ teams, projects, departments }) => {

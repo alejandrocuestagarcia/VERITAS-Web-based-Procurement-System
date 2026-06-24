@@ -163,7 +163,7 @@ export class BudgetDashboardComponent implements OnInit {
       stats: this.financialService.getFinanceDashboard(this.selectedDepartmentId || undefined),
       depts: this.departmentService.getAllDepartments(),
       teams: this.teamsService.getAllTeams(),
-      projects: this.projectService.getAllProjects()
+      projects: this.projectService.getAllProjects(true)
     }).subscribe({
       next: (data) => {
         console.log('Dashboard stats from server:', data.stats);

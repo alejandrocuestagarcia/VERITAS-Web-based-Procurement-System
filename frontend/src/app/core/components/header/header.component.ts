@@ -155,7 +155,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   loadProjects(): void {
     if (this.projects.length === 0) {
-      this.projectService.getAllProjects().subscribe({
+      this.projectService.getAllProjects(true).subscribe({
         next: (projects) => this.projects = projects,
         error: (err) => console.error('Failed to load projects', err)
       });
