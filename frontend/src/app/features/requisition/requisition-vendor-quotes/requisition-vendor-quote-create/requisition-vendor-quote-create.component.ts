@@ -144,6 +144,11 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
         this.requisitionService.getRequestById(this.requisitionId).subscribe({
           next: (req: RequisitionDto) => {
             this.requisition = req;
+            if (this.requisition.state === 'FINISHED') {
+              this.toastService.showError('Cannot modify quotes for a finished request.');
+              this.router.navigate([`/requisitions/${this.requisitionId}`]);
+              return;
+            }
 
             if (this.isEditMode && this.quoteId) {
               this.loadQuote();

@@ -36,6 +36,7 @@ import com.veritas.backend.requisition.entity.Attachment;
 import com.veritas.backend.requisition.entity.Invoice;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.requisition.repository.InvoiceRepository;
+import com.veritas.backend.requisition.entity.RequestStatus;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -108,6 +109,10 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         canRequesterOrProcurementOfficerAccessRequestDetails(request);
             
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Cannot create a quote for a finished request.");
+        }
+
         Vendor vendor = vendorRepository.findById(createDto.vendorId())
             .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + createDto.vendorId()));
 
@@ -137,6 +142,11 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     public QuoteDto updateQuoteForRequest(Long requestId, Long quoteId, QuoteCreateDto updateDto) {
         Quote quote = getQuoteForRequest(requestId, quoteId);
         
+        Request request = quote.getRequest();
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Cannot update a quote for a finished request.");
+        }
+
         if (!quote.getVendorID().getId().equals(updateDto.vendorId())) {
             Vendor vendor = vendorRepository.findById(updateDto.vendorId())
                 .orElseThrow(() -> new EntityNotFoundException("Vendor not found with id: " + updateDto.vendorId()));
@@ -157,7 +167,6 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         
         Quote updatedQuote = quoteRepository.save(quote);
 
-        Request request = quote.getRequest();
         if (quote.isSelected()) {
             BigDecimal oldAmountEur = currencyConversionService.convert(oldAmount, oldCurrency).convertedAmount();
             BigDecimal newAmountEur = currencyConversionService.convert(newAmount, updateDto.currency()).convertedAmount();
@@ -201,6 +210,10 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote quote = getQuoteForRequest(requestId, quoteId);
 
         Request request = quote.getRequest();
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Cannot delete a quote for a finished request.");
+        }
+
         if (quote.isSelected()) {
             BigDecimal amountToSubtract = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
             BigDecimal amountToSubtractEur = currencyConversionService.convert(amountToSubtract, quote.getCurrency()).convertedAmount();
@@ -219,10 +232,28 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote quoteToSelect = getQuoteForRequest(requestId, quoteId);
         Request request = quoteToSelect.getRequest();
         
-        // Unselect all other quotes for this request
-        BigDecimal oldAmountEur = BigDecimal.ZERO;
+        if (request.getState() == RequestStatus.FINISHED) {
+            throw new WorkflowStateException("Cannot change quote selection for a finished request.");
+        }
+
         List<Quote> otherQuotes = quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId);
         Quote currentlySelectedQuote = otherQuotes.stream().filter(Quote::isSelected).findFirst().orElse(null);
+
+        BigDecimal oldAmountEur = BigDecimal.ZERO;
+        if (currentlySelectedQuote != null) {
+            BigDecimal oldAmount = currentlySelectedQuote.getTotalAmount() != null ? currentlySelectedQuote.getTotalAmount() : BigDecimal.ZERO;
+            oldAmountEur = currencyConversionService.convert(oldAmount, currentlySelectedQuote.getCurrency()).convertedAmount();
+        }
+
+        BigDecimal newAmount = quoteToSelect.getTotalAmount() != null ? quoteToSelect.getTotalAmount() : BigDecimal.ZERO;
+        BigDecimal newAmountEur = currencyConversionService.convert(newAmount, quoteToSelect.getCurrency()).convertedAmount();
+
+        BigDecimal difference = newAmountEur.subtract(oldAmountEur);
+
+        // Pre-validate the budget before performing any database updates or file deletions
+        if (request.getBudget() != null) {
+            requisitionService.validateBudget(request.getBudget(), difference, true);
+        }
 
         if (request.getInvoice() != null && (currentlySelectedQuote == null || !currentlySelectedQuote.getQuoteID().equals(quoteId))) {
             Invoice invoice = request.getInvoice();
@@ -241,10 +272,6 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         }
 
         for (Quote quote : otherQuotes) {
-            if (quote.isSelected()) {
-                BigDecimal oldAmount = quote.getTotalAmount() != null ? quote.getTotalAmount() : BigDecimal.ZERO;
-                oldAmountEur = currencyConversionService.convert(oldAmount, quote.getCurrency()).convertedAmount();
-            }
             quote.setSelected(false);
             quoteRepository.save(quote);
         }
@@ -252,11 +279,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         quoteToSelect.setSelected(true);
         quoteRepository.save(quoteToSelect);
 
-        BigDecimal newAmount = quoteToSelect.getTotalAmount() != null ? quoteToSelect.getTotalAmount() : BigDecimal.ZERO;
-        BigDecimal newAmountEur = currencyConversionService.convert(newAmount, quoteToSelect.getCurrency()).convertedAmount();
-
-        BigDecimal difference = newAmountEur.subtract(oldAmountEur);
-        updateCommittedSpendAndValidate(request.getBudget(), difference);
+        updateCommittedSpend(request.getBudget(), difference);
     }
 
     private void validateAmounts(QuoteCreateDto dto) {

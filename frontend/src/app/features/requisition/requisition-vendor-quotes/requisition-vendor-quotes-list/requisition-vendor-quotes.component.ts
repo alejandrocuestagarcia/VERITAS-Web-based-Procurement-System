@@ -101,6 +101,10 @@ export class RequisitionVendorQuotesComponent implements OnInit {
     this.requisitionService.getRequestById(this.requisitionId).subscribe({
       next: (req: RequisitionDto) => {
         this.requisition = req;
+        if (this.requisition.state === 'FINISHED') {
+          this.toastService.showError('Cannot manage quotes for a finished request.');
+          this.router.navigate([`/requisitions/${this.requisitionId}`]);
+        }
         this.findInvoiceAttachment();
       },
       error: (err: any) => {

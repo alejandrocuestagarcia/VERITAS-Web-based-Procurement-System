@@ -44,6 +44,11 @@ export class RequisitionVendorComparisonComponent implements OnInit {
     this.requisitionService.getRequestById(this.requestId).subscribe({
       next: (req) => {
         this.requisition = req;
+        if (this.requisition.state === 'FINISHED') {
+          this.toastService.showError('Cannot compare quotes for a finished request.');
+          this.router.navigate([`/requisitions/${this.requestId}`]);
+          return;
+        }
         this.checkInvoiceExists();
         this.loadQuotes();
       },

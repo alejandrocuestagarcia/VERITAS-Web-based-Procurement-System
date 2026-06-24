@@ -574,4 +574,101 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         assertTrue(invoiceRepository.findById(invoice.getInvoiceId()).isEmpty());
         assertTrue(attachmentRepository.findById(attachment.getAttachmentId()).isEmpty());
     }
+
+    //AI-Generated
+    @Test
+    void SelectQuote_BudgetValidationFails_DoesNotDeleteInvoiceOrAttachments() {
+        InternalBudget globalBudget = InternalBudget.builder()
+                .budgetName("Global Budget")
+                .budgetType(BudgetType.GLOBAL)
+                .totalAmount(BigDecimal.valueOf(100))
+                .committedSpend(BigDecimal.ZERO)
+                .safetyBuffer(BigDecimal.ZERO)
+                .build();
+        globalBudget = internalBudgetRepository.save(globalBudget);
+
+        InternalBudget deptBudget = InternalBudget.builder()
+                .budgetName("Department Budget")
+                .budgetType(BudgetType.DEPARTMENT)
+                .totalAmount(BigDecimal.valueOf(100))
+                .committedSpend(BigDecimal.ZERO)
+                .safetyBuffer(BigDecimal.ZERO)
+                .parentBudget(globalBudget)
+                .build();
+        deptBudget = internalBudgetRepository.save(deptBudget);
+
+        InternalBudget projBudget = InternalBudget.builder()
+                .budgetName("Project Budget")
+                .budgetType(BudgetType.PROJECT)
+                .totalAmount(BigDecimal.valueOf(100))
+                .committedSpend(BigDecimal.ZERO)
+                .safetyBuffer(BigDecimal.ZERO)
+                .parentBudget(deptBudget)
+                .build();
+        projBudget = internalBudgetRepository.save(projBudget);
+
+        InternalBudget reqBudget = InternalBudget.builder()
+                .budgetName("Request Budget")
+                .budgetType(BudgetType.REQUEST)
+                .totalAmount(BigDecimal.ZERO)
+                .committedSpend(BigDecimal.ZERO)
+                .safetyBuffer(BigDecimal.ZERO)
+                .parentBudget(projBudget)
+                .build();
+        reqBudget = internalBudgetRepository.save(reqBudget);
+
+        request.setBudget(reqBudget);
+        request = requestRepository.save(request);
+
+        Quote quote1 = saveTestQuote(Currency.EUR, BigDecimal.valueOf(50));
+        Quote quote2 = saveTestQuote(Currency.EUR, BigDecimal.valueOf(150));
+
+        // Select first quote initially (50 EUR)
+        quoteService.selectQuoteForRequest(request.getRequestID(), quote1.getQuoteID());
+
+        // Create and save an invoice associated with the request
+        Invoice invoice = new Invoice();
+        invoice.setRequest(request);
+        invoice.setVendor(vendor);
+        invoice.setInvoiceDate(java.time.LocalDate.now());
+        invoice.setCreatedAt(java.time.LocalDateTime.now());
+        invoice.setInvoiceNumber("INV-001");
+        invoice.setTotalAmount(BigDecimal.valueOf(50));
+        invoice.setCurrency(Currency.EUR);
+        invoice.setIsPaid(false);
+        invoice = invoiceRepository.save(invoice);
+
+        request.setInvoice(invoice);
+        request = requestRepository.save(request);
+
+        Attachment attachment = new Attachment();
+        attachment.setFileName("invoice.pdf");
+        attachment.setFileType("application/pdf");
+        attachment.setFileSize(1234L);
+        attachment.setUploadedAt(java.time.LocalDateTime.now());
+        attachment.setStoragePath("/tmp/nonexistent-test-invoice.pdf");
+        attachment.setRequest(request);
+        attachment.setInvoice(invoice);
+        attachment = attachmentRepository.save(attachment);
+
+        invoice.setAttachments(List.of(attachment));
+        invoice = invoiceRepository.save(invoice);
+
+        // Verify pre-conditions
+        assertTrue(invoiceRepository.findById(invoice.getInvoiceId()).isPresent());
+        assertTrue(attachmentRepository.findById(attachment.getAttachmentId()).isPresent());
+
+        // Selecting quote2 (150 EUR) exceeds budget limit (100 EUR), should throw WorkflowStateException
+        final Long reqId = request.getRequestID();
+        final Long q2Id = quote2.getQuoteID();
+        assertThrows(com.veritas.backend.common.exception.WorkflowStateException.class, () -> {
+            quoteService.selectQuoteForRequest(reqId, q2Id);
+        });
+
+        // Verify that the invoice and attachment still exist (transaction rolled back, file not deleted)
+        Request updatedRequest = requestRepository.findById(request.getRequestID()).orElseThrow();
+        assertNotNull(updatedRequest.getInvoice());
+        assertTrue(invoiceRepository.findById(invoice.getInvoiceId()).isPresent());
+        assertTrue(attachmentRepository.findById(attachment.getAttachmentId()).isPresent());
+    }
 }
