@@ -10,6 +10,7 @@ import com.veritas.backend.workflow.dto.WorkflowDto;
 import com.veritas.backend.workflow.dto.WorkflowEditDto;
 import com.veritas.backend.workflow.dto.WorkflowSaveDto;
 import com.veritas.backend.workflow.entity.TransitionRule;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.workflow.entity.WorkflowTransition;
@@ -796,6 +797,137 @@ class WorkflowServiceUnitTest {
         doReturn(new BpmnValidationResult()).when(bpmnValidator).validate(anyString(), any(BpmnModelInstance.class));
 
         assertThrows(IllegalStateException.class, () -> workflowService.createWorkflow(saveDto));
+    }
+
+    @Test
+    void GetWorkflow_BypassesDepartmentCheckForNonRestrictedRoles() {
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(10L);
+        Department dept = new Department();
+        dept.setDepartmentId(99L);
+        wd.setDepartment(dept);
+        
+        User admin = User.builder().id(1L).role(UserRole.ADMINISTRATOR).build();
+        WorkflowDto dto = new WorkflowDto(10L, "Workflow", VALID_BPMN_XML, 99L, "desc", true, null);
+
+        when(workflowDefinitionRepository.findById(10L)).thenReturn(Optional.of(wd));
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        WorkflowDto result = workflowService.getWorkflow(10L, admin);
+
+        assertEquals(dto, result);
+        verify(workflowDefinitionRepository).findById(10L);
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void GetWorkflow_UserWithTeamAndNoDepartment_UsesTeamDepartment() {
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(10L);
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        wd.setDepartment(dept);
+
+        User requester = User.builder().id(2L).role(UserRole.REQUESTER).build();
+        Department teamDept = new Department();
+        teamDept.setDepartmentId(12L);
+        Team team = new Team();
+        team.setDepartment(teamDept);
+        User fullUser = User.builder().id(2L).role(UserRole.REQUESTER).team(team).build();
+
+        when(workflowDefinitionRepository.findById(10L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(fullUser));
+        
+        WorkflowDto dto = new WorkflowDto(10L, "Workflow", VALID_BPMN_XML, 12L, "desc", true, null);
+        when(workflowMapper.toWorkflowDto(wd)).thenReturn(dto);
+
+        WorkflowDto result = workflowService.getWorkflow(10L, requester);
+
+        assertEquals(dto, result);
+    }
+
+    @Test
+    void GetWorkflow_UserWithNoTeamAndNoDepartment_ThrowsNullPointerException() {
+        WorkflowDefinition wd = new WorkflowDefinition();
+        wd.setId(10L);
+        Department dept = new Department();
+        dept.setDepartmentId(12L);
+        wd.setDepartment(dept);
+
+        User requester = User.builder().id(2L).role(UserRole.REQUESTER).build();
+        User fullUser = User.builder().id(2L).role(UserRole.REQUESTER).build(); // both null
+
+        when(workflowDefinitionRepository.findById(10L)).thenReturn(Optional.of(wd));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(fullUser));
+
+        assertThrows(NullPointerException.class, () -> workflowService.getWorkflow(10L, requester));
+    }
+
+    @Test
+    void CreateWorkflow_WithEmptyAndNullTaskDocumentation_AndEmptyFlowCondition() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" " +
+                "id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n" +
+                "  <bpmn:process id=\"Process_1\" name=\"Test Workflow\" isExecutable=\"true\">\n" +
+                "    <bpmn:startEvent id=\"StartEvent_1\" name=\"Start\" />\n" +
+                "    <bpmn:task id=\"Task_1\" name=\"Approval Step A\">\n" +
+                "      <bpmn:documentation></bpmn:documentation>\n" +
+                "    </bpmn:task>\n" +
+                "    <bpmn:endEvent id=\"EndEvent_1\" name=\"End\" />\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_1\" sourceRef=\"StartEvent_1\" targetRef=\"Task_1\">\n" +
+                "      <bpmn:conditionExpression></bpmn:conditionExpression>\n" +
+                "    </bpmn:sequenceFlow>\n" +
+                "    <bpmn:sequenceFlow id=\"Flow_2\" sourceRef=\"Task_1\" targetRef=\"EndEvent_1\" />\n" +
+                "  </bpmn:process>\n" +
+                "</bpmn:definitions>";
+        WorkflowSaveDto saveDto = new WorkflowSaveDto(xml, null);
+        doReturn(new BpmnValidationResult()).when(bpmnValidator).validate(anyString(), any(BpmnModelInstance.class));
+        when(workflowMapper.toWorkflowDto(any(WorkflowDefinition.class))).thenReturn(new WorkflowDto(1L, "", "", null, "", true, null));
+
+        workflowService.createWorkflow(saveDto);
+
+        verify(workflowStepRepository).saveAll(stepsCaptor.capture());
+        verify(workflowTransitionRepository).saveAll(transitionsCaptor.capture());
+        
+        List<WorkflowStep> steps = new ArrayList<>();
+        stepsCaptor.getValue().forEach(steps::add);
+        
+        WorkflowStep step = steps.stream().filter(s -> "Approval Step A".equals(s.getName())).findFirst().orElseThrow();
+        assertNull(step.getDescription());
+        assertNull(step.getRole());
+
+        List<WorkflowTransition> transitions = new ArrayList<>();
+        transitionsCaptor.getValue().forEach(transitions::add);
+        WorkflowTransition flow = transitions.stream().filter(t -> "Flow_1".equals(t.getName()) || t.getFromStep().getWorkflowComponent() == WorkflowComponent.START_EVENT).findFirst().orElseThrow();
+        assertNull(flow.getConditionExpression());
+    }
+
+    @Test
+    void GetAllWorkflows_WithBlankFilterAndNonRestrictedRole_QueriesCorrectly() {
+        Pageable pageable = PageRequest.of(0, 10);
+        User admin = User.builder().id(1L).role(UserRole.ADMINISTRATOR).build();
+
+        when(workflowDefinitionRepository.findAllFiltered(eq(null), any(), eq(null), eq(true), eq(pageable)))
+                .thenReturn(Page.empty());
+
+        workflowService.getAllWorkflows(pageable, "   ", null, admin);
+
+        verify(workflowDefinitionRepository).findAllFiltered(eq(null), any(), eq(null), eq(true), eq(pageable));
+    }
+
+    @Test
+    void GetAllWorkflows_WithUserRoleRequesterButNoDepartmentOrTeam_QueriesCorrectly() {
+        Pageable pageable = PageRequest.of(0, 10);
+        User requester = User.builder().id(2L).role(UserRole.REQUESTER).build();
+        User fullUser = User.builder().id(2L).role(UserRole.REQUESTER).build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(fullUser));
+        when(workflowDefinitionRepository.findAllFiltered(any(), any(), eq(null), eq(true), eq(pageable)))
+                .thenReturn(Page.empty());
+
+        workflowService.getAllWorkflows(pageable, "filter", null, requester);
+
+        verify(workflowDefinitionRepository).findAllFiltered(any(), any(), eq(null), eq(true), eq(pageable));
     }
 }
 

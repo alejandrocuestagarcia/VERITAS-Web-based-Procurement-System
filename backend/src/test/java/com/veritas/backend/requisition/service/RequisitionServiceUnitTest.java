@@ -104,8 +104,6 @@ import com.veritas.backend.integrations.currency.entity.ExchangeRateSource;
 import com.veritas.backend.integrations.currency.service.CurrencyConversionService;
 import com.veritas.backend.integrations.jira.service.JiraSyncService;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
@@ -3294,5 +3292,798 @@ class RequisitionServiceUnitTest {
         assertThrows(WorkflowStateException.class, () -> {
             requisitionService.processPayment(1L, testUser);
         });
+    }
+
+    @Test
+    void checkRequestAccess_asRequester_whoIsTeamLeader_accessingOwnTeamRequest_success() {
+        User leader = new User();
+        leader.setId(10L);
+        leader.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(5L);
+        team.setLeader(leader);
+        leader.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setTeam(team);
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(leader));
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+        assertDoesNotThrow(() -> requisitionService.checkRequestAccess(100L, leader));
+    }
+
+    @Test
+    void checkRequestAccess_asRequester_whoIsTeamLeader_accessingDifferentTeamRequest_throwsAccessDenied() {
+        User leader = new User();
+        leader.setId(10L);
+        leader.setRole(UserRole.REQUESTER);
+        Team teamA = new Team();
+        teamA.setTeamId(5L);
+        teamA.setLeader(leader);
+        leader.setTeam(teamA);
+
+        Team teamB = new Team();
+        teamB.setTeamId(6L);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setTeam(teamB);
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(leader));
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () -> requisitionService.checkRequestAccess(100L, leader));
+    }
+
+    @Test
+    void checkRequestAccess_asRequester_whoIsNotTeamLeader_accessingOwnRequest_success() {
+        User requester = new User();
+        requester.setId(10L);
+        requester.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(5L);
+        User leader = new User();
+        leader.setId(11L);
+        team.setLeader(leader);
+        requester.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setUser(requester);
+        request.setTeam(team);
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(requester));
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+
+        assertDoesNotThrow(() -> requisitionService.checkRequestAccess(100L, requester));
+    }
+
+    @Test
+    void checkRequestAccess_asRequester_whoIsNotTeamLeader_accessingDifferentRequest_throwsAccessDenied() {
+        User requester = new User();
+        requester.setId(10L);
+        requester.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(5L);
+        User leader = new User();
+        leader.setId(11L);
+        team.setLeader(leader);
+        requester.setTeam(team);
+
+        User otherUser = new User();
+        otherUser.setId(12L);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setUser(otherUser);
+        request.setTeam(team);
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(requester));
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () -> requisitionService.checkRequestAccess(100L, requester));
+    }
+
+    @Test
+    void checkRequestAccess_asProcurementOfficer_accessingSameDepartmentRequest_success() {
+        Department dept = new Department();
+        dept.setDepartmentId(3L);
+
+        User officer = new User();
+        officer.setId(20L);
+        officer.setRole(UserRole.PROCUREMENT_OFFICER);
+        officer.setDepartment(dept);
+
+        Team team = new Team();
+        team.setDepartment(dept);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setTeam(team);
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+
+        assertDoesNotThrow(() -> requisitionService.checkRequestAccess(100L, officer));
+    }
+
+    @Test
+    void checkRequestAccess_asProcurementOfficer_accessingDifferentDepartmentRequest_throwsAccessDenied() {
+        Department deptA = new Department();
+        deptA.setDepartmentId(3L);
+        Department deptB = new Department();
+        deptB.setDepartmentId(4L);
+
+        User officer = new User();
+        officer.setId(20L);
+        officer.setRole(UserRole.PROCUREMENT_OFFICER);
+        officer.setDepartment(deptA);
+
+        Team team = new Team();
+        team.setDepartment(deptB);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setTeam(team);
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+
+        assertThrows(AccessDeniedException.class, () -> requisitionService.checkRequestAccess(100L, officer));
+    }
+
+    @Test
+    void submitRequest_asTeamLeader_setsStateCorrectly() {
+        User leader = new User();
+        leader.setId(10L);
+        leader.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(5L);
+        team.setLeader(leader);
+        leader.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setState(RequestStatus.DRAFT);
+        request.setTeam(team);
+        request.setUser(leader);
+        request.setWorkflowDefinition(testWorkflow);
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.submitRequest(100L, leader, null));
+    }
+
+    @Test
+    void getRequests_withUserIdFilter_callsRepositoryWithFilter() {
+        testUser.setRole(UserRole.ADMINISTRATOR);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, 1L, null, null, null, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, 1L, null, null, null, testUser, pageable);
+        verify(requestRepository).findFilteredRequests(null, null, 1L, null, null, null, null, null, null, pageable);
+    }
+
+    @Test
+    void approveRequest_withInvoiceNotNullButNotPaid_success() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(false);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.approveRequest(1L, testUser, null));
+    }
+
+    @Test
+    void approveRequest_noUserAndNoAssignee_skipsNotifications() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        request.setUser(null);
+        request.setAssignee(null);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        assertThrows(NullPointerException.class, () -> requisitionService.approveRequest(1L, testUser, null));
+    }
+
+    @Test
+    void revertRequest_withRevisionRequiredNull_defaultsToFalse() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+        request.setAssignee(testUser);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Revert reason");
+        rejectDto.setRevisionRequired(null);
+
+        assertDoesNotThrow(() -> requisitionService.revertRequest(1L, testUser, rejectDto));
+        assertFalse(request.getRevisionRequired());
+    }
+
+    @Test
+    void revertRequest_withNullReason_success() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+        request.setAssignee(testUser);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason(null);
+        rejectDto.setRevisionRequired(false);
+
+        assertDoesNotThrow(() -> requisitionService.revertRequest(1L, testUser, rejectDto));
+    }
+
+    @Test
+    void changeRequester_withNullJiraSyncService_skipsSync() {
+        RequisitionServiceImpl serviceWithNullJira = new RequisitionServiceImpl(
+            requestRepository, projectRepository, workflowDefinitionRepository,
+            userRepository, requestItemRepository, attachmentRepository,
+            workflowStepRepository, requisitionMapper, invoiceMapper,
+            internalBudgetRepository, userMapper, quoteLineItemRepository,
+            quoteRepository, invoiceRepository, workflowEngineService,
+            auditService, notificationService, currencyConversionService,
+            null
+        );
+
+        Team team = new Team();
+        team.setTeamId(10L);
+
+        User currentRequester = new User();
+        currentRequester.setId(1L);
+        currentRequester.setRole(UserRole.REQUESTER);
+        currentRequester.setTeam(team);
+
+        User newRequester = new User();
+        newRequester.setId(2L);
+        newRequester.setName("New Requester");
+        newRequester.setRole(UserRole.REQUESTER);
+        newRequester.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setUser(currentRequester);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(newRequester));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> serviceWithNullJira.changeRequester(1L, 2L, testUser));
+    }
+
+    @Test
+    void getEligibleAssignees_roleRequester_returnsTeamMembers() {
+        Team team = new Team();
+        team.setTeamId(5L);
+        Department dept = new Department();
+        dept.setDepartmentId(10L);
+        team.setDepartment(dept);
+
+        User requester = new User();
+        requester.setId(1L);
+        requester.setRole(UserRole.REQUESTER);
+        requester.setTeam(team);
+
+        User otherRequester = new User();
+        otherRequester.setId(2L);
+        otherRequester.setRole(UserRole.REQUESTER);
+        otherRequester.setTeam(team);
+
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setTeam(team);
+        request.setUser(requester);
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.REQUESTER)).thenReturn(List.of(requester, otherRequester));
+        when(userMapper.toUserDto(any(User.class))).thenReturn(mock(UserDto.class));
+
+        List<UserDto> result = requisitionService.getEligibleAssignees(100L, "REQUESTER", testUser);
+        assertNotNull(result);
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void getEligibleAssignees_roleProcurementOfficer_noTeam_returnsAllProcurementOfficers() {
+        Request request = new Request();
+        request.setRequestID(100L);
+        request.setTeam(null);
+        User creator = new User();
+        creator.setTeam(null);
+        request.setUser(creator);
+
+        User officer = new User();
+        officer.setRole(UserRole.PROCUREMENT_OFFICER);
+
+        when(requestRepository.findById(100L)).thenReturn(Optional.of(request));
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.PROCUREMENT_OFFICER)).thenReturn(List.of(officer));
+        when(userMapper.toUserDto(any(User.class))).thenReturn(mock(UserDto.class));
+
+        List<UserDto> result = requisitionService.getEligibleAssignees(100L, "PROCUREMENT_OFFICER", testUser);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void updateRequest_descriptionTransitions_coverage() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+        request.setRequestID(10L);
+        request.setRequestName("Name");
+        request.setDescription(""); // empty description
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        RequisitionUpdateDto updates1 = new RequisitionUpdateDto(
+            "Name", null, null, null, Priority.LOW, new ArrayList<>()
+        );
+        requisitionService.updateRequest(10L, updates1, testUser);
+
+        request.setDescription(null); // null description
+        RequisitionUpdateDto updates2 = new RequisitionUpdateDto(
+            "Name", "", null, null, Priority.LOW, new ArrayList<>()
+        );
+        requisitionService.updateRequest(10L, updates2, testUser);
+
+        request.setDescription("");
+        RequisitionUpdateDto updates3 = new RequisitionUpdateDto(
+            "Name", "New Desc", null, null, Priority.LOW, new ArrayList<>()
+        );
+        requisitionService.updateRequest(10L, updates3, testUser);
+    }
+
+    @Test
+    void updateRequest_itemDiffUnitAndDescription_coverage() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+        request.setRequestID(10L);
+        request.setRequestName("Name");
+        RequestItem ri = new RequestItem();
+        ri.setName("Item1");
+        ri.setQuantity(2);
+        ri.setUnit(RequestItemUnit.PIECES);
+        ri.setDescription("Item Desc");
+        request.getItems().add(ri);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any())).thenReturn(request);
+
+        // Different unit
+        RequisitionItemCreateDto itemDto1 = new RequisitionItemCreateDto("Item1", 2, RequestItemUnit.KG, "Item Desc");
+        RequisitionUpdateDto updates1 = new RequisitionUpdateDto(
+            "Name", null, null, null, Priority.LOW, List.of(itemDto1)
+        );
+        requisitionService.updateRequest(10L, updates1, testUser);
+
+        // Different description
+        RequisitionItemCreateDto itemDto2 = new RequisitionItemCreateDto("Item1", 2, RequestItemUnit.PIECES, "New Item Desc");
+        RequisitionUpdateDto updates2 = new RequisitionUpdateDto(
+            "Name", null, null, null, Priority.LOW, List.of(itemDto2)
+        );
+        requisitionService.updateRequest(10L, updates2, testUser);
+
+        // Null description incoming
+        RequisitionItemCreateDto itemDto3 = new RequisitionItemCreateDto("Item1", 2, RequestItemUnit.PIECES, null);
+        RequisitionUpdateDto updates3 = new RequisitionUpdateDto(
+            "Name", null, null, null, Priority.LOW, List.of(itemDto3)
+        );
+        requisitionService.updateRequest(10L, updates3, testUser);
+    }
+
+    @Test
+    void saveAttachment_withNullOriginalFilename_success() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        org.springframework.web.multipart.MultipartFile file = mock(org.springframework.web.multipart.MultipartFile.class);
+        org.mockito.Mockito.lenient().when(file.getOriginalFilename()).thenReturn(null);
+        org.mockito.Mockito.lenient().when(file.isEmpty()).thenReturn(false);
+        org.mockito.Mockito.lenient().when(file.getContentType()).thenReturn("application/octet-stream");
+        try {
+            org.mockito.Mockito.lenient().when(file.getInputStream()).thenReturn(new java.io.ByteArrayInputStream("test".getBytes()));
+        } catch (IOException e) {}
+
+        requisitionService.saveAttachment(1L, file, testUser);
+        verify(attachmentRepository).save(attachmentCaptor.capture());
+        Attachment saved = attachmentCaptor.getValue();
+        assertNull(saved.getFileName());
+        assertFalse(saved.getStoragePath().contains("."));
+    }
+
+    @Test
+    void processPayment_withCommittedSpendNull_throwsNullPointerException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+
+        User creator = new User();
+        creator.setName("creator");
+        creator.setEmail("creator@veritas.com");
+        request.setUser(creator);
+
+        InternalBudget budget = new InternalBudget();
+        budget.setBudgetType(BudgetType.REQUEST);
+        budget.setCommittedSpend(null); // null committed spend
+        budget.setActualSpend(BigDecimal.valueOf(50.0));
+        request.setBudget(budget);
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(BigDecimal.valueOf(120.00));
+        invoice.setCurrency(Currency.EUR);
+        invoice.setIsPaid(false);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(currencyConversionService.convert(any(BigDecimal.class), any())).thenReturn(new CurrencyConversionResult(new BigDecimal("120.00"), BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+
+        assertThrows(NullPointerException.class, () -> requisitionService.processPayment(1L, testUser));
+    }
+
+    @Test
+    void rejectRequest_withCommittedSpendNull_success() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+
+        InternalBudget budget = new InternalBudget();
+        budget.setBudgetType(BudgetType.REQUEST);
+        budget.setCommittedSpend(null); // null committed spend
+        request.setBudget(budget);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Invalid");
+        assertDoesNotThrow(() -> requisitionService.rejectRequest(1L, testUser, rejectDto));
+    }
+
+    @Test
+    void getRequests_RequesterWithTeamAndLeaderIsNull_UserIdFilterIsUser() {
+        testUser.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(2L);
+        team.setLeader(null);
+        testUser.setTeam(team);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, 1L, null, 2L, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, null, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, 1L, null, 2L, null, null, null, pageable);
+    }
+
+    @Test
+    void getRequests_WithCreatorIdAndRequesterRoleWithUserIdFilterNotNull_DoesNotModifyUserIdFilter() {
+        testUser.setRole(UserRole.REQUESTER);
+        Team team = new Team();
+        team.setTeamId(2L);
+        User leader = new User();
+        leader.setId(99L);
+        team.setLeader(leader);
+        testUser.setTeam(team);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(requestRepository.findFilteredRequests(null, null, null, 1L, null, 2L, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        requisitionService.getRequests(null, null, null, null, null, 99L, testUser, pageable);
+
+        verify(requestRepository).findFilteredRequests(null, null, null, 1L, null, 2L, null, null, null, pageable);
+    }
+
+    @Test
+    void approveRequest_NotFinished_WithAssignee_SendsAssigneeNotification_AndCurrentStepNotNull() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        request.setRequestID(10L);
+        
+        User assignee = new User();
+        assignee.setId(5L);
+        assignee.setEmail("assignee@test.com");
+        
+        WorkflowStep currentStep = new WorkflowStep();
+        currentStep.setName("Approval Step");
+        
+        request.setAssignee(assignee);
+        request.setCurrentStep(currentStep);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenReturn(request);
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        requisitionService.approveRequest(10L, testUser, 5L);
+
+        verify(notificationService).createNotification(
+                eq(assignee),
+                eq(request),
+                eq(NotificationType.ASSIGNED),
+                contains("requires your action at step 'Approval Step'")
+        );
+    }
+
+    @Test
+    void approveRequest_NotFinished_WithAssignee_SendsAssigneeNotification_AndCurrentStepNull() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        request.setRequestID(10L);
+        
+        User assignee = new User();
+        assignee.setId(5L);
+        assignee.setEmail("assignee@test.com");
+        
+        request.setAssignee(assignee);
+        request.setCurrentStep(testStartStep);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        doAnswer(invocation -> {
+            Request r = invocation.getArgument(0);
+            r.setCurrentStep(null);
+            r.setAssignee(assignee);
+            return null;
+        }).when(workflowEngineService).moveToNextStep(any(), any(), any());
+
+        assertThrows(NullPointerException.class, () ->
+            requisitionService.approveRequest(10L, testUser, 5L)
+        );
+    }
+
+    @Test
+    void revertRequest_noUserAndNoAssignee_skipsNotifications() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(null);
+        request.setAssignee(null);
+        WorkflowStep currentStep = new WorkflowStep();
+        currentStep.setName("Revert Step");
+        request.setCurrentStep(currentStep);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Reverted");
+
+        assertThrows(NullPointerException.class, () ->
+            requisitionService.revertRequest(10L, testUser, rejectDto)
+        );
+    }
+
+    @Test
+    void rejectRequest_withInvoiceNotNullButNotPaid_success() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(false);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Invalid");
+        assertDoesNotThrow(() -> requisitionService.rejectRequest(1L, testUser, rejectDto));
+    }
+
+    @Test
+    void rejectRequest_withBlankJiraKey_SkipsJiraSync() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+        request.setJiraIssueKey("   ");
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("Invalid");
+        requisitionService.rejectRequest(1L, testUser, rejectDto);
+
+        verify(jiraSyncService, never()).handleVeritasWorkflowChange(any());
+    }
+
+    @Test
+    void rejectRequest_withNonNullBlankReason_AppendsPeriodInMessage() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setUser(testUser);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        RequisitionRejectDto rejectDto = new RequisitionRejectDto();
+        rejectDto.setReason("   ");
+        requisitionService.rejectRequest(1L, testUser, rejectDto);
+
+        verify(notificationService).createNotification(
+                eq(testUser),
+                any(Request.class),
+                eq(NotificationType.REJECTED),
+                eq("Your request 'null' was rejected.")
+        );
+    }
+
+    @Test
+    void getEligibleAssignees_roleAdministrator_returnsAllAdministrators() {
+        Request request = new Request();
+        request.setRequestID(10L);
+        request.setUser(testUser);
+        Team team = new Team();
+        Department department = new Department();
+        department.setDepartmentId(5L);
+        team.setDepartment(department);
+        testUser.setTeam(team);
+
+        User admin = new User();
+        admin.setId(100L);
+        admin.setRole(UserRole.ADMINISTRATOR);
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(userRepository.findAllByRoleAndIsActiveTrue(UserRole.ADMINISTRATOR)).thenReturn(List.of(admin));
+
+        List<UserDto> result = requisitionService.getEligibleAssignees(10L, "ADMINISTRATOR", testUser);
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+
+    @Test
+    void updateRequest_ActiveRequestWithRevisionRequired_success() {
+        Request request = createValidRequest(RequestStatus.ACTIVE);
+        request.setRequestID(10L);
+        request.setRevisionRequired(true);
+        request.setUser(testUser);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of()
+        );
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.updateRequest(10L, updates, testUser));
+    }
+
+    @Test
+    void updateRequest_itemsDescriptionEmptyString_success() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+        request.setRequestID(10L);
+        request.setUser(testUser);
+
+        RequestItem ri = new RequestItem();
+        ri.setName("Item1");
+        ri.setQuantity(2);
+        ri.setUnit(RequestItemUnit.PIECES);
+        ri.setDescription("");
+        request.getItems().add(ri);
+
+        RequisitionItemCreateDto itemDto = new RequisitionItemCreateDto("Item1", 2, RequestItemUnit.PIECES, "");
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of(itemDto)
+        );
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.updateRequest(10L, updates, testUser));
+    }
+
+    @Test
+    void updateRequest_incomingItemsNullAndCurrentItemsEmpty_returnsFalse() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+        request.setRequestID(10L);
+        request.setUser(testUser);
+        request.setItems(new ArrayList<>());
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, null
+        );
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.updateRequest(10L, updates, testUser));
+    }
+
+    @Test
+    void updateRequest_incomingItemsNullAndCurrentItemsNull_returnsFalse() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+        request.setRequestID(10L);
+        request.setUser(testUser);
+        request.setItems(null);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, null
+        );
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.updateRequest(10L, updates, testUser));
+    }
+
+    @Test
+    void updateRequest_itemsNoChanges_success() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+        request.setRequestID(10L);
+        request.setUser(testUser);
+
+        RequestItem ri = new RequestItem();
+        ri.setName("Item1");
+        ri.setQuantity(2);
+        ri.setUnit(RequestItemUnit.PIECES);
+        ri.setDescription("Same Desc");
+        request.getItems().add(ri);
+
+        RequisitionItemCreateDto itemDto = new RequisitionItemCreateDto("Item1", 2, RequestItemUnit.PIECES, "Same Desc");
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Laptop", "Need laptop", 1L, 1L, Priority.LOW, List.of(itemDto)
+        );
+
+        when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(Request.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requisitionMapper.toDto(any(Request.class))).thenReturn(mock(RequisitionDto.class));
+
+        assertDoesNotThrow(() -> requisitionService.updateRequest(10L, updates, testUser));
+    }
+
+    @Test
+    void processPayment_withBlankJiraKey_SkipsJiraSync() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setJiraIssueKey("   ");
+        request.setUser(testUser);
+
+        InternalBudget budget = new InternalBudget();
+        budget.setBudgetType(BudgetType.PROJECT);
+        budget.setTotalAmount(BigDecimal.valueOf(1000.0));
+        budget.setActualSpend(BigDecimal.ZERO);
+        budget.setCommittedSpend(BigDecimal.TEN);
+        budget.setSafetyBuffer(BigDecimal.ZERO);
+        request.setBudget(budget);
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(BigDecimal.ONE);
+        invoice.setCurrency(Currency.EUR);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(currencyConversionService.convert(any(BigDecimal.class), any())).thenReturn(new CurrencyConversionResult(BigDecimal.ONE, BigDecimal.ONE, LocalDateTime.now(), ExchangeRateSource.FRANKFURTER));
+        when(requestRepository.save(any(Request.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        requisitionService.processPayment(1L, testUser);
+
+        verify(jiraSyncService, never()).handleVeritasWorkflowChange(any());
     }
 }

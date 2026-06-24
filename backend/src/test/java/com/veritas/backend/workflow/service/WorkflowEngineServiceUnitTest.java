@@ -1714,4 +1714,265 @@ class WorkflowEngineServiceUnitTest {
         WorkflowStep result = workflowEngineService.getNextStep(testRequest);
         assertNull(result);
     }
+
+    @Test
+    void moveToNextStep_NullRequestIdInTransitionRule_DoesNotFetchQuotes() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        TransitionRule rule = new TransitionRule();
+        rule.setMinRequiredVendors(2);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        testRequest.setRequestID(null);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class, () ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertTrue(ex.getMessage().contains("distinct vendors is required"));
+    }
+
+    @Test
+    void moveToNextStep_NullVendorScoreInSelectedQuote_ThrowsWorkflowStateException() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        TransitionRule rule = new TransitionRule();
+        rule.setMinVendorReliabilityScore(4.0);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        Quote selectedQuote = new Quote();
+        Vendor vendor = new Vendor();
+        vendor.setOverallScore(null);
+        vendor.setVendorName("Mock Vendor");
+        selectedQuote.setVendorID(vendor);
+        selectedQuote.setSelected(true);
+        testRequest.setQuotes(new ArrayList<>());
+        testRequest.getQuotes().add(selectedQuote);
+
+        WorkflowStateException ex = assertThrows(WorkflowStateException.class, () ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertTrue(ex.getMessage().contains("reliability score (0.00) is below the required minimum"));
+    }
+
+    @Test
+    void moveToNextStep_AssigneeInvalidRole_ThrowsIllegalArgumentException() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        nextStep.setWorkflowComponent(WorkflowComponent.STEP);
+        nextStep.setRole(UserRole.FINANCE_OFFICER);
+
+        User assignee = new User();
+        assignee.setId(99L);
+        assignee.setRole(UserRole.REQUESTER); // invalid role for FINANCE_OFFICER step
+        assignee.setName("John Requester");
+
+        lenient().when(userRepository.findById(99L)).thenReturn(Optional.of(assignee));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, 99L)
+        );
+        assertTrue(ex.getMessage().contains("does not have the required role"));
+    }
+
+    @Test
+    void moveToNextStep_NullTeamAndLeaderCheck_ThrowsWorkflowStateException() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+
+        nextStep.setWorkflowComponent(WorkflowComponent.STEP);
+        nextStep.setRole(UserRole.REQUESTER);
+        nextStep.setIsTeamLeader(true);
+
+        User creator = testRequest.getUser();
+        
+        // Scenario 1: Team is null
+        creator.setTeam(null);
+        WorkflowStateException ex1 = assertThrows(WorkflowStateException.class, () ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertTrue(ex1.getMessage().contains("requester does not belong to a team"));
+
+        // Scenario 2: Team leader is null
+        testRequest.setCurrentStep(currentStep); // Reset step to avoid state mutation leakage
+        Team team = new Team();
+        team.setLeader(null);
+        creator.setTeam(team);
+        
+        WorkflowStateException ex2 = assertThrows(WorkflowStateException.class, () ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+        assertTrue(ex2.getMessage().contains("team has no team leader assigned"));
+    }
+
+    @Test
+    void moveToNextStep_AttachmentValidation_VariousMimetypes() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        TransitionRule rule = new TransitionRule();
+        rule.setRequiredFileTypes("excel,word,powerpoint,zip,email,docx,xlsx,customType");
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        // Add attachments matching different types
+        Attachment aExcel = new Attachment();
+        aExcel.setFileName("file.xlsx");
+        aExcel.setFileType("application/vnd.ms-excel");
+        aExcel.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aWord = new Attachment();
+        aWord.setFileName("file.doc");
+        aWord.setFileType("application/msword");
+        aWord.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aPpt = new Attachment();
+        aPpt.setFileName("file.ppt");
+        aPpt.setFileType("application/vnd.ms-powerpoint");
+        aPpt.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aZip = new Attachment();
+        aZip.setFileName("file.zip");
+        aZip.setFileType("application/zip");
+        aZip.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aEmail = new Attachment();
+        aEmail.setFileName("file.eml");
+        aEmail.setFileType("message/rfc822");
+        aEmail.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aCustom = new Attachment();
+        aCustom.setFileName("file.customType");
+        aCustom.setFileType("text/plain");
+        aCustom.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aNullName = new Attachment();
+        aNullName.setFileName(null);
+        aNullName.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aNullType = new Attachment();
+        aNullType.setFileName("noext");
+        aNullType.setFileType(null);
+        aNullType.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        Attachment aDocx = new Attachment();
+        aDocx.setFileName("file.docx");
+        aDocx.setFileType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        aDocx.setUploadedAt(LocalDateTime.now().plusDays(1));
+
+        testRequest.setAttachments(List.of(aExcel, aWord, aPpt, aZip, aEmail, aCustom, aNullName, aNullType, aDocx));
+
+        assertDoesNotThrow(() ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+    }
+
+    @Test
+    void moveToNextStep_AttachmentUploadTimeEqualEntryTime_Success() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        TransitionRule rule = new TransitionRule();
+        rule.setRequiredFileTypes("pdf");
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        LocalDateTime entryTime = LocalDateTime.now();
+        
+        // Mock auditLogRepository finding step entry time
+        AuditLog auditLog = AuditLog.builder()
+                .timestamp(entryTime)
+                .build();
+        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampAsc(any(), any()))
+                .thenReturn(Optional.of(auditLog));
+
+        // Attachment equal to entry time
+        Attachment aEqual = new Attachment();
+        aEqual.setFileName("file.pdf");
+        aEqual.setFileType("application/pdf");
+        aEqual.setUploadedAt(entryTime);
+
+        testRequest.setAttachments(List.of(aEqual));
+        assertDoesNotThrow(() ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+    }
+
+    @Test
+    void moveToNextStep_AttachmentUploadTimeBeforeEntryTime_ThrowsWorkflowStateException() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setWorkflowComponent(WorkflowComponent.STEP);
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        TransitionRule rule = new TransitionRule();
+        rule.setRequiredFileTypes("pdf");
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        LocalDateTime entryTime = LocalDateTime.now();
+        
+        // Mock auditLogRepository finding step entry time
+        AuditLog auditLog = AuditLog.builder()
+                .timestamp(entryTime)
+                .build();
+        when(auditLogRepository.findFirstByRequestAndNewStepOrderByTimestampAsc(any(), any()))
+                .thenReturn(Optional.of(auditLog));
+
+        // Attachment before entry time (should fail)
+        Attachment aBefore = new Attachment();
+        aBefore.setFileName("file.pdf");
+        aBefore.setFileType("application/pdf");
+        aBefore.setUploadedAt(entryTime.minusMinutes(1));
+
+        testRequest.setAttachments(List.of(aBefore));
+        assertThrows(WorkflowStateException.class, () ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+    }
+
+    @Test
+    void moveToNextStep_AdvancedRuleNullOrBlank_BypassesAdvancedRuleCheck() {
+        testActor.setId(10L);
+        lenient().when(userRepository.findById(10L)).thenReturn(Optional.of(testActor));
+        currentStep.setIsTeamLeader(false);
+        currentStep.setRole(UserRole.REQUESTER);
+
+        TransitionRule rule = new TransitionRule();
+        rule.setAdvancedRule("");
+
+        when(workflowTransitionRepository.findByFromStep(currentStep)).thenReturn(List.of(testTransition));
+        when(transitionRuleRepository.findByTransition(testTransition)).thenReturn(Optional.of(rule));
+
+        assertDoesNotThrow(() ->
+            workflowEngineService.moveToNextStep(testRequest, testActor, null)
+        );
+    }
 }
