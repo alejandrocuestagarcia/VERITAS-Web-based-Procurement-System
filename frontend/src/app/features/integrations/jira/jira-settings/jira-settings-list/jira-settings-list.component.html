@@ -62,7 +62,7 @@
     <ng-container matColumnDef="actions">
       <th class = "!text-center" mat-header-cell *matHeaderCellDef>ACTIONS</th>
       <td mat-cell *matCellDef="let config" class="!text-center">
-          <button mat-icon-button color="accent" (click)="triggerSync(config)" matTooltip="Sync Now">
+          <button mat-icon-button (click)="triggerSync(config)" matTooltip="Sync Now">
             <mat-icon>sync</mat-icon>
           </button>
           <button mat-icon-button (click)="editConfig(config)" matTooltip="Edit Config">
