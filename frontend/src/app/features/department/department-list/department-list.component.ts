@@ -21,6 +21,8 @@ interface DepartmentRow {
   budget: number;
   committedSpend: number;
   actualSpend: number;
+  isActive: boolean;
+  statusLabel: string;
 }
 
 @Component({
@@ -31,7 +33,7 @@ interface DepartmentRow {
 export class DepartmentListComponent implements OnInit, AfterViewInit {
   @ViewChild(SharedTableComponent) sharedTable!: SharedTableComponent;
 
-  displayedColumns: string[] = ['name', 'teams', 'budget', 'committed', 'actual', 'actions'];
+  displayedColumns: string[] = ['name', 'teams', 'budget', 'committed', 'actual', 'status', 'actions'];
   dataSource = new MatTableDataSource<DepartmentRow>([]);
 
   loading = false;
@@ -89,8 +91,8 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
         this.departmentsService.deleteDepartment(row.id).subscribe({
-          next: () => {
-            this.toastService.showSuccess('Department deleted successfully.');
+          next: (res: any) => {
+            this.toastService.showSuccess(res?.['message'] || 'Department deleted successfully.');
             this.loadData();
           },
           error: (err) => {
@@ -106,7 +108,7 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
     this.error = null;
 
     forkJoin({
-      departments: this.departmentsService.getAllDepartments(),
+      departments: this.departmentsService.getAllDepartments(true),
       teams: this.teamsService.getAllTeams()
     }).subscribe({
       next: ({ departments, teams }) => {
@@ -127,7 +129,9 @@ export class DepartmentListComponent implements OnInit, AfterViewInit {
             teamsCount: teamsInDept,
             budget: dept.budget || 0,
             committedSpend: dept.committedSpend || 0,
-            actualSpend: dept.actualSpend || 0
+            actualSpend: dept.actualSpend || 0,
+            isActive: dept.isActive !== false,
+            statusLabel: dept.isActive !== false ? 'Active' : 'Inactive'
           };
         });
 
