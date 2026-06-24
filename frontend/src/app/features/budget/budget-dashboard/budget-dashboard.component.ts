@@ -161,9 +161,9 @@ export class BudgetDashboardComponent implements OnInit {
 
     forkJoin({
       stats: this.financialService.getFinanceDashboard(this.selectedDepartmentId || undefined),
-      depts: this.departmentService.getAllDepartments(),
-      teams: this.teamsService.getAllTeams(),
-      projects: this.projectService.getAllProjects()
+      depts: this.departmentService.getAllDepartments(true),
+      teams: this.teamsService.getAllTeams(true),
+      projects: this.projectService.getAllProjects(true)
     }).subscribe({
       next: (data) => {
         console.log('Dashboard stats from server:', data.stats);

@@ -34,7 +34,8 @@ class DepartmentMapperUnitTest {
             BigDecimal.valueOf(5000),
             BigDecimal.valueOf(1000),
             BigDecimal.valueOf(500),
-            BigDecimal.valueOf(100)
+            BigDecimal.valueOf(100),
+            true
         );
 
         Department entity = mapper.toDepartment(dto);

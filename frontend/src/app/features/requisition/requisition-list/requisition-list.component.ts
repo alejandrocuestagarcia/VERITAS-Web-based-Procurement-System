@@ -101,7 +101,7 @@ export class RequisitionListComponent implements OnInit {
   }
 
   loadProjects(): void {
-    this.projectService.getAllProjects().subscribe({
+    this.projectService.getAllProjects(true).subscribe({
       next: (projects) => this.projects = projects,
       error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to load projects'))
     });

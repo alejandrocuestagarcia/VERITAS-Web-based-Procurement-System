@@ -122,7 +122,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .isActive(true)
                 .build());
 
-        var result = projectService.getProjectsForUser(financeOfficer);
+        var result = projectService.getProjectsForUser(financeOfficer, false);
 
         assertAll(
             () -> assertEquals(1, result.size()),
@@ -141,7 +141,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .isActive(true)
                 .build());
 
-        var result = projectService.getProjectsForUser(requester);
+        var result = projectService.getProjectsForUser(requester, false);
 
         assertAll(
             () -> assertEquals(1, result.size()),
@@ -160,7 +160,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .isActive(true)
                 .build());
 
-        var result = projectService.getProjectsForUser(procurementOfficer);
+        var result = projectService.getProjectsForUser(procurementOfficer, false);
 
         assertAll(
             () -> assertEquals(1, result.size()),
@@ -179,7 +179,7 @@ class ProjectServiceIntegrationTest extends BaseDBIntegrationTest {
                 .isActive(true)
                 .build());
 
-        var result = projectService.getProjectsForUser(procurementOfficer);
+        var result = projectService.getProjectsForUser(procurementOfficer, false);
 
         assertTrue(result.isEmpty());
     }

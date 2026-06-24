@@ -14,11 +14,13 @@ import java.util.Optional;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByTeam(Team team);
+    List<Project> findByTeamAndIsActiveTrue(Team team);
     Optional<Project> findByIdAndTeam(Long id, Team team);
     @Query("SELECT p FROM Project p WHERE p.id = :id AND  p.team.department = :department")
     Optional<Project> findByIdAndTeamDepartment(@Param("id") Long id, @Param("department") Department department);
     boolean existsByNameOrProjectKey(String name, String projectKey);
     boolean existsByTeamTeamId(Long teamId);
+    boolean existsByTeamTeamIdAndIsActiveTrue(Long teamId);
 
     Optional<Project> findByProjectKey(String projectKey);
     Optional<Project> findByName(String name);
@@ -26,5 +28,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT p FROM Project p WHERE p.team.department = :department")
     List<Project> findByTeamDepartment(@Param("department") Department department);
 
+    @Query("SELECT p FROM Project p WHERE p.team.department = :department AND p.isActive = true")
+    List<Project> findByTeamDepartmentAndIsActiveTrue(@Param("department") Department department);
+
+    List<Project> findByIsActiveTrue();
 
 }

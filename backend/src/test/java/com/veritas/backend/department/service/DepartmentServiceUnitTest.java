@@ -57,7 +57,7 @@ class DepartmentServiceUnitTest {
         DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
         Department department = Department.builder().name("Engineering").build();
         Department savedDepartment = Department.builder().departmentId(1L).name("Engineering").build();
-        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
+        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null, true);
 
         when(departmentRepository.existsByName("Engineering")).thenReturn(false);
         when(departmentMapper.toDepartment(request)).thenReturn(department);
@@ -112,14 +112,15 @@ class DepartmentServiceUnitTest {
         Department dept1 = Department.builder().departmentId(1L).name("Engineering").build();
         Department dept2 = Department.builder().departmentId(2L).name("HR").build();
 
-        DepartmentDto dto1 = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
-        DepartmentDto dto2 = new DepartmentDto(2L, "HR", BigDecimal.valueOf(10000.0), null, null, null);
+        DepartmentDto dto1 = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null, true);
+        DepartmentDto dto2 = new DepartmentDto(2L, "HR", BigDecimal.valueOf(10000.0), null, null, null, true);
 
         when(departmentRepository.findAll()).thenReturn(List.of(dept1, dept2));
         when(departmentMapper.toDepartmentDto(dept1)).thenReturn(dto1);
         when(departmentMapper.toDepartmentDto(dept2)).thenReturn(dto2);
 
-        List<DepartmentDto> result = departmentService.getAllDepartments();
+        // Act
+        List<DepartmentDto> result = departmentService.getAllDepartments(true);
 
         assertAll(
             () -> assertEquals(2, result.size()),
@@ -131,9 +132,33 @@ class DepartmentServiceUnitTest {
     }
 
     @Test
+    void GetAllDepartments_ActiveOnly_ReturnsOnlyActive() {
+        Department dept1 = Department.builder().departmentId(1L).name("Engineering").isActive(true).build();
+        Department dept2 = Department.builder().departmentId(2L).name("HR").isActive(true).build();
+
+        DepartmentDto dto1 = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null, true);
+        DepartmentDto dto2 = new DepartmentDto(2L, "HR", BigDecimal.valueOf(10000.0), null, null, null, true);
+
+        when(departmentRepository.findByIsActiveTrue()).thenReturn(List.of(dept1, dept2));
+        when(departmentMapper.toDepartmentDto(dept1)).thenReturn(dto1);
+        when(departmentMapper.toDepartmentDto(dept2)).thenReturn(dto2);
+
+        // Act
+        List<DepartmentDto> result = departmentService.getAllDepartments(false);
+
+        assertAll(
+            () -> assertEquals(2, result.size()),
+            () -> assertEquals("Engineering", result.get(0).name()),
+            () -> assertEquals("HR", result.get(1).name())
+        );
+
+        verify(departmentRepository).findByIsActiveTrue();
+    }
+
+    @Test
     void GetDepartmentById_ValidId_ReturnsDepartment() {
         Department department = Department.builder().departmentId(1L).name("Engineering").build();
-        DepartmentDto dto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
+        DepartmentDto dto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null, true);
 
         when(departmentRepository.getDepartmentByDepartmentId(1L)).thenReturn(department);
         when(departmentMapper.toDepartmentDto(department)).thenReturn(dto);
@@ -154,7 +179,7 @@ class DepartmentServiceUnitTest {
         DepartmentCreateDto request = new DepartmentCreateDto("R&D", BigDecimal.valueOf(10000.0));
         Department existing = Department.builder().departmentId(1L).name("Engineering").build();
         Department saved = Department.builder().departmentId(1L).name("R&D").build();
-        DepartmentDto expectedDto = new DepartmentDto(1L, "R&D", BigDecimal.valueOf(10000.0), null, null, null);
+        DepartmentDto expectedDto = new DepartmentDto(1L, "R&D", BigDecimal.valueOf(10000.0), null, null, null, true);
 
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(departmentRepository.existsByName("R&D")).thenReturn(false);
@@ -179,7 +204,7 @@ class DepartmentServiceUnitTest {
         DepartmentCreateDto request = new DepartmentCreateDto("Engineering", BigDecimal.valueOf(10000.0));
         Department existing = Department.builder().departmentId(1L).name("Engineering").build();
         Department saved = Department.builder().departmentId(1L).name("Engineering").build();
-        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null);
+        DepartmentDto expectedDto = new DepartmentDto(1L, "Engineering", BigDecimal.valueOf(10000.0), null, null, null, true);
 
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(existing));
         // existsByName is called in impl, but since name is same as existing, it shouldn't trigger duplicate exception
@@ -274,21 +299,24 @@ class DepartmentServiceUnitTest {
 
     @Test
     void DeleteDepartment_ValidId_Deletes() {
-        when(departmentRepository.existsById(1L)).thenReturn(true);
-        when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(false);
+        Department department = Department.builder().departmentId(1L).name("Engineering").build();
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(department));
+        when(teamRepository.existsByDepartmentDepartmentIdAndIsActiveTrue(1L)).thenReturn(false);
         when(userRepository.existsByDepartmentDepartmentId(1L)).thenReturn(false);
+        when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(false);
 
         departmentService.deleteDepartment(1L);
 
-        verify(departmentRepository).existsById(1L);
-        verify(teamRepository).existsByDepartmentDepartmentId(1L);
+        verify(departmentRepository).findById(1L);
+        verify(teamRepository).existsByDepartmentDepartmentIdAndIsActiveTrue(1L);
         verify(departmentRepository).deleteById(1L);
     }
 
     @Test
     void DeleteDepartment_ReferencedByTeams_ThrowsDataIntegrityViolationException() {
-        when(departmentRepository.existsById(1L)).thenReturn(true);
-        when(teamRepository.existsByDepartmentDepartmentId(1L)).thenReturn(true);
+        Department department = Department.builder().departmentId(1L).name("Engineering").build();
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(department));
+        when(teamRepository.existsByDepartmentDepartmentIdAndIsActiveTrue(1L)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> departmentService.deleteDepartment(1L));
 
@@ -297,7 +325,7 @@ class DepartmentServiceUnitTest {
 
     @Test
     void DeleteDepartment_NotFound_ThrowsEntityNotFoundException() {
-        when(departmentRepository.existsById(1L)).thenReturn(false);
+        when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> departmentService.deleteDepartment(1L));
 

@@ -20,6 +20,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,21 +60,21 @@ class ProjectServiceUnitTest {
         Project project1 = Project.builder().team(team).build();
         Project project2 = Project.builder().team(team).build();
 
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null, "Testing Team",null, null, null);
-        ProjectDto dto2 = new ProjectDto(2L, "Project 2", null, null, null, null, null, null, "Testing Team",null, null, null);
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null, "Testing Team",null, null, null, true);
+        ProjectDto dto2 = new ProjectDto(2L, "Project 2", null, null, null, null, null, null, "Testing Team",null, null, null, true);
 
         User financeOfficer = User.builder()
                 .role(UserRole.FINANCE_OFFICER)
                 .build();
 
-        when(projectRepository.findAll()).thenReturn(List.of(project1, project2));
+        when(projectRepository.findByIsActiveTrue()).thenReturn(List.of(project1, project2));
         when(projectMapper.toProjectDto(project1)).thenReturn(dto1);
         when(projectMapper.toProjectDto(project2)).thenReturn(dto2);
 
-        var result = projectService.getProjectsForUser(financeOfficer);
+        var result = projectService.getProjectsForUser(financeOfficer, false);
 
         assertEquals(2, result.size());
-        verify(projectRepository).findAll();
+        verify(projectRepository).findByIsActiveTrue();
     }
 
     @Test
@@ -81,20 +82,20 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null, null, null);
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null, null, null, true);
 
         User user = User.builder()
                 .role(UserRole.REQUESTER)
                 .team(team)
                 .build();
 
-        when(projectRepository.findByTeam(team)).thenReturn(List.of(project1));
+        when(projectRepository.findByTeamAndIsActiveTrue(team)).thenReturn(List.of(project1));
         when(projectMapper.toProjectDto(project1)).thenReturn(dto1);
 
-        var result = projectService.getProjectsForUser(user);
+        var result = projectService.getProjectsForUser(user, false);
 
         assertEquals(1, result.size());
-        verify(projectRepository).findByTeam(team);
+        verify(projectRepository).findByTeamAndIsActiveTrue(team);
     }
 
     @Test
@@ -103,20 +104,20 @@ class ProjectServiceUnitTest {
         Team team = Team.builder().name("Testing Team").department(department).build();
 
         Project project1 = Project.builder().team(team).build();
-        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null, null, null);
+        ProjectDto dto1 = new ProjectDto(1L, "Project 1", null, null, null, null, null, null,"Testing Team",null, null, null, true);
 
         User user = User.builder()
                 .role(UserRole.PROCUREMENT_OFFICER)
                 .department(department)
                 .build();
 
-        when(projectRepository.findByTeamDepartment(department)).thenReturn(List.of(project1));
+        when(projectRepository.findByTeamDepartmentAndIsActiveTrue(department)).thenReturn(List.of(project1));
         when(projectMapper.toProjectDto(project1)).thenReturn(dto1);
 
-        var result = projectService.getProjectsForUser(user);
+        var result = projectService.getProjectsForUser(user, false);
 
         assertEquals(1, result.size());
-        verify(projectRepository).findByTeamDepartment(department);
+        verify(projectRepository).findByTeamDepartmentAndIsActiveTrue(department);
     }
 
     @Test
@@ -128,7 +129,7 @@ class ProjectServiceUnitTest {
         Project project = Project.builder().name("Secret Project").projectKey("KEY-123").build();
         Project saved = Project.builder().id(1L).name("Secret Project").projectKey("KEY-123").team(team).build();
 
-        ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, null, null, null,"Team A",null, null, null);
+        ProjectDto mapped = new ProjectDto(1L, "Secret Project", null, null, null, null, null, null,"Team A",null, null, null, true);
 
         when(projectRepository.existsByNameOrProjectKey("Secret Project", "KEY-123")).thenReturn(false);
         when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
@@ -168,7 +169,7 @@ class ProjectServiceUnitTest {
 
         Team team = Team.builder().teamId(10L).name("Testing Team").build();
         Project project = Project.builder().id(1L).name("Secret Project").team(team).build();
-        ProjectDto expectedDto = new ProjectDto(1L, "Secret Project", null, null, null, null,null,null,"Testing Team",null, null, null);
+        ProjectDto expectedDto = new ProjectDto(1L, "Secret Project", null, null, null, null,null,null,"Testing Team",null, null, null, true);
         User requester = User.builder().role(UserRole.REQUESTER).team(team).build();
 
         when(projectRepository.findByIdAndTeam(1L, team)).thenReturn(Optional.of(project));
@@ -204,7 +205,7 @@ class ProjectServiceUnitTest {
         Department department = Department.builder().departmentId(5L).name("Logistics").build();
         Team team = Team.builder().teamId(10L).department(department).build();
         Project project = Project.builder().id(1L).name("Logistics Project").team(team).build();
-        ProjectDto expectedDto = new ProjectDto(1L, "Logistics Project", null, null, null, null, null, null, "Team Logistics",null, null, null);
+        ProjectDto expectedDto = new ProjectDto(1L, "Logistics Project", null, null, null, null, null, null, "Team Logistics",null, null, null, true);
         User procurementOfficer = User.builder().role(UserRole.PROCUREMENT_OFFICER).department(department).build();
 
         when(projectRepository.findByIdAndTeamDepartment(1L, department)).thenReturn(Optional.of(project));
@@ -257,7 +258,7 @@ class ProjectServiceUnitTest {
                         .build())
                 .build();
 
-        ProjectDto expectedDto = new ProjectDto(projectId, "Updated Project Name", null, null, BigDecimal.valueOf(50000.00), null, null, null, null,null, null, null);
+        ProjectDto expectedDto = new ProjectDto(projectId, "Updated Project Name", null, null, BigDecimal.valueOf(50000.00), null, null, null, null,null, null, null, true);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(projectRepository.save(existingProject)).thenReturn(savedProject);
@@ -297,41 +298,72 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void DeleteProject_NoReferences_DeletesSuccessfully() {
+    void DeleteProject_NoReferences_HardDeletesSuccessfully() {
         Long projectId = 1L;
+        Project project = Project.builder().id(projectId).build();
 
-        when(projectRepository.existsById(projectId)).thenReturn(true);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(requestRepository.existsActiveRequisitionsByProjectId(projectId)).thenReturn(false);
         when(requestRepository.existsByProjectId(projectId)).thenReturn(false);
         when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(false);
 
         projectService.deleteProject(projectId);
 
-        verify(projectRepository).deleteById(projectId);
+        verify(projectRepository).delete(project);
+        verify(projectRepository, never()).save(any());
     }
 
     @Test
-    void DeleteProject_HasRequisitions_ThrowsIllegalStateException() {
+    void DeleteProject_HasOnlyFinishedRequisitions_SoftDeletesProject() {
         Long projectId = 1L;
+        Project project = Project.builder().id(projectId).isActive(true).build();
 
-        when(projectRepository.existsById(projectId)).thenReturn(true);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(false);
+        when(requestRepository.existsActiveRequisitionsByProjectId(projectId)).thenReturn(false);
         when(requestRepository.existsByProjectId(projectId)).thenReturn(true);
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
 
-        assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
+        projectService.deleteProject(projectId);
 
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository, never()).delete(any());
+        ArgumentCaptor<Project> captor = ArgumentCaptor.forClass(Project.class);
+        verify(projectRepository).save(captor.capture());
+        Project saved = captor.getValue();
+        assertFalse(saved.getIsActive());
+        assertNotNull(saved.getDeactivatedAt());
+    }
+
+    @Test
+    void DeleteProject_HasActiveRequisitions_ThrowsIllegalStateException() {
+        Long projectId = 1L;
+        Project project = Project.builder().id(projectId).build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(false);
+        when(requestRepository.existsActiveRequisitionsByProjectId(projectId)).thenReturn(true);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                projectService.deleteProject(projectId)
+        );
+        assertEquals("Cannot delete project because it has open or in-progress requisitions", ex.getMessage());
+
+        verify(projectRepository, never()).delete(any());
+        verify(projectRepository, never()).save(any());
     }
 
     @Test
     void DeleteProject_IsJiraFallbackProject_ThrowsIllegalStateException() {
         Long projectId = 1L;
+        Project project = Project.builder().id(projectId).build();
 
-        when(projectRepository.existsById(projectId)).thenReturn(true);
-        when(requestRepository.existsByProjectId(projectId)).thenReturn(false);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(jiraConfigRepository.existsByFallbackProjectId(projectId)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> projectService.deleteProject(projectId));
 
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository, never()).delete(any());
+        verify(projectRepository, never()).save(any());
     }
 
     @Test
@@ -472,7 +504,7 @@ class ProjectServiceUnitTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
         when(projectRepository.save(existingProject)).thenReturn(existingProject);
-        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.editProject(projectId, editDto);
         assertNotNull(result);
@@ -496,7 +528,7 @@ class ProjectServiceUnitTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
         when(projectRepository.save(existingProject)).thenReturn(existingProject);
-        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.editProject(projectId, editDto);
         assertNotNull(result);
@@ -511,7 +543,7 @@ class ProjectServiceUnitTest {
                 .id(projectId)
                 .name("Finance Project")
                 .build();
-        ProjectDto dto = new ProjectDto(projectId, "Finance Project", null, null, null, null, null, null, null, null, null, null);
+        ProjectDto dto = new ProjectDto(projectId, "Finance Project", null, null, null, null, null, null, null, null, null, null, true);
 
         User user = User.builder().role(UserRole.FINANCE_OFFICER).build();
 
@@ -592,7 +624,7 @@ class ProjectServiceUnitTest {
     @Test
     void DeleteProject_DoesNotExist_ThrowsEntityNotFoundException() {
         Long projectId = 999L;
-        when(projectRepository.existsById(projectId)).thenReturn(false);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () ->
                 projectService.deleteProject(projectId)
@@ -610,7 +642,7 @@ class ProjectServiceUnitTest {
         when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
         when(projectMapper.toProject(creationDto)).thenReturn(project);
         when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Null Proj", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Null Proj", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.createProject(creationDto);
         assertNotNull(result);
@@ -628,7 +660,7 @@ class ProjectServiceUnitTest {
         when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
         when(projectMapper.toProject(creationDto)).thenReturn(project);
         when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Non-Null Proj", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Non-Null Proj", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.createProject(creationDto);
         assertNotNull(result);
@@ -645,7 +677,7 @@ class ProjectServiceUnitTest {
         when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
         when(projectMapper.toProject(creationDto)).thenReturn(project);
         when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Null Limit Proj", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Null Limit Proj", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.createProject(creationDto);
         assertNotNull(result);
@@ -664,7 +696,7 @@ class ProjectServiceUnitTest {
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(projectRepository.save(existingProject)).thenReturn(existingProject);
-        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.editProject(projectId, editDto);
         assertNotNull(result);
@@ -686,7 +718,7 @@ class ProjectServiceUnitTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
         when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
         when(projectRepository.save(existingProject)).thenReturn(existingProject);
-        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null));
+        when(projectMapper.toProjectDto(existingProject)).thenReturn(new ProjectDto(projectId, "Old Project", null, null, null, null, null, null, null, null, null, null, true));
 
         ProjectDto result = projectService.editProject(projectId, editDto);
         assertNotNull(result);
@@ -743,5 +775,25 @@ class ProjectServiceUnitTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
 
         assertThrows(NullPointerException.class, () -> projectService.editProject(projectId, editDto));
+    }
+
+    @Test
+    void EditProject_InactiveProject_ThrowsIllegalStateException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto("New Name", null, null, null, null);
+
+        Project inactiveProject = Project.builder()
+                .id(projectId)
+                .name("Old Name")
+                .isActive(false)
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(inactiveProject));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                projectService.editProject(projectId, editDto)
+        );
+        assertEquals("Cannot edit a deactivated project", ex.getMessage());
+        verify(projectRepository, never()).save(any());
     }
 }

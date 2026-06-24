@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -33,9 +34,11 @@ public class ProjectController {
     @Operation(summary = "List projects", description = "Retrieves all projects.")
     @IsRequester
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ProjectDto>> getAllProjects(@AuthenticationPrincipal User user) {
-        log.info("GET /projects – requested by user: {}", user.getEmail());
-        return ResponseEntity.ok(projectService.getProjectsForUser(user));
+    public ResponseEntity<List<ProjectDto>> getAllProjects(
+            @AuthenticationPrincipal User user,
+            @RequestParam(value = "includeInactive", defaultValue = "false") boolean includeInactive) {
+        log.info("GET /projects?includeInactive={} – requested by user: {}", includeInactive, user.getEmail());
+        return ResponseEntity.ok(projectService.getProjectsForUser(user, includeInactive));
     }
 
     @Operation(summary = "Get project", description = "Retrieves a project.")
@@ -67,12 +70,12 @@ public class ProjectController {
 
     @Operation(summary = "Delete project", description = "Deletes an existing project.")
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @IsFinanceOfficer
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteProject(@PathVariable Long id) {
         log.info("DELETE /projects/{}", id);
-        projectService.deleteProject(id);
-        return ResponseEntity.noContent().build();
+        boolean softDeleted = projectService.deleteProject(id);
+        String message = softDeleted ? "Project deactivated successfully." : "Project deleted successfully.";
+        return ResponseEntity.ok(Map.of("message", message));
     }
 }
 

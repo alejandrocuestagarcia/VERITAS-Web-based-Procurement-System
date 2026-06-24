@@ -31,9 +31,10 @@ public class DepartmentController {
     @Operation(summary = "List departments", description = "Retrieves all departments.")
     @IsRequester
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<DepartmentDto>> getAllDepartments() {
-        log.info("GET /departments");
-        return ResponseEntity.ok(departmentService.getAllDepartments());
+    public ResponseEntity<List<DepartmentDto>> getAllDepartments(
+            @RequestParam(value = "includeInactive", defaultValue = "false") boolean includeInactive) {
+        log.info("GET /departments?includeInactive={}", includeInactive);
+        return ResponseEntity.ok(departmentService.getAllDepartments(includeInactive));
     }
 
     @Operation(summary = "Get department", description = "Retrieves a department.")
@@ -66,11 +67,12 @@ public class DepartmentController {
 
     @Operation(summary = "Delete department", description = "Deletes an existing department.")
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseStatus(HttpStatus.OK)
     @IsFinanceOfficer
-    public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
+    public ResponseEntity<java.util.Map<String, String>> deleteDepartment(@PathVariable Long id) {
         log.info("DELETE /departments/{}", id);
-        departmentService.deleteDepartment(id);
-        return ResponseEntity.noContent().build();
+        boolean isSoftDeleted = departmentService.deleteDepartment(id);
+        String message = isSoftDeleted ? "Department deactivated successfully." : "Department deleted successfully.";
+        return ResponseEntity.ok(java.util.Map.of("message", message));
     }
 }

@@ -1,5 +1,7 @@
 package com.veritas.backend.project.service.impl;
 
+import java.time.LocalDateTime;
+
 import com.veritas.backend.project.dto.ProjectCreationDto;
 import com.veritas.backend.project.dto.ProjectDto;
 import com.veritas.backend.project.dto.ProjectEditDto;
@@ -43,15 +45,15 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProjectDto> getProjectsForUser(User user) {
-        log.debug("Fetching projects for user: {} (role={})", user.getEmail(), user.getRole());
+    public List<ProjectDto> getProjectsForUser(User user, boolean includeInactive) {
+        log.debug("Fetching projects for user: {} (role={}), includeInactive={}", user.getEmail(), user.getRole(), includeInactive);
 
         if (user.getRole() == UserRole.REQUESTER) {
             if (user.getTeam() == null) {
                 log.warn("Requester {} has no team assigned; returning no projects", user.getEmail());
                 return List.of();
             }
-            List<ProjectDto> teamProjects = projectRepository.findByTeam(user.getTeam()).stream()
+            List<ProjectDto> teamProjects = (includeInactive ? projectRepository.findByTeam(user.getTeam()) : projectRepository.findByTeamAndIsActiveTrue(user.getTeam())).stream()
                     .map(projectMapper::toProjectDto)
                     .toList();
             log.debug("Returning {} team-scoped projects for user: {}", teamProjects.size(), user.getEmail());
@@ -63,17 +65,17 @@ public class ProjectServiceImpl implements ProjectService {
                 log.warn("Procurement officer {} has no department assigned; returning no projects", user.getEmail());
                 return List.of();
             }
-            List<ProjectDto> departmentProjects = projectRepository.findByTeamDepartment(user.getDepartment()).stream()
+            List<ProjectDto> departmentProjects = (includeInactive ? projectRepository.findByTeamDepartment(user.getDepartment()) : projectRepository.findByTeamDepartmentAndIsActiveTrue(user.getDepartment())).stream()
                     .map(projectMapper::toProjectDto)
                     .toList();
             log.debug("Returning {} department-scoped projects for user: {}", departmentProjects.size(), user.getEmail());
             return departmentProjects;
         }
 
-        List<ProjectDto> allProjects = projectRepository.findAll().stream()
+        List<ProjectDto> allProjects = (includeInactive ? projectRepository.findAll() : projectRepository.findByIsActiveTrue()).stream()
                 .map(projectMapper::toProjectDto)
                 .toList();
-        log.debug("Returning all {} projects for user: {}", allProjects.size(), user.getEmail());
+        log.debug("Returning {} projects for user: {}", allProjects.size(), user.getEmail());
         return allProjects;
     }
 
@@ -167,6 +169,10 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Project with id " + id + " not found"));
 
+        if (!project.getIsActive()) {
+            throw new IllegalStateException("Cannot edit a deactivated project");
+        }
+
         if (updatedProject.startDate() != null && !project.getStartDate().equals(updatedProject.startDate())) {
 
             if(project.getStartDate().isBefore(LocalDate.now())){
@@ -222,19 +228,30 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public void deleteProject(Long id) {
-        if (!projectRepository.existsById(id)) {
-            throw new EntityNotFoundException("Project not found with id " + id);
-        }
-
-        if (requestRepository.existsByProjectId(id)) {
-            throw new IllegalStateException("Cannot delete project because there are requisitions that are part of the project");
-        }
+    public boolean deleteProject(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id " + id));
 
         if (jiraConfigRepository.existsByFallbackProjectId(id)) {
             throw new IllegalStateException("Cannot delete project because it is used as a fallback project in a Jira configuration");
         }
 
-        projectRepository.deleteById(id);
+        if (requestRepository.existsActiveRequisitionsByProjectId(id)) {
+            throw new IllegalStateException("Cannot delete project because it has open or in-progress requisitions");
+        }
+
+        if (requestRepository.existsByProjectId(id)) {
+            // Soft-delete: all requisitions are finished, deactivate the project for audit/history
+            project.setIsActive(false);
+            project.setDeactivatedAt(LocalDateTime.now());
+            projectRepository.save(project);
+            log.info("Project soft-deleted (deactivated) – id: {}", id);
+            return true;
+        } else {
+            // Hard-delete: no requisitions reference this project
+            projectRepository.delete(project);
+            log.info("Project hard-deleted – id: {}", id);
+            return false;
+        }
     }
 }

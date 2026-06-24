@@ -37,8 +37,9 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TeamDto> getAllTeams() {
-        return teamRepository.findAll().stream()
+    public List<TeamDto> getAllTeams(boolean includeInactive) {
+        log.debug("Fetching teams, includeInactive={}", includeInactive);
+        return (includeInactive ? teamRepository.findAll() : teamRepository.findByIsActiveTrue()).stream()
                 .map(this::convertTeamToTeamDto)
                 .toList();
     }
@@ -135,6 +136,10 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
 
+        if (!team.getIsActive()) {
+            throw new IllegalStateException("Cannot edit a deactivated team");
+        }
+
         if (edits.getName() != null) {
             String updatedName = edits.getName().trim();
             if (updatedName.isEmpty()) {
@@ -212,29 +217,35 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional
-    public void deleteTeam(Long id) {
-        Team team = teamRepository.findById(Objects.requireNonNull(id))
+    public boolean deleteTeam(Long id) {
+        Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Team not found with id " + id));
 
-        List<String> errors = new java.util.ArrayList<>();
+        // Block deletion if there are assigned users
+        if (userRepository.existsByTeamTeamId(id)) {
+            throw new IllegalArgumentException("Cannot delete team because it still has assigned users.");
+        }
+
+        // Block deletion if there are active projects
+        if (projectRepository.existsByTeamTeamIdAndIsActiveTrue(id)) {
+            throw new IllegalArgumentException("Cannot delete team because it has active projects assigned to it.");
+        }
 
         if (projectRepository.existsByTeamTeamId(id)) {
-            errors.add("Cannot delete team because it is currently assigned to one or more projects.");
+            // Soft-delete: team has only inactive projects, deactivate for audit/history
+            team.setIsActive(false);
+            team.setLeader(null);
+            teamRepository.save(team);
+            log.info("Team soft-deleted (deactivated) – id: {}, name: {}", id, team.getName());
+            return true;
+        } else {
+            // Hard-delete: no projects reference this team
+            team.setLeader(null);
+            teamRepository.save(team);
+            teamRepository.delete(team);
+            log.info("Team hard-deleted – id: {}, name: {}", id, team.getName());
+            return false;
         }
-
-        if (userRepository.existsByTeamTeamId(id)) {
-            errors.add("Cannot delete team because it still has assigned users.");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new IllegalArgumentException(String.join("\n ", errors));
-        }
-
-        team.setLeader(null);
-        teamRepository.save(team);
-
-        teamRepository.delete(team);
-        log.info("Team deleted – id: {}, name: {}", id, team.getName());
     }
 
     private void ensureLeaderAssignment(User leader, Team team) {

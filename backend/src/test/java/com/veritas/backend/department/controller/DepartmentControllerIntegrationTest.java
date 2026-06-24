@@ -256,7 +256,8 @@ class DepartmentControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 mockMvc.perform(delete("/api/v1/departments/" + tempDept.getDepartmentId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.message").value("Department deleted successfully."));
         }
 
         @Test

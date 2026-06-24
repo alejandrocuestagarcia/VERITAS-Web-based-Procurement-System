@@ -16,5 +16,6 @@ public record ProjectDto (
         String teamName,
         Long teamId,
         String departmentName,
-        Long departmentId
+        Long departmentId,
+        boolean isActive
 ) {}

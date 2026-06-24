@@ -868,7 +868,7 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
 
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isOk());
 
                 assertFalse(teamRepository.existsById(team.getTeamId()));
         }
@@ -895,7 +895,36 @@ class TeamControllerIntegrationTest extends BaseDBIntegrationTest {
                 mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isBadRequest())
-                                .andExpect(content().string(containsString("Cannot delete team because it is currently assigned to one or more projects.")));
+                                .andExpect(content().string(containsString("Cannot delete team because it has active projects assigned to it.")));
+        }
+
+        @Test
+        void TeamDeletion_WithInactiveProject_ReturnsNoContentAndDeactivatesTeam() throws Exception {
+                String token = createTokenForRole(UserRole.FINANCE_OFFICER);
+                Team team = createTeam("Soft Delete Team", departmentIT);
+
+                 Project project = Project.builder()
+                                 .name("Inactive Project")
+                                 .projectKey("IP-1")
+                                 .team(team)
+                                 .startDate(LocalDate.now())
+                                 .endDate(LocalDate.now().plusDays(30))
+                                 .internalBudget(InternalBudget.builder()
+                                                 .budgetName("Inactive Project")
+                                                 .budgetType(BudgetType.PROJECT)
+                                                 .totalAmount(BigDecimal.valueOf(10000.0))
+                                                 .build())
+                                 .build();
+                project = projectRepository.save(project);
+                project.setIsActive(false); // Update after save to bypass @PrePersist
+                projectRepository.save(project);
+
+                mockMvc.perform(delete("/api/v1/teams/" + team.getTeamId())
+                                .header("Authorization", "Bearer " + token))
+                                .andExpect(status().isOk());
+
+                Team refreshedTeam = teamRepository.findById(team.getTeamId()).orElseThrow();
+                assertFalse(refreshedTeam.getIsActive(), "Team should be deactivated");
         }
 
         @Test
