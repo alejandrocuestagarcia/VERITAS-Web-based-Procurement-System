@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto } from 'src/app/core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { extractErrorMessage } from '../../../../shared/utils/error-utils';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-requisition-vendor-comparison',
@@ -16,13 +18,15 @@ export class RequisitionVendorComparisonComponent implements OnInit {
   recommendedQuote: QuoteDto | null = null;
   budgetCeiling = 0;
   loading = true;
+  hasInvoice = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private requisitionService: RequisitionModuleService,
     private quotesService: RequisitionQuotesModuleService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -40,6 +44,12 @@ export class RequisitionVendorComparisonComponent implements OnInit {
     this.requisitionService.getRequestById(this.requestId).subscribe({
       next: (req) => {
         this.requisition = req;
+        if (this.requisition.state === 'FINISHED') {
+          this.toastService.showError('Cannot compare quotes for a finished request.');
+          this.router.navigate([`/requisitions/${this.requestId}`]);
+          return;
+        }
+        this.checkInvoiceExists();
         this.loadQuotes();
       },
       error: (err) => {
@@ -47,6 +57,17 @@ export class RequisitionVendorComparisonComponent implements OnInit {
         this.toastService.showError(extractErrorMessage(err, 'Failed to load requisition details'));
         this.loading = false;
         this.router.navigate(['/requisitions']);
+      }
+    });
+  }
+
+  checkInvoiceExists(): void {
+    this.requisitionService.getInvoice(this.requestId).subscribe({
+      next: () => {
+        this.hasInvoice = true;
+      },
+      error: () => {
+        this.hasInvoice = false;
       }
     });
   }
@@ -133,19 +154,40 @@ export class RequisitionVendorComparisonComponent implements OnInit {
 
   selectQuote(quote: QuoteDto): void {
     if (quote.quoteId && this.requisition?.id) {
-      this.loading = true;
-      this.quotesService.selectQuote(this.requisition.id, quote.quoteId).subscribe({
-        next: () => {
-          this.toastService.showSuccess('Quote selected successfully');
-          this.router.navigate(['/requisitions', this.requisition!.id, 'vendor-quotes']);
-        },
-        error: (err) => {
-          console.error('Failed to select quote', err);
-          this.toastService.showError(extractErrorMessage(err, 'Failed to select quote'));
-          this.loading = false;
-        }
-      });
+      if (quote.isSelected) return;
+      if (this.hasInvoice) {
+        const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+          maxWidth: '500px',
+          data: {
+            title: 'Select Quote',
+            message: 'Selecting a different quote will automatically delete the currently uploaded invoice since it was created for the previous quote. Do you want to proceed?'
+          }
+        });
+
+        dialogRef.afterClosed().subscribe((confirmed: any) => {
+          if (confirmed) {
+            this.executeQuoteSelection(quote);
+          }
+        });
+      } else {
+        this.executeQuoteSelection(quote);
+      }
     }
+  }
+
+  private executeQuoteSelection(quote: QuoteDto): void {
+    this.loading = true;
+    this.quotesService.selectQuote(this.requisition!.id!, quote.quoteId!).subscribe({
+      next: () => {
+        this.toastService.showSuccess('Quote selected successfully');
+        this.router.navigate(['/requisitions', this.requisition!.id, 'vendor-quotes']);
+      },
+      error: (err) => {
+        console.error('Failed to select quote', err);
+        this.toastService.showError(extractErrorMessage(err, 'Failed to select quote'));
+        this.loading = false;
+      }
+    });
   }
 
   close(): void {

@@ -13,6 +13,8 @@ import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
 import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
+import com.veritas.backend.requisition.repository.InvoiceRepository;
+import com.veritas.backend.requisition.repository.AttachmentRepository;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.vendor.entity.Quote;
@@ -40,6 +42,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.team.entity.Team;
+import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.common.exception.WorkflowStateException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -85,6 +89,12 @@ class RequisitionQuoteServiceUnitTest {
 
     @Mock
     private RequisitionServiceImpl requisitionService;
+
+    @Mock
+    private InvoiceRepository invoiceRepository;
+
+    @Mock
+    private AttachmentRepository attachmentRepository;
 
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;
@@ -1222,6 +1232,204 @@ class RequisitionQuoteServiceUnitTest {
 
         assertThrows(NullPointerException.class, () ->
             quoteService.updateQuoteForRequest(requestId, quoteId, updateDto)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_WithInvoice_DeletesInvoiceAndAttachments() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        com.veritas.backend.requisition.entity.Invoice invoice = new com.veritas.backend.requisition.entity.Invoice();
+        invoice.setInvoiceId(100L);
+        com.veritas.backend.requisition.entity.Attachment attachment = new com.veritas.backend.requisition.entity.Attachment();
+        attachment.setAttachmentId(200L);
+        attachment.setStoragePath("/tmp/nonexistent-test-file-path");
+        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        request.setInvoice(invoice);
+
+        Quote quoteToSelect = new Quote();
+        quoteToSelect.setQuoteID(quoteId);
+        quoteToSelect.setRequest(request);
+        quoteToSelect.setSelected(false);
+        quoteToSelect.setTotalAmount(BigDecimal.valueOf(150));
+        quoteToSelect.setCurrency(Currency.EUR);
+
+        Quote currentlySelectedQuote = new Quote();
+        currentlySelectedQuote.setQuoteID(11L);
+        currentlySelectedQuote.setRequest(request);
+        currentlySelectedQuote.setSelected(true);
+        currentlySelectedQuote.setTotalAmount(BigDecimal.valueOf(100));
+        currentlySelectedQuote.setCurrency(Currency.EUR);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quoteToSelect, currentlySelectedQuote));
+
+        quoteService.selectQuoteForRequest(requestId, quoteId);
+
+        assertAll(
+            () -> assertTrue(quoteToSelect.isSelected()),
+            () -> assertFalse(currentlySelectedQuote.isSelected()),
+            () -> assertNull(request.getInvoice())
+        );
+
+        verify(attachmentRepository).delete(attachment);
+        verify(invoiceRepository).delete(invoice);
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_BudgetValidationFails_DoesNotDeleteInvoiceOrAttachments() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        InternalBudget budget = new InternalBudget();
+        request.setBudget(budget);
+
+        com.veritas.backend.requisition.entity.Invoice invoice = new com.veritas.backend.requisition.entity.Invoice();
+        invoice.setInvoiceId(100L);
+        com.veritas.backend.requisition.entity.Attachment attachment = new com.veritas.backend.requisition.entity.Attachment();
+        attachment.setAttachmentId(200L);
+        attachment.setStoragePath("/tmp/nonexistent-test-file-path");
+        invoice.setAttachments(new java.util.ArrayList<>(List.of(attachment)));
+        request.setInvoice(invoice);
+
+        Quote quoteToSelect = new Quote();
+        quoteToSelect.setQuoteID(quoteId);
+        quoteToSelect.setRequest(request);
+        quoteToSelect.setSelected(false);
+        quoteToSelect.setTotalAmount(BigDecimal.valueOf(150));
+        quoteToSelect.setCurrency(Currency.EUR);
+
+        Quote currentlySelectedQuote = new Quote();
+        currentlySelectedQuote.setQuoteID(11L);
+        currentlySelectedQuote.setRequest(request);
+        currentlySelectedQuote.setSelected(true);
+        currentlySelectedQuote.setTotalAmount(BigDecimal.valueOf(100));
+        currentlySelectedQuote.setCurrency(Currency.EUR);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quoteToSelect));
+        when(quoteRepository.findByRequestRequestIDOrderByQuoteIDAsc(requestId)).thenReturn(List.of(quoteToSelect, currentlySelectedQuote));
+
+        // Mock validateBudget to throw WorkflowStateException
+        doThrow(new com.veritas.backend.common.exception.WorkflowStateException("Budget of : Global budget exhausted including safety buffer."))
+                .when(requisitionService).validateBudget(any(), any(), eq(true));
+
+        // Run the call and expect WorkflowStateException
+        assertThrows(com.veritas.backend.common.exception.WorkflowStateException.class, () -> {
+            quoteService.selectQuoteForRequest(requestId, quoteId);
+        });
+
+        // Verify that the invoice was NOT deleted and the request still references it
+        assertNotNull(request.getInvoice());
+        verifyNoInteractions(attachmentRepository);
+        verifyNoInteractions(invoiceRepository);
+    }
+
+    //AI-Generated
+    @Test
+    void CreateQuoteForRequest_RequestFinished_ThrowsWorkflowStateException() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setState(RequestStatus.FINISHED);
+
+        QuoteCreateDto createDto = QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.valueOf(10))
+                .totalAmount(BigDecimal.valueOf(110))
+                .shippingTime(5)
+                .items(List.of())
+                .build();
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        assertThrows(WorkflowStateException.class, () ->
+            quoteService.createQuoteForRequest(requestId, createDto)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateQuoteForRequest_RequestFinished_ThrowsWorkflowStateException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setState(RequestStatus.FINISHED);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+
+        QuoteCreateDto updateDto = QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.valueOf(10))
+                .totalAmount(BigDecimal.valueOf(110))
+                .shippingTime(5)
+                .items(List.of())
+                .build();
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+
+        assertThrows(WorkflowStateException.class, () ->
+            quoteService.updateQuoteForRequest(requestId, quoteId, updateDto)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void DeleteQuoteForRequest_RequestFinished_ThrowsWorkflowStateException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setState(RequestStatus.FINISHED);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+
+        assertThrows(WorkflowStateException.class, () ->
+            quoteService.deleteQuoteForRequest(requestId, quoteId)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_RequestFinished_ThrowsWorkflowStateException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+        request.setState(RequestStatus.FINISHED);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+
+        assertThrows(WorkflowStateException.class, () ->
+            quoteService.selectQuoteForRequest(requestId, quoteId)
         );
     }
 }
