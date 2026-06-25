@@ -8,6 +8,7 @@ import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.auth.dto.AuthResponseDto;
 import com.veritas.backend.auth.dto.LoginRequestDto;
 import com.veritas.backend.auth.dto.RefreshTokenDto;
+import com.veritas.backend.common.exception.InvalidRefreshTokenException;
 import com.veritas.backend.auth.entity.RefreshToken;
 import com.veritas.backend.auth.repository.RefreshTokenRepository;
 import com.veritas.backend.auth.service.JwtService;
@@ -145,7 +146,7 @@ class AuthServiceUnitTest {
   }
 
   @Test
-  void RefreshToken_TokenNotFound_ThrowsRuntimeException() {
+  void RefreshToken_TokenNotFound_ThrowsInvalidRefreshTokenException() {
 
     User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
 
@@ -157,7 +158,7 @@ class AuthServiceUnitTest {
     when(refreshTokenRepository.findByToken(anyString())).thenReturn(Optional.empty());
 
 
-    assertThrows(RuntimeException.class, () -> authService.refreshToken(new RefreshTokenDto("invalid_token")));
+    assertThrows(InvalidRefreshTokenException.class, () -> authService.refreshToken(new RefreshTokenDto("invalid_token")));
 
   }
 
@@ -261,7 +262,7 @@ class AuthServiceUnitTest {
   }
 
   @Test
-  void RefreshToken_TokenExpired_ThrowsRuntimeExceptionAndDeletesToken() {
+  void RefreshToken_TokenExpired_ThrowsInvalidRefreshTokenExceptionAndDeletesToken() {
     User user = createTestUser("dev@veritas.com", UserRole.ADMINISTRATOR);
     RefreshToken refreshToken = new RefreshToken();
     refreshToken.setToken("expired_token");
@@ -270,7 +271,7 @@ class AuthServiceUnitTest {
 
     when(refreshTokenRepository.findByToken("expired_token")).thenReturn(Optional.of(refreshToken));
 
-    assertThrows(RuntimeException.class, () -> authService.refreshToken(new RefreshTokenDto("expired_token")));
+    assertThrows(InvalidRefreshTokenException.class, () -> authService.refreshToken(new RefreshTokenDto("expired_token")));
 
     verify(refreshTokenRepository).findByToken("expired_token");
     verify(refreshTokenRepository).delete(refreshToken);

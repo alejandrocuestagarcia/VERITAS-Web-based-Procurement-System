@@ -17,6 +17,8 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.veritas.backend.common.exception.InvalidRefreshTokenException;
+
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -129,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
                     if (token.getExpiryDate().isBefore(Instant.now())) {
                         refreshTokenRepository.delete(token);
                         log.warn("Refresh token expired for user: {}", token.getUser().getEmail());
-                        throw new RuntimeException("Refresh token expired.");
+                        throw new InvalidRefreshTokenException("Refresh token expired.");
                     }
 
                     String newAccessToken = jwtService.generateAccessToken(token.getUser());
@@ -144,7 +146,7 @@ public class AuthServiceImpl implements AuthService {
                 })
                 .orElseThrow(() -> {
                     log.warn("Refresh token not found in database");
-                    return new RuntimeException("Refresh token not in database");
+                    return new InvalidRefreshTokenException("Refresh token not in database");
                 });
     }
 
