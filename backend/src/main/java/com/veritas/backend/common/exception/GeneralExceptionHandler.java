@@ -45,6 +45,12 @@ public class GeneralExceptionHandler {
     return buildErrorResponse(HttpStatus.FORBIDDEN, message != null ? message : "Access Denied");
   }
 
+  @ExceptionHandler(InvalidRefreshTokenException.class)
+  public ResponseEntity<Map<String, Object>> handleInvalidRefreshTokenException(final InvalidRefreshTokenException exception) {
+    log.warn("Token refresh failed: {}", exception.getMessage());
+    return buildErrorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage());
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
     List<String> messages = new ArrayList<>();
