@@ -26,7 +26,7 @@
 
     <Loggers>
         <!-- Application loggers -->
-        <Logger name="com.veritas.backend" level="DEBUG" additivity="false">
+        <Logger name="com.veritas.backend" level="INFO" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="File" />
         </Logger>
@@ -38,7 +38,7 @@
         </Logger>
 
         <!-- Hibernate SQL logging -->
-        <Logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <Logger name="org.hibernate.SQL" level="INFO" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="File" />
         </Logger>
