@@ -337,16 +337,54 @@ class UserServiceUnitTest {
         assertNull(mappedUser.getTeam());
     }
 
+    // AI-GENERATED
     @Test
-    void CreateUser_RequesterWithoutTeam_ThrowsIllegalArgumentException() {
+    void CreateUser_RequesterWithoutTeam_SavesSuccessfully() {
         UserCreationRequestDto request = new UserCreationRequestDto(
                 "test@veritas.corp", "Requester", "password123",
                 UserRole.REQUESTER, null, null, false);
 
-        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        User mappedUser = new User();
+        User savedUser = new User();
+        UserDto expectedDto = new UserDto(1L, "Requester", "test@veritas.corp", true, UserRole.REQUESTER, null, null, null, null, LocalDateTime.now());
 
-        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
-        verify(userRepository, never()).save(any());
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(userMapper.toUser(request)).thenReturn(mappedUser);
+        when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
+        when(userRepository.save(mappedUser)).thenReturn(savedUser);
+        when(userMapper.toUserDto(savedUser)).thenReturn(expectedDto);
+
+        UserDto result = userService.createUser(request);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertNull(mappedUser.getTeam()),
+            () -> verify(userRepository).save(mappedUser)
+        );
+    }
+
+    // AI-GENERATED
+    @Test
+    void CreateUser_RequesterPromoteToLeaderNoTeamAssigned_ThrowsIllegalArgumentException() {
+        UserCreationRequestDto request = new UserCreationRequestDto(
+                "test@veritas.corp", "Requester", "password123",
+                UserRole.REQUESTER, null, null, true);
+
+        User mappedUser = new User();
+        mappedUser.setRole(UserRole.REQUESTER);
+        User savedUser = new User();
+        savedUser.setRole(UserRole.REQUESTER);
+
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(userMapper.toUser(request)).thenReturn(mappedUser);
+        when(passwordEncoder.encode(request.password())).thenReturn("hashedPassword");
+        when(userRepository.save(mappedUser)).thenReturn(savedUser);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            userService.createUser(request)
+        );
+
+        assertEquals("Cannot promote user to team leader: no team assigned.", exception.getMessage());
     }
 
     @Test
@@ -955,17 +993,26 @@ class UserServiceUnitTest {
         );
     }
 
+    // AI-GENERATED
     @Test
-    void EditUser_RequesterNoTeamAssigned_ThrowsIllegalArgumentException() {
+    void EditUser_RequesterNoTeamAssigned_SavesSuccessfully() {
         User user = new User();
         user.setId(1L);
         user.setRole(UserRole.REQUESTER);
         user.setTeam(null);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        UserDto expectedDto = new UserDto(1L, "Requester", "requester@veritas.corp", true, UserRole.REQUESTER, null, null, null, null, LocalDateTime.now());
 
-        assertThrows(IllegalArgumentException.class, () ->
-            userService.editUser(1L, new UserEditDto(null, null, null, null, null, null), null)
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toUserDto(user)).thenReturn(expectedDto);
+
+        UserDto result = userService.editUser(1L, new UserEditDto(null, null, null, null, null, null), null);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertNull(user.getTeam()),
+            () -> verify(userRepository).save(user)
         );
     }
 
@@ -1155,6 +1202,38 @@ class UserServiceUnitTest {
         assertAll(
             () -> assertNotNull(result),
             () -> assertNull(team.getLeader())
+        );
+    }
+
+    // AI-GENERATED
+    @Test
+    void EditUser_RequesterChangeTeamRemovesOldLeaderStatus_SavesSuccessfully() {
+        Team oldTeam = new Team();
+        oldTeam.setTeamId(1L);
+        User user = new User();
+        user.setId(1L);
+        user.setRole(UserRole.REQUESTER);
+        user.setTeam(oldTeam);
+        oldTeam.setLeader(user);
+
+        Team newTeam = new Team();
+        newTeam.setTeamId(2L);
+
+        UserDto expectedDto = new UserDto(1L, "Requester", "requester@veritas.corp", true, UserRole.REQUESTER, "New Team", 2L, null, null, LocalDateTime.now());
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(teamRepository.findById(2L)).thenReturn(Optional.of(newTeam));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toUserDto(user)).thenReturn(expectedDto);
+
+        UserDto result = userService.editUser(1L, new UserEditDto(null, null, null, 2L, null, null), null);
+
+        assertAll(
+            () -> assertNotNull(result),
+            () -> assertNull(oldTeam.getLeader()),
+            () -> assertEquals(newTeam, user.getTeam()),
+            () -> verify(teamRepository).save(oldTeam),
+            () -> verify(userRepository).save(user)
         );
     }
 }

@@ -65,12 +65,11 @@ public class UserServiceImpl implements UserService {
     Department department = null;
 
     if (role == UserRole.REQUESTER) {
-      if (userDto.teamId() == null) {
-        throw new IllegalArgumentException("Team assignment is required for role: " + role);
+      if (userDto.teamId() != null) {
+        team = teamRepository.findById(userDto.teamId())
+            .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
+        log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
       }
-      team = teamRepository.findById(userDto.teamId())
-          .orElseThrow(() -> new EntityNotFoundException("Team with id " + userDto.teamId() + " not found"));
-      log.debug("Assigned user to team: {} (id={})", team.getName(), team.getTeamId());
     } else if (role == UserRole.PROCUREMENT_OFFICER) {
       if (userDto.departmentId() == null) {
         throw new IllegalArgumentException("Department assignment is required for role: " + role);
@@ -91,7 +90,10 @@ public class UserServiceImpl implements UserService {
     User savedUser = userRepository.save(user);
     log.info("User persisted – id: {}, email: {}", savedUser.getId(), savedUser.getEmail());
 
-    if (savedUser.getRole() == UserRole.REQUESTER && userDto.promoteToTeamLeader() && team != null) {
+    if (savedUser.getRole() == UserRole.REQUESTER && userDto.promoteToTeamLeader()) {
+      if (team == null) {
+        throw new IllegalArgumentException("Cannot promote user to team leader: no team assigned.");
+      }
       if (team.getLeader() != null) {
         throw new IllegalArgumentException("Team with id " + team.getTeamId() + " already has assigned leader");
       }
@@ -158,14 +160,27 @@ public class UserServiceImpl implements UserService {
     } else {
       // Team logic for Requester
       user.setDepartment(null);
+      boolean shouldRemoveOldLeader = false;
+      Team oldTeam = user.getTeam();
+      if (oldTeam != null && oldTeam.getLeader() != null && oldTeam.getLeader().getId().equals(user.getId())) {
+        if (edits.teamId() == null || !edits.teamId().equals(oldTeam.getTeamId())) {
+          shouldRemoveOldLeader = true;
+        }
+      }
+
       if (edits.teamId() != null) {
         if (changingTeam) {
           Team newTeam = teamRepository.findById(edits.teamId())
               .orElseThrow(() -> new EntityNotFoundException("Team not found"));
           user.setTeam(newTeam);
         }
-      } else if (user.getTeam() == null) {
-        throw new IllegalArgumentException("Team assignment is required for role: " + currentRole);
+      } else {
+        user.setTeam(null);
+      }
+
+      if (shouldRemoveOldLeader) {
+        oldTeam.setLeader(null);
+        teamRepository.save(oldTeam);
       }
     }
 
