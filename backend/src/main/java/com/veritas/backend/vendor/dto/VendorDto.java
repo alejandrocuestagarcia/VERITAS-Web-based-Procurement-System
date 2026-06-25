@@ -19,6 +19,7 @@ public record VendorDto (
     Double qualityScore,
     Double gapScore,
     Double overallScore,
+    Long evaluationCount,
     @NotBlank(message = "Description is required")
     @Size(max = 3000, message = "Description must be at most 3000 characters")
     String description,

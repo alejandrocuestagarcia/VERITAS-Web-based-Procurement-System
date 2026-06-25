@@ -108,7 +108,7 @@ export class RequisitionListComponent implements OnInit {
   }
 
   loadCreators(): void {
-    if (!this.isRequester) {
+    if (!this.isRequester && !this.isProcurementOfficer) {
       this.userService.getAllUsers({ page: 0, size: 1000 }, "").subscribe({
         next: (response) => this.creators = (response.content || []).filter(u => u.role === UserDtoRoleEnum.Requester),
         error: (err) => this.toastService.showError(extractErrorMessage(err, 'Failed to load creators'))

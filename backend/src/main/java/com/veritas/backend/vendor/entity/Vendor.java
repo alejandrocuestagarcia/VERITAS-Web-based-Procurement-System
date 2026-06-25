@@ -64,6 +64,9 @@ public class Vendor {
     @Formula("(SELECT AVG(COALESCE(e.gap_score, 0) * 0.4 + COALESCE(e.quality_score, 0) * 0.2 + COALESCE(e.delivery_score, 0) * 0.2 + COALESCE(e.communication_score, 0) * 0.2) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
     private Double overallScore;
 
+    @Formula("(SELECT COUNT(*) FROM vendor_evaluations e WHERE e.vendor_id = vendor_id)")
+    private Long evaluationCount;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

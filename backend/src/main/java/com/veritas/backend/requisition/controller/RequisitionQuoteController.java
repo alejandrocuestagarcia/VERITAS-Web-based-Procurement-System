@@ -4,6 +4,7 @@ import com.veritas.backend.config.annotations.IsProcurementOfficer;
 import com.veritas.backend.config.annotations.IsRequester;
 import com.veritas.backend.requisition.dto.QuoteCreateDto;
 import com.veritas.backend.requisition.dto.QuoteDto;
+import com.veritas.backend.requisition.dto.RecommendedQuoteDto;
 import com.veritas.backend.requisition.service.RequisitionQuoteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +35,14 @@ public class RequisitionQuoteController {
     public ResponseEntity<List<QuoteDto>> getQuotesForRequest(@PathVariable Long requestId) {
         log.info("GET /requisitions/{}/quotes", requestId);
         return ResponseEntity.ok(requisitionQuoteService.getQuotesForRequest(requestId));
+    }
+
+    @Operation(summary = "Get quote recommendations", description = "Returns all quotes for a request ranked by recommendation score.")
+    @IsRequester
+    @GetMapping(value = "/recommendations", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RecommendedQuoteDto>> getQuoteRecommendations(@PathVariable Long requestId) {
+        log.info("GET /requisitions/{}/quotes/recommendations", requestId);
+        return ResponseEntity.ok(requisitionQuoteService.getQuoteRecommendations(requestId));
     }
 
     @Operation(summary = "Get quote", description = "Retrieves a specific quote.")

@@ -28,10 +28,23 @@
   </div>
 
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" [class.lg:grid-cols-3]="hasNonEuroQuote()">
+    <!-- Recommendation Score Calculation Card -->
+    <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6">
+      <div class="flex flex-col gap-2">
+        <span class="text-sm font-bold text-blue-800 uppercase tracking-wider">Recommendation Score Calculation:</span>
+        <p class="text-sm text-slate-600 font-medium leading-relaxed m-0">
+          The score is a weighted average of three factors:
+          <strong>55% Price</strong>,
+          <strong>30% Vendor Reliability</strong> (adjusted using a <span class="underline decoration-dotted cursor-help text-slate-800 font-semibold" matTooltip="Bayesian adjustment pulls vendor scores toward the global average when they have very few evaluations. This prevents recommendations from being heavily skewed by a single review and ensures fairer comparisons.">Bayesian model</span> based on evaluation count), and
+          <strong>15% Delivery Speed</strong>.
+          Hover over any card's rank to view the exact breakdown.
+        </p>
+      </div>
+    </div>
+
     <!-- Reliability Score Calculation Card -->
-    <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6"
-         [class.md:col-span-2]="!hasNonEuroQuote()">
+    <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6">
       <div class="flex flex-col gap-2">
         <span class="text-sm font-bold text-blue-800 uppercase tracking-wider">Reliability Score Calculation:</span>
         <p class="text-sm text-slate-600 font-medium leading-relaxed m-0">
@@ -46,7 +59,7 @@
     </div>
 
     <!-- Currency Conversion Notice Card -->
-    <div *ngIf="hasNonEuroQuote()" class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6">
+    <div *ngIf="hasNonEuroQuote()" class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-6 md:col-span-2 lg:col-span-1">
       <div class="flex flex-col gap-2">
         <span class="text-sm font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
           <mat-icon class="text-amber-500 scale-90 -ml-0.5">info_outline</mat-icon>
@@ -71,6 +84,9 @@
         <div class="h-32 flex items-center border-t border-slate-100">Total (EUR)</div>
         <div class="h-16 flex items-center border-t border-slate-100">Shipping Time</div>
         <div class="h-20 flex items-center border-t border-slate-100">Reliability Score</div>
+        <!-- AI-GENERATED -->
+        <div class="h-24 flex items-center border-t border-slate-100">Recommendation Score</div>
+        <div class="h-28 flex items-center border-t border-slate-100">Recommendation Reason</div>
       </div>
 
       <!-- Vendor Quote Cards Columns -->
@@ -180,7 +196,7 @@
             <!-- Reliability Score Row -->
             <div class="h-20 flex flex-col justify-center border-t border-slate-100 cursor-help"
                  [matTooltip]="'Breakdown:\n• Quote-to-Invoice Gap: ' + (quote.vendor?.gapScore != null ? quote.vendor?.gapScore?.toFixed(1) : 'N/A') + '\n• Quality: ' + (quote.vendor?.qualityScore != null ? quote.vendor?.qualityScore?.toFixed(1) : 'N/A') + '\n• Delivery: ' + (quote.vendor?.deliveryScore != null ? quote.vendor?.deliveryScore?.toFixed(1) : 'N/A') + '\n• Communication: ' + (quote.vendor?.communicationScore != null ? quote.vendor?.communicationScore?.toFixed(1) : 'N/A')"
-                 matTooltipClass="whitespace-pre-line text-xs p-3">
+                 matTooltipClass="tooltip-nowrap text-xs p-3">
               <div class="flex items-center justify-between mb-1.5">
                 <div class="flex items-center gap-1">
                   <div class="w-2 h-2 rounded-full" [ngClass]="getRatingColor(quote.vendor?.overallScore)"></div>
@@ -198,6 +214,35 @@
                      [style.width.%]="(quote.vendor?.overallScore || 0) * 10">
                 </div>
               </div>
+            </div>
+
+            <!-- AI-GENERATED -->
+            <!-- Recommendation Score Row -->
+            <div *ngIf="getRecommendationForQuote(quote) as rec"
+              class="h-24 flex flex-col justify-center border-t border-slate-100 cursor-help"
+              [matTooltip]="getTooltipText(rec)"
+              matTooltipClass="tooltip-nowrap text-xs p-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1">
+                  <div class="w-2 h-2 rounded-full" [ngClass]="getScoreColor(rec.recommendationScore)"></div>
+                  <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Recommendation Rank #{{ rec.rank }}</span>
+                </div>
+                <span class="text-xs font-black" [ngClass]="getScoreTextColor(rec.recommendationScore)">
+                  {{ rec.recommendationScore != null ? (rec.recommendationScore * 100).toFixed(0) : '0' }}%
+                </span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500"
+                  [ngClass]="getScoreColor(rec.recommendationScore)"
+                  [style.width.%]="rec.recommendationScore != null ? rec.recommendationScore * 100 : 0">
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommendation Reason Row -->
+            <div *ngIf="getRecommendationForQuote(quote) as rec"
+              class="h-28 flex items-center border-t border-slate-100 text-xs text-slate-500 italic leading-relaxed">
+              {{ rec.recommendationReason }}
             </div>
 
             <!-- Selection Action Button -->
