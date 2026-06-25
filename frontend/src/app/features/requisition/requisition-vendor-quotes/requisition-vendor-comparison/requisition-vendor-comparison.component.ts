@@ -220,11 +220,27 @@ export class RequisitionVendorComparisonComponent implements OnInit {
 
     const priceSuffix = pricePercent === 100 ? ' (Cheapest)' : '';
     const leadTimeSuffix = leadTimePercent === 100 ? ' (Fastest)' : '';
-    const vendorSuffix = vendorPercent === 100 ? ' (Best)' : '';
+
+    const maxVendorScore = this.recommendations && this.recommendations.length > 0
+      ? Math.max(...this.recommendations.map(r => r.vendorScore ?? 0))
+      : 0;
+    const isBestVendor = rec.vendorScore != null && rec.vendorScore > 0 && rec.vendorScore === maxVendorScore;
+    const vendorSuffix = isBestVendor ? ' (Best)' : '';
+
+    const vendor = rec.quote?.vendor;
+    let vendorDetail = '';
+    if (vendor) {
+      if (vendor.overallScore != null) {
+        const evalText = vendor.evaluationCount === 1 ? '1 evaluation' : `${vendor.evaluationCount} evaluations`;
+        vendorDetail = ` (raw: ${vendor.overallScore.toFixed(1)}, ${evalText})`;
+      } else {
+        vendorDetail = ` (N/A reliability)`;
+      }
+    }
 
     return `Breakdown:\n` +
            `• Price Score: ${pricePercent}%${priceSuffix}\n` +
-           `• Vendor Score: ${vendorPercent}%${vendorSuffix}\n` +
+           `• Vendor Score: ${vendorPercent}%${vendorSuffix}${vendorDetail}\n` +
            `• Lead Time Score: ${leadTimePercent}%${leadTimeSuffix}`;
   }
 }

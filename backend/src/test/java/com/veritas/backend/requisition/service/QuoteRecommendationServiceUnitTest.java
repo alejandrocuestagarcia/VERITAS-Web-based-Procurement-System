@@ -303,4 +303,140 @@ class QuoteRecommendationServiceUnitTest {
 
         assertEquals("Less competitive overall.", nonTop.recommendationReason());
     }
+
+    @Test
+    void rankQuotes_excellentPriceAndFastDeliveryAndExcellentVendor() {
+        VendorDto v1 = vendor(9.5, 100);
+        VendorDto v2 = vendor(6.0, 100);
+        QuoteDto q1 = quote(BigDecimal.valueOf(100), 2, v1);
+        QuoteDto q2 = quote(BigDecimal.valueOf(102), 3, v2);
+
+        List<RecommendedQuoteDto> result = service.rankQuotes(List.of(q1, q2), 7.0);
+        RecommendedQuoteDto top = result.getFirst();
+
+        // q1 is cheapest (priceScore=1.0 >= 0.95), fastest (leadTimeScore=1.0 >= 0.95),
+        // and vendorScore is (100*9.5 + 70)/110/10 = 0.927 >= 0.85
+        assertEquals("Recommended because it offers the lowest total price and provides the fastest delivery and the vendor has an excellent reliability score.",
+                top.recommendationReason());
+    }
+
+    @Test
+    void rankQuotes_competitivePriceAndGoodDeliveryAndGoodVendor() {
+        VendorDto v1 = vendor(7.6, 100);
+        VendorDto v2 = vendor(5.0, 100);
+        VendorDto v3 = vendor(1.0, 100);
+        QuoteDto q1 = quote(BigDecimal.valueOf(100), 5, v1);
+        QuoteDto q2 = quote(BigDecimal.valueOf(170), 4, v2);
+        QuoteDto q3 = quote(BigDecimal.valueOf(85), 40, v3);
+
+        List<RecommendedQuoteDto> result = service.rankQuotes(List.of(q1, q2, q3), 7.0);
+        RecommendedQuoteDto q1Rec = result.stream()
+                .filter(r -> r.quote().totalAmountEuro().compareTo(BigDecimal.valueOf(100)) == 0)
+                .findFirst().orElseThrow();
+
+        assertEquals("Recommended because it offers a competitive price and has a short delivery time and the vendor has a strong reliability score.",
+                q1Rec.recommendationReason());
+    }
+
+    @Test
+    void rankQuotes_noStrengths_returnsBalancedReason() {
+        VendorDto v1 = vendor(6.4, 100);
+        VendorDto v2 = vendor(1.0, 100);
+        VendorDto v3 = vendor(1.0, 100);
+        QuoteDto q1 = quote(BigDecimal.valueOf(100), 4, v1);
+        QuoteDto q2 = quote(BigDecimal.valueOf(75), 30, v2);
+        QuoteDto q3 = quote(BigDecimal.valueOf(300), 3, v3);
+
+        List<RecommendedQuoteDto> result = service.rankQuotes(List.of(q1, q2, q3), 7.0);
+        RecommendedQuoteDto q1Rec = result.stream()
+                .filter(r -> r.quote().totalAmountEuro().compareTo(BigDecimal.valueOf(100)) == 0)
+                .findFirst().orElseThrow();
+
+        assertEquals("Recommended because it provides the best balance between vendor reputation, delivery speed, and overall cost.",
+                q1Rec.recommendationReason());
+    }
+
+    @Test
+    void rankQuotes_quotesWithNullAndNegativePrices() {
+        VendorDto v1 = vendor(8.0, 100);
+        VendorDto v2 = vendor(8.0, 100);
+        QuoteDto q1 = quote(BigDecimal.valueOf(100), 5, v1);
+        
+        QuoteDto q2 = QuoteDto.builder()
+                .quoteId(2L)
+                .vendorId(v2.id())
+                .vendor(v2)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(null)
+                .totalAmountEuro(null)
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
+        
+        QuoteDto q3 = QuoteDto.builder()
+                .quoteId(3L)
+                .vendorId(v2.id())
+                .vendor(v2)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.valueOf(-50))
+                .totalAmountEuro(BigDecimal.valueOf(-50))
+                .shippingTime(5)
+                .isSelected(false)
+                .items(List.of())
+                .build();
+
+        List<RecommendedQuoteDto> result = service.rankQuotes(List.of(q1, q2, q3), 7.0);
+        RecommendedQuoteDto rec2 = result.stream().filter(r -> r.quote().totalAmountEuro() == null).findFirst().orElseThrow();
+        RecommendedQuoteDto rec3 = result.stream().filter(r -> r.quote().totalAmountEuro() != null && r.quote().totalAmountEuro().compareTo(BigDecimal.ZERO) < 0).findFirst().orElseThrow();
+
+        assertEquals(0.0, rec2.priceScore());
+        assertEquals(0.0, rec3.priceScore());
+    }
+
+    @Test
+    void rankQuotes_quotesWithNullAndNegativeLeadTimes() {
+        VendorDto v = vendor(8.0, 100);
+        QuoteDto q1 = quote(BigDecimal.valueOf(100), 5, v);
+        
+        QuoteDto q2 = QuoteDto.builder()
+                .quoteId(2L)
+                .vendorId(v.id())
+                .vendor(v)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.valueOf(100))
+                .totalAmountEuro(BigDecimal.valueOf(100))
+                .shippingTime(null)
+                .isSelected(false)
+                .items(List.of())
+                .build();
+        
+        QuoteDto q3 = quote(BigDecimal.valueOf(100), -5, v);
+
+        List<RecommendedQuoteDto> result = service.rankQuotes(List.of(q1, q2, q3), 7.0);
+        RecommendedQuoteDto rec2 = result.stream().filter(r -> r.quote().shippingTime() == null).findFirst().orElseThrow();
+        RecommendedQuoteDto rec3 = result.stream().filter(r -> r.quote().shippingTime() != null && r.quote().shippingTime() < 0).findFirst().orElseThrow();
+
+        assertEquals(0.0, rec2.leadTimeScore());
+        assertEquals(0.0, rec3.leadTimeScore());
+    }
+
+    @Test
+    void rankQuotes_nonTopQuoteWithoutVendorScore() {
+        VendorDto v1 = vendor(9.0, 100);
+        VendorDto v2 = vendorNoScore();
+        QuoteDto q1 = quote(BigDecimal.valueOf(100), 2, v1);
+        QuoteDto q2 = quote(BigDecimal.valueOf(110), 3, v2);
+
+        List<RecommendedQuoteDto> result = service.rankQuotes(List.of(q1, q2), 7.0);
+        RecommendedQuoteDto nonTop = result.get(1);
+
+        assertEquals("Strongest factor: competitive pricing.", nonTop.recommendationReason());
+    }
 }
