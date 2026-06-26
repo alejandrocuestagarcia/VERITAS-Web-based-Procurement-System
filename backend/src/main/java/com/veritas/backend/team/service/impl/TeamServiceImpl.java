@@ -3,6 +3,8 @@ package com.veritas.backend.team.service.impl;
 import com.veritas.backend.department.entity.Department;
 import com.veritas.backend.department.repository.DepartmentRepository;
 import com.veritas.backend.project.repository.ProjectRepository;
+import com.veritas.backend.requisition.entity.RequestStatus;
+import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.mapper.UserMapper;
 import jakarta.persistence.EntityExistsException;
@@ -32,6 +34,7 @@ public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final RequestRepository requestRepository;
     private final ProjectRepository projectRepository;
     private final UserMapper userMapper;
 
@@ -231,15 +234,20 @@ public class TeamServiceImpl implements TeamService {
             throw new IllegalArgumentException("Cannot delete team because it has active projects assigned to it.");
         }
 
-        if (projectRepository.existsByTeamTeamId(id)) {
-            // Soft-delete: team has only inactive projects, deactivate for audit/history
+        // Block deletion if there are ongoing requisitions
+        if (requestRepository.existsByTeamTeamIdAndStateNot(id, RequestStatus.FINISHED)) {
+            throw new IllegalArgumentException("Cannot delete team because it has ongoing requisitions.");
+        }
+
+        if (projectRepository.existsByTeamTeamId(id) || requestRepository.existsByTeamTeamId(id)) {
+            // Soft-delete: team has only inactive projects or finished requisitions, deactivate for audit/history
             team.setIsActive(false);
             team.setLeader(null);
             teamRepository.save(team);
             log.info("Team soft-deleted (deactivated) – id: {}, name: {}", id, team.getName());
             return true;
         } else {
-            // Hard-delete: no projects reference this team
+            // Hard-delete: nothing references this team
             team.setLeader(null);
             teamRepository.save(team);
             teamRepository.delete(team);

@@ -1,6 +1,8 @@
 package com.veritas.backend.requisition.repository;
 
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.requisition.entity.RequestStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -55,6 +57,10 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                      Pageable pageable);
 
     boolean existsByProjectId(Long projectId);
+
+    boolean existsByTeamTeamId(Long teamId);
+
+    boolean existsByTeamTeamIdAndStateNot(Long teamId, RequestStatus state);
 
     @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Request r WHERE r.project.id = :projectId AND r.state <> 'FINISHED'")
     boolean existsActiveRequisitionsByProjectId(@Param("projectId") Long projectId);
