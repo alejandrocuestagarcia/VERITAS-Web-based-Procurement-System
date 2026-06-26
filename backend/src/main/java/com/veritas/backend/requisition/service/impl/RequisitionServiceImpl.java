@@ -789,6 +789,11 @@ public class RequisitionServiceImpl implements RequisitionService {
 
         if (itemsChanged) {
             deleteInvoiceQuoteChanged(request);
+
+            if (request.getSelectedQuote() != null) {
+                freeRequestBudget(request);
+            }
+
             quoteLineItemRepository.deleteByQuoteRequestID(id);
             quoteRepository.deleteByRequestID(id);
 
