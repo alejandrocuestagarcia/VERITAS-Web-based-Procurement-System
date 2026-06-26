@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { RequisitionModuleService, RequisitionDto, VendorModuleService, VendorDto, QuoteCreateDto, RequisitionQuotesModuleService, QuoteDto } from '../../../../core/api';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -141,11 +142,19 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
           this.vendors = [];
         }
 
-        this.requisitionService.getRequestById(this.requisitionId).subscribe({
-          next: (req: RequisitionDto) => {
+        forkJoin({
+          req: this.requisitionService.getRequestById(this.requisitionId),
+          canAct: this.requisitionService.canAct(this.requisitionId)
+        }).subscribe({
+          next: ({ req, canAct }) => {
             this.requisition = req;
             if (this.requisition.state === 'FINISHED') {
               this.toastService.showError('Cannot modify quotes for a finished request.');
+              this.router.navigate([`/requisitions/${this.requisitionId}`]);
+              return;
+            }
+            if (!canAct) {
+              this.toastService.showError('You are not responsible for the current workflow step of this requisition.');
               this.router.navigate([`/requisitions/${this.requisitionId}`]);
               return;
             }

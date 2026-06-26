@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { RequisitionModuleService, RequisitionDto, RequisitionQuotesModuleService, QuoteDto, RecommendedQuoteDto } from 'src/app/core/api';
 import { ToastService } from '../../../../core/services/toast.service';
 import { extractErrorMessage } from '../../../../shared/utils/error-utils';
@@ -42,11 +43,19 @@ export class RequisitionVendorComparisonComponent implements OnInit {
 
   loadData(): void {
     this.loading = true;
-    this.requisitionService.getRequestById(this.requestId).subscribe({
-      next: (req) => {
+    forkJoin({
+      req: this.requisitionService.getRequestById(this.requestId),
+      canAct: this.requisitionService.canAct(this.requestId)
+    }).subscribe({
+      next: ({ req, canAct }) => {
         this.requisition = req;
         if (this.requisition.state === 'FINISHED') {
           this.toastService.showError('Cannot compare quotes for a finished request.');
+          this.router.navigate([`/requisitions/${this.requestId}`]);
+          return;
+        }
+        if (!canAct) {
+          this.toastService.showError('You are not responsible for the current workflow step of this requisition.');
           this.router.navigate([`/requisitions/${this.requestId}`]);
           return;
         }
