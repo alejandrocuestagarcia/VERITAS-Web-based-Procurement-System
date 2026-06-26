@@ -32,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.workflow.service.WorkflowEngineService;
 import com.veritas.backend.budget.entity.BudgetType;
 import com.veritas.backend.integrations.currency.entity.Currency;
 import com.veritas.backend.requisition.entity.Attachment;
@@ -64,6 +65,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     private final InvoiceRepository invoiceRepository;
     private final AttachmentRepository attachmentRepository;
     private final QuoteRecommendationService quoteRecommendationService;
+    private final WorkflowEngineService workflowEngineService;
 
     @Override
     @Transactional(readOnly = true)
@@ -119,6 +121,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
             .orElseThrow(() -> new EntityNotFoundException("Request not found with id: " + requestId));
 
         canRequesterOrProcurementOfficerAccessRequestDetails(request);
+        checkWriteAccess(request);
             
         if (request.getState() == RequestStatus.FINISHED) {
             throw new WorkflowStateException("Cannot create a quote for a finished request.");
@@ -154,6 +157,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote quote = getQuoteForRequest(requestId, quoteId);
         
         Request request = quote.getRequest();
+        checkWriteAccess(request);
         if (request.getState() == RequestStatus.FINISHED) {
             throw new WorkflowStateException("Cannot update a quote for a finished request.");
         }
@@ -221,6 +225,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
         Quote quote = getQuoteForRequest(requestId, quoteId);
 
         Request request = quote.getRequest();
+        checkWriteAccess(request);
         if (request.getState() == RequestStatus.FINISHED) {
             throw new WorkflowStateException("Cannot delete a quote for a finished request.");
         }
@@ -242,6 +247,7 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
     public void selectQuoteForRequest(Long requestId, Long quoteId) {
         Quote quoteToSelect = getQuoteForRequest(requestId, quoteId);
         Request request = quoteToSelect.getRequest();
+        checkWriteAccess(request);
         
         if (request.getState() == RequestStatus.FINISHED) {
             throw new WorkflowStateException("Cannot change quote selection for a finished request.");
@@ -361,5 +367,11 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
                 throw new AccessDeniedException("Not allowed to access this request");
             }
         }
+    }
+
+    private void checkWriteAccess(Request request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) auth.getPrincipal();
+        workflowEngineService.checkAuthorization(request, user, request.getCurrentStep());
     }
 }

@@ -9,6 +9,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
+import { forkJoin } from 'rxjs';
+
 @Component({
   selector: 'app-requisition-vendor-quotes',
   templateUrl: './requisition-vendor-quotes.component.html',
@@ -98,12 +100,22 @@ export class RequisitionVendorQuotesComponent implements OnInit {
   }
 
   loadRequisition(): void {
-    this.requisitionService.getRequestById(this.requisitionId).subscribe({
-      next: (req: RequisitionDto) => {
+    this.loading = true;
+    forkJoin({
+      req: this.requisitionService.getRequestById(this.requisitionId),
+      canAct: this.requisitionService.canAct(this.requisitionId)
+    }).subscribe({
+      next: ({ req, canAct }) => {
         this.requisition = req;
         if (this.requisition.state === 'FINISHED') {
           this.toastService.showError('Cannot manage quotes for a finished request.');
           this.router.navigate([`/requisitions/${this.requisitionId}`]);
+          return;
+        }
+        if (!canAct) {
+          this.toastService.showError('You are not responsible for the current workflow step of this requisition.');
+          this.router.navigate([`/requisitions/${this.requisitionId}`]);
+          return;
         }
         this.findInvoiceAttachment();
       },

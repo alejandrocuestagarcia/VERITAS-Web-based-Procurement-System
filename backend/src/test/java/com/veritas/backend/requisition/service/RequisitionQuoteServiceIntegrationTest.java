@@ -14,6 +14,9 @@ import com.veritas.backend.requisition.dto.QuoteLineItemCreateDto;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.RequisitionQuoteService;
+import com.veritas.backend.workflow.entity.WorkflowComponent;
+import com.veritas.backend.workflow.entity.WorkflowStep;
+import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.entity.User;
@@ -92,6 +95,9 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
     private AttachmentRepository attachmentRepository;
 
     @Autowired
+    private WorkflowStepRepository workflowStepRepository;
+
+    @Autowired
     private RequestFactory requestFactory;
     @Autowired
     private UserFactory userFactory;
@@ -121,6 +127,15 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         User requester = userFactory.createUser("requester@test.com", team, UserRole.REQUESTER);
         request = requestFactory.createValidRequest("Integration Request", requester);
 
+        WorkflowStep procStep = new WorkflowStep();
+        procStep.setWorkflowDefinition(request.getWorkflowDefinition());
+        procStep.setWorkflowComponent(WorkflowComponent.STEP);
+        procStep.setName("Procurement Review");
+        procStep.setRole(UserRole.PROCUREMENT_OFFICER);
+        procStep = workflowStepRepository.save(procStep);
+        request.setCurrentStep(procStep);
+        request = requestRepository.save(request);
+
         vendor = new Vendor();
         vendor.setVendorName("Integration Vendor");
         vendor.setTaxId("TAX-INT-999");
@@ -128,10 +143,13 @@ class RequisitionQuoteServiceIntegrationTest extends BaseDBIntegrationTest {
         vendor = vendorRepository.save(vendor);
 
         User user = new User();
-        user.setId(1L);
         user.setRole(UserRole.PROCUREMENT_OFFICER);
         user.setDepartment(department);
         user.setEmail("test@test.com");
+        user.setName("Procurement Officer");
+        user.setPasswordHash("hashed_password");
+        user.setIsActive(true);
+        user = userRepository.save(user);
 
         ExchangeRate rate = ExchangeRate.builder()
             .targetCurrency(Currency.USD)

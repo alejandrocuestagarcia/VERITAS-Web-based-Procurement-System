@@ -15,6 +15,7 @@ import com.veritas.backend.requisition.service.impl.RequisitionQuoteServiceImpl;
 import com.veritas.backend.requisition.service.impl.RequisitionServiceImpl;
 import com.veritas.backend.requisition.repository.InvoiceRepository;
 import com.veritas.backend.requisition.repository.AttachmentRepository;
+import com.veritas.backend.workflow.service.WorkflowEngineService;
 import com.veritas.backend.user.entity.User;
 import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.vendor.entity.Quote;
@@ -95,6 +96,9 @@ class RequisitionQuoteServiceUnitTest {
 
     @Mock
     private AttachmentRepository attachmentRepository;
+
+    @Mock
+    private WorkflowEngineService workflowEngineService;
 
     @InjectMocks
     private RequisitionQuoteServiceImpl quoteService;
@@ -1429,6 +1433,108 @@ class RequisitionQuoteServiceUnitTest {
         when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
 
         assertThrows(WorkflowStateException.class, () ->
+            quoteService.selectQuoteForRequest(requestId, quoteId)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void CreateQuoteForRequest_UserNotResponsible_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        QuoteCreateDto createDto = QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.valueOf(10))
+                .totalAmount(BigDecimal.valueOf(110))
+                .shippingTime(5)
+                .items(List.of())
+                .build();
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        doThrow(new AccessDeniedException("User not responsible"))
+                .when(workflowEngineService).checkAuthorization(eq(request), any(User.class), any());
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.createQuoteForRequest(requestId, createDto)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void UpdateQuoteForRequest_UserNotResponsible_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+
+        QuoteCreateDto updateDto = QuoteCreateDto.builder()
+                .vendorId(2L)
+                .currency(Currency.EUR)
+                .baseAmount(BigDecimal.valueOf(100))
+                .shippingCosts(BigDecimal.valueOf(10))
+                .totalAmount(BigDecimal.valueOf(110))
+                .shippingTime(5)
+                .items(List.of())
+                .build();
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        doThrow(new AccessDeniedException("User not responsible"))
+                .when(workflowEngineService).checkAuthorization(eq(request), any(User.class), any());
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.updateQuoteForRequest(requestId, quoteId, updateDto)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void DeleteQuoteForRequest_UserNotResponsible_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        doThrow(new AccessDeniedException("User not responsible"))
+                .when(workflowEngineService).checkAuthorization(eq(request), any(User.class), any());
+
+        assertThrows(AccessDeniedException.class, () ->
+            quoteService.deleteQuoteForRequest(requestId, quoteId)
+        );
+    }
+
+    //AI-Generated
+    @Test
+    void SelectQuoteForRequest_UserNotResponsible_ThrowsAccessDeniedException() {
+        Long requestId = 1L;
+        Long quoteId = 10L;
+        Request request = new Request();
+        request.setRequestID(requestId);
+
+        Quote quote = new Quote();
+        quote.setQuoteID(quoteId);
+        quote.setRequest(request);
+
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(quoteRepository.findById(quoteId)).thenReturn(Optional.of(quote));
+        doThrow(new AccessDeniedException("User not responsible"))
+                .when(workflowEngineService).checkAuthorization(eq(request), any(User.class), any());
+
+        assertThrows(AccessDeniedException.class, () ->
             quoteService.selectQuoteForRequest(requestId, quoteId)
         );
     }
