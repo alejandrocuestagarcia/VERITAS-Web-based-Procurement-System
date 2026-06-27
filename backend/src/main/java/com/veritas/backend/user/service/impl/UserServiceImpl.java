@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -110,9 +111,18 @@ public class UserServiceImpl implements UserService {
   public UserDto editUser(Long id, UserEditDto edits, User currentUser) {
     User user = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-    if (currentUser != null && currentUser.getId().equals(id) && user.getRole() == UserRole.ADMINISTRATOR) {
-      if (edits.role() != null && edits.role() != UserRole.ADMINISTRATOR) {
+    if (currentUser != null && currentUser.getId().equals(id)) {
+      if (currentUser.getRole() == UserRole.FINANCE_OFFICER) {
+        throw new AccessDeniedException("Finance officers cannot modify their own profile");
+      }
+      if (user.getRole() == UserRole.ADMINISTRATOR && edits.role() != null && edits.role() != UserRole.ADMINISTRATOR) {
         throw new IllegalArgumentException("Administrators cannot change their own role");
+      }
+    }
+
+    if (edits.role() != null && edits.role() != user.getRole()) {
+      if (currentUser != null && currentUser.getRole() != UserRole.ADMINISTRATOR) {
+        throw new AccessDeniedException("Only administrators can change user roles");
       }
     }
 
