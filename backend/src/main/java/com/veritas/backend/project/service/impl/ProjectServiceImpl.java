@@ -80,7 +80,10 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private void validateProjectBudgetLimit(Department department, Long excludeProjectId, BigDecimal projectBudget) {
-        if (department != null && department.getInternalBudget() != null) {
+        if (department != null) {
+            if (department.getInternalBudget() == null) {
+                throw new IllegalStateException("Department '" + department.getName() + "' has no budget initialized.");
+            }
             BigDecimal deptLimit = department.getInternalBudget().getTotalAmount();
             if (deptLimit != null) {
                 BigDecimal existingTotal = projectRepository.findByTeamDepartment(department).stream()
@@ -127,7 +130,10 @@ public class ProjectServiceImpl implements ProjectService {
         budget.setBudgetName(project.getName());
         budget.setTotalAmount(projectCreationDto.budget());
         budget.setBudgetType(BudgetType.PROJECT);
-        if (department != null && department.getInternalBudget() != null) {
+        if (department != null) {
+            if (department.getInternalBudget() == null) {
+                throw new IllegalStateException("Department '" + department.getName() + "' has no budget initialized.");
+            }
             budget.setParentBudget(department.getInternalBudget());
         }
 
@@ -197,6 +203,9 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         if (updatedProject.budget() != null || updatedProject.teamId() != null) {
+            if (project.getInternalBudget() == null) {
+                throw new EntityNotFoundException("No internal budget is currently assigned to project id: " + project.getId());
+            }
             Team targetTeam = updatedProject.teamId() != null ? 
                     teamRepository.findById(updatedProject.teamId())
                             .orElseThrow(() -> new EntityNotFoundException("Team with id " + updatedProject.teamId() + " not found")) :
@@ -207,10 +216,6 @@ public class ProjectServiceImpl implements ProjectService {
 
         if(updatedProject.name()!= null) project.setName(updatedProject.name());
         if(updatedProject.budget()!= null){
-            if (project.getInternalBudget() == null) {
-                throw new EntityNotFoundException("No internal budget is currently assigned to project id: " + project.getId());
-            }
-
             project.getInternalBudget().setTotalAmount(updatedProject.budget());
         }
         if(updatedProject.teamId()!=null) {

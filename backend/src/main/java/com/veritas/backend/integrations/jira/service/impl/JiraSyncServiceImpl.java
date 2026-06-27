@@ -31,6 +31,7 @@ import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.service.RequisitionService;
 import com.veritas.backend.workflow.entity.WorkflowComponent;
+import com.veritas.backend.workflow.entity.WorkflowDefinition;
 import com.veritas.backend.workflow.repository.WorkflowStepRepository;
 
 import java.io.IOException;
@@ -52,6 +53,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -219,24 +221,26 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             request.setDescription(mapDescription(issueRecord.fields().description()));
         }
 
-        Project resolvedProject = null;
-        if (issueRecord.fields() != null && issueRecord.fields().project() != null) {
-            JiraProjectRecord jiraProj = issueRecord.fields().project();
-            Optional<Project> matchedProject = Optional.empty();
-            if (jiraProj.key() != null && !jiraProj.key().isBlank()) {
-                matchedProject = projectRepository.findByProjectKey(jiraProj.key());
-            }
-            if (matchedProject.isEmpty() && jiraProj.name() != null && !jiraProj.name().isBlank()) {
-                matchedProject = projectRepository.findByName(jiraProj.name());
-            }
-            if (matchedProject.isPresent()) {
-                resolvedProject = matchedProject.get();
+        WorkflowDefinition resolvedWorkflow = request.getWorkflowDefinition() != null
+                ? request.getWorkflowDefinition()
+                : config.getFallbackWorkflow();
+        Project resolvedProject = request.getProject() != null ? request.getProject() : resolveJiraProject(issueRecord);
+        User resolvedUser = request.getUser() != null ? request.getUser() : resolveJiraReporter(issueRecord, key);
+
+        if (!isUsableRequester(resolvedUser) || resolvedProject == null
+                || !canCreateWith(resolvedUser, resolvedProject, resolvedWorkflow)) {
+            if (resolvedProject != null && canCreateWith(config.getFallbackUser(), resolvedProject, resolvedWorkflow)) {
+                resolvedUser = config.getFallbackUser();
+                log.warn("Using Jira fallback user for issue {} because reporter mapping is missing or outside the project scope", key);
+            } else {
+                resolvedUser = config.getFallbackUser();
+                resolvedProject = config.getFallbackProject();
+                resolvedWorkflow = config.getFallbackWorkflow();
+                log.warn("Using Jira fallback user/project/workflow for issue {} because Jira mapping is missing or invalid", key);
             }
         }
 
-        if (resolvedProject == null) {
-            resolvedProject = config.getFallbackProject();
-        }
+        validateResolvedJiraCreationScope(resolvedUser, resolvedProject, resolvedWorkflow, config.getId(), key);
 
         request.setProject(resolvedProject);
         if (request.getRequestKey() == null) {
@@ -245,9 +249,7 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             request.setRequestKey(resolvedProject.getProjectKey() + "-" + resolvedProject.getRequestCounter());
         }
 
-        if (request.getWorkflowDefinition() == null) {
-            request.setWorkflowDefinition(config.getFallbackWorkflow());
-        }
+        request.setWorkflowDefinition(resolvedWorkflow);
 
         if (request.getCurrentStep() == null) {
             workflowStepRepository.findFirstByWorkflowDefinitionAndWorkflowComponent(
@@ -255,30 +257,8 @@ public class JiraSyncServiceImpl implements JiraSyncService {
             ).ifPresent(request::setCurrentStep);
         }
 
-        if (request.getUser() == null && issueRecord.fields() != null && issueRecord.fields().reporter() != null) {
-            String email = issueRecord.fields().reporter().emailAddress();
-            if (email != null && !email.isBlank()) {
-                Optional<User> matchedUser = userRepository.findByEmailAndIsActiveTrue(email.toLowerCase().trim());
-                if (matchedUser.isPresent()) {
-                    User user = matchedUser.get();
-                    if (user.getTeam() != null) {
-                        request.setUser(user);
-                        request.setTeam(user.getTeam());
-                    } else {
-                        log.warn("Skipping Jira reporter match for request {} because matched user {} has no team", key, user.getEmail());
-                    }
-                }
-            }
-        }
-        
-        if (request.getUser() == null) {
-            User fallbackUser = config.getFallbackUser();
-            if (fallbackUser.getTeam() == null) {
-                throw new IllegalStateException("Fallback user has no team configured on Jira config ID " + config.getId());
-            }
-            request.setUser(fallbackUser);
-            request.setTeam(fallbackUser.getTeam());
-        }
+        request.setUser(resolvedUser);
+        request.setTeam(resolvedUser.getTeam());
 
         if (request.getBudget() == null) {
             InternalBudget budget = new InternalBudget();
@@ -329,6 +309,89 @@ public class JiraSyncServiceImpl implements JiraSyncService {
         } else {
             log.warn("Failed to set Jira custom field for {}, syncing may repeat", key);
         }
+    }
+
+    private Project resolveJiraProject(JiraIssueRecord issueRecord) {
+        if (issueRecord.fields() == null || issueRecord.fields().project() == null) {
+            return null;
+        }
+
+        JiraProjectRecord jiraProject = issueRecord.fields().project();
+        Optional<Project> matchedProject = Optional.empty();
+        if (jiraProject.key() != null && !jiraProject.key().isBlank()) {
+            matchedProject = projectRepository.findByProjectKey(jiraProject.key());
+        }
+        if (matchedProject.isEmpty() && jiraProject.name() != null && !jiraProject.name().isBlank()) {
+            matchedProject = projectRepository.findByName(jiraProject.name());
+        }
+        return matchedProject.orElse(null);
+    }
+
+    private User resolveJiraReporter(JiraIssueRecord issueRecord, String issueKey) {
+        if (issueRecord.fields() == null || issueRecord.fields().reporter() == null) {
+            return null;
+        }
+
+        String email = issueRecord.fields().reporter().emailAddress();
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        Optional<User> matchedUser = userRepository.findByEmailAndIsActiveTrue(email.toLowerCase().trim());
+        if (matchedUser.isEmpty()) {
+            return null;
+        }
+
+        User user = matchedUser.get();
+        if (!isUsableRequester(user)) {
+            log.warn("Skipping Jira reporter match for issue {} because matched user {} is not an active requester with a team",
+                    issueKey, user.getEmail());
+            return null;
+        }
+        return user;
+    }
+
+    private boolean canCreateWith(User user, Project project, WorkflowDefinition workflow) {
+        if (!isUsableRequester(user) || project == null || workflow == null) {
+            return false;
+        }
+
+        try {
+            requisitionService.validateCreationScope(user, project, workflow);
+            return true;
+        } catch (RuntimeException exception) {
+            log.debug("Rejected Jira creation tuple user={}, project={}, workflow={}: {}",
+                    user.getId(),
+                    project.getId(),
+                    workflow.getId(),
+                    exception.getMessage());
+            return false;
+        }
+    }
+
+    private void validateResolvedJiraCreationScope(User user, Project project, WorkflowDefinition workflow, Long configId, String issueKey) {
+        if (!isUsableRequester(user)) {
+            throw new IllegalStateException("Jira issue " + issueKey
+                    + " cannot be imported because the resolved requester for Jira config ID " + configId
+                    + " is not an active REQUESTER with a team.");
+        }
+        if (project == null) {
+            throw new IllegalStateException("Jira issue " + issueKey
+                    + " cannot be imported because no valid project could be resolved for Jira config ID " + configId + ".");
+        }
+        if (workflow == null) {
+            throw new IllegalStateException("Jira issue " + issueKey
+                    + " cannot be imported because no valid workflow could be resolved for Jira config ID " + configId + ".");
+        }
+
+        requisitionService.validateCreationScope(user, project, workflow);
+    }
+
+    private boolean isUsableRequester(User user) {
+        return user != null
+                && user.getRole() == UserRole.REQUESTER
+                && user.getIsActive()
+                && user.getTeam() != null;
     }
 
     private void syncAttachments(Request request, JiraConfig config, JiraIssueRecord issueRecord) {

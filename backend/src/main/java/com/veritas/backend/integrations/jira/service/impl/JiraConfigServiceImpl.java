@@ -17,6 +17,7 @@ import com.veritas.backend.requisition.entity.RequestStatus;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.audit.service.AuditService;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
@@ -158,9 +159,17 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         entity.setFallbackWorkflow(workflowDefinitionRepository.findById(dto.fallbackWorkflowId())
             .orElseThrow(() -> new EntityNotFoundException("Fallback workflow not found")));
 
+        validateFallbackRequester(entity.getFallbackUser());
+        if (!entity.getFallbackProject().getIsActive()) {
+            throw new IllegalArgumentException("Fallback project must be active.");
+        }
+        if (!entity.getFallbackWorkflow().getIsActive()) {
+            throw new IllegalArgumentException("Fallback workflow must be active.");
+        }
+
         var userTeam = entity.getFallbackUser().getTeam();
         var projectTeam = entity.getFallbackProject().getTeam();
-        if (userTeam == null || !userTeam.getTeamId().equals(projectTeam.getTeamId())) {
+        if (userTeam == null || projectTeam == null || !userTeam.getTeamId().equals(projectTeam.getTeamId())) {
             throw new IllegalArgumentException("Fallback user and fallback project must belong to the same team.");
         }
 
@@ -169,6 +178,15 @@ public class JiraConfigServiceImpl implements JiraConfigService {
         if (workflowDept != null && projectDept != null
                 && !workflowDept.getDepartmentId().equals(projectDept.getDepartmentId())) {
             throw new IllegalArgumentException("Fallback workflow must be global or belong to the same department as the fallback project.");
+        }
+    }
+
+    private void validateFallbackRequester(User fallbackUser) {
+        if (fallbackUser == null
+                || fallbackUser.getRole() != UserRole.REQUESTER
+                || !fallbackUser.getIsActive()
+                || fallbackUser.getTeam() == null) {
+            throw new IllegalArgumentException("Fallback user must be an active requester assigned to a team.");
         }
     }
 

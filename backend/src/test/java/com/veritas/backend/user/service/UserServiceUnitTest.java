@@ -758,6 +758,39 @@ class UserServiceUnitTest {
     }
 
     @Test
+    void EditUser_FinanceOfficerAttemptsToEditSelf_ThrowsAccessDeniedException() {
+        User financeUser = new User();
+        financeUser.setId(1L);
+        financeUser.setEmail("finance@test.com");
+        financeUser.setRole(UserRole.FINANCE_OFFICER);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(financeUser));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> {
+            userService.editUser(1L, new UserEditDto("New Name", null, null, null, null, null), financeUser);
+        });
+    }
+
+    @Test
+    void EditUser_NonAdminAttemptsToChangeRole_ThrowsAccessDeniedException() {
+        User financeUser = new User();
+        financeUser.setId(2L);
+        financeUser.setEmail("finance@test.com");
+        financeUser.setRole(UserRole.FINANCE_OFFICER);
+
+        User userToEdit = new User();
+        userToEdit.setId(1L);
+        userToEdit.setEmail("requester@test.com");
+        userToEdit.setRole(UserRole.REQUESTER);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(userToEdit));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> {
+            userService.editUser(1L, new UserEditDto(null, null, UserRole.ADMINISTRATOR, null, null, null), financeUser);
+        });
+    }
+
+    @Test
     void EditUser_AdminChangesOtherAdminRole_SavesSuccessfully() {
         User currentUser = new User();
         currentUser.setId(1L);

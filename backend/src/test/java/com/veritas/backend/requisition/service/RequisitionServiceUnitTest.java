@@ -188,10 +188,13 @@ class RequisitionServiceUnitTest {
         testProject.setProjectKey("PRJ");
         testProject.setName("Test Project");
         testProject.setRequestCounter(10);
+        testProject.setTeam(testTeam);
+        testProject.setIsActive(true);
 
         testWorkflow = new WorkflowDefinition();
         testWorkflow.setId(1L);
         testWorkflow.setName("Standard Workflow");
+        testWorkflow.setIsActive(true);
 
         testStartStep = new WorkflowStep();
         testStartStep.setId(1L);
@@ -368,6 +371,100 @@ class RequisitionServiceUnitTest {
                 () -> requisitionService.createRequest(createDto, testUser));
         assertTrue(ex.getMessage().contains("Workflow not found"));
         verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void CreateRequest_ProjectFromDifferentTeam_ThrowsAccessDeniedException() {
+        Team otherTeam = new Team();
+        otherTeam.setTeamId(99L);
+        Department department = testTeam.getDepartment();
+        otherTeam.setDepartment(department);
+
+        Project otherTeamProject = new Project();
+        otherTeamProject.setId(99L);
+        otherTeamProject.setProjectKey("OTHER");
+        otherTeamProject.setName("Other Team Project");
+        otherTeamProject.setTeam(otherTeam);
+        otherTeamProject.setIsActive(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(projectRepository.findById(99L)).thenReturn(Optional.of(otherTeamProject));
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(testWorkflow));
+
+        RequisitionCreateDto createDto = new RequisitionCreateDto(
+                "Test", null, 99L, 1L, Priority.LOW,
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
+
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> requisitionService.createRequest(createDto, testUser));
+        assertTrue(ex.getMessage().contains("Project does not belong"));
+        verify(requestRepository, never()).save(any());
+        verify(internalBudgetRepository, never()).save(any());
+    }
+
+    @Test
+    void CreateRequest_WorkflowFromDifferentDepartment_ThrowsAccessDeniedException() {
+        Department otherDepartment = new Department();
+        otherDepartment.setDepartmentId(99L);
+        otherDepartment.setName("Other Department");
+
+        WorkflowDefinition otherDepartmentWorkflow = new WorkflowDefinition();
+        otherDepartmentWorkflow.setId(99L);
+        otherDepartmentWorkflow.setName("Other Department Workflow");
+        otherDepartmentWorkflow.setIsActive(true);
+        otherDepartmentWorkflow.setDepartment(otherDepartment);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+        when(workflowDefinitionRepository.findById(99L)).thenReturn(Optional.of(otherDepartmentWorkflow));
+
+        RequisitionCreateDto createDto = new RequisitionCreateDto(
+                "Test", null, 1L, 99L, Priority.LOW,
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
+
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> requisitionService.createRequest(createDto, testUser));
+        assertTrue(ex.getMessage().contains("Workflow does not belong"));
+        verify(requestRepository, never()).save(any());
+        verify(internalBudgetRepository, never()).save(any());
+    }
+
+    @Test
+    void CreateRequest_InactiveProject_ThrowsIllegalArgumentException() {
+        testProject.setIsActive(false);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(testWorkflow));
+
+        RequisitionCreateDto createDto = new RequisitionCreateDto(
+                "Test", null, 1L, 1L, Priority.LOW,
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.createRequest(createDto, testUser));
+        assertTrue(ex.getMessage().contains("inactive project"));
+        verify(requestRepository, never()).save(any());
+        verify(internalBudgetRepository, never()).save(any());
+    }
+
+    @Test
+    void CreateRequest_InactiveWorkflow_ThrowsIllegalArgumentException() {
+        testWorkflow.setIsActive(false);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+        when(workflowDefinitionRepository.findById(1L)).thenReturn(Optional.of(testWorkflow));
+
+        RequisitionCreateDto createDto = new RequisitionCreateDto(
+                "Test", null, 1L, 1L, Priority.LOW,
+                List.of(new RequisitionItemCreateDto("Item", 1, RequestItemUnit.PIECES, null)));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> requisitionService.createRequest(createDto, testUser));
+        assertTrue(ex.getMessage().contains("inactive workflow"));
+        verify(requestRepository, never()).save(any());
+        verify(internalBudgetRepository, never()).save(any());
     }
 
     @Test
