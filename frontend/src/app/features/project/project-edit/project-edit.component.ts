@@ -37,6 +37,7 @@ export class ProjectEditComponent implements OnInit{
   private initForm(): void {
     this.projectForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(120)]],
+      projectKey: [{ value: '', disabled: true }],
       teamId: [null, Validators.required],
       budget: [null, [Validators.required, Validators.min(1)]],
       startDate: [null, Validators.required],
@@ -60,6 +61,7 @@ export class ProjectEditComponent implements OnInit{
       next: (project) => {
         this.projectForm.patchValue({
           name: project.name,
+          projectKey: project.projectKey,
           teamId: project.teamId,
           budget: project.budget,
           startDate: project.startDate,

@@ -352,7 +352,26 @@ public class DatabaseSeeder implements ApplicationRunner {
         for (int i = 0; i < names.length; i++) {
             String key = names[i].toLowerCase().replaceAll("[^a-z]", "") + "-" + i;
             Team team = ctx.allTeams().get(i % ctx.allTeams().size());
-            BigDecimal budget = new BigDecimal(faker.number().numberBetween(70000, 110000));
+            
+            BigDecimal budget = BigDecimal.ZERO;
+            if (team != null && team.getDepartment() != null && team.getDepartment().getInternalBudget() != null) {
+                Department department = team.getDepartment();
+                BigDecimal deptLimit = department.getInternalBudget().getTotalAmount();
+                if (deptLimit != null) {
+                    BigDecimal existingTotal = projectRepo.findByTeamDepartment(department).stream()
+                            .map(p -> p.getInternalBudget().getTotalAmount())
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal remaining = deptLimit.subtract(existingTotal);
+                    if (remaining.compareTo(BigDecimal.ZERO) > 0) {
+                        double factor = 0.3 + rng.nextDouble() * 0.4; // 30% to 70% of remaining budget
+                        budget = remaining.multiply(BigDecimal.valueOf(factor)).setScale(2, RoundingMode.HALF_UP);
+                        if (budget.compareTo(BigDecimal.ONE) < 0) {
+                            budget = BigDecimal.ZERO;
+                        }
+                    }
+                }
+            }
+
             seedProject(names[i], key, budget.toString(),
                     LocalDate.now().minusMonths(rng.nextInt(1, 6)),
                     LocalDate.now().plusMonths(rng.nextInt(6, 18)), team);
@@ -537,8 +556,33 @@ public class DatabaseSeeder implements ApplicationRunner {
                                  LocalDate start, LocalDate end, Team team) {
         if (projectRepo.existsByNameOrProjectKey(name, key)) return projectRepo.findByName(name).orElse(null);
         InternalBudget parent = (team != null && team.getDepartment() != null) ? team.getDepartment().getInternalBudget() : null;
+        BigDecimal pBudget = new BigDecimal(budgetAmount);
+
+        // Check to ensure project budget does not exceed remaining department budget, and adjust it if necessary
+        if (team != null && team.getDepartment() != null) {
+            Department department = team.getDepartment();
+            if (department.getInternalBudget() != null) {
+                BigDecimal deptLimit = department.getInternalBudget().getTotalAmount();
+                if (deptLimit != null) {
+                    BigDecimal existingTotal = projectRepo.findByTeamDepartment(department).stream()
+                            .map(p -> p.getInternalBudget().getTotalAmount())
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal newTotal = existingTotal.add(pBudget);
+                    if (newTotal.compareTo(deptLimit) > 0) {
+                        BigDecimal remaining = deptLimit.subtract(existingTotal);
+                        if (remaining.compareTo(BigDecimal.ZERO) < 0) {
+                            remaining = BigDecimal.ZERO;
+                        }
+                        log.warn("Project budget of {} € for project '{}' exceeds the remaining budget of department '{}' ({} €). Adjusting project budget to {} €.", 
+                                pBudget, name, department.getName(), remaining, remaining);
+                        pBudget = remaining;
+                    }
+                }
+            }
+        }
+
         Project p = Project.builder().name(name).projectKey(key)
-                .internalBudget(budget(name, new BigDecimal(budgetAmount), BudgetType.PROJECT, parent))
+                .internalBudget(budget(name, pBudget, BudgetType.PROJECT, parent))
                 .startDate(start).endDate(end).team(team).build();
         log.info("Seeded project: {} (team {})", projectRepo.save(p).getName(), team != null ? team.getName() : "none");
         return p;
