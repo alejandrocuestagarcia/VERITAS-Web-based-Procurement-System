@@ -48,7 +48,7 @@ public class GeneralExceptionHandler {
   @ExceptionHandler(InvalidRefreshTokenException.class)
   public ResponseEntity<Map<String, Object>> handleInvalidRefreshTokenException(final InvalidRefreshTokenException exception) {
     log.warn("Token refresh failed: {}", exception.getMessage());
-    return buildErrorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -135,4 +135,3 @@ public class GeneralExceptionHandler {
     return ResponseEntity.status(status).body(body);
   }
 }
-

@@ -755,12 +755,16 @@ public class RequisitionServiceImpl implements RequisitionService {
         if (!Objects.equals(request.getPriority(), updates.priority())) {
             changes.add("Priority changed from '" + request.getPriority() + "' to '" + updates.priority() + "'");
         }
-        if (updates.projectId() != null && !request.getProject().getId().equals(updates.projectId())) {
+        Project newProject = null;
+        boolean projectChanged = updates.projectId() != null && !request.getProject().getId().equals(updates.projectId());
+        if (projectChanged) {
             String oldName = request.getProject().getName();
-            Project newProject = projectRepository.findById(updates.projectId()).orElse(null);
-            String newName = newProject != null ? newProject.getName() : String.valueOf(updates.projectId());
-            changes.add("Project changed from '" + oldName + "' to '" + newName + "'");
+            newProject = projectRepository.findById(updates.projectId())
+                    .orElseThrow(
+                            () -> new IllegalArgumentException("Project not found with ID: " + updates.projectId()));
+            changes.add("Project changed from '" + oldName + "' to '" + newProject.getName() + "'");
         }
+
         WorkflowDefinition newWorkflow = null;
         boolean workflowChanged = updates.workflowDefinitionId() != null
                 && !request.getWorkflowDefinition().getId().equals(updates.workflowDefinitionId());
@@ -770,6 +774,12 @@ public class RequisitionServiceImpl implements RequisitionService {
                     .orElseThrow(() -> new IllegalArgumentException("Workflow not found with ID: " + updates.workflowDefinitionId()));
             String newName = newWorkflow.getName();
             changes.add("Workflow changed from '" + oldName + "' to '" + newName + "'");
+        }
+
+        if (projectChanged || workflowChanged) {
+            Project effectiveProject = projectChanged ? newProject : request.getProject();
+            WorkflowDefinition effectiveWorkflow = workflowChanged ? newWorkflow : request.getWorkflowDefinition();
+            validateCreationScope(request.getUser(), effectiveProject, effectiveWorkflow);
         }
 
         boolean itemsChanged = hasLineItemsChanged(request.getItems(), updates.items());
@@ -792,11 +802,7 @@ public class RequisitionServiceImpl implements RequisitionService {
         request.setDescription(updates.description());
         request.setPriority(updates.priority());
 
-        if (updates.projectId() != null && !request.getProject().getId().equals(updates.projectId())) {
-            Project newProject = projectRepository.findById(updates.projectId())
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("Project not found with ID: " + updates.projectId()));
-
+        if (projectChanged) {
             newProject.setRequestCounter(newProject.getRequestCounter() + 1);
             projectRepository.save(newProject);
             request.setRequestKey(newProject.getProjectKey() + "-" + newProject.getRequestCounter());
@@ -886,6 +892,10 @@ public class RequisitionServiceImpl implements RequisitionService {
         Invoice invoice = request.getInvoice();
         if (invoice == null) {
             throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
+        }
+
+        if (invoice.getIsPaid()) {
+            throw new IllegalStateException("Invoice has already been paid.");
         }
 
         addToBudgets(request.getBudget(), invoice);

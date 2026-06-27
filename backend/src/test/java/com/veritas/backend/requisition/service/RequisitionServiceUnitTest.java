@@ -1043,6 +1043,9 @@ class RequisitionServiceUnitTest {
         newProject.setProjectKey("NEWPRJ");
         newProject.setName("NEWPRJ");
         newProject.setRequestCounter(5);
+        newProject.setTeam(testTeam);
+        newProject.setIsActive(true);
+        newProject.setInternalBudget(new InternalBudget());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Updated Laptop", "Need an updated laptop", 2L, 1L, Priority.HIGH,
@@ -1167,6 +1170,7 @@ class RequisitionServiceUnitTest {
 
         WorkflowDefinition newWorkflow = new WorkflowDefinition();
         newWorkflow.setId(2L);
+        newWorkflow.setIsActive(true);
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
                 "Laptop", "Need laptop", 1L, 2L, Priority.LOW, List.of());
@@ -2409,6 +2413,7 @@ class RequisitionServiceUnitTest {
         request.setState(RequestStatus.DRAFT);
         request.setUser(testUser);
         request.setProject(testProject);
+        request.setWorkflowDefinition(testWorkflow);
         
         InternalBudget budget = new InternalBudget();
         request.setBudget(budget);
@@ -2418,6 +2423,8 @@ class RequisitionServiceUnitTest {
         newProject.setProjectKey("NEWPRJ");
         newProject.setName("New Project");
         newProject.setRequestCounter(5);
+        newProject.setTeam(testTeam);
+        newProject.setIsActive(true);
         newProject.setInternalBudget(new InternalBudget());
 
         RequisitionUpdateDto updates = new RequisitionUpdateDto(
@@ -2440,6 +2447,35 @@ class RequisitionServiceUnitTest {
     }
 
     @Test
+    void updateRequest_ProjectFromDifferentTeam_ThrowsAccessDeniedException() {
+        Request request = createValidRequest(RequestStatus.DRAFT);
+
+        Team otherTeam = new Team();
+        otherTeam.setTeamId(99L);
+        otherTeam.setDepartment(testTeam.getDepartment());
+
+        Project otherTeamProject = new Project();
+        otherTeamProject.setId(99L);
+        otherTeamProject.setProjectKey("OTHER");
+        otherTeamProject.setName("Other Team Project");
+        otherTeamProject.setTeam(otherTeam);
+        otherTeamProject.setIsActive(true);
+
+        RequisitionUpdateDto updates = new RequisitionUpdateDto(
+                "Updated Laptop", "Need an updated laptop", 99L, null, Priority.HIGH, List.of());
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(projectRepository.findById(99L)).thenReturn(Optional.of(otherTeamProject));
+
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> requisitionService.updateRequest(1L, updates, testUser));
+
+        assertTrue(ex.getMessage().contains("Project does not belong"));
+        verify(projectRepository, never()).save(otherTeamProject);
+        verify(requestRepository, never()).save(any(Request.class));
+    }
+
+    @Test
     void updateRequest_WorkflowChanged_ResetsToDraft() {
         Request request = createValidRequest(RequestStatus.DRAFT);
         request.setRequestID(1L);
@@ -2447,6 +2483,7 @@ class RequisitionServiceUnitTest {
         WorkflowDefinition newWorkflow = new WorkflowDefinition();
         newWorkflow.setId(2L);
         newWorkflow.setName("New Workflow");
+        newWorkflow.setIsActive(true);
 
         WorkflowStep startStep = new WorkflowStep();
         startStep.setName("New Start");
@@ -3286,6 +3323,7 @@ class RequisitionServiceUnitTest {
         WorkflowDefinition oldWf = new WorkflowDefinition();
         oldWf.setId(1L);
         oldWf.setName("Old Workflow");
+        oldWf.setIsActive(true);
         request.setWorkflowDefinition(oldWf);
 
         when(requestRepository.findById(10L)).thenReturn(Optional.of(request));
@@ -3293,6 +3331,7 @@ class RequisitionServiceUnitTest {
         WorkflowDefinition newWf = new WorkflowDefinition();
         newWf.setId(2L);
         newWf.setName("New Workflow");
+        newWf.setIsActive(true);
         when(workflowDefinitionRepository.findById(2L)).thenReturn(Optional.of(newWf));
 
         WorkflowStep startStep = new WorkflowStep();
@@ -3421,6 +3460,35 @@ class RequisitionServiceUnitTest {
         assertThrows(WorkflowStateException.class, () -> {
             requisitionService.processPayment(1L, testUser);
         });
+    }
+
+    @Test
+    void processPayment_AlreadyPaidInvoice_ThrowsIllegalStateException() {
+        Request request = new Request();
+        request.setRequestID(1L);
+        request.setState(RequestStatus.ACTIVE);
+        request.setClosedReason(ClosedReason.COMPLETED);
+
+        InternalBudget budget = new InternalBudget();
+        budget.setCommittedSpend(BigDecimal.TEN);
+        budget.setActualSpend(BigDecimal.ZERO);
+        request.setBudget(budget);
+
+        Invoice invoice = new Invoice();
+        invoice.setIsPaid(true);
+        invoice.setTotalAmount(BigDecimal.TEN);
+        invoice.setCurrency(Currency.EUR);
+        request.setInvoice(invoice);
+
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> requisitionService.processPayment(1L, testUser));
+
+        assertTrue(ex.getMessage().contains("already been paid"));
+        verify(internalBudgetRepository, never()).save(any());
+        verify(invoiceRepository, never()).save(any());
+        verify(requestRepository, never()).save(any());
     }
 
     @Test
