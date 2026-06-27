@@ -24,6 +24,7 @@ import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.workflow.entity.WorkflowDefinition;
@@ -275,10 +276,11 @@ class JiraConfigServiceUnitTest {
         Team teamA = Team.builder().teamId(1L).name("Team A").build();
         Team teamB = Team.builder().teamId(2L).name("Team B").build();
 
-        User fallbackUser = User.builder().id(10L).team(teamA).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(teamA).build();
         Project fallbackProject = Project.builder().id(20L).team(teamB).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -297,10 +299,11 @@ class JiraConfigServiceUnitTest {
     void CreateConfig_FallbackUserAndProjectSameTeam_Succeeds() {
         Team team = Team.builder().teamId(1L).name("Team A").build();
 
-        User fallbackUser = User.builder().id(10L).team(team).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder().id(20L).team(team).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -326,10 +329,11 @@ class JiraConfigServiceUnitTest {
         Department deptB = Department.builder().departmentId(2L).name("Dept B").build();
         Team team = Team.builder().teamId(1L).name("Team A").department(deptA).build();
 
-        User fallbackUser = User.builder().id(10L).team(team).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder().id(20L).team(team).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
+        workflow.setIsActive(true);
         workflow.setDepartment(deptB);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
@@ -350,11 +354,12 @@ class JiraConfigServiceUnitTest {
         Department dept = Department.builder().departmentId(1L).name("Dept A").build();
         Team team = Team.builder().teamId(1L).name("Team A").department(dept).build();
 
-        User fallbackUser = User.builder().id(10L).team(team).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder().id(20L).team(team).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
         workflow.setDepartment(null);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -457,10 +462,11 @@ class JiraConfigServiceUnitTest {
 
     @Test
     void CreateConfig_FallbackUserNullTeam_ThrowsIllegalArgument() {
-        User fallbackUser = User.builder().id(10L).team(null).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(null).build();
         Project fallbackProject = Project.builder().id(20L).team(Team.builder().teamId(1L).build()).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -475,11 +481,12 @@ class JiraConfigServiceUnitTest {
     }
 
     @Test
-    void CreateConfig_FallbackProjectNullTeam_ThrowsNullPointerException() {
-        User fallbackUser = User.builder().id(10L).team(Team.builder().teamId(1L).build()).build();
+    void CreateConfig_FallbackProjectNullTeam_ThrowsIllegalArgument() {
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(Team.builder().teamId(1L).build()).build();
         Project fallbackProject = Project.builder().id(20L).team(null).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -490,7 +497,7 @@ class JiraConfigServiceUnitTest {
         when(projectRepository.findById(20L)).thenReturn(Optional.of(fallbackProject));
         when(workflowDefinitionRepository.findById(30L)).thenReturn(Optional.of(workflow));
 
-        assertThrows(NullPointerException.class, () -> service.createConfig(dto));
+        assertThrows(IllegalArgumentException.class, () -> service.createConfig(dto));
     }
     @Test
     void GetConfigById_ExistingConfig_ReturnsDto() {
@@ -638,11 +645,12 @@ class JiraConfigServiceUnitTest {
         Department deptA = Department.builder().departmentId(1L).name("Dept A").build();
         Team team = Team.builder().teamId(1L).name("Team A").department(null).build();
 
-        User fallbackUser = User.builder().id(10L).team(team).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder().id(20L).team(team).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
         workflow.setDepartment(deptA);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -667,11 +675,12 @@ class JiraConfigServiceUnitTest {
         Department deptA = Department.builder().departmentId(1L).name("Dept A").build();
         Team team = Team.builder().teamId(1L).name("Team A").department(deptA).build();
 
-        User fallbackUser = User.builder().id(10L).team(team).build();
+        User fallbackUser = User.builder().id(10L).role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder().id(20L).team(team).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(30L);
         workflow.setDepartment(deptA);
+        workflow.setIsActive(true);
 
         JiraConfigDto dto = new JiraConfigDto(null, "Config", "https://test.atlassian.net", "user", "token",
                 "jql", 60, "customfield_10015", 10L, 20L, 30L, null, null);
@@ -815,10 +824,11 @@ class JiraConfigServiceUnitTest {
 
 
     private void setupFallbackMocks(Long userId, Long projectId, Long workflowId, Team team) {
-        User fallbackUser = User.builder().id(userId).team(team).build();
+        User fallbackUser = User.builder().id(userId).role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder().id(projectId).team(team).build();
         WorkflowDefinition workflow = new WorkflowDefinition();
         workflow.setId(workflowId);
+        workflow.setIsActive(true);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(fallbackUser));
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(fallbackProject));

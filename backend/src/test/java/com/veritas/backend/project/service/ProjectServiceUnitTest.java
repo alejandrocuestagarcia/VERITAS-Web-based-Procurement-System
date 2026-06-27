@@ -650,20 +650,15 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void CreateProject_DepartmentNonNullBudgetNull_Succeeds() {
+    void CreateProject_DepartmentNonNullBudgetNull_ThrowsIllegalStateException() {
         ProjectCreationDto creationDto = new ProjectCreationDto("Dept Non-Null Proj", "DN2-KEY", 10L, LocalDate.now(), LocalDate.now().plusDays(30), BigDecimal.valueOf(10000.00));
 
-        Department department = Department.builder().departmentId(5L).internalBudget(null).build();
+        Department department = Department.builder().departmentId(5L).name("Logistics").internalBudget(null).build();
         Team team = Team.builder().teamId(10L).department(department).build();
-        Project project = Project.builder().name("Dept Non-Null Proj").build();
 
         when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
-        when(projectMapper.toProject(creationDto)).thenReturn(project);
-        when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(projectMapper.toProjectDto(project)).thenReturn(new ProjectDto(1L, "Dept Non-Null Proj", null, null, null, null, null, null, null, null, null, null, true));
 
-        ProjectDto result = projectService.createProject(creationDto);
-        assertNotNull(result);
+        assertThrows(IllegalStateException.class, () -> projectService.createProject(creationDto));
     }
 
     @Test
@@ -742,20 +737,37 @@ class ProjectServiceUnitTest {
     }
 
     @Test
-    void EditProject_TeamChangeNullInternalBudget_ThrowsNullPointerException() {
+    void EditProject_TeamChangeNullInternalBudget_ThrowsEntityNotFoundException() {
         Long projectId = 1L;
         ProjectEditDto editDto = new ProjectEditDto(null, null, 20L, null, null);
 
-        Team team = Team.builder().teamId(20L).department(null).build();
         Project existingProject = Project.builder()
                 .id(projectId)
                 .internalBudget(null)
                 .build();
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
-        when(teamRepository.findById(20L)).thenReturn(Optional.of(team));
 
-        assertThrows(NullPointerException.class, () -> projectService.editProject(projectId, editDto));
+        assertThrows(EntityNotFoundException.class, () -> projectService.editProject(projectId, editDto));
+    }
+
+    @Test
+    void EditProject_DepartmentNonNullBudgetNull_ThrowsIllegalStateException() {
+        Long projectId = 1L;
+        ProjectEditDto editDto = new ProjectEditDto(null, BigDecimal.valueOf(50000.00), null, null, null);
+
+        Department department = Department.builder().departmentId(5L).name("Logistics").internalBudget(null).build();
+        Team team = Team.builder().teamId(10L).department(department).build();
+        Project existingProject = Project.builder()
+                .id(projectId)
+                .name("Old Project")
+                .team(team)
+                .internalBudget(InternalBudget.builder().totalAmount(BigDecimal.valueOf(10000.00)).build())
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(existingProject));
+
+        assertThrows(IllegalStateException.class, () -> projectService.editProject(projectId, editDto));
     }
 
     @Test

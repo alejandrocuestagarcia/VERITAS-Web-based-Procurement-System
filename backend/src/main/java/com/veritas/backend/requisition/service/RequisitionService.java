@@ -1,6 +1,7 @@
 package com.veritas.backend.requisition.service;
 
 import com.veritas.backend.common.exception.WorkflowStateException;
+import com.veritas.backend.project.entity.Project;
 import com.veritas.backend.requisition.dto.InvoiceCreateDto;
 import com.veritas.backend.requisition.dto.InvoiceDto;
 import com.veritas.backend.requisition.dto.RequisitionCreateDto;
@@ -9,6 +10,7 @@ import com.veritas.backend.requisition.dto.RequisitionRejectDto;
 import com.veritas.backend.requisition.dto.RequisitionUpdateDto;
 import com.veritas.backend.user.dto.UserDto;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.workflow.entity.WorkflowDefinition;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -34,6 +36,14 @@ public interface RequisitionService {
      * @throws IllegalArgumentException if the user, project, or workflow is not found, or the workflow has no START_EVENT step
      */
     RequisitionDto createRequest(RequisitionCreateDto createDto, User user);
+
+    /**
+     * Validates the user/project/workflow tuple used when creating a requisition.
+     *
+     * @throws IllegalArgumentException if the project or workflow is inactive
+     * @throws AccessDeniedException if the project/team or workflow/department scope is invalid
+     */
+    void validateCreationScope(User user, Project project, WorkflowDefinition workflow);
 
     /**
      * Stores an uploaded file as an attachment on the given request.

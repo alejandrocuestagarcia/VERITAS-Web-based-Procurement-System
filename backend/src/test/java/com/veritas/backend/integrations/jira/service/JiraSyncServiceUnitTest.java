@@ -42,6 +42,7 @@ import com.veritas.backend.workflow.entity.WorkflowStep;
 import com.veritas.backend.requisition.repository.RequestItemRepository;
 import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.user.entity.User;
+import com.veritas.backend.user.entity.UserRole;
 import com.veritas.backend.user.repository.UserRepository;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
@@ -129,11 +130,12 @@ class JiraSyncServiceUnitTest {
         config.setCustomFieldId("customfield_10001");
 
         Team team = Team.builder().teamId(10L).name("Fallback Team").build();
-        User fallbackUser = User.builder().id(20L).name("Fallback User").team(team).build();
+        User fallbackUser = User.builder().id(20L).name("Fallback User").role(UserRole.REQUESTER).team(team).build();
         Project fallbackProject = Project.builder()
                 .id(30L)
                 .name("Fallback Project")
                 .projectKey("FALLBACK")
+                .team(team)
                 .internalBudget(InternalBudget.builder()
                         .budgetName("Fallback Project Budget")
                         .budgetType(BudgetType.PROJECT)
@@ -143,6 +145,7 @@ class JiraSyncServiceUnitTest {
         WorkflowDefinition fallbackWorkflow = new WorkflowDefinition();
         fallbackWorkflow.setId(40L);
         fallbackWorkflow.setName("Fallback Workflow");
+        fallbackWorkflow.setIsActive(true);
 
         config.setFallbackUser(fallbackUser);
         config.setFallbackProject(fallbackProject);
@@ -230,6 +233,7 @@ class JiraSyncServiceUnitTest {
         User mockUser = new User();
         mockUser.setId(42L);
         mockUser.setEmail("reporter@veritas.com");
+        mockUser.setRole(UserRole.REQUESTER);
         mockUser.setTeam(config.getFallbackUser().getTeam());
         when(userRepository.findByEmailAndIsActiveTrue("reporter@veritas.com")).thenReturn(Optional.of(mockUser));
 
@@ -702,6 +706,7 @@ class JiraSyncServiceUnitTest {
 
         User fallbackUser = new User();
         fallbackUser.setId(50L);
+        fallbackUser.setRole(UserRole.REQUESTER);
         fallbackUser.setTeam(Team.builder().teamId(10L).build());
         config.setFallbackUser(fallbackUser);
 
@@ -1631,6 +1636,7 @@ class JiraSyncServiceUnitTest {
 
         User fallbackUser = new User();
         fallbackUser.setId(55L);
+        fallbackUser.setRole(UserRole.REQUESTER);
         fallbackUser.setTeam(Team.builder().teamId(10L).build());
         config.setFallbackUser(fallbackUser);
 
@@ -1660,6 +1666,7 @@ class JiraSyncServiceUnitTest {
 
         User fallbackUser = new User();
         fallbackUser.setId(55L);
+        fallbackUser.setRole(UserRole.REQUESTER);
         fallbackUser.setTeam(Team.builder().teamId(10L).build());
         config.setFallbackUser(fallbackUser);
 
