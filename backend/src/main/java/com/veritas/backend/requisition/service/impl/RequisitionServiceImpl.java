@@ -894,6 +894,10 @@ public class RequisitionServiceImpl implements RequisitionService {
             throw new EntityNotFoundException("Invoice not found for request with id: " + requestId);
         }
 
+        if (invoice.getIsPaid()) {
+            throw new IllegalStateException("Invoice has already been paid.");
+        }
+
         addToBudgets(request.getBudget(), invoice);
         invoice.setIsPaid(true);
         invoiceRepository.save(invoice);
