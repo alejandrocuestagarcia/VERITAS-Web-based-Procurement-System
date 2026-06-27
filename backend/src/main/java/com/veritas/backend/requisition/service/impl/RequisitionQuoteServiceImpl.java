@@ -309,11 +309,16 @@ public class RequisitionQuoteServiceImpl implements RequisitionQuoteService {
 
         BigDecimal computedTotalAmount = computedBaseAmount.add(dto.shippingCosts());
 
-        if (dto.baseAmount().compareTo(computedBaseAmount) != 0) {
+        BigDecimal inputBase = dto.baseAmount().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal compBase = computedBaseAmount.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal inputTotal = dto.totalAmount().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal compTotal = computedTotalAmount.setScale(2, RoundingMode.HALF_UP);
+
+        if (inputBase.compareTo(compBase) != 0) {
             throw new IllegalArgumentException("Base amount is incorrect");
         }
 
-        if (dto.totalAmount().compareTo(computedTotalAmount) != 0) {
+        if (inputTotal.compareTo(compTotal) != 0) {
             throw new IllegalArgumentException("Total amount is incorrect");
         }
     }

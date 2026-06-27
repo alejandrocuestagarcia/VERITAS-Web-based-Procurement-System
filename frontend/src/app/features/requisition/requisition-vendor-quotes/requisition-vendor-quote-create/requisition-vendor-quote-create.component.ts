@@ -119,14 +119,17 @@ export class RequisitionVendorQuoteCreateComponent implements OnInit {
       base += qty * price;
     });
 
-    this.quoteForm.get('baseAmount')?.setValue(base, { emitEvent: false });
+    const roundedBase = Math.round(base * 100) / 100;
+    this.quoteForm.get('baseAmount')?.setValue(roundedBase, { emitEvent: false });
     this.calculateTotal();
   }
 
   calculateTotal(): void {
     const base = this.quoteForm.get('baseAmount')?.value || 0;
     const shipping = this.quoteForm.get('shippingCosts')?.value || 0;
-    this.quoteForm.get('totalAmount')?.setValue(base + shipping, { emitEvent: false });
+
+    const roundedTotal = Math.round((base + shipping) * 100) / 100;
+    this.quoteForm.get('totalAmount')?.setValue(roundedTotal, { emitEvent: false });
   }
 
   loadData(): void {
