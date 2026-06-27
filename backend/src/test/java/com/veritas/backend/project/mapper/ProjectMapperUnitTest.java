@@ -53,6 +53,7 @@ class ProjectMapperUnitTest {
         assertAll(
             () -> assertEquals(1L, dto.id()),
             () -> assertEquals("Project Alpha", dto.name()),
+            () -> assertEquals("ALPHA", dto.projectKey()),
             () -> assertEquals(LocalDate.of(2026, 1, 1), dto.startDate()),
             () -> assertEquals(LocalDate.of(2026, 12, 31), dto.endDate()),
             () -> assertNull(dto.budget()),

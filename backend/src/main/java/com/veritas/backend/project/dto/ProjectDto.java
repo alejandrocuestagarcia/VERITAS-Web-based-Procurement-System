@@ -7,6 +7,7 @@ import java.time.LocalDate;
 public record ProjectDto (
         Long id,
         String name,
+        String projectKey,
         LocalDate startDate,
         LocalDate endDate,
         BigDecimal budget,
