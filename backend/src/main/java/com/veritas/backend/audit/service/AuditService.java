@@ -92,6 +92,15 @@ public interface AuditService {
     void createRequisitionChangeLog(User actor, Request request, String details);
 
     /**
+     * Records an audit entry when a requester of a request is changed.
+     *
+     * @param actor   the {@link User} who triggered the reassignment (e.g. administrator)
+     * @param request the {@link Request} that was reassigned
+     * @param details a human-readable description of the reassignment event
+     */
+    void createRequesterChangedLog(User actor, Request request, String details);
+
+    /**
      * Records an audit entry when a notification is sent regarding a {@link Request}.
      *
      * @param actor   the {@link User} associated with the notification

@@ -33,6 +33,9 @@ import com.veritas.backend.requisition.repository.RequestRepository;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.dto.RequisitionDto;
 import com.veritas.backend.requisition.entity.Request;
+import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.notification.service.NotificationService;
+import com.veritas.backend.notification.entity.NotificationType;
 import java.util.List;
 
 @Slf4j
@@ -50,6 +53,8 @@ public class UserServiceImpl implements UserService {
   private final RequestRepository requestRepository;
   private final RequisitionMapper requisitionMapper;
   private final RoleHierarchy roleHierarchy;
+  private final AuditService auditService;
+  private final NotificationService notificationService;
 
   @Override
   @Transactional
@@ -277,6 +282,7 @@ public class UserServiceImpl implements UserService {
 
     if (user.isPresent()) {
       User actualUser = user.get();
+      String deletedUserEmail = actualUser.getEmail();
       actualUser.setIsActive(false);
       actualUser.setNotificationEmailEnabled(false);
       actualUser.setDeletedAt(LocalDateTime.now());
@@ -294,6 +300,11 @@ public class UserServiceImpl implements UserService {
         List<Request> activeRequests = requestRepository.findActiveRequestsByUserId(actualUser.getId());
         for (Request req : activeRequests) {
           req.setUser(fallbackUser);
+          String details = String.format("Request reassigned from deleted user %s to %s", deletedUserEmail, fallbackUser.getEmail());
+          auditService.createRequesterChangedLog(currentUser, req, details);
+          
+          String message = String.format("Request '%s' has been reassigned to you from deleted user %s", req.getRequestName(), deletedUserEmail);
+          notificationService.createNotification(fallbackUser, req, NotificationType.REASSIGNED, message);
         }
         requestRepository.saveAll(activeRequests);
       }

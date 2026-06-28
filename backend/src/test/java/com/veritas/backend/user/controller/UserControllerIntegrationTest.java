@@ -10,6 +10,8 @@ import com.veritas.backend.project.repository.ProjectRepository;
 import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.notification.repository.NotificationRepository;
+import com.veritas.backend.notification.entity.Notification;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -35,6 +37,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import jakarta.persistence.EntityManager;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -68,6 +71,9 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
   private AuditLogRepository auditLogRepository;
 
   @Autowired
+  private NotificationRepository notificationRepository;
+
+  @Autowired
   private PasswordEncoder encoder;
 
   private Team testTeam;
@@ -93,6 +99,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
 
+    notificationRepository.deleteAll();
     auditLogRepository.deleteAll();
     requestRepository.deleteAll();
     projectRepository.deleteAll();
@@ -111,6 +118,7 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
     jdbcTemplate.update("UPDATE teams SET leader_id = NULL");
     jdbcTemplate.update("UPDATE internal_budgets SET parent_budget_id = NULL");
 
+    notificationRepository.deleteAll();
     auditLogRepository.deleteAll();
     requestRepository.deleteAll();
     projectRepository.deleteAll();
@@ -136,6 +144,10 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
 
     userRepository.saveAll(List.of(alex, john));
 
+    Request dummyRequest = requestFactory.createValidRequest("New Laptop for Alex", alex);
+    dummyRequest.setPriority(Priority.MEDIUM);
+    dummyRequest = requestRepository.save(dummyRequest);
+    final Long dummyRequestId = dummyRequest.getRequestID();
 
     Long userId = alex.getId();
     Long fallBackUserId = john.getId();
@@ -146,10 +158,25 @@ class UserControllerIntegrationTest extends BaseDBIntegrationTest {
             .andExpect(status().isNoContent());
 
     User afterOperationAlex = userRepository.findById(userId).get();
-
     assertFalse(afterOperationAlex.getIsActive());
 
+    Request updatedRequest = requestRepository.findById(dummyRequestId).get();
+    assertEquals(john.getId(), updatedRequest.getUser().getId());
 
+    List<com.veritas.backend.audit.entity.AuditLog> auditLogs = auditLogRepository.findAll();
+    boolean auditLogExists = auditLogs.stream()
+            .anyMatch(log -> log.getAction().equals("REQUESTER_CHANGED") &&
+                    log.getRequest().getRequestID().equals(dummyRequestId) &&
+                    log.getDescription().contains("Request reassigned from deleted user alex@test.com to john@test.com"));
+    assertTrue(auditLogExists);
+
+    List<Notification> notifications = notificationRepository.findAll();
+    boolean notificationExists = notifications.stream()
+            .anyMatch(n -> n.getUser().getId().equals(john.getId()) &&
+                    n.getRequest().getRequestID().equals(dummyRequestId) &&
+                    n.getType() == com.veritas.backend.notification.entity.NotificationType.REASSIGNED &&
+                    n.getMessage().contains("Request 'New Laptop for Alex' has been reassigned to you from deleted user alex@test.com"));
+    assertTrue(notificationExists);
   }
 
   @Test
