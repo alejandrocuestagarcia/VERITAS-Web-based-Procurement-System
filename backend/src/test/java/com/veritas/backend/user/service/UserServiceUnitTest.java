@@ -19,6 +19,9 @@ import com.veritas.backend.requisition.entity.Priority;
 import com.veritas.backend.requisition.entity.Request;
 import com.veritas.backend.requisition.mapper.RequisitionMapper;
 import com.veritas.backend.requisition.repository.RequestRepository;
+import com.veritas.backend.audit.service.AuditService;
+import com.veritas.backend.notification.service.NotificationService;
+import com.veritas.backend.notification.entity.NotificationType;
 import com.veritas.backend.team.entity.Team;
 import com.veritas.backend.team.repository.TeamRepository;
 import com.veritas.backend.user.dto.UserCreationRequestDto;
@@ -79,6 +82,12 @@ class UserServiceUnitTest {
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @Spy
     private UserMapper userMapper = Mappers.getMapper(UserMapper.class);
@@ -1163,15 +1172,18 @@ class UserServiceUnitTest {
         actualUser.setId(1L);
         actualUser.setRole(UserRole.REQUESTER);
         actualUser.setTeam(testTeam);
+        actualUser.setEmail("alex@test.com");
 
         User fallbackUser = new User();
         fallbackUser.setId(2L);
         fallbackUser.setRole(UserRole.REQUESTER);
         fallbackUser.setTeam(testTeam);
+        fallbackUser.setEmail("john@test.com");
 
         Request request1 = new Request();
         request1.setRequestID(10L);
         request1.setUser(actualUser);
+        request1.setRequestName("Laptop Request");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(actualUser));
         when(userRepository.findById(2L)).thenReturn(Optional.of(fallbackUser));
@@ -1181,7 +1193,18 @@ class UserServiceUnitTest {
 
         assertAll(
             () -> assertEquals(fallbackUser, request1.getUser()),
-            () -> verify(requestRepository).saveAll(anyList())
+            () -> verify(requestRepository).saveAll(anyList()),
+            () -> verify(auditService).createRequesterChangedLog(
+                null,
+                request1,
+                "Request reassigned from deleted user alex@test.com to john@test.com"
+            ),
+            () -> verify(notificationService).createNotification(
+                fallbackUser,
+                request1,
+                NotificationType.REASSIGNED,
+                "Request 'Laptop Request' has been reassigned to you from deleted user alex@test.com"
+            )
         );
     }
 
