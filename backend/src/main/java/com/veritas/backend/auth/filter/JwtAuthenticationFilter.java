@@ -48,6 +48,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       log.warn("JWT token expired for request: {} {}", request.getMethod(), request.getRequestURI());
       sendError(response, "Token expired");
       return;
+    } catch (io.jsonwebtoken.JwtException e) {
+      log.warn("Invalid JWT token for request: {} {} – {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+      sendError(response, "Invalid token");
+      return;
     }
 
     if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {

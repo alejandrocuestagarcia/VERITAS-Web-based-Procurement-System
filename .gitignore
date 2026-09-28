@@ -1,10 +1,25 @@
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
 # IDE files
 .idea/
 *.iml
 .vscode/
-.env
+
+# Generated API client (built from OpenAPI spec)
 /frontend/src/app/core/api/
-/htmlReport/
 frontend/openapi.json
+
+# Reports & logs
+/htmlReport/
 logs/
+
+# Uploads
 uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+

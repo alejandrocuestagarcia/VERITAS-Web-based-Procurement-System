@@ -59,4 +59,4 @@ clean: ## Remove build files and node_modules from both folders
 	$(MAKE) -C $(FRONTEND_DIR) clean
 
 init: db-only install-frontend ## One-time setup: Start DB and install frontend libs
-	@echo "✅ Setup complete. Use 'make run-be' and 'make run-fe' in two terminals."
+	@echo "✅ Setup complete. Use 'make run-backend' and 'make run-frontend' in two terminals."

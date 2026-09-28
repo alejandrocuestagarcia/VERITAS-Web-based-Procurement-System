@@ -4,21 +4,27 @@ services:
     container_name: veritas-db
     environment:
       POSTGRES_DB: veritas_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${DB_USERNAME:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
     ports:
       - "5432:5432"
     healthcheck:
-      test: pg_isready -U user -d veritas_db
+      test: pg_isready -U ${DB_USERNAME:-user} -d veritas_db
       interval: 5s
 
   backend:
     build: ./backend
     container_name: veritas-backend
+    env_file:
+      - path: .env
+        required: false
     environment:
       DB_HOST: db
+      DB_USERNAME: ${DB_USERNAME:-user}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
     ports:
       - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
+
