@@ -32,6 +32,24 @@ make run-frontend  # terminal 2: starts the Angular frontend (waits for backend)
 
 No `.env` file is needed — sensible defaults are built in for local development.
 
+### Default Login Accounts
+
+The database is automatically seeded with default accounts. All accounts use the password **`password123`**:
+
+- `admin@veritas.com` (Administrator)
+- `finance@veritas.com` (Finance Officer)
+- `procurement@veritas.com` (Procurement Officer)
+- `requester@veritas.com` (Requester)
+
+## Screenshots
+
+![Dashboard](doc/screenshots/Dashboard.png)
+![Requisitions List](doc/screenshots/Requisitions%20List.png)
+![Requisitions Detailed View](doc/screenshots/Requisition%20Detailed%20View.png)
+![Budget Overview](doc/screenshots/Budget%20Overview.png)
+![Workflow View](doc/screenshots/Workflow%20View.png)
+
+
 ## Optional: Environment Overrides
 
 To enable **email notifications** or **live currency exchange rates**, create a `.env` file:
@@ -66,6 +84,10 @@ make db-only
 | `make test-backend`  | Run backend tests                     |
 | `make clean`         | Remove build files and node_modules   |
 | `make help`          | Show all available commands           |
+
+## Documentation
+
+- **[User Guide](doc/User_Guide.md)**: A guide on how to use VERITAS, including roles, features, and the procurement workflow.
 
 ## Useful Information
 
